@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.0",
   "appId": "1234567890",
   "inAppPurchases": [
     {
@@ -7,7 +7,23 @@
       "type": "CONSUMABLE",
       "referenceName": "100 Coins",
       "familySharable": false,
-      "priceTier": 1,
+      "priceSchedule": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "priceTier": 1,
+            "territory": "USA"
+          },
+          {
+            "priceTier": 2,
+            "territory": "CAN"
+          },
+          {
+            "priceTier": 3,
+            "territory": "GBR"
+          }
+        ]
+      },
       "localizations": [
         {
           "locale": "en-US",
@@ -22,7 +38,15 @@
       "type": "NON_CONSUMABLE",
       "referenceName": "Unlock Pro Features",
       "familySharable": true,
-      "priceTier": 10,
+      "priceSchedule": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "priceTier": 10,
+            "territory": "USA"
+          }
+        ]
+      },
       "localizations": [
         {
           "locale": "en-US",
@@ -36,7 +60,15 @@
       "type": "NON_RENEWING_SUBSCRIPTION",
       "referenceName": "30-Day Pro Pass",
       "familySharable": true,
-      "priceTier": 8,
+      "priceSchedule": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "priceTier": 8,
+            "territory": "USA"
+          }
+        ]
+      },
       "localizations": [
         {
           "locale": "en-US",
@@ -63,7 +95,15 @@
           "groupLevel": 1,
           "subscriptionPeriod": "ONE_MONTH",
           "familySharable": true,
-          "priceTier": 5,
+          "priceSchedule": {
+            "baseTerritory": "USA",
+            "prices": [
+              {
+                "priceTier": 5,
+                "territory": "USA"
+              }
+            ]
+          },
           "localizations": [
             {
               "locale": "en-US",
@@ -101,7 +141,15 @@
           "groupLevel": 2,
           "subscriptionPeriod": "ONE_YEAR",
           "familySharable": true,
-          "priceTier": 50,
+          "priceSchedule": {
+            "baseTerritory": "USA",
+            "prices": [
+              {
+                "priceTier": 50,
+                "territory": "USA"
+              }
+            ]
+          },
           "localizations": [
             {
               "locale": "en-US",
@@ -113,6 +161,44 @@
             {
               "type": "FREE_TRIAL",
               "duration": "P14D"
+            }
+          ],
+          "winBackOffers": [
+            {
+              "referenceName": "ComeBackQ12025",
+              "type": "PAY_AS_YOU_GO",
+              "numberOfPeriods": 1,
+              "priceTier": 20,
+              "territories": ["USA", "CAN"]
+            }
+          ]
+        },
+        {
+          "productId": "com.example.sub.premium.yearly.manual",
+          "referenceName": "Premium Yearly Manual",
+          "groupLevel": 3,
+          "subscriptionPeriod": "ONE_YEAR",
+          "familySharable": true,
+          "priceSchedule": {
+            "baseTerritory": "USA",
+            "prices": [
+              {
+                "priceTier": 60,
+                "territory": "USA"
+              }
+            ],
+            "manualPrices": [
+              {
+                "price": "79.99",
+                "territory": "CAN"
+              }
+            ]
+          },
+          "localizations": [
+            {
+              "locale": "en-US",
+              "name": "Premium Yearly (Manual)",
+              "description": "A full year of access to premium features with manually set prices."
             }
           ]
         }

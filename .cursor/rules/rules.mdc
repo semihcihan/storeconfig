@@ -39,7 +39,7 @@ This is a Node.js CLI tool for synchronizing in-app purchases (IAPs) and subscri
 - **Example and Schema:**
 
   - Refer to `@example.json` for a sample structure of the IAPs and subscriptions file.
-  - The `@iap_subscription_openapi.json` file contains the OpenAPI specification for the App Store Connect IAP and Subscriptions API. This should be the source of truth for API interactions.
+  - The `@iap_subscription_openapi.json` file contains the OpenAPI specification for the App Store Connect IAP and Subscriptions API. This is a subset, may have missing data. When you can't find what you are looking for as API specifications, you should refer to the docs linked to cursor which is also given below `Managing In-App Purchases`.
 
 - **Apple Developer Documentation:**
   - [Managing In-App Purchases](https://developer.apple.com/documentation/appstoreconnectapi/managing-in-app-purchases)
