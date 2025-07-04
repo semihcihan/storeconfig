@@ -88,6 +88,14 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 6.  **Implement Commands:** Build out the full functionality for the `new`, `fetch`, `validate`, `plan`, and `apply` commands.
 7.  **Documentation:** Write a comprehensive `README.md` with usage instructions.
 
+## Example .env
+
+# App Store Connect API Credentials
+
+ASC_ISSUER_ID=your-issuer-id-goes-here
+ASC_KEY_ID=your-key-id-goes-here
+ASC_PRIVATE_KEY_PATH=/path/to/your/AuthKey_YOUR_KEY_ID.p8
+
 ## References
 
 - **Managing In-App Purchases:** [Managing In-App Purchases](https://developer.apple.com/documentation/appstoreconnectapi/managing-in-app-purchases) - Core documentation for using the App Store Connect API to manage IAPs.
