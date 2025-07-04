@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "1.1",
+  "bundleId": "com.example.my-awesome-app",
+  "inAppPurchases": [
+    {
+      "productId": "com.example.product.coins100",
+      "type": "CONSUMABLE",
+      "referenceName": "100 Coins",
+      "familySharable": false,
+      "priceTier": 1,
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "100 Coins",
+          "description": "A bundle of 100 shiny coins."
+        }
+      ],
+      "reviewNote": "A note for the reviewer."
+    },
+    {
+      "productId": "com.example.product.unlockpro",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Unlock Pro Features",
+      "familySharable": true,
+      "priceTier": 10,
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Unlock Pro",
+          "description": "Permanently unlock all pro features."
+        }
+      ]
+    },
+    {
+      "productId": "com.example.product.30daypass",
+      "type": "NON_RENEWING_SUBSCRIPTION",
+      "referenceName": "30-Day Pro Pass",
+      "familySharable": true,
+      "priceTier": 8,
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "30-Day Pro Access",
+          "description": "Unlock all pro features for 30 days."
+        }
+      ]
+    }
+  ],
+  "subscriptionGroups": [
+    {
+      "referenceName": "Premium Access",
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Premium Access",
+          "customAppName": "My Awesome App Premium"
+        }
+      ],
+      "subscriptions": [
+        {
+          "productId": "com.example.sub.premium.monthly",
+          "referenceName": "Premium Monthly",
+          "groupLevel": 1,
+          "subscriptionPeriod": "ONE_MONTH",
+          "familySharable": true,
+          "priceTier": 5,
+          "localizations": [
+            {
+              "locale": "en-US",
+              "name": "Premium Monthly",
+              "description": "Monthly access to all premium features."
+            }
+          ],
+          "introductoryOffers": [
+            {
+              "type": "PAY_AS_YOU_GO",
+              "numberOfPeriods": 3,
+              "priceTier": 1,
+              "territories": ["USA", "CAN"]
+            }
+          ],
+          "promotionalOffers": [
+            {
+              "referenceName": "SummerSale2024",
+              "type": "PAY_AS_YOU_GO",
+              "numberOfPeriods": 2,
+              "priceTier": 2,
+              "codes": [
+                {
+                  "code": "SUMMER24",
+                  "numberOfCodes": 1000
+                }
+              ]
+            }
+          ],
+          "reviewNote": "Review note for monthly subscription."
+        },
+        {
+          "productId": "com.example.sub.premium.yearly",
+          "referenceName": "Premium Yearly",
+          "groupLevel": 2,
+          "subscriptionPeriod": "ONE_YEAR",
+          "familySharable": true,
+          "priceTier": 50,
+          "localizations": [
+            {
+              "locale": "en-US",
+              "name": "Premium Yearly",
+              "description": "A full year of access to premium features at a discounted rate."
+            }
+          ],
+          "introductoryOffers": [
+            {
+              "type": "FREE_TRIAL",
+              "duration": "P14D"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

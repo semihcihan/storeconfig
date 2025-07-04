@@ -4,7 +4,7 @@ A Node.js CLI tool to synchronize in-app purchases and subscriptions with the Ap
 
 ## Objective
 
-The primary objective of this project is to create a command-line tool that simplifies managing App Store Connect in-app purchases (IAPs) and subscriptions by syncing them from a local JSON file. This will allow for easier version control, automation, and management of IAPs and subscriptions as code.
+The primary objective of this project is to create a command-line tool that simplifies managing App Store Connect in-app purchases (IAPs) and subscriptions by syncing them from a local JSON file. This will allow for easier version control, automation, and management of IAPs and subscriptions as code. Each JSON file will belong to a single APP.
 
 ## Technology Stack
 
@@ -121,3 +121,10 @@ _(Note: Unable to inspect `app_store_connect_api_openapi.json`. This structure i
 5.  **IAP/Subscription Models:** Refine the JSON schema and implement the logic for creating/updating IAPs and subscriptions based on the actual API specification.
 6.  **Implement Commands:** Build out the full functionality for the `validate`, `plan`, and `apply` commands.
 7.  **Documentation:** Write a comprehensive `README.md` with usage instructions.
+
+## References
+
+- **Managing In-App Purchases:** [Managing In-App Purchases](https://developer.apple.com/documentation/appstoreconnectapi/managing-in-app-purchases) - Core documentation for using the App Store Connect API to manage IAPs.
+- **API Keys and Tokens:**
+  - [Creating API Keys for App Store Connect API](httpss://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api)
+  - [Generating Tokens for API Requests](httpss://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests)
