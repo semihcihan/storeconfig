@@ -1,19 +1,22 @@
 import * as jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
+import * as fs from "fs";
 import { logger } from "../utils/logger";
 
 dotenv.config();
 
-const privateKey = process.env.APP_STORE_CONNECT_API_PRIVATE_KEY;
-const keyId = process.env.APP_STORE_CONNECT_API_KEY_ID;
-const issuerId = process.env.APP_STORE_CONNECT_API_ISSUER_ID;
+const privateKeyPath = process.env.ASC_PRIVATE_KEY_PATH;
+const keyId = process.env.ASC_KEY_ID;
+const issuerId = process.env.ASC_ISSUER_ID;
 
-if (!privateKey || !keyId || !issuerId) {
+if (!privateKeyPath || !keyId || !issuerId) {
   logger.error(
-    "Missing App Store Connect API credentials. Please check your .env file for APP_STORE_CONNECT_API_PRIVATE_KEY, APP_STORE_CONNECT_API_KEY_ID, and APP_STORE_CONNECT_API_ISSUER_ID."
+    "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY_PATH, ASC_KEY_ID, and ASC_ISSUER_ID."
   );
   process.exit(1);
 }
+
+const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
 /**
  * Generates a JWT token for App Store Connect API authentication.
@@ -40,7 +43,7 @@ export function generateAuthToken(): string {
     },
   };
 
-  const token = jwt.sign(payload, privateKey!.replace(/\\n/g, "\n"), options);
+  const token = jwt.sign(payload, privateKey, options);
   logger.info("Successfully generated App Store Connect API token.");
   return token;
 }

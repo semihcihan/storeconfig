@@ -42,7 +42,7 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 
 - `app-store-sync new`: Creates a sample `iaps.json` file.
 - `app-store-sync validate --file <path>`: Validates the JSON file.
-- `app-store-sync fetch --file <path>`: Fetches the current IAPs and subscriptions from App Store Connect and writes them to the specified JSON file. This is useful for bootstrapping or updating the local state.
+- `app-store-sync fetch --id <app-id> --file <path>`: Fetches the current IAPs and subscriptions from App Store Connect for a specific app and writes them to the specified JSON file. This is useful for bootstrapping or updating the local state.
 - `app-store-sync plan --file <path>`: Shows a plan of changes (dry run). **Note:** This command will use the `fetch` method internally to retrieve the current state from App Store Connect and compare it with the local JSON file to determine what changes would be made.
 - `app-store-sync apply --file <path>`: Applies the changes to App Store Connect. **Note:** This command will also use the `fetch` method internally to ensure it is applying only the necessary changes based on the current state.
 
