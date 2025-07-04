@@ -37,51 +37,6 @@ The tool will be configured using a `.env` file in the project root. The followi
 
 We will need to define a JSON structure to represent IAPs and subscriptions. Based on the App Store Connect API's general structure, we can propose a starting point.
 
-_(Note: Unable to inspect `app_store_connect_api_openapi.json`. This structure is a proposal and will need to be verified against the actual API.)_
-
-```json
-{
-  "schemaVersion": "1.0",
-  "inAppPurchases": [
-    {
-      "productId": "com.example.product1",
-      "type": "CONSUMABLE",
-      "referenceName": "Product 1",
-      "name": {
-        "en-US": "Product 1 Name"
-      },
-      "description": {
-        "en-US": "Product 1 Description"
-      },
-      "priceTier": 1
-    }
-  ],
-  "subscriptions": [
-    {
-      "productId": "com.example.sub1",
-      "referenceName": "Subscription 1",
-      "name": {
-        "en-US": "Subscription 1 Name"
-      },
-      "description": {
-        "en-US": "Subscription 1 Description"
-      },
-      "group": "group1",
-      "levels": [
-        {
-          "level": 1,
-          "duration": "P1M",
-          "price": {
-            "tier": 1,
-            "currency": "USD"
-          }
-        }
-      ]
-    }
-  ]
-}
-```
-
 ## CLI Commands
 
 - `app-store-sync init`: Creates a sample `iaps.json` file.

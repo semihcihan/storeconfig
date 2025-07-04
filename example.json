@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.1",
-  "bundleId": "com.example.my-awesome-app",
+  "appId": "1234567890",
   "inAppPurchases": [
     {
       "productId": "com.example.product.coins100",
