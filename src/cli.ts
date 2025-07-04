@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
-import initCmd from "./commands/init";
+import newCmd from "./commands/new";
 import validateCmd from "./commands/validate";
 import planCmd from "./commands/plan";
 import applyCmd from "./commands/apply";
@@ -12,7 +12,7 @@ import applyCmd from "./commands/apply";
 dotenv.config();
 
 yargs(hideBin(process.argv))
-  .command(initCmd)
+  .command(newCmd)
   .command(validateCmd)
   .command(planCmd)
   .command(applyCmd)

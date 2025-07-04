@@ -24,6 +24,7 @@ The primary objective of this project is to create a command-line tool that simp
   - Create, update, or delete subscriptions.
 - **Validation:** Validate the JSON file against the defined schema before syncing.
 - **Dry Runs:** Allow users to perform a "dry run" to see what changes would be made without actually applying them.
+- **Fetching:** Fetch the current state of IAPs and subscriptions from App Store Connect to generate a local JSON file or to compare with the local state.
 
 ## Configuration
 
@@ -39,10 +40,11 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 
 ## CLI Commands
 
-- `app-store-sync init`: Creates a sample `iaps.json` file.
+- `app-store-sync new`: Creates a sample `iaps.json` file.
 - `app-store-sync validate --file <path>`: Validates the JSON file.
-- `app-store-sync plan --file <path>`: Shows a plan of changes (dry run).
-- `app-store-sync apply --file <path>`: Applies the changes to App Store Connect.
+- `app-store-sync fetch --file <path>`: Fetches the current IAPs and subscriptions from App Store Connect and writes them to the specified JSON file. This is useful for bootstrapping or updating the local state.
+- `app-store-sync plan --file <path>`: Shows a plan of changes (dry run). **Note:** This command will use the `fetch` method internally to retrieve the current state from App Store Connect and compare it with the local JSON file to determine what changes would be made.
+- `app-store-sync apply --file <path>`: Applies the changes to App Store Connect. **Note:** This command will also use the `fetch` method internally to ensure it is applying only the necessary changes based on the current state.
 
 ## Project Structure
 
@@ -55,8 +57,9 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 ├── src/
 │   ├── cli.js
 │   ├── commands/
-│   │   ├── init.js
+│   │   ├── new.js
 │   │   ├── validate.js
+│   │   ├── fetch.js
 │   │   ├── plan.js
 │   │   └── apply.js
 │   ├── services/
@@ -67,6 +70,14 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 └── README.md
 ```
 
+## Command Workflow
+
+- **new:** Bootstraps a new JSON file with sample IAPs/subscriptions.
+- **validate:** Checks the local JSON file for schema and data validity.
+- **fetch:** Retrieves the current state from App Store Connect and writes it to a local JSON file. This is useful for initializing or updating the local representation.
+- **plan:** Compares the local JSON file with the current state fetched from App Store Connect (using the fetch method) and shows a summary of what would change if you applied the local file.
+- **apply:** Applies the necessary changes to App Store Connect to make its state match the local JSON file. It uses the fetch method to determine the current state and only applies the required changes.
+
 ## Development Plan / Next Steps
 
 1.  **Setup Project:** Initialize a Node.js project, install dependencies, and set up the basic project structure.
@@ -74,7 +85,7 @@ We will need to define a JSON structure to represent IAPs and subscriptions. Bas
 3.  **CLI Scaffolding:** Set up the basic CLI commands using `yargs` or `commander`.
 4.  **API Service:** Create a service to interact with the App Store Connect API. Initially, focus on a single endpoint to test the connection (e.g., listing apps).
 5.  **IAP/Subscription Models:** Refine the JSON schema and implement the logic for creating/updating IAPs and subscriptions based on the actual API specification.
-6.  **Implement Commands:** Build out the full functionality for the `validate`, `plan`, and `apply` commands.
+6.  **Implement Commands:** Build out the full functionality for the `new`, `fetch`, `validate`, `plan`, and `apply` commands.
 7.  **Documentation:** Write a comprehensive `README.md` with usage instructions.
 
 ## References
