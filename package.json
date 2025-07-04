@@ -1,0 +1,30 @@
+{
+  "name": "@semihcihan/developer-tool",
+  "version": "1.0.0",
+  "description": "A Node.js CLI tool to synchronize in-app purchases and subscriptions with the App Store from a local JSON file.",
+  "main": "dist/cli.js",
+  "bin": {
+    "app-store-sync": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [],
+  "author": "Focus Tapps",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "dotenv": "^17.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.10",
+    "@types/yargs": "^17.0.33",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
