@@ -34,9 +34,37 @@ The tool will be configured using a `.env` file in the project root. The followi
 - `ASC_KEY_ID`: Your private key ID from App Store Connect.
 - `ASC_PRIVATE_KEY_PATH`: The path to your private key (`.p8`) file.
 
-## JSON File Format (Initial Proposal)
+### Pricing Model
 
-We will need to define a JSON structure to represent IAPs and subscriptions. Based on the App Store Connect API's general structure, we can propose a starting point.
+The pricing model is designed for both simplicity and control. You will specify a concrete `price` for each territory you wish to configure.
+
+- **Base Territory Price:** You must define a `baseTerritory` and set a `price` for it. This price is used to find a corresponding price on the App Store, which then determines the prices for all other territories.
+- **Manual Price Overrides:** To set a specific price for a country that differs from the automatically calculated price, simply add a price entry for that territory. This gives you granular control over your pricing strategy in key markets.
+
+Internally, the tool will query the App Store Connect API's `/v1/appPricePoints` endpoint to find the price point that matches your specified price. It will then use the ID of that price point when creating or updating IAPs and subscriptions.
+
+**Example:**
+
+```json
+"priceSchedule": {
+  "baseTerritory": "USA",
+  "prices": [
+    {
+      "price": "9.99",
+      "territory": "USA"
+    },
+    {
+      "price": "12.99",
+      "territory": "CAN"
+    }
+  ]
+}
+```
+
+In this example:
+
+1. The price for the USA is set to $9.99. This price will be used to determine the price for all other territories except Canada.
+2. The price for Canada is manually set to $12.99, overriding the automatic calculation.
 
 ## CLI Commands
 

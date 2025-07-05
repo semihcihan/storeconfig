@@ -11,15 +11,15 @@
         "baseTerritory": "USA",
         "prices": [
           {
-            "priceTier": 1,
+            "price": "0.99",
             "territory": "USA"
           },
           {
-            "priceTier": 2,
+            "price": "1.99",
             "territory": "CAN"
           },
           {
-            "priceTier": 3,
+            "price": "2.99",
             "territory": "GBR"
           }
         ]
@@ -46,7 +46,7 @@
         "baseTerritory": "USA",
         "prices": [
           {
-            "priceTier": 10,
+            "price": "9.99",
             "territory": "USA"
           }
         ]
@@ -68,7 +68,7 @@
         "baseTerritory": "USA",
         "prices": [
           {
-            "priceTier": 8,
+            "price": "7.99",
             "territory": "USA"
           }
         ]
@@ -103,7 +103,7 @@
             "baseTerritory": "USA",
             "prices": [
               {
-                "priceTier": 5,
+                "price": "4.99",
                 "territory": "USA"
               }
             ]
@@ -123,11 +123,11 @@
                 "baseTerritory": "USA",
                 "prices": [
                   {
-                    "priceTier": 1,
+                    "price": "0.99",
                     "territory": "USA"
                   },
                   {
-                    "priceTier": 1,
+                    "price": "0.99",
                     "territory": "CAN"
                   }
                 ]
@@ -141,7 +141,7 @@
                 "baseTerritory": "GBR",
                 "prices": [
                   {
-                    "priceTier": 10,
+                    "price": "9.99",
                     "territory": "GBR"
                   }
                 ]
@@ -151,7 +151,7 @@
             {
               "type": "FREE",
               "duration": "P1M",
-              "availableTerritories": ["TR"]
+              "availableTerritories": ["TUR"]
             }
           ],
           "reviewNote": "Review note for monthly subscription.",
@@ -170,7 +170,7 @@
             "baseTerritory": "USA",
             "prices": [
               {
-                "priceTier": 50,
+                "price": "49.99",
                 "territory": "USA"
               }
             ]
@@ -198,7 +198,7 @@
                 "baseTerritory": "USA",
                 "prices": [
                   {
-                    "priceTier": 2,
+                    "price": "1.99",
                     "territory": "USA"
                   }
                 ]
@@ -213,7 +213,7 @@
                 "baseTerritory": "USA",
                 "prices": [
                   {
-                    "priceTier": 15,
+                    "price": "14.99",
                     "territory": "USA"
                   },
                   {
@@ -241,7 +241,7 @@
             "baseTerritory": "USA",
             "prices": [
               {
-                "priceTier": 60,
+                "price": "59.99",
                 "territory": "USA"
               },
               {
