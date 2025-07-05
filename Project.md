@@ -14,6 +14,7 @@ The primary objective of this project is to create a command-line tool that simp
   - `axios` or a similar HTTP client for making API requests.
   - `yargs` or `commander` for creating the CLI interface.
   - `dotenv` for managing environment variables for configuration.
+  - `zod` for schema declaration and validation to ensure type-safe handling of JSON files.
 
 ## Core Features
 
@@ -22,7 +23,7 @@ The primary objective of this project is to create a command-line tool that simp
 - **Syncing:**
   - Create, update, or delete in-app purchases.
   - Create, update, or delete subscriptions.
-- **Validation:** Validate the JSON file against the defined schema before syncing.
+- **Validation:** Validate the JSON file against a Zod schema before syncing. This provides both runtime validation and generates static TypeScript types, ensuring data integrity and type safety.
 - **Dry Runs:** Allow users to perform a "dry run" to see what changes would be made without actually applying them.
 - **Fetching:** Fetch the current state of IAPs and subscriptions from App Store Connect to generate a local JSON file or to compare with the local state.
 
