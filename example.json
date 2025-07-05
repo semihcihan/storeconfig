@@ -31,7 +31,11 @@
           "description": "A bundle of 100 shiny coins."
         }
       ],
-      "reviewNote": "A note for the reviewer."
+      "reviewNote": "A note for the reviewer.",
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": ["USA", "CAN", "GBR"]
+      }
     },
     {
       "productId": "com.example.product.unlockpro",
@@ -115,25 +119,46 @@
             {
               "type": "PAY_AS_YOU_GO",
               "numberOfPeriods": 3,
-              "priceTier": 1,
-              "territories": ["USA", "CAN"]
-            }
-          ],
-          "promotionalOffers": [
+              "priceSchedule": {
+                "baseTerritory": "USA",
+                "prices": [
+                  {
+                    "priceTier": 1,
+                    "territory": "USA"
+                  },
+                  {
+                    "priceTier": 1,
+                    "territory": "CAN"
+                  }
+                ]
+              },
+              "availableTerritories": ["USA", "CAN"]
+            },
             {
-              "referenceName": "SummerSale2024",
-              "type": "PAY_AS_YOU_GO",
-              "numberOfPeriods": 2,
-              "priceTier": 2,
-              "codes": [
-                {
-                  "code": "SUMMER24",
-                  "numberOfCodes": 1000
-                }
-              ]
+              "type": "PAY_UP_FRONT",
+              "duration": "P6M",
+              "priceSchedule": {
+                "baseTerritory": "GBR",
+                "prices": [
+                  {
+                    "priceTier": 10,
+                    "territory": "GBR"
+                  }
+                ]
+              },
+              "availableTerritories": ["GBR"]
+            },
+            {
+              "type": "FREE",
+              "duration": "P1M",
+              "availableTerritories": ["TR"]
             }
           ],
-          "reviewNote": "Review note for monthly subscription."
+          "reviewNote": "Review note for monthly subscription.",
+          "availability": {
+            "availableInNewTerritories": false,
+            "availableTerritories": ["USA"]
+          }
         },
         {
           "productId": "com.example.sub.premium.yearly",
@@ -159,17 +184,50 @@
           ],
           "introductoryOffers": [
             {
-              "type": "FREE_TRIAL",
+              "type": "FREE",
               "duration": "P14D"
             }
           ],
-          "winBackOffers": [
+          "promotionalOffers": [
             {
-              "referenceName": "ComeBackQ12025",
+              "id": "promo.payasyougo.winter24",
+              "referenceName": "PayAsYouGo_Winter24",
               "type": "PAY_AS_YOU_GO",
-              "numberOfPeriods": 1,
-              "priceTier": 20,
-              "territories": ["USA", "CAN"]
+              "numberOfPeriods": 2,
+              "priceSchedule": {
+                "baseTerritory": "USA",
+                "prices": [
+                  {
+                    "priceTier": 2,
+                    "territory": "USA"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "promo.payupfront.spring25",
+              "referenceName": "PayUpFront_Spring25",
+              "type": "PAY_UP_FRONT",
+              "duration": "P3M",
+              "priceSchedule": {
+                "baseTerritory": "USA",
+                "prices": [
+                  {
+                    "priceTier": 15,
+                    "territory": "USA"
+                  },
+                  {
+                    "price": "19.99",
+                    "territory": "CAN"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "promo.free.summer25",
+              "referenceName": "Free_Summer25",
+              "type": "FREE",
+              "duration": "P1M"
             }
           ]
         },
@@ -185,9 +243,7 @@
               {
                 "priceTier": 60,
                 "territory": "USA"
-              }
-            ],
-            "manualPrices": [
+              },
               {
                 "price": "79.99",
                 "territory": "CAN"
