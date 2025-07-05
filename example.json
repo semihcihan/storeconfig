@@ -89,7 +89,7 @@
         {
           "locale": "en-US",
           "name": "Premium Access",
-          "customAppName": "My Awesome App Premium"
+          "customName": "My Awesome App Premium"
         }
       ],
       "subscriptions": [
@@ -136,7 +136,7 @@
             },
             {
               "type": "PAY_UP_FRONT",
-              "duration": "P6M",
+              "duration": "SIX_MONTHS",
               "priceSchedule": {
                 "baseTerritory": "GBR",
                 "prices": [
@@ -150,7 +150,7 @@
             },
             {
               "type": "FREE",
-              "duration": "P1M",
+              "duration": "ONE_MONTH",
               "availableTerritories": ["TUR"]
             }
           ],
@@ -185,7 +185,7 @@
           "introductoryOffers": [
             {
               "type": "FREE",
-              "duration": "P14D"
+              "duration": "TWO_WEEKS"
             }
           ],
           "promotionalOffers": [
@@ -208,7 +208,7 @@
               "id": "promo.payupfront.spring25",
               "referenceName": "PayUpFront_Spring25",
               "type": "PAY_UP_FRONT",
-              "duration": "P3M",
+              "duration": "THREE_MONTHS",
               "priceSchedule": {
                 "baseTerritory": "USA",
                 "prices": [
@@ -227,7 +227,7 @@
               "id": "promo.free.summer25",
               "referenceName": "Free_Summer25",
               "type": "FREE",
-              "duration": "P1M"
+              "duration": "ONE_MONTH"
             }
           ]
         },

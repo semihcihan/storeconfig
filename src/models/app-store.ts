@@ -2,6 +2,17 @@ import { z } from "zod";
 import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 
+const SubscriptionOfferDurationSchema = z.enum([
+  "THREE_DAYS",
+  "ONE_WEEK",
+  "TWO_WEEKS",
+  "ONE_MONTH",
+  "TWO_MONTHS",
+  "THREE_MONTHS",
+  "SIX_MONTHS",
+  "ONE_YEAR",
+]);
+
 const PriceSchema = z.object({
   price: z.string(),
   territory: TerritoryCodeSchema,
@@ -26,7 +37,7 @@ const AvailabilitySchema = z.object({
 const SubscriptionGroupLocalizationSchema = z.object({
   locale: LocaleCodeSchema,
   name: z.string(),
-  customAppName: z.string().optional(),
+  customName: z.string().optional(),
 });
 
 const IntroOfferPayAsYouGoSchema = z.object({
@@ -38,14 +49,14 @@ const IntroOfferPayAsYouGoSchema = z.object({
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
-  duration: z.string(),
+  duration: SubscriptionOfferDurationSchema,
   priceSchedule: PriceScheduleSchema,
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
 const IntroOfferFreeSchema = z.object({
   type: z.literal("FREE"),
-  duration: z.string(),
+  duration: SubscriptionOfferDurationSchema,
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
@@ -67,7 +78,7 @@ const PromoOfferPayUpFrontSchema = z.object({
   id: z.string(),
   referenceName: z.string(),
   type: z.literal("PAY_UP_FRONT"),
-  duration: z.string(),
+  duration: SubscriptionOfferDurationSchema,
   priceSchedule: PriceScheduleSchema,
 });
 
@@ -75,7 +86,7 @@ const PromoOfferFreeSchema = z.object({
   id: z.string(),
   referenceName: z.string(),
   type: z.literal("FREE"),
-  duration: z.string(),
+  duration: SubscriptionOfferDurationSchema,
 });
 
 const PromotionalOfferSchema = z.discriminatedUnion("type", [
