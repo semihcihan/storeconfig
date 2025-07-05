@@ -1,28 +1,30 @@
 import { z } from "zod";
+import { TerritoryCodeSchema } from "./territories";
+import { LocaleCodeSchema } from "./locales";
 
 const PriceSchema = z.object({
   price: z.string(),
-  territory: z.string(),
+  territory: TerritoryCodeSchema,
 });
 
 const PriceScheduleSchema = z.object({
-  baseTerritory: z.string(),
+  baseTerritory: TerritoryCodeSchema,
   prices: z.array(PriceSchema),
 });
 
 const LocalizationSchema = z.object({
-  locale: z.string(),
+  locale: LocaleCodeSchema,
   name: z.string(),
   description: z.string(),
 });
 
 const AvailabilitySchema = z.object({
   availableInNewTerritories: z.boolean(),
-  availableTerritories: z.array(z.string()),
+  availableTerritories: z.array(TerritoryCodeSchema),
 });
 
 const SubscriptionGroupLocalizationSchema = z.object({
-  locale: z.string(),
+  locale: LocaleCodeSchema,
   name: z.string(),
   customAppName: z.string().optional(),
 });
@@ -31,20 +33,20 @@ const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
   priceSchedule: PriceScheduleSchema,
-  availableTerritories: z.array(z.string()).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
   duration: z.string(),
   priceSchedule: PriceScheduleSchema,
-  availableTerritories: z.array(z.string()).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
 const IntroOfferFreeSchema = z.object({
   type: z.literal("FREE"),
   duration: z.string(),
-  availableTerritories: z.array(z.string()).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
 const IntroductoryOfferSchema = z.discriminatedUnion("type", [
