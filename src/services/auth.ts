@@ -18,19 +18,20 @@ if (!privateKeyPath || !keyId || !issuerId) {
 
 const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
-/**
- * Generates a JWT token for App Store Connect API authentication.
- * The token is valid for 15 minutes.
- * @returns The generated JWT.
- */
-export function generateAuthToken(): string {
+let authToken: string | null = null;
+let tokenExpiration: number | null = null;
+
+const TOKEN_LIFETIME_SECONDS = 15 * 60; // 15 minutes, max is 20
+const TOKEN_REFRESH_MARGIN_SECONDS = 60; // 1 minute
+
+function generateNewAuthToken(): string {
   const now = Math.floor(Date.now() / 1000);
-  const expirationTime = now + 15 * 60; // 15 minutes
+  tokenExpiration = now + TOKEN_LIFETIME_SECONDS;
 
   const payload = {
     iss: issuerId!,
     iat: now,
-    exp: expirationTime,
+    exp: tokenExpiration,
     aud: "appstoreconnect-v1",
   };
 
@@ -44,6 +45,25 @@ export function generateAuthToken(): string {
   };
 
   const token = jwt.sign(payload, privateKey, options);
-  logger.info("Successfully generated App Store Connect API token.");
+  logger.info("Successfully generated new App Store Connect API token.");
+  authToken = token;
   return token;
+}
+
+/**
+ * Gets a JWT token for App Store Connect API authentication.
+ * Manages a cached token, refreshing it when it's about to expire.
+ * @returns A valid JWT.
+ */
+export function getAuthToken(): string {
+  const now = Math.floor(Date.now() / 1000);
+  if (
+    authToken &&
+    tokenExpiration &&
+    tokenExpiration - now > TOKEN_REFRESH_MARGIN_SECONDS
+  ) {
+    logger.info("Using cached App Store Connect API token.");
+    return authToken;
+  }
+  return generateNewAuthToken();
 }

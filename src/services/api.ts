@@ -1,5 +1,5 @@
 import axios from "axios";
-import { generateAuthToken } from "./auth";
+import { getAuthToken } from "./auth";
 import { logger } from "../utils/logger";
 
 const API_BASE_URL = "https://api.appstoreconnect.apple.com/v1";
@@ -11,7 +11,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     try {
-      const token = generateAuthToken();
+      const token = getAuthToken();
       config.headers.Authorization = `Bearer ${token}`;
       return config;
     } catch (error) {
