@@ -1,27 +1,29 @@
-import axios from "axios";
+import { OpenAPI } from "../generated/app-store-connect-api";
 import { getAuthToken } from "./auth";
-import { logger } from "../utils/logger";
+import { AppsService } from "../generated/app-store-connect-api/services/AppsService";
+import { InAppPurchasesService } from "../generated/app-store-connect-api/services/InAppPurchasesService";
+import { InAppPurchasePriceSchedulesService } from "../generated/app-store-connect-api/services/InAppPurchasePriceSchedulesService";
+import { SubscriptionsService } from "../generated/app-store-connect-api/services/SubscriptionsService";
+import { SubscriptionGroupsService } from "../generated/app-store-connect-api/services/SubscriptionGroupsService";
+import { SubscriptionLocalizationsService } from "../generated/app-store-connect-api/services/SubscriptionLocalizationsService";
+import { SubscriptionPricesService } from "../generated/app-store-connect-api/services/SubscriptionPricesService";
+import { SubscriptionIntroductoryOffersService } from "../generated/app-store-connect-api/services/SubscriptionIntroductoryOffersService";
+import { SubscriptionPromotionalOffersService } from "../generated/app-store-connect-api/services/SubscriptionPromotionalOffersService";
 
-const API_BASE_URL = "https://api.appstoreconnect.apple.com/v1";
+OpenAPI.BASE = "https://api.appstoreconnect.apple.com/v1";
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-});
+OpenAPI.TOKEN = async () => {
+  return getAuthToken();
+};
 
-apiClient.interceptors.request.use(
-  (config) => {
-    try {
-      const token = getAuthToken();
-      config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    } catch (error) {
-      logger.error("Failed to generate auth token:", error);
-      return Promise.reject(error);
-    }
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-export default apiClient;
+export const api = {
+  apps: AppsService,
+  inAppPurchases: InAppPurchasesService,
+  inAppPurchasePriceSchedules: InAppPurchasePriceSchedulesService,
+  subscriptions: SubscriptionsService,
+  subscriptionGroups: SubscriptionGroupsService,
+  subscriptionLocalizations: SubscriptionLocalizationsService,
+  subscriptionPrices: SubscriptionPricesService,
+  subscriptionIntroductoryOffers: SubscriptionIntroductoryOffersService,
+  subscriptionPromotionalOffers: SubscriptionPromotionalOffersService,
+};

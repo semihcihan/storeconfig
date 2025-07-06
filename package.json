@@ -9,7 +9,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "codegen": "npx openapi-typescript-codegen --input openapi.json --output src/generated/app-store-connect-api",
+    "call": "npx ts-node src/cli.ts fetch --id 6569241842 --file test.json"
   },
   "keywords": [],
   "author": "Focus Tapps",
@@ -25,6 +27,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
+    "openapi-typescript-codegen": "^0.29.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

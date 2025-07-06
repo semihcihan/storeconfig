@@ -1,34 +1,50 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
-import apiClient from "../services/api";
 import * as fs from "fs";
 import { AppStoreModelSchema } from "../models/app-store";
 import { z } from "zod";
-import { AxiosResponse } from "axios";
+import { api } from "../services/api";
+import { getAuthToken } from "../services/auth";
+import axios, { AxiosResponse } from "axios";
+import {
+  ApiError,
+  PagedDocumentLinks,
+} from "../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
-async function fetchAllWithNext(url: string, params: Record<string, any> = {}) {
-  let results: any[] = [];
-  let nextUrl: string | undefined = url;
+async function fetchAllWithNext<
+  T extends { data: any[]; links: PagedDocumentLinks; included?: any[] }
+>(firstPageFetcher: () => Promise<T>) {
+  let allData: any[] = [];
+  let allIncluded: any[] = [];
+  let response = await firstPageFetcher();
+
+  allData = allData.concat(response.data);
+  if (response.included) {
+    allIncluded = allIncluded.concat(response.included);
+  }
+
+  let nextUrl = response.links?.next;
 
   while (nextUrl) {
-    const response: AxiosResponse<any> = await apiClient.get(nextUrl, {
-      params,
+    const token = getAuthToken();
+    const nextResponse: AxiosResponse<any> = await axios.get(nextUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    let responseData = response.data.data;
-    const included = response.data.included;
-    if (included) {
-      responseData = responseData.map((item: any) => ({
-        ...item,
-        ...resolveRelationships(item, included),
-      }));
+    allData = allData.concat(nextResponse.data.data);
+    if (nextResponse.data.included) {
+      allIncluded = allIncluded.concat(nextResponse.data.included);
     }
-    results = results.concat(responseData);
-    nextUrl = response.data.links?.next;
-    params = {};
+    nextUrl = nextResponse.data.links?.next;
   }
-  return results;
+
+  return allData.map((item) => ({
+    ...item,
+    ...resolveRelationships(item, allIncluded),
+  }));
 }
 
 function resolveRelationships(item: any, included: any[]) {
@@ -54,51 +70,78 @@ function resolveRelationships(item: any, included: any[]) {
 }
 
 async function enrichIapWithPriceSchedule(iap: any) {
-  if (!iap.iapPriceSchedule?.id) return;
-  const scheduleId = iap.iapPriceSchedule.id;
-  const scheduleRes = await apiClient.get(
-    `inAppPurchasePriceSchedules/${scheduleId}`,
-    { params: { include: "baseTerritory,manualPrices" } }
+  if (!iap.relationships?.iapPriceSchedule?.data?.id) return;
+  const scheduleId = iap.relationships.iapPriceSchedule.data.id;
+  const scheduleRes =
+    await api.inAppPurchasePriceSchedules.inAppPurchasePriceSchedulesGetInstance(
+      scheduleId,
+      undefined, // fieldsInAppPurchasePriceSchedules
+      undefined, // fieldsTerritories
+      undefined, // fieldsInAppPurchasePrices
+      ["baseTerritory", "manualPrices"] // include
+    );
+
+  const scheduleData = scheduleRes.data;
+  const scheduleIncluded = scheduleRes.included;
+
+  const resolvedRelationships = resolveRelationships(
+    scheduleData,
+    scheduleIncluded || []
   );
-  const scheduleData = scheduleRes.data.data;
-  const scheduleIncluded = scheduleRes.data.included;
-  Object.assign(iap.iapPriceSchedule, scheduleData);
-  if (scheduleIncluded) {
-    Object.assign(
-      iap.iapPriceSchedule,
-      resolveRelationships(scheduleData, scheduleIncluded)
-    );
-  }
-  if (
-    !iap.iapPriceSchedule.baseTerritory ||
-    !iap.iapPriceSchedule.baseTerritory.id
-  ) {
-    const baseTerritoryRes = await apiClient.get(
-      `inAppPurchasePriceSchedules/${scheduleId}/baseTerritory`
-    );
-    const baseTerritoryData =
-      baseTerritoryRes.data && baseTerritoryRes.data.data;
-    if (baseTerritoryData && baseTerritoryData.id) {
-      iap.iapPriceSchedule.baseTerritory = { id: baseTerritoryData.id };
-    }
-  }
-  if (iap.iapPriceSchedule.manualPrices?.data?.length > 0) {
+
+  iap.iapPriceSchedule = { ...scheduleData, ...resolvedRelationships };
+
+  if (iap.iapPriceSchedule?.relationships?.manualPrices?.links?.related) {
     const pricesUrl =
       iap.iapPriceSchedule.relationships.manualPrices.links.related;
-    const prices = await fetchAllWithNext(pricesUrl, {
-      include: "inAppPurchasePricePoint,territory",
+    const prices = await fetchAllWithNext(async () => {
+      const token = getAuthToken();
+      const response = await axios.get(pricesUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { include: "inAppPurchasePricePoint,territory" },
+      });
+      return response.data;
     });
-    iap.iapPriceSchedule.prices = prices;
+    if (iap.iapPriceSchedule) {
+      iap.iapPriceSchedule.prices = prices;
+    }
   }
 }
 
 async function fetchInAppPurchases(appId: string) {
-  const iaps = await fetchAllWithNext(`apps/${appId}/inAppPurchasesV2`, {
-    include:
-      "inAppPurchaseLocalizations,iapPriceSchedule,inAppPurchaseAvailability",
-    "fields[inAppPurchases]":
-      "name,productId,inAppPurchaseType,state,familySharable,reviewNote",
-  });
+  const iaps = await fetchAllWithNext(() =>
+    api.apps.appsInAppPurchasesV2GetToManyRelated(
+      appId,
+      undefined, // filterProductId
+      undefined, // filterName
+      undefined, // filterState
+      ["NON_CONSUMABLE", "CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"], // filterInAppPurchaseType
+      undefined, // sort
+      [
+        "name",
+        "productId",
+        "inAppPurchaseType",
+        "state",
+        "familySharable",
+        "reviewNote",
+      ], // fieldsInAppPurchases
+      undefined, // fieldsInAppPurchaseLocalizations
+      undefined, // fieldsInAppPurchaseContents
+      undefined, // fieldsInAppPurchaseAppStoreReviewScreenshots
+      undefined, // fieldsPromotedPurchases
+      undefined, // fieldsInAppPurchasePriceSchedules
+      undefined, // fieldsInAppPurchaseAvailabilities
+      undefined, // fieldsInAppPurchaseImages
+      undefined, // limit
+      [
+        "inAppPurchaseLocalizations",
+        "iapPriceSchedule",
+        "inAppPurchaseAvailability",
+      ], // include
+      undefined, // limitInAppPurchaseLocalizations
+      undefined // limitImages
+    )
+  );
 
   for (const iap of iaps) {
     await enrichIapWithPriceSchedule(iap);
@@ -108,60 +151,89 @@ async function fetchInAppPurchases(appId: string) {
 }
 
 async function enrichSubscriptionWithDetails(sub: any) {
-  const response: AxiosResponse<any> = await apiClient.get(
-    `subscriptions/${sub.id}`,
-    {
-      params: {
-        include: "subscriptionLocalizations",
-      },
-    }
+  // Fetch localizations
+  sub.subscriptionLocalizations = await fetchAllWithNext(() =>
+    api.subscriptions.subscriptionsSubscriptionLocalizationsGetToManyRelated(
+      sub.id,
+      undefined, // fieldsSubscriptionLocalizations
+      [], // include
+      undefined // limit
+    )
   );
-  const subDetails = response.data.data;
-  const included = response.data.included;
 
-  Object.assign(sub, subDetails);
+  // Fetch prices
+  sub.prices = await fetchAllWithNext(() =>
+    api.subscriptions.subscriptionsPricesGetToManyRelated(
+      sub.id,
+      undefined, // fieldsSubscriptionPrices
+      undefined, // fieldsTerritories
+      ["subscriptionPricePoint", "territory"], // include
+      undefined, // filter[subscriptionPricePoint]
+      undefined, // filter[territory]
+      undefined // limit
+    )
+  );
 
-  if (included) {
-    Object.assign(sub, resolveRelationships(subDetails, included));
-  }
+  // Fetch introductory offers
+  sub.introductoryOffers = await fetchAllWithNext(() =>
+    api.subscriptions.subscriptionsIntroductoryOffersGetToManyRelated(
+      sub.id,
+      undefined, // filter[territory]
+      undefined, // fieldsSubscriptionIntroductoryOffers
+      undefined, // fieldsSubscriptionPricePoints
+      undefined, // fieldsTerritories
+      ["territory"], // include
+      undefined // limit
+    )
+  );
 
-  if (sub.relationships?.prices?.links?.related) {
-    sub.prices = await fetchAllWithNext(
-      sub.relationships.prices.links.related,
-      {
-        include: "subscriptionPricePoint,territory",
-      }
-    );
-  }
+  // Fetch promotional offers and their prices
+  const offers = await fetchAllWithNext(() =>
+    api.subscriptions.subscriptionsPromotionalOffersGetToManyRelated(
+      sub.id,
+      undefined, // filter[territory]
+      undefined, // fieldsSubscriptionPromotionalOffers
+      undefined, // fieldsSubscriptionPromotionalOfferPrices
+      undefined, // include
+      undefined // limit
+    )
+  );
 
-  if (sub.relationships?.introductoryOffers?.links?.related) {
-    const offersUrl = sub.relationships.introductoryOffers.links.related;
-    sub.introductoryOffers = await fetchAllWithNext(offersUrl, {
-      include: "territory,subscriptionPricePoint",
-    });
-  }
-
-  if (sub.relationships?.promotionalOffers?.links?.related) {
-    const offersUrl = sub.relationships.promotionalOffers.links.related;
-    const offers = await fetchAllWithNext(offersUrl);
-    for (const offer of offers) {
-      if (offer.relationships?.prices?.links?.related) {
-        offer.prices = await fetchAllWithNext(
+  // The above call doesn't resolve nested relationships in prices, so we use the links for that.
+  for (const offer of offers) {
+    if (offer.relationships?.prices?.links?.related) {
+      offer.prices = await fetchAllWithNext(async () => {
+        const token = getAuthToken();
+        const response = await axios.get(
           offer.relationships.prices.links.related,
           {
-            include: "subscriptionPricePoint,territory",
+            headers: { Authorization: `Bearer ${token}` },
+            params: { include: "subscriptionPricePoint,territory" },
           }
         );
-      }
+        return response.data;
+      });
     }
-    sub.promotionalOffers = offers;
   }
+  sub.promotionalOffers = offers;
 }
 
 async function fetchSubscriptionGroups(appId: string) {
-  const groups = await fetchAllWithNext(`apps/${appId}/subscriptionGroups`, {
-    include: "subscriptions,subscriptionGroupLocalizations",
-  });
+  const groups = await fetchAllWithNext(() =>
+    api.apps.appsSubscriptionGroupsGetToManyRelated(
+      appId,
+      undefined, // filterReferenceName
+      undefined, // filterSubscriptionsState
+      undefined, // sort
+      undefined, // fieldsSubscriptionGroups
+      undefined, // fieldsSubscriptions
+      undefined, // fieldsSubscriptionGroupLocalizations
+      undefined, // limit
+      ["subscriptions", "subscriptionGroupLocalizations"], // include
+      undefined, // limitSubscriptions
+      undefined // limitSubscriptionGroupLocalizations
+    )
+  );
 
   for (const group of groups) {
     if (group.subscriptions) {
@@ -444,7 +516,8 @@ const fetchCommand: CommandModule = {
         appId: appId,
         inAppPurchases: mapInAppPurchases(
           inAppPurchasesData.filter(
-            (iap) => !iap.attributes.inAppPurchaseType.includes("SUBSCRIPTION")
+            (iap: any) =>
+              !iap.attributes.inAppPurchaseType.includes("SUBSCRIPTION")
           )
         ),
         subscriptionGroups: mapSubscriptionGroups(subscriptionGroupsData),
@@ -460,6 +533,9 @@ const fetchCommand: CommandModule = {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.error("Data validation failed:", error.errors);
+      } else if (error instanceof ApiError) {
+        logger.error(`Failed to fetch app details: ${error.message}`);
+        logger.error("API Error:", JSON.stringify(error.body, null, 2));
       } else if (error instanceof Error) {
         logger.error(`Failed to fetch app details: ${error.message}`);
         const axiosError = error as any;
