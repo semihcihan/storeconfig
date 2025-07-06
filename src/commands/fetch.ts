@@ -19,13 +19,10 @@ async function fetchAllWithNext(url: string, params: Record<string, any> = {}) {
     let responseData = response.data.data;
     const included = response.data.included;
     if (included) {
-      responseData = responseData.map((item: any) => {
-        const resolvedRels = resolveRelationships(item, included);
-        return {
-          ...item,
-          ...resolvedRels,
-        };
-      });
+      responseData = responseData.map((item: any) => ({
+        ...item,
+        ...resolveRelationships(item, included),
+      }));
     }
     results = results.concat(responseData);
     nextUrl = response.data.links?.next;
@@ -42,20 +39,57 @@ function resolveRelationships(item: any, included: any[]) {
   for (const key in item.relationships) {
     const relation = item.relationships[key];
     if (relation.data) {
-      if (Array.isArray(relation.data)) {
-        relationships[key] = relation.data
-          .map((d: any) =>
-            included.find((i) => i.type === d.type && i.id === d.id)
-          )
-          .filter(Boolean);
-      } else {
-        relationships[key] = included.find(
-          (i) => i.type === relation.data.type && i.id === relation.data.id
-        );
-      }
+      relationships[key] = Array.isArray(relation.data)
+        ? relation.data
+            .map((d: any) =>
+              included.find((i) => i.type === d.type && i.id === d.id)
+            )
+            .filter(Boolean)
+        : included.find(
+            (i) => i.type === relation.data.type && i.id === relation.data.id
+          );
     }
   }
   return relationships;
+}
+
+async function enrichIapWithPriceSchedule(iap: any) {
+  if (!iap.iapPriceSchedule?.id) return;
+  const scheduleId = iap.iapPriceSchedule.id;
+  const scheduleRes = await apiClient.get(
+    `inAppPurchasePriceSchedules/${scheduleId}`,
+    { params: { include: "baseTerritory,manualPrices" } }
+  );
+  const scheduleData = scheduleRes.data.data;
+  const scheduleIncluded = scheduleRes.data.included;
+  Object.assign(iap.iapPriceSchedule, scheduleData);
+  if (scheduleIncluded) {
+    Object.assign(
+      iap.iapPriceSchedule,
+      resolveRelationships(scheduleData, scheduleIncluded)
+    );
+  }
+  if (
+    !iap.iapPriceSchedule.baseTerritory ||
+    !iap.iapPriceSchedule.baseTerritory.id
+  ) {
+    const baseTerritoryRes = await apiClient.get(
+      `inAppPurchasePriceSchedules/${scheduleId}/baseTerritory`
+    );
+    const baseTerritoryData =
+      baseTerritoryRes.data && baseTerritoryRes.data.data;
+    if (baseTerritoryData && baseTerritoryData.id) {
+      iap.iapPriceSchedule.baseTerritory = { id: baseTerritoryData.id };
+    }
+  }
+  if (iap.iapPriceSchedule.manualPrices?.data?.length > 0) {
+    const pricesUrl =
+      iap.iapPriceSchedule.relationships.manualPrices.links.related;
+    const prices = await fetchAllWithNext(pricesUrl, {
+      include: "inAppPurchasePricePoint,territory",
+    });
+    iap.iapPriceSchedule.prices = prices;
+  }
 }
 
 async function fetchInAppPurchases(appId: string) {
@@ -67,32 +101,61 @@ async function fetchInAppPurchases(appId: string) {
   });
 
   for (const iap of iaps) {
-    if (iap.iapPriceSchedule?.id) {
-      const scheduleId = iap.iapPriceSchedule.id;
-      const scheduleRes = await apiClient.get(
-        `inAppPurchasePriceSchedules/${scheduleId}`,
-        { params: { include: "baseTerritory,manualPrices" } }
-      );
-      const scheduleData = scheduleRes.data.data;
-      const scheduleIncluded = scheduleRes.data.included;
-      Object.assign(iap.iapPriceSchedule, scheduleData);
-      if (scheduleIncluded) {
-        const resolved = resolveRelationships(scheduleData, scheduleIncluded);
-        Object.assign(iap.iapPriceSchedule, resolved);
-      }
-
-      if (iap.iapPriceSchedule.manualPrices?.data?.length > 0) {
-        const pricesUrl =
-          iap.iapPriceSchedule.relationships.manualPrices.links.related;
-        const prices = await fetchAllWithNext(pricesUrl, {
-          include: "inAppPurchasePricePoint,territory",
-        });
-        iap.iapPriceSchedule.prices = prices;
-      }
-    }
+    await enrichIapWithPriceSchedule(iap);
   }
 
   return iaps;
+}
+
+async function enrichSubscriptionWithDetails(sub: any) {
+  const response: AxiosResponse<any> = await apiClient.get(
+    `subscriptions/${sub.id}`,
+    {
+      params: {
+        include: "subscriptionLocalizations",
+      },
+    }
+  );
+  const subDetails = response.data.data;
+  const included = response.data.included;
+
+  Object.assign(sub, subDetails);
+
+  if (included) {
+    Object.assign(sub, resolveRelationships(subDetails, included));
+  }
+
+  if (sub.relationships?.prices?.links?.related) {
+    sub.prices = await fetchAllWithNext(
+      sub.relationships.prices.links.related,
+      {
+        include: "subscriptionPricePoint,territory",
+      }
+    );
+  }
+
+  if (sub.relationships?.introductoryOffers?.links?.related) {
+    const offersUrl = sub.relationships.introductoryOffers.links.related;
+    sub.introductoryOffers = await fetchAllWithNext(offersUrl, {
+      include: "territory,subscriptionPricePoint",
+    });
+  }
+
+  if (sub.relationships?.promotionalOffers?.links?.related) {
+    const offersUrl = sub.relationships.promotionalOffers.links.related;
+    const offers = await fetchAllWithNext(offersUrl);
+    for (const offer of offers) {
+      if (offer.relationships?.prices?.links?.related) {
+        offer.prices = await fetchAllWithNext(
+          offer.relationships.prices.links.related,
+          {
+            include: "subscriptionPricePoint,territory",
+          }
+        );
+      }
+    }
+    sub.promotionalOffers = offers;
+  }
 }
 
 async function fetchSubscriptionGroups(appId: string) {
@@ -103,63 +166,32 @@ async function fetchSubscriptionGroups(appId: string) {
   for (const group of groups) {
     if (group.subscriptions) {
       for (const sub of group.subscriptions) {
-        const response: AxiosResponse<any> = await apiClient.get(
-          `subscriptions/${sub.id}`,
-          {
-            params: {
-              include: "subscriptionLocalizations",
-            },
-          }
-        );
-        const subDetails = response.data.data;
-        const included = response.data.included;
-
-        Object.assign(sub, subDetails);
-
-        if (included) {
-          const resolvedRels = resolveRelationships(subDetails, included);
-          Object.assign(sub, resolvedRels);
-        }
-
-        if (sub.relationships?.prices?.links?.related) {
-          const prices = await fetchAllWithNext(
-            sub.relationships.prices.links.related,
-            {
-              include: "subscriptionPricePoint,territory",
-            }
-          );
-          sub.prices = prices;
-        }
-
-        if (sub.relationships?.introductoryOffers?.links?.related) {
-          const offersUrl = sub.relationships.introductoryOffers.links.related;
-          const offers = await fetchAllWithNext(offersUrl, {
-            include: "territory,subscriptionPricePoint",
-          });
-          sub.introductoryOffers = offers;
-        }
-
-        if (sub.relationships?.promotionalOffers?.links?.related) {
-          const offersUrl = sub.relationships.promotionalOffers.links.related;
-          const offers = await fetchAllWithNext(offersUrl);
-          for (const offer of offers) {
-            if (offer.relationships?.prices?.links?.related) {
-              const offerPrices = await fetchAllWithNext(
-                offer.relationships.prices.links.related,
-                {
-                  include: "subscriptionPricePoint,territory",
-                }
-              );
-              offer.prices = offerPrices;
-            }
-          }
-          sub.promotionalOffers = offers;
-        }
+        await enrichSubscriptionWithDetails(sub);
       }
     }
   }
   return groups;
 }
+
+const mapLocalizations = (localizations: any[] = []) =>
+  localizations.map((loc: any) => ({
+    locale: loc.attributes.locale,
+    name: loc.attributes.name,
+    description: loc.attributes.description,
+    customName: loc.attributes.customName,
+  }));
+
+const mapPriceSchedule = (
+  baseTerritory: any,
+  prices: any[] = [],
+  pricePointKey = "inAppPurchasePricePoint"
+) => ({
+  baseTerritory: baseTerritory.id,
+  prices: prices.map((p: any) => ({
+    price: p[pricePointKey]?.attributes.customerPrice,
+    territory: p.territory.id,
+  })),
+});
 
 function mapIntroductoryOffer(offer: any) {
   const { attributes, territory, subscriptionPricePoint } = offer;
@@ -167,15 +199,7 @@ function mapIntroductoryOffer(offer: any) {
     attributes.offerMode === "FREE_TRIAL" ? "FREE" : attributes.offerMode;
 
   const priceSchedule = subscriptionPricePoint
-    ? {
-        baseTerritory: territory.id,
-        prices: [
-          {
-            price: subscriptionPricePoint.attributes.customerPrice,
-            territory: territory.id,
-          },
-        ],
-      }
+    ? mapPriceSchedule(territory, [offer], "subscriptionPricePoint")
     : undefined;
 
   switch (type) {
@@ -184,7 +208,7 @@ function mapIntroductoryOffer(offer: any) {
       return {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: attributes.numberOfPeriods,
-        priceSchedule: priceSchedule,
+        priceSchedule,
         availableTerritories: [territory.id],
       };
     case "PAY_UP_FRONT":
@@ -192,7 +216,7 @@ function mapIntroductoryOffer(offer: any) {
       return {
         type: "PAY_UP_FRONT",
         duration: attributes.duration,
-        priceSchedule: priceSchedule,
+        priceSchedule,
         availableTerritories: [territory.id],
       };
     case "FREE":
@@ -214,13 +238,11 @@ function mapPromotionalOffer(offer: any) {
   const firstPrice = prices[0];
   if (!firstPrice?.territory?.id) return null;
 
-  const priceSchedule = {
-    baseTerritory: firstPrice.territory.id,
-    prices: prices.map((p: any) => ({
-      price: p.subscriptionPricePoint.attributes.customerPrice,
-      territory: p.territory.id,
-    })),
-  };
+  const priceSchedule = mapPriceSchedule(
+    firstPrice.territory,
+    prices,
+    "subscriptionPricePoint"
+  );
 
   switch (type) {
     case "PAY_AS_YOU_GO":
@@ -229,7 +251,7 @@ function mapPromotionalOffer(offer: any) {
         referenceName: attributes.name,
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: attributes.numberOfPeriods,
-        priceSchedule: priceSchedule,
+        priceSchedule,
       };
     case "PAY_UP_FRONT":
       return {
@@ -237,7 +259,7 @@ function mapPromotionalOffer(offer: any) {
         referenceName: attributes.name,
         type: "PAY_UP_FRONT",
         duration: attributes.duration,
-        priceSchedule: priceSchedule,
+        priceSchedule,
       };
     case "FREE":
       return {
@@ -249,6 +271,57 @@ function mapPromotionalOffer(offer: any) {
     default:
       return null;
   }
+}
+
+function groupIntroductoryOffers(offers: any[]) {
+  const grouped: Record<string, any> = {};
+  for (const offer of offers) {
+    if (!offer) continue;
+    const key =
+      offer.type === "PAY_AS_YOU_GO"
+        ? `${offer.type}|${offer.numberOfPeriods}`
+        : offer.type === "PAY_UP_FRONT"
+        ? `${offer.type}|${offer.duration}`
+        : offer.type === "FREE"
+        ? `${offer.type}|${offer.duration}`
+        : offer.type;
+    if (!grouped[key]) {
+      grouped[key] = {
+        ...offer,
+        availableTerritories: [...(offer.availableTerritories || [])],
+      };
+    } else {
+      grouped[key].availableTerritories = Array.from(
+        new Set([
+          ...(grouped[key].availableTerritories || []),
+          ...(offer.availableTerritories || []),
+        ])
+      );
+    }
+  }
+  return Object.values(grouped);
+}
+
+function groupPromotionalOffers(offers: any[]) {
+  const grouped: Record<string, any> = {};
+  for (const offer of offers) {
+    if (!offer) continue;
+    const id = offer.id;
+    if (!grouped[id]) {
+      grouped[id] = { ...offer };
+      if (offer.prices) {
+        grouped[id].prices = [...offer.prices];
+      }
+    } else {
+      // Merge prices arrays if present
+      if (offer.prices) {
+        grouped[id].prices = Array.from(
+          new Set([...(grouped[id].prices || []), ...offer.prices])
+        );
+      }
+    }
+  }
+  return Object.values(grouped);
 }
 
 function mapInAppPurchases(iaps: any[]): AppStoreModel["inAppPurchases"] {
@@ -266,32 +339,23 @@ function mapInAppPurchases(iaps: any[]): AppStoreModel["inAppPurchases"] {
         return null;
       }
 
-      const priceSchedule = {
-        baseTerritory: iapPriceSchedule.baseTerritory.id,
-        prices: (iapPriceSchedule.prices || []).map((p: any) => ({
-          price: p.inAppPurchasePricePoint.attributes.customerPrice,
-          territory: p.territory.id,
-        })),
-      };
-
       return {
         productId: attributes.productId,
         type: attributes.inAppPurchaseType,
         referenceName: attributes.name,
         familySharable: attributes.familySharable,
         reviewNote: attributes.reviewNote,
-        localizations: (inAppPurchaseLocalizations || []).map((loc: any) => ({
-          locale: loc.attributes.locale,
-          name: loc.attributes.name,
-          description: loc.attributes.description,
-        })),
-        priceSchedule: priceSchedule,
-        availability: inAppPurchaseAvailability
+        localizations: mapLocalizations(inAppPurchaseLocalizations),
+        priceSchedule: mapPriceSchedule(
+          iapPriceSchedule.baseTerritory,
+          iapPriceSchedule.prices
+        ),
+        availability: iapPriceSchedule.baseTerritory
           ? {
               availableInNewTerritories:
-                inAppPurchaseAvailability.attributes.availableInNewTerritories,
+                inAppPurchaseAvailability?.attributes.availableInNewTerritories,
               availableTerritories: (
-                inAppPurchaseAvailability.relationships.availableTerritories
+                inAppPurchaseAvailability?.relationships.availableTerritories
                   .data || []
               ).map((t: any) => t.id),
             }
@@ -309,11 +373,7 @@ function mapSubscriptionGroups(
     const { attributes, subscriptionGroupLocalizations, subscriptions } = group;
     return {
       referenceName: attributes.referenceName,
-      localizations: (subscriptionGroupLocalizations || []).map((loc: any) => ({
-        locale: loc.attributes.locale,
-        name: loc.attributes.name,
-        customName: loc.attributes.customName,
-      })),
+      localizations: mapLocalizations(subscriptionGroupLocalizations),
       subscriptions: (subscriptions || [])
         .map((sub: any) => {
           const prices = sub.prices || [];
@@ -323,19 +383,10 @@ function mapSubscriptionGroups(
             return null;
           }
 
-          const priceSchedule = {
-            baseTerritory: firstPrice.territory.id,
-            prices: prices.map((p: any) => ({
-              price: p.subscriptionPricePoint.attributes.customerPrice,
-              territory: p.territory.id,
-            })),
-          };
-
-          const introductoryOffers = (sub.introductoryOffers || [])
+          const mappedIntroOffers = (sub.introductoryOffers || [])
             .map(mapIntroductoryOffer)
             .filter((o: any): o is NonNullable<typeof o> => o !== null);
-
-          const promotionalOffers = (sub.promotionalOffers || [])
+          const mappedPromoOffers = (sub.promotionalOffers || [])
             .map(mapPromotionalOffer)
             .filter((o: any): o is NonNullable<typeof o> => o !== null);
 
@@ -345,16 +396,14 @@ function mapSubscriptionGroups(
             groupLevel: sub.attributes.groupLevel,
             subscriptionPeriod: sub.attributes.subscriptionPeriod,
             familySharable: sub.attributes.familySharable,
-            priceSchedule: priceSchedule,
-            localizations: (sub.subscriptionLocalizations || []).map(
-              (loc: any) => ({
-                locale: loc.attributes.locale,
-                name: loc.attributes.name,
-                description: loc.attributes.description,
-              })
+            priceSchedule: mapPriceSchedule(
+              firstPrice.territory,
+              prices,
+              "subscriptionPricePoint"
             ),
-            introductoryOffers,
-            promotionalOffers,
+            localizations: mapLocalizations(sub.subscriptionLocalizations),
+            introductoryOffers: groupIntroductoryOffers(mappedIntroOffers),
+            promotionalOffers: groupPromotionalOffers(mappedPromoOffers),
           };
         })
         .filter((sub: any): sub is NonNullable<typeof sub> => sub !== null),

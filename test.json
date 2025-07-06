@@ -735,349 +735,55 @@
               "type": "FREE",
               "duration": "THREE_DAYS",
               "availableTerritories": [
-                "ARE"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AFG"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ATG"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AIA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ALB"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ARM"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AGO"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ARG"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AUT"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AUS"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "AZE"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BIH"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BRB"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BEL"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BFA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BGR"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BHR"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BEN"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BMU"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BRN"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BOL"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BRA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BHS"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BTN"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BWA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BLR"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "BLZ"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CAN"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "COD"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "COG"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CHE"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CIV"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CHL"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CMR"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CHN"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "COL"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CRI"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CPV"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CYP"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "CZE"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "DEU"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "DNK"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "DMA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "DOM"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "DZA"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ECU"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "EST"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "EGY"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
-                "ESP"
-              ]
-            },
-            {
-              "type": "FREE",
-              "duration": "THREE_DAYS",
-              "availableTerritories": [
+                "ARE",
+                "AFG",
+                "ATG",
+                "AIA",
+                "ALB",
+                "ARM",
+                "AGO",
+                "ARG",
+                "AUT",
+                "AUS",
+                "AZE",
+                "BIH",
+                "BRB",
+                "BEL",
+                "BFA",
+                "BGR",
+                "BHR",
+                "BEN",
+                "BMU",
+                "BRN",
+                "BOL",
+                "BRA",
+                "BHS",
+                "BTN",
+                "BWA",
+                "BLR",
+                "BLZ",
+                "CAN",
+                "COD",
+                "COG",
+                "CHE",
+                "CIV",
+                "CHL",
+                "CMR",
+                "CHN",
+                "COL",
+                "CRI",
+                "CPV",
+                "CYP",
+                "CZE",
+                "DEU",
+                "DNK",
+                "DMA",
+                "DOM",
+                "DZA",
+                "ECU",
+                "EST",
+                "EGY",
+                "ESP",
                 "FIN"
               ]
             }
