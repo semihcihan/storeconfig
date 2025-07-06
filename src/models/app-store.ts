@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 
-const SubscriptionOfferDurationSchema = z.enum([
+export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_DAYS",
   "ONE_WEEK",
   "TWO_WEEKS",
@@ -37,7 +37,7 @@ const AvailabilitySchema = z.object({
 const SubscriptionGroupLocalizationSchema = z.object({
   locale: LocaleCodeSchema,
   name: z.string(),
-  customName: z.string().optional(),
+  customName: z.string().optional().nullable(),
 });
 
 const IntroOfferPayAsYouGoSchema = z.object({
@@ -104,7 +104,7 @@ const SubscriptionPeriodSchema = z.enum([
   "ONE_YEAR",
 ]);
 
-const SubscriptionSchema = z.object({
+export const SubscriptionSchema = z.object({
   productId: z.string(),
   referenceName: z.string(),
   groupLevel: z.number(),
@@ -118,13 +118,13 @@ const SubscriptionSchema = z.object({
   availability: AvailabilitySchema.optional(),
 });
 
-const SubscriptionGroupSchema = z.object({
+export const SubscriptionGroupSchema = z.object({
   referenceName: z.string(),
   localizations: z.array(SubscriptionGroupLocalizationSchema),
   subscriptions: z.array(SubscriptionSchema),
 });
 
-export const InAppPurchase = z.object({
+export const InAppPurchaseSchema = z.object({
   productId: z.string(),
   type: z.enum(["CONSUMABLE", "NON_CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"]),
   referenceName: z.string(),
@@ -138,6 +138,6 @@ export const InAppPurchase = z.object({
 export const AppStoreModelSchema = z.object({
   schemaVersion: z.string(),
   appId: z.string(),
-  inAppPurchases: z.array(InAppPurchase).optional(),
+  inAppPurchases: z.array(InAppPurchaseSchema).optional(),
   subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
 });
