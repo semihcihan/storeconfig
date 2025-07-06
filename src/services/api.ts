@@ -7,4 +7,15 @@ export const api = createClient<paths>({
   headers: {
     Authorization: `Bearer ${getAuthToken()}`,
   },
+  querySerializer: (params) => {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (Array.isArray(value)) {
+        search.append(key, value.join(","));
+      } else if (value !== undefined && value !== null) {
+        search.append(key, String(value));
+      }
+    }
+    return search.toString();
+  },
 });
