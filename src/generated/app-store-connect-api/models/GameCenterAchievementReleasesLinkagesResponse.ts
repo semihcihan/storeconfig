@@ -1,0 +1,15 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { PagedDocumentLinks } from './PagedDocumentLinks';
+import type { PagingInformation } from './PagingInformation';
+export type GameCenterAchievementReleasesLinkagesResponse = {
+    data: Array<{
+        type: 'gameCenterAchievementReleases';
+        id: string;
+    }>;
+    links: PagedDocumentLinks;
+    meta?: PagingInformation;
+};
+

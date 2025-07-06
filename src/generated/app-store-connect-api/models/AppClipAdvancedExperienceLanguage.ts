@@ -1,0 +1,38 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+export enum AppClipAdvancedExperienceLanguage {
+    AR = 'AR',
+    CA = 'CA',
+    CS = 'CS',
+    DA = 'DA',
+    DE = 'DE',
+    EL = 'EL',
+    EN = 'EN',
+    ES = 'ES',
+    FI = 'FI',
+    FR = 'FR',
+    HE = 'HE',
+    HI = 'HI',
+    HR = 'HR',
+    HU = 'HU',
+    ID = 'ID',
+    IT = 'IT',
+    JA = 'JA',
+    KO = 'KO',
+    MS = 'MS',
+    NL = 'NL',
+    NO = 'NO',
+    PL = 'PL',
+    PT = 'PT',
+    RO = 'RO',
+    RU = 'RU',
+    SK = 'SK',
+    SV = 'SV',
+    TH = 'TH',
+    TR = 'TR',
+    UK = 'UK',
+    VI = 'VI',
+    ZH = 'ZH',
+}
