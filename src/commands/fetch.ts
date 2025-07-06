@@ -1,7 +1,7 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
-import { AppStoreModelSchema } from "../models/app-store";
+import { AppStoreModelSchema, InAppPurchase } from "../models/app-store";
 import { z } from "zod";
 import { api } from "../services/api";
 import type { components } from "../generated/app-store-connect-api";
@@ -12,52 +12,16 @@ type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 type InAppPurchasesV2Response =
   components["schemas"]["InAppPurchasesV2Response"];
-type InAppPurchaseV2 = components["schemas"]["InAppPurchaseV2"];
 type InAppPurchaseLocalization =
   components["schemas"]["InAppPurchaseLocalization"];
-type InAppPurchasePrice = components["schemas"]["InAppPurchasePrice"];
-type InAppPurchasePricePoint = components["schemas"]["InAppPurchasePricePoint"];
-type InAppPurchasePricePointsResponse =
-  components["schemas"]["InAppPurchasePricePointsResponse"];
 type InAppPurchasePriceSchedule =
   components["schemas"]["InAppPurchasePriceSchedule"];
-type Territory = components["schemas"]["Territory"];
 
 async function fetchInAppPurchases(appId: string) {
   const include: ("inAppPurchaseLocalizations" | "iapPriceSchedule")[] = [
     "inAppPurchaseLocalizations",
     "iapPriceSchedule",
   ];
-
-  const fieldsInAppPurchaces: (
-    | "name"
-    | "productId"
-    | "inAppPurchaseType"
-    | "reviewNote"
-    | "familySharable"
-    | "inAppPurchaseLocalizations"
-    | "iapPriceSchedule"
-  )[] = [
-    "name",
-    "productId",
-    "inAppPurchaseType",
-    "reviewNote",
-    "familySharable",
-    "inAppPurchaseLocalizations",
-    "iapPriceSchedule",
-  ];
-
-  const fieldsInAppPurchasePriceSchedules: (
-    | "manualPrices"
-    | "baseTerritory"
-  )[] = ["manualPrices", "baseTerritory"];
-
-  const fieldsInAppPurchasePrices: (
-    | "price"
-    | "startDate"
-    | "endDate"
-    | "territory"
-  )[] = ["price", "startDate", "endDate", "territory"];
 
   const fieldsInAppPurchaseLocalizations: (
     | "name"
@@ -71,7 +35,6 @@ async function fetchInAppPurchases(appId: string) {
       query: {
         limit: 200,
         include: include,
-        "fields[inAppPurchases]": fieldsInAppPurchaces,
         "fields[inAppPurchaseLocalizations]": fieldsInAppPurchaseLocalizations,
       },
     },
@@ -168,98 +131,125 @@ function processPriceResponse(
     .filter((p): p is NonNullable<typeof p> => p !== null);
 }
 
+function mapLocalizations(
+  localizationRels:
+    | { id: string; type: "inAppPurchaseLocalizations" }[]
+    | undefined,
+  includedById: any
+): {
+  locale: z.infer<typeof LocaleCodeSchema>;
+  name: string;
+  description: string;
+}[] {
+  if (!localizationRels) {
+    return [];
+  }
+  return (
+    localizationRels
+      .map((rel) => {
+        const locData = includedById[
+          `${rel.type}-${rel.id}`
+        ] as InAppPurchaseLocalization;
+        if (!locData) {
+          logger.warn(
+            `  Could not find included data for localization ${rel.id}`
+          );
+          return null;
+        }
+        const locale = locData.attributes?.locale;
+        const localeParseResult = LocaleCodeSchema.safeParse(locale);
+        if (!localeParseResult.success) {
+          logger.warn(`Invalid locale code: ${locale}. Skipping.`);
+          return null;
+        }
+        return {
+          locale: localeParseResult.data,
+          name: locData.attributes?.name || "",
+          description: locData.attributes?.description || "",
+        };
+      })
+      .filter((l): l is NonNullable<typeof l> => l !== null) || []
+  );
+}
+
+async function fetchAndMapPrices(
+  priceScheduleRel:
+    | { id: string; type: "inAppPurchasePriceSchedules" }
+    | undefined,
+  includedById: any
+): Promise<z.infer<typeof InAppPurchase>["priceSchedule"]> {
+  let prices: {
+    price: string;
+    territory: z.infer<typeof TerritoryCodeSchema>;
+  }[] = [];
+  let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
+
+  if (priceScheduleRel) {
+    const priceSchedule = includedById[
+      `${priceScheduleRel.type}-${priceScheduleRel.id}`
+    ] as InAppPurchasePriceSchedule;
+    const baseTerritoryRel = priceSchedule?.relationships?.baseTerritory?.data;
+    if (baseTerritoryRel) {
+      const territoryParseResult = TerritoryCodeSchema.safeParse(
+        baseTerritoryRel.id
+      );
+      if (territoryParseResult.success) {
+        baseTerritory = territoryParseResult.data;
+      }
+    }
+
+    const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
+      fetchManualPrices(priceScheduleRel.id),
+      fetchAutomaticPrices(priceScheduleRel.id, baseTerritory),
+    ]);
+
+    const manualPrices = processPriceResponse(manualPricesResponse);
+    const automaticPrices = processPriceResponse(automaticPricesResponse);
+
+    prices = [...manualPrices, ...automaticPrices];
+  }
+
+  return { baseTerritory, prices };
+}
+
 async function mapInAppPurchases(
   data: InAppPurchasesV2Response
-): Promise<AppStoreModel["inAppPurchases"]> {
+): Promise<z.infer<typeof InAppPurchase>[]> {
   const includedById = (data.included || []).reduce((map, item) => {
     map[`${item.type}-${item.id}`] = item;
     return map;
   }, {} as any);
 
   const iaps = await Promise.all(
-    (data.data || []).map(async (iap) => {
-      const localizationRels =
-        iap.relationships?.inAppPurchaseLocalizations?.data;
+    (data.data || []).map(
+      async (iap): Promise<z.infer<typeof InAppPurchase> | null> => {
+        const localizations = mapLocalizations(
+          iap.relationships?.inAppPurchaseLocalizations?.data,
+          includedById
+        );
 
-      const localizations = (
-        localizationRels?.map((rel) => {
-          const locData = includedById[
-            `${rel.type}-${rel.id}`
-          ] as InAppPurchaseLocalization;
-          if (!locData) {
-            logger.warn(
-              `  Could not find included data for localization ${rel.id}`
-            );
-            return null;
-          }
+        const priceSchedule = await fetchAndMapPrices(
+          iap.relationships?.iapPriceSchedule?.data,
+          includedById
+        );
 
-          const locale = locData.attributes?.locale;
-          const localeParseResult = LocaleCodeSchema.safeParse(locale);
-          if (!localeParseResult.success) {
-            logger.warn(`  Invalid locale code: ${locale}. Skipping.`);
-            return null;
-          }
-          return {
-            locale: localeParseResult.data,
-            name: locData.attributes?.name || "",
-            description: locData.attributes?.description || "",
-          };
-        }) || []
-      ).filter((l): l is NonNullable<typeof l> => l !== null);
-
-      let prices: {
-        price: string;
-        territory: z.infer<typeof TerritoryCodeSchema>;
-      }[] = [];
-      let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
-
-      const priceScheduleRel = iap.relationships?.iapPriceSchedule?.data;
-      if (priceScheduleRel) {
-        const priceSchedule = includedById[
-          `${priceScheduleRel.type}-${priceScheduleRel.id}`
-        ] as InAppPurchasePriceSchedule;
-        const baseTerritoryRel =
-          priceSchedule?.relationships?.baseTerritory?.data;
-        if (baseTerritoryRel) {
-          const territoryParseResult = TerritoryCodeSchema.safeParse(
-            baseTerritoryRel.id
-          );
-          if (territoryParseResult.success) {
-            baseTerritory = territoryParseResult.data;
-          }
-        }
-
-        const [manualPricesResponse, automaticPricesResponse] =
-          await Promise.all([
-            fetchManualPrices(priceScheduleRel.id),
-            fetchAutomaticPrices(priceScheduleRel.id, baseTerritory),
-          ]);
-
-        const manualPrices = processPriceResponse(manualPricesResponse);
-        const automaticPrices = processPriceResponse(automaticPricesResponse);
-
-        prices = [...manualPrices, ...automaticPrices];
+        return {
+          productId: iap.attributes?.productId || "",
+          type: iap.attributes?.inAppPurchaseType as
+            | "CONSUMABLE"
+            | "NON_CONSUMABLE"
+            | "NON_RENEWING_SUBSCRIPTION",
+          referenceName: iap.attributes?.name || "",
+          familySharable: iap.attributes?.familySharable || false,
+          reviewNote: iap.attributes?.reviewNote || "",
+          localizations: localizations,
+          priceSchedule: priceSchedule,
+        };
       }
-
-      return {
-        productId: iap.attributes?.productId || "",
-        type: iap.attributes?.inAppPurchaseType as
-          | "CONSUMABLE"
-          | "NON_CONSUMABLE"
-          | "NON_RENEWING_SUBSCRIPTION",
-        referenceName: iap.attributes?.name || "",
-        familySharable: iap.attributes?.familySharable || false,
-        reviewNote: iap.attributes?.reviewNote || "",
-        localizations: localizations,
-        priceSchedule: {
-          baseTerritory: baseTerritory,
-          prices: prices,
-        },
-      };
-    })
+    )
   );
 
-  return iaps;
+  return iaps.filter((iap): iap is NonNullable<typeof iap> => iap !== null);
 }
 
 async function fetchSubscriptionGroups(appId: string) {

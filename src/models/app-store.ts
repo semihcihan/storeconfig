@@ -124,7 +124,7 @@ const SubscriptionGroupSchema = z.object({
   subscriptions: z.array(SubscriptionSchema),
 });
 
-const InAppPurchaseSchema = z.object({
+export const InAppPurchase = z.object({
   productId: z.string(),
   type: z.enum(["CONSUMABLE", "NON_CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"]),
   referenceName: z.string(),
@@ -138,6 +138,6 @@ const InAppPurchaseSchema = z.object({
 export const AppStoreModelSchema = z.object({
   schemaVersion: z.string(),
   appId: z.string(),
-  inAppPurchases: z.array(InAppPurchaseSchema).optional(),
+  inAppPurchases: z.array(InAppPurchase).optional(),
   subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
 });
