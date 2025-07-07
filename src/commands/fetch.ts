@@ -25,14 +25,9 @@ type InAppPurchasesV2Response =
   components["schemas"]["InAppPurchasesV2Response"];
 type InAppPurchaseLocalization =
   components["schemas"]["InAppPurchaseLocalization"];
-type InAppPurchasePriceSchedule =
-  components["schemas"]["InAppPurchasePriceSchedule"];
-type APISubscriptionGroup = components["schemas"]["SubscriptionGroup"];
 type APISubscription = components["schemas"]["Subscription"];
 type APISubscriptionGroupLocalization =
   components["schemas"]["SubscriptionGroupLocalization"];
-type APISubscriptionLocalization =
-  components["schemas"]["SubscriptionLocalization"];
 type APIIntroductoryOffer =
   components["schemas"]["SubscriptionIntroductoryOffer"];
 type APIPromotionalOffer =
@@ -41,11 +36,38 @@ type APISubscriptionAvailability =
   components["schemas"]["SubscriptionAvailability"];
 type InAppPurchaseAvailability =
   components["schemas"]["InAppPurchaseAvailability"];
-type APISubscriptionPrice = components["schemas"]["SubscriptionPrice"];
 type APISubscriptionPricesResponse =
   components["schemas"]["SubscriptionPricesResponse"];
 type APISubscriptionPricePoint =
   components["schemas"]["SubscriptionPricePoint"];
+type InAppPurchaseV2 = components["schemas"]["InAppPurchaseV2"];
+
+type IncludedResource =
+  | InAppPurchaseLocalization
+  | APISubscription
+  | APISubscriptionGroupLocalization
+  | APIIntroductoryOffer
+  | APIPromotionalOffer
+  | InAppPurchaseAvailability
+  | APISubscriptionPricePoint
+  | components["schemas"]["Territory"]
+  | components["schemas"]["InAppPurchasePricePoint"]
+  | components["schemas"]["SubscriptionPrice"]
+  | components["schemas"]["SubscriptionPromotionalOfferPrice"];
+
+type IncludedByIdMap = { [key: string]: IncludedResource };
+
+function createIncludedByIdMap(
+  included: IncludedResource[] | undefined
+): IncludedByIdMap {
+  if (!included) {
+    return {};
+  }
+  return included.reduce((map: IncludedByIdMap, item: IncludedResource) => {
+    map[`${item.type}-${item.id}`] = item;
+    return map;
+  }, {});
+}
 
 async function fetchInAppPurchases(appId: string) {
   const include: (
@@ -294,23 +316,21 @@ function processSubscriptionPriceResponse(
     return [];
   }
 
-  const includedById = (response.included || []).reduce(
-    (map: any, item: any) => {
-      map[`${item.type}-${item.id}`] = item;
-      return map;
-    },
-    {}
+  const includedById = createIncludedByIdMap(
+    response.included as IncludedResource[]
   );
 
   const prices: z.infer<typeof PriceSchema>[] = [];
-  for (const priceData of response.data as any[]) {
+  for (const priceData of response.data) {
     const priceRel = priceData.relationships?.subscriptionPricePoint?.data;
     const territoryRel = priceData.relationships?.territory?.data;
     if (priceRel && territoryRel) {
       const pricePoint = includedById[
         `${priceRel.type}-${priceRel.id}`
       ] as APISubscriptionPricePoint;
-      const territory = includedById[`${territoryRel.type}-${territoryRel.id}`];
+      const territory = includedById[
+        `${territoryRel.type}-${territoryRel.id}`
+      ] as components["schemas"]["Territory"];
 
       if (pricePoint && pricePoint.attributes && territory) {
         const territoryParseResult = TerritoryCodeSchema.safeParse(
@@ -331,13 +351,18 @@ function processSubscriptionPriceResponse(
   return prices;
 }
 
-function processPriceResponse(response: any): z.infer<typeof PriceSchema>[] {
+function processPriceResponse(
+  response: components["schemas"]["InAppPurchasePricesResponse"]
+): z.infer<typeof PriceSchema>[] {
   if (!response || !response.included) {
     return [];
   }
 
   return (response.included as any[])
-    .filter((item) => item.type === "inAppPurchasePricePoints")
+    .filter(
+      (item): item is components["schemas"]["InAppPurchasePricePoint"] =>
+        item.type === "inAppPurchasePricePoints"
+    )
     .map((pricePoint) => {
       let territoryId: string | null = null;
       try {
@@ -373,7 +398,7 @@ function mapLocalizations(
   localizationRels:
     | { id: string; type: "inAppPurchaseLocalizations" }[]
     | undefined,
-  includedById: any
+  includedById: IncludedByIdMap
 ): {
   locale: z.infer<typeof LocaleCodeSchema>;
   name: string;
@@ -427,7 +452,7 @@ async function fetchAndMapIAPPrices(
   priceScheduleRel:
     | { id: string; type: "inAppPurchasePriceSchedules" }
     | undefined,
-  includedById: any
+  includedById: IncludedByIdMap
 ): Promise<InAppPurchase["priceSchedule"]> {
   let prices: z.infer<typeof PriceSchema>[] = [];
   let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
@@ -472,7 +497,7 @@ async function mapInAppPurchaseAvailability(
   availabilityRel:
     | { id: string; type: "inAppPurchaseAvailabilities" }
     | undefined,
-  includedById: any
+  includedById: IncludedByIdMap
 ): Promise<{
   availableInNewTerritories: boolean;
   availableTerritories: z.infer<typeof TerritoryCodeSchema>[];
@@ -572,45 +597,49 @@ async function mapSubscriptionAvailability(
   };
 }
 
+async function mapInAppPurchase(
+  iap: InAppPurchaseV2,
+  includedById: IncludedByIdMap
+): Promise<InAppPurchase | null> {
+  const localizations = mapLocalizations(
+    iap.relationships?.inAppPurchaseLocalizations?.data,
+    includedById
+  );
+
+  const priceSchedule = await fetchAndMapIAPPrices(
+    iap.relationships?.iapPriceSchedule?.data,
+    includedById
+  );
+
+  const availability = await mapInAppPurchaseAvailability(
+    iap.relationships?.inAppPurchaseAvailability?.data,
+    includedById
+  );
+
+  return {
+    productId: iap.attributes?.productId || "",
+    type: iap.attributes?.inAppPurchaseType as
+      | "CONSUMABLE"
+      | "NON_CONSUMABLE"
+      | "NON_RENEWING_SUBSCRIPTION",
+    referenceName: iap.attributes?.name || "",
+    familySharable: iap.attributes?.familySharable || false,
+    reviewNote: iap.attributes?.reviewNote || "",
+    localizations: localizations,
+    priceSchedule: priceSchedule,
+    availability: availability,
+  };
+}
+
 async function mapInAppPurchases(
   data: InAppPurchasesV2Response
 ): Promise<InAppPurchase[]> {
-  const includedById = (data.included || []).reduce((map, item) => {
-    map[`${item.type}-${item.id}`] = item;
-    return map;
-  }, {} as any);
+  const includedById = createIncludedByIdMap(
+    data.included as IncludedResource[]
+  );
 
   const iaps = await Promise.all(
-    (data.data || []).map(async (iap): Promise<InAppPurchase | null> => {
-      const localizations = mapLocalizations(
-        iap.relationships?.inAppPurchaseLocalizations?.data,
-        includedById
-      );
-
-      const priceSchedule = await fetchAndMapIAPPrices(
-        iap.relationships?.iapPriceSchedule?.data,
-        includedById
-      );
-
-      const availability = await mapInAppPurchaseAvailability(
-        iap.relationships?.inAppPurchaseAvailability?.data,
-        includedById
-      );
-
-      return {
-        productId: iap.attributes?.productId || "",
-        type: iap.attributes?.inAppPurchaseType as
-          | "CONSUMABLE"
-          | "NON_CONSUMABLE"
-          | "NON_RENEWING_SUBSCRIPTION",
-        referenceName: iap.attributes?.name || "",
-        familySharable: iap.attributes?.familySharable || false,
-        reviewNote: iap.attributes?.reviewNote || "",
-        localizations: localizations,
-        priceSchedule: priceSchedule,
-        availability: availability,
-      };
-    })
+    (data.data || []).map((iap) => mapInAppPurchase(iap, includedById))
   );
 
   return iaps.filter((iap): iap is NonNullable<typeof iap> => iap !== null);
@@ -634,10 +663,9 @@ function mapSubscriptionLocalizations(
 async function mapIntroductoryOffers(
   response: components["schemas"]["SubscriptionIntroductoryOffersResponse"]
 ): Promise<Subscription["introductoryOffers"]> {
-  const includedById = (response.included || []).reduce((map, item) => {
-    map[`${item.type}-${item.id}`] = item;
-    return map;
-  }, {} as any);
+  const includedById = createIncludedByIdMap(
+    response.included as IncludedResource[]
+  );
 
   const groupedOffers: {
     [key: string]: z.infer<typeof IntroductoryOfferSchema>;
@@ -803,105 +831,107 @@ async function mapPromotionalOffers(
   return offers.filter((o): o is NonNullable<typeof o> => o !== null);
 }
 
+async function mapSubscription(
+  subRel: { type: string; id: string },
+  includedById: IncludedByIdMap
+): Promise<Subscription | null> {
+  const subData = includedById[
+    `${subRel.type}-${subRel.id}`
+  ] as APISubscription;
+  if (!subData) return null;
+
+  const subscriptionPeriod = subData.attributes?.subscriptionPeriod;
+  if (!subscriptionPeriod) {
+    logger.warn(
+      `Subscription ${subData.id} has no subscription period. Skipping.`
+    );
+    return null;
+  }
+
+  const [
+    localizationsResponse,
+    introductoryOffersResponse,
+    promotionalOffersResponse,
+    availabilityResponse,
+  ] = await Promise.all([
+    fetchSubscriptionLocalizations(subData.id),
+    fetchSubscriptionIntroductoryOffers(subData.id),
+    fetchSubscriptionPromotionalOffers(subData.id),
+    fetchSubscriptionAvailability(subData.id),
+  ]);
+
+  const localizations = mapSubscriptionLocalizations(localizationsResponse);
+  const introductoryOffers = await mapIntroductoryOffers(
+    introductoryOffersResponse
+  );
+  const promotionalOffers = await mapPromotionalOffers(
+    promotionalOffersResponse
+  );
+  const availability = await mapSubscriptionAvailability(availabilityResponse);
+
+  const prices = await fetchAndMapSubscriptionPrices(subData);
+
+  const sub: Subscription = {
+    productId: subData.attributes?.productId || "",
+    referenceName: subData.attributes?.name || "",
+    groupLevel: subData.attributes?.groupLevel || 0,
+    familySharable: subData.attributes?.familySharable || false,
+    subscriptionPeriod: subscriptionPeriod,
+    localizations: localizations,
+    introductoryOffers: introductoryOffers,
+    promotionalOffers: promotionalOffers,
+    prices: prices,
+    availability: availability,
+  };
+  return sub;
+}
+
+async function mapSubscriptionGroup(
+  group: components["schemas"]["SubscriptionGroup"],
+  includedById: IncludedByIdMap
+): Promise<SubscriptionGroup | null> {
+  const groupLocalizations = (
+    group.relationships?.subscriptionGroupLocalizations?.data?.map((rel) => {
+      const locData = includedById[
+        `${rel.type}-${rel.id}`
+      ] as APISubscriptionGroupLocalization;
+      if (!locData) return null;
+      const locale = locData.attributes?.locale;
+      const localeParseResult = LocaleCodeSchema.safeParse(locale);
+      if (!localeParseResult.success) return null;
+      return {
+        locale: localeParseResult.data,
+        name: locData.attributes?.name || "",
+        customName: locData.attributes?.customAppName || null,
+      };
+    }) || []
+  ).filter((l): l is NonNullable<typeof l> => l !== null);
+
+  const subscriptions = await Promise.all(
+    (group.relationships?.subscriptions?.data || []).map((rel) =>
+      mapSubscription(rel, includedById)
+    )
+  );
+
+  const result: SubscriptionGroup = {
+    referenceName: group.attributes?.referenceName || "",
+    localizations: groupLocalizations,
+    subscriptions: subscriptions.filter(
+      (s): s is NonNullable<typeof s> => s !== null
+    ),
+  };
+  return result;
+}
+
 async function mapSubscriptionGroups(
-  data: components["schemas"]["SubscriptionGroupsResponse"],
-  allIAPs: InAppPurchasesV2Response
+  data: components["schemas"]["SubscriptionGroupsResponse"]
 ): Promise<SubscriptionGroup[]> {
-  const includedById = (data.included || []).reduce((map, item) => {
-    map[`${item.type}-${item.id}`] = item;
-    return map;
-  }, {} as any);
+  const includedById = createIncludedByIdMap(
+    data.included as IncludedResource[]
+  );
 
   const groups = await Promise.all(
-    (data.data || []).map(async (group): Promise<SubscriptionGroup | null> => {
-      const groupLocalizations = (
-        group.relationships?.subscriptionGroupLocalizations?.data?.map(
-          (rel) => {
-            const locData = includedById[
-              `${rel.type}-${rel.id}`
-            ] as APISubscriptionGroupLocalization;
-            if (!locData) return null;
-            const locale = locData.attributes?.locale;
-            const localeParseResult = LocaleCodeSchema.safeParse(locale);
-            if (!localeParseResult.success) return null;
-            return {
-              locale: localeParseResult.data,
-              name: locData.attributes?.name || "",
-              customName: locData.attributes?.customAppName || null,
-            };
-          }
-        ) || []
-      ).filter((l): l is NonNullable<typeof l> => l !== null);
-
-      const subscriptions = await Promise.all(
-        (group.relationships?.subscriptions?.data || []).map(
-          async (rel): Promise<Subscription | null> => {
-            const subData = includedById[
-              `${rel.type}-${rel.id}`
-            ] as APISubscription;
-            if (!subData) return null;
-
-            const subscriptionPeriod = subData.attributes?.subscriptionPeriod;
-            if (!subscriptionPeriod) {
-              logger.warn(
-                `Subscription ${subData.id} has no subscription period. Skipping.`
-              );
-              return null;
-            }
-
-            const [
-              localizationsResponse,
-              introductoryOffersResponse,
-              promotionalOffersResponse,
-              availabilityResponse,
-            ] = await Promise.all([
-              fetchSubscriptionLocalizations(subData.id),
-              fetchSubscriptionIntroductoryOffers(subData.id),
-              fetchSubscriptionPromotionalOffers(subData.id),
-              fetchSubscriptionAvailability(subData.id),
-            ]);
-
-            const localizations = mapSubscriptionLocalizations(
-              localizationsResponse
-            );
-            const introductoryOffers = await mapIntroductoryOffers(
-              introductoryOffersResponse
-            );
-            const promotionalOffers = await mapPromotionalOffers(
-              promotionalOffersResponse
-            );
-            const availability = await mapSubscriptionAvailability(
-              availabilityResponse
-            );
-
-            const prices = await fetchAndMapSubscriptionPrices(subData);
-
-            const sub: Subscription = {
-              productId: subData.attributes?.productId || "",
-              referenceName: subData.attributes?.name || "",
-              groupLevel: subData.attributes?.groupLevel || 0,
-              familySharable: subData.attributes?.familySharable || false,
-              subscriptionPeriod: subscriptionPeriod,
-              localizations: localizations,
-              introductoryOffers: introductoryOffers,
-              promotionalOffers: promotionalOffers,
-              prices: prices,
-              availability: availability,
-            };
-            return sub;
-          }
-        )
-      );
-
-      const result: SubscriptionGroup = {
-        referenceName: group.attributes?.referenceName || "",
-        localizations: groupLocalizations,
-        subscriptions: subscriptions.filter(
-          (s): s is NonNullable<typeof s> => s !== null
-        ),
-      };
-      return result;
-    })
+    (data.data || []).map((group) => mapSubscriptionGroup(group, includedById))
   );
   return groups.filter((g): g is NonNullable<typeof g> => g !== null);
 }
@@ -916,7 +946,7 @@ function parseOfferDuration(
   | {} {
   if (!attributes) return {};
 
-  const { duration, numberOfPeriods, offerMode } = attributes as any;
+  const { duration, numberOfPeriods, offerMode } = attributes;
 
   if (offerMode === "PAY_AS_YOU_GO" && numberOfPeriods && numberOfPeriods > 0) {
     return { numberOfPeriods: numberOfPeriods };
@@ -951,6 +981,26 @@ function parseOfferDuration(
   return {};
 }
 
+async function fetchAndSave(appId: string, outputFile: string) {
+  const inAppPurchasesData = await fetchInAppPurchases(appId);
+  const subscriptionGroupsData = await fetchSubscriptionGroups(appId);
+  const mappedIAPs = await mapInAppPurchases(inAppPurchasesData);
+  const mappedSubscriptionGroups = await mapSubscriptionGroups(
+    subscriptionGroupsData
+  );
+
+  const result: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: appId,
+    inAppPurchases: mappedIAPs,
+    subscriptionGroups: mappedSubscriptionGroups,
+  };
+
+  const parsedData = AppStoreModelSchema.parse(result);
+
+  fs.writeFileSync(outputFile, JSON.stringify(parsedData, null, 2));
+}
+
 const fetchCommand: CommandModule = {
   command: "fetch",
   describe:
@@ -976,25 +1026,7 @@ const fetchCommand: CommandModule = {
     );
 
     try {
-      const inAppPurchasesData = await fetchInAppPurchases(appId);
-      const subscriptionGroupsData = await fetchSubscriptionGroups(appId);
-      const mappedIAPs = await mapInAppPurchases(inAppPurchasesData);
-      const mappedSubscriptionGroups = await mapSubscriptionGroups(
-        subscriptionGroupsData,
-        inAppPurchasesData
-      );
-
-      const result: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: appId,
-        inAppPurchases: mappedIAPs,
-        subscriptionGroups: mappedSubscriptionGroups,
-      };
-
-      const parsedData = AppStoreModelSchema.parse(result);
-
-      fs.writeFileSync(outputFile, JSON.stringify(parsedData, null, 2));
-
+      await fetchAndSave(appId, outputFile);
       logger.info(
         `Successfully fetched app details and wrote to ${outputFile}`
       );
