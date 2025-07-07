@@ -37,12 +37,14 @@ The tool will be configured using a `.env` file in the project root. The followi
 
 ### Pricing Model
 
-The pricing model is designed for both simplicity and control. You will specify a concrete `price` for each territory you wish to configure.
+The pricing model is designed for both simplicity and control, but it differs between In-App Purchases and Subscriptions due to the capabilities of the App Store Connect API.
 
-- **Base Territory Price:** You must define a `baseTerritory` and set a `price` for it. This price is used to find a corresponding price on the App Store, which then determines the prices for all other territories.
-- **Manual Price Overrides:** To set a specific price for a country that differs from the automatically calculated price, simply add a price entry for that territory. This gives you granular control over your pricing strategy in key markets.
+#### In-App Purchase Pricing
 
-Internally, the tool will query the App Store Connect API's `/v1/appPricePoints` endpoint to find the price point that matches your specified price. It will then use the ID of that price point when creating or updating IAPs and subscriptions.
+For standard In-App Purchases (consumables, non-consumables), you will specify a concrete `price` for each territory you wish to configure within a `priceSchedule` object.
+
+- **Base Territory Price:** You must define a `baseTerritory` and set a `price` for it. This price is used to find a corresponding price point on the App Store, which then determines the prices for all other territories.
+- **Manual Price Overrides:** To set a specific price for a country that differs from the automatically calculated price, simply add a price entry for that territory.
 
 **Example:**
 
@@ -62,10 +64,28 @@ Internally, the tool will query the App Store Connect API's `/v1/appPricePoints`
 }
 ```
 
-In this example:
+#### Subscription Pricing
 
-1. The price for the USA is set to $9.99. This price will be used to determine the price for all other territories except Canada.
-2. The price for Canada is manually set to $12.99, overriding the automatic calculation.
+The App Store Connect API does not support the concept of a `baseTerritory` for subscriptions or their offers. When fetching subscription data, the API provides a flat list of prices for each territory, with no indication of which was the "base".
+
+To reflect this, our JSON model for subscriptions (and their introductory/promotional offers) will **not** use a `priceSchedule` object. Instead, it will contain a simple `prices` array directly.
+
+```json
+"subscriptions": [
+    {
+      "productId": "com.example.monthly",
+      // ... other attributes
+      "prices": [
+        { "price": "4.99", "territory": "USA" },
+        { "price": "5.99", "territory": "CAN" },
+        { "price": "5.99", "territory": "EUR" }
+        // ... and 170+ more
+      ]
+    }
+]
+```
+
+To address the challenge of managing over 170 individual prices, a new command will be introduced to automate this process.
 
 ## CLI Commands
 
@@ -74,6 +94,7 @@ In this example:
 - `app-store-sync fetch --id <app-id> --file <path>`: Fetches the current IAPs and subscriptions from App Store Connect for a specific app and writes them to the specified JSON file. This is useful for bootstrapping or updating the local state.
 - `app-store-sync plan --file <path>`: Shows a plan of changes (dry run). **Note:** This command will use the `fetch` method internally to retrieve the current state from App Store Connect and compare it with the local JSON file to determine what changes would be made.
 - `app-store-sync apply --file <path>`: Applies the changes to App Store Connect. **Note:** This command will also use the `fetch` method internally to ensure it is applying only the necessary changes based on the current state.
+- `app-store-sync update-prices --file <path> --product-id <id> --base-territory <territory> --price <price> [--manual-overrides <json-string>]`: A utility command to automatically populate the `prices` array for a specific subscription or offer. It will use the provided base price to calculate all other territory prices, simplifying price management.
 
 ## Project Structure
 

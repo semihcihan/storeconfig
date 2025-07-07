@@ -39,6 +39,11 @@ type APISubscriptionAvailability =
   components["schemas"]["SubscriptionAvailability"];
 type InAppPurchaseAvailability =
   components["schemas"]["InAppPurchaseAvailability"];
+type APISubscriptionPrice = components["schemas"]["SubscriptionPrice"];
+type APISubscriptionPricesResponse =
+  components["schemas"]["SubscriptionPricesResponse"];
+type APISubscriptionPricePoint =
+  components["schemas"]["SubscriptionPricePoint"];
 
 async function fetchInAppPurchases(appId: string) {
   const include: (
@@ -159,6 +164,23 @@ async function fetchSubscriptionPromotionalOffers(subscriptionId: string) {
   return response.data;
 }
 
+async function fetchSubscriptionPrices(subscriptionId: string) {
+  const response = await api.GET("/v1/subscriptions/{id}/prices", {
+    params: {
+      path: { id: subscriptionId },
+      query: {
+        limit: 100,
+        include: ["territory", "subscriptionPricePoint"],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
 async function fetchManualPrices(priceScheduleId: string) {
   const response = await api.GET(
     "/v1/inAppPurchasePriceSchedules/{id}/manualPrices",
@@ -239,6 +261,53 @@ async function fetchSubscriptionGroups(appId: string) {
     throw response.error;
   }
   return response.data;
+}
+
+function processSubscriptionPriceResponse(
+  response: APISubscriptionPricesResponse
+): { price: string; territory: z.infer<typeof TerritoryCodeSchema> }[] {
+  if (!response || !response.included) {
+    return [];
+  }
+
+  const includedById = (response.included || []).reduce(
+    (map: any, item: any) => {
+      map[`${item.type}-${item.id}`] = item;
+      return map;
+    },
+    {}
+  );
+
+  const prices: {
+    price: string;
+    territory: z.infer<typeof TerritoryCodeSchema>;
+  }[] = [];
+  for (const priceData of response.data) {
+    const priceRel = priceData.relationships?.subscriptionPricePoint?.data;
+    const territoryRel = priceData.relationships?.territory?.data;
+    if (priceRel && territoryRel) {
+      const pricePoint = includedById[
+        `${priceRel.type}-${priceRel.id}`
+      ] as APISubscriptionPricePoint;
+      const territory = includedById[`${territoryRel.type}-${territoryRel.id}`];
+
+      if (pricePoint && pricePoint.attributes && territory) {
+        const territoryParseResult = TerritoryCodeSchema.safeParse(
+          territory.id
+        );
+        if (
+          territoryParseResult.success &&
+          pricePoint.attributes.customerPrice
+        ) {
+          prices.push({
+            price: pricePoint.attributes.customerPrice,
+            territory: territoryParseResult.data,
+          });
+        }
+      }
+    }
+  }
+  return prices;
 }
 
 function processPriceResponse(
@@ -373,43 +442,15 @@ async function fetchAndMapIAPPrices(
 }
 
 async function fetchAndMapSubscriptionPrices(
-  subscription: APISubscription,
-  includedById: any,
-  allIAPs: InAppPurchasesV2Response
+  subscription: APISubscription
 ): Promise<Subscription["priceSchedule"]> {
-  const productId = subscription.attributes?.productId;
-  if (!productId) {
-    logger.warn(
-      `Subscription ${subscription.id} has no product ID. Cannot fetch prices.`
-    );
+  if (!subscription.id) {
+    logger.warn(`Subscription has no ID. Cannot fetch prices.`);
     return { baseTerritory: "USA", prices: [] };
   }
-
-  const matchingIAP = allIAPs.data.find(
-    (iap) => iap.attributes?.productId === productId
-  );
-
-  if (!matchingIAP) {
-    logger.warn(
-      `Could not find matching IAP for subscription product ID: ${productId}`
-    );
-    return { baseTerritory: "USA", prices: [] };
-  }
-
-  // We need to merge the 'included' from both responses to ensure the price schedule can be found
-  const combinedIncluded = [
-    ...(allIAPs.included || []),
-    ...(includedById.values() || []),
-  ];
-  const combinedIncludedById = combinedIncluded.reduce((map, item) => {
-    map[`${item.type}-${item.id}`] = item;
-    return map;
-  }, {} as any);
-
-  return fetchAndMapIAPPrices(
-    matchingIAP.relationships?.iapPriceSchedule?.data,
-    combinedIncludedById
-  );
+  const pricesResponse = await fetchSubscriptionPrices(subscription.id);
+  const prices = processSubscriptionPriceResponse(pricesResponse);
+  return { baseTerritory: "USA", prices };
 }
 
 async function mapInAppPurchaseAvailability(
@@ -777,11 +818,7 @@ async function mapSubscriptionGroups(
               availabilityResponse
             );
 
-            const priceSchedule = await fetchAndMapSubscriptionPrices(
-              subData,
-              includedById,
-              allIAPs
-            );
+            const priceSchedule = await fetchAndMapSubscriptionPrices(subData);
 
             const sub: Subscription = {
               productId: subData.attributes?.productId || "",
