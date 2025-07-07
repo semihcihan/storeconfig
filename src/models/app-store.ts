@@ -18,23 +18,23 @@ export const PriceSchema = z.object({
   territory: TerritoryCodeSchema,
 });
 
-const PriceScheduleSchema = z.object({
+export const PriceScheduleSchema = z.object({
   baseTerritory: TerritoryCodeSchema,
   prices: z.array(PriceSchema),
 });
 
-const LocalizationSchema = z.object({
+export const LocalizationSchema = z.object({
   locale: LocaleCodeSchema,
   name: z.string(),
   description: z.string(),
 });
 
-const AvailabilitySchema = z.object({
+export const AvailabilitySchema = z.object({
   availableInNewTerritories: z.boolean(),
   availableTerritories: z.array(TerritoryCodeSchema),
 });
 
-const SubscriptionGroupLocalizationSchema = z.object({
+export const SubscriptionGroupLocalizationSchema = z.object({
   locale: LocaleCodeSchema,
   name: z.string(),
   customName: z.string().optional().nullable(),
@@ -89,13 +89,13 @@ const PromoOfferFreeSchema = z.object({
   duration: SubscriptionOfferDurationSchema,
 });
 
-const PromotionalOfferSchema = z.discriminatedUnion("type", [
+export const PromotionalOfferSchema = z.discriminatedUnion("type", [
   PromoOfferPayAsYouGoSchema,
   PromoOfferPayUpFrontSchema,
   PromoOfferFreeSchema,
 ]);
 
-const SubscriptionPeriodSchema = z.enum([
+export const SubscriptionPeriodSchema = z.enum([
   "ONE_WEEK",
   "ONE_MONTH",
   "TWO_MONTHS",
@@ -140,4 +140,10 @@ export const AppStoreModelSchema = z.object({
   appId: z.string(),
   inAppPurchases: z.array(InAppPurchaseSchema).optional(),
   subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
+});
+
+export const InAppPurchaseLocalizationSchema = z.object({
+  locale: LocaleCodeSchema,
+  name: z.string(),
+  description: z.string(),
 });
