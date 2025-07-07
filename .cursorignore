@@ -1,0 +1,2 @@
+# Include openapi folder in Cursor indexing (even though it's in .gitignore)
+!/openapi

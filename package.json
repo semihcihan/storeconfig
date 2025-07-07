@@ -11,7 +11,8 @@
     "start": "node dist/cli.js",
     "prepublishOnly": "npm run build",
     "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
-    "call": "npx ts-node src/cli.ts fetch --id 1523230470 --file test.json"
+    "call": "npx ts-node src/cli.ts fetch --id 1523230470 --file test.json",
+    "split-openapi": "npx redocly split openapi.json --outDir=openapi"
   },
   "keywords": [],
   "author": "Focus Tapps",
@@ -25,6 +26,7 @@
     "zod": "^3.25.74"
   },
   "devDependencies": {
+    "@redocly/cli": "^1.34.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
