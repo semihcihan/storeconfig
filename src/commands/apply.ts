@@ -13,30 +13,52 @@ const command: CommandModule = {
   builder: {
     file: {
       alias: "f",
-      describe: "Path to the JSON file",
+      describe: "Path to the desired state JSON file.",
       demandOption: true,
       type: "string",
     },
+    "current-state-file": {
+      alias: "c",
+      describe:
+        "Path to the JSON file to use as the current state. If not provided, the current state will be fetched from App Store Connect.",
+      type: "string",
+    },
     id: {
-      describe: "The App ID to apply changes to.",
-      demandOption: true,
+      describe:
+        "The App ID to apply changes to. Required if not using --current-state-file.",
       type: "string",
     },
   },
   handler: async (argv) => {
-    const inputFile = argv.file as string;
-    const appId = argv.id as string;
+    const desiredStateFile = argv.file as string;
+    const currentStateFile = argv["current-state-file"] as string | undefined;
+    const appId = argv.id as string | undefined;
 
-    logger.info(`Applying changes from ${inputFile} to app ID: ${appId}`);
+    if (!currentStateFile && !appId) {
+      logger.error(
+        "You must provide either an App ID with --id or a file for the current state with --current-state-file."
+      );
+      process.exit(1);
+    }
+
+    logger.info(`Processing desired state from ${desiredStateFile}...`);
 
     try {
-      const fileContents = fs.readFileSync(inputFile, "utf-8");
+      const fileContents = fs.readFileSync(desiredStateFile, "utf-8");
       const desiredState = AppStoreModelSchema.parse(JSON.parse(fileContents));
 
-      const currentState = await fetchAppStoreState(appId);
+      let currentState: z.infer<typeof AppStoreModelSchema>;
 
-      logger.info("Desired state:", desiredState);
-      logger.info("Current state:", currentState);
+      if (currentStateFile) {
+        logger.info(`Using ${currentStateFile} as current state.`);
+        const currentFileContents = fs.readFileSync(currentStateFile, "utf-8");
+        currentState = AppStoreModelSchema.parse(
+          JSON.parse(currentFileContents)
+        );
+      } else {
+        logger.info(`Fetching current state for app ID: ${appId}`);
+        currentState = await fetchAppStoreState(appId!);
+      }
 
       const plan = diff(currentState, desiredState);
 

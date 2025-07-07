@@ -11,7 +11,9 @@
     "start": "node dist/cli.js",
     "prepublishOnly": "npm run build",
     "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
-    "call": "npx ts-node src/cli.ts fetch --id 1523230470 --file test.json",
+    "fetch": "npx ts-node src/cli.ts fetch --id 1523230470 --file test.json",
+    "apply": "npx ts-node src/cli.ts apply --id 1523230470 --file test2.json",
+    "apply-file": "npx ts-node src/cli.ts apply --current-state-file test.json --file test2.json",
     "split-openapi": "npx redocly split openapi.json --outDir=openapi"
   },
   "keywords": [],

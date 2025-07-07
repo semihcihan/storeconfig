@@ -9,6 +9,8 @@ import {
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
   LocalizationSchema,
+  AvailabilitySchema,
+  SubscriptionPeriodSchema,
 } from "./app-store";
 import { LocaleCodeSchema } from "./locales";
 import { TerritoryCodeSchema } from "./territories";
@@ -113,6 +115,18 @@ export type DeleteIapPriceAction = Action<
 >;
 
 // #################################################################################
+// IAP Availability Action Types
+// #################################################################################
+
+export type UpdateIapAvailabilityAction = Action<
+  "UPDATE_IAP_AVAILABILITY",
+  {
+    productId: string;
+    availability: z.infer<typeof AvailabilitySchema>;
+  }
+>;
+
+// #################################################################################
 // Subscription Group Action Types
 // #################################################################################
 
@@ -128,8 +142,7 @@ export type UpdateSubscriptionGroupAction = Action<
   {
     referenceName: string;
     changes: {
-      // According to the API, only localizations are really updatable here.
-      // The referenceName itself is immutable after creation.
+      referenceName?: string;
     };
   }
 >;
@@ -189,6 +202,7 @@ export type UpdateSubscriptionAction = Action<
       referenceName?: string;
       familySharable?: boolean;
       groupLevel?: number;
+      subscriptionPeriod?: z.infer<typeof SubscriptionPeriodSchema>;
     };
   }
 >;
@@ -249,6 +263,18 @@ export type DeleteSubscriptionPriceAction = Action<
 >;
 
 // #################################################################################
+// Subscription Availability Action Types
+// #################################################################################
+
+export type UpdateSubscriptionAvailabilityAction = Action<
+  "UPDATE_SUBSCRIPTION_AVAILABILITY",
+  {
+    subscriptionProductId: string;
+    availability: z.infer<typeof AvailabilitySchema>;
+  }
+>;
+
+// #################################################################################
 // Subscription Offer Action Types
 // #################################################################################
 
@@ -300,6 +326,8 @@ export type AnyAction =
   | UpdateIapBaseTerritoryAction
   | CreateIapPriceAction
   | DeleteIapPriceAction
+  // IAP Availability
+  | UpdateIapAvailabilityAction
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction
@@ -317,6 +345,8 @@ export type AnyAction =
   // Subscription Prices
   | CreateSubscriptionPriceAction
   | DeleteSubscriptionPriceAction
+  // Subscription Availability
+  | UpdateSubscriptionAvailabilityAction
   // Subscription Offers
   | CreateIntroductoryOfferAction
   | DeleteAllIntroductoryOffersAction

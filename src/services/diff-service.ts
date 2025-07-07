@@ -192,6 +192,16 @@ function diffInAppPurchases(
           desiredIap.priceSchedule
         )
       );
+
+      if (!isEqual(currentIap.availability, desiredIap.availability)) {
+        actions.push({
+          type: "UPDATE_IAP_AVAILABILITY",
+          payload: {
+            productId,
+            availability: desiredIap.availability,
+          },
+        });
+      }
     }
   }
 
@@ -353,6 +363,9 @@ function diffSubscriptions(
       if (desiredSub.groupLevel !== currentSub.groupLevel) {
         changes.groupLevel = desiredSub.groupLevel;
       }
+      if (desiredSub.subscriptionPeriod !== currentSub.subscriptionPeriod) {
+        changes.subscriptionPeriod = desiredSub.subscriptionPeriod;
+      }
       if (Object.keys(changes).length > 0) {
         actions.push({
           type: "UPDATE_SUBSCRIPTION",
@@ -388,6 +401,16 @@ function diffSubscriptions(
           desiredSub.promotionalOffers || []
         )
       );
+
+      if (!isEqual(currentSub.availability, desiredSub.availability)) {
+        actions.push({
+          type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+          payload: {
+            subscriptionProductId: productId,
+            availability: desiredSub.availability,
+          },
+        });
+      }
     }
   }
 
@@ -466,15 +489,16 @@ function diffSubscriptionGroups(
     desiredGroups.map((g) => [g.referenceName, g])
   );
 
+  const addedGroups: SubscriptionGroup[] = [];
+  const removedGroups: SubscriptionGroup[] = [];
+
   for (const [refName, desiredGroup] of desiredGroupsByName.entries()) {
     const currentGroup = currentGroupsByName.get(refName);
 
     if (!currentGroup) {
-      actions.push({
-        type: "CREATE_SUBSCRIPTION_GROUP",
-        payload: { group: desiredGroup },
-      });
+      addedGroups.push(desiredGroup);
     } else {
+      // It's an existing group, check for updates within it
       actions.push(
         ...diffSubscriptionGroupLocalizations(
           refName,
@@ -492,11 +516,52 @@ function diffSubscriptionGroups(
     }
   }
 
-  for (const [refName] of currentGroupsByName.entries()) {
+  for (const [refName, currentGroup] of currentGroupsByName.entries()) {
     if (!desiredGroupsByName.has(refName)) {
+      removedGroups.push(currentGroup);
+    }
+  }
+
+  // Smart rename detection
+  if (addedGroups.length === 1 && removedGroups.length === 1) {
+    const oldName = removedGroups[0].referenceName;
+    const newName = addedGroups[0].referenceName;
+    actions.push({
+      type: "UPDATE_SUBSCRIPTION_GROUP",
+      payload: {
+        referenceName: oldName,
+        changes: { referenceName: newName },
+      },
+    });
+
+    // Since we've handled the rename, we need to diff the contents
+    // of the renamed group.
+    actions.push(
+      ...diffSubscriptionGroupLocalizations(
+        newName, // use new name for context in sub-diffs
+        removedGroups[0].localizations,
+        addedGroups[0].localizations
+      )
+    );
+    actions.push(
+      ...diffSubscriptions(
+        newName, // use new name for context
+        removedGroups[0].subscriptions,
+        addedGroups[0].subscriptions
+      )
+    );
+  } else {
+    // If it's not a simple rename, treat them as separate add/delete
+    for (const group of addedGroups) {
+      actions.push({
+        type: "CREATE_SUBSCRIPTION_GROUP",
+        payload: { group },
+      });
+    }
+    for (const group of removedGroups) {
       actions.push({
         type: "DELETE_SUBSCRIPTION_GROUP",
-        payload: { referenceName: refName },
+        payload: { referenceName: group.referenceName },
       });
     }
   }
@@ -519,3 +584,9 @@ export function diff(
   logger.info(`Plan contains ${plan.length} actions.`);
   return plan;
 }
+
+/*
+prices
+offers considered as whole
+in app purchases not checked yet
+*/
