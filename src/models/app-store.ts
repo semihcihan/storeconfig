@@ -13,7 +13,7 @@ export const SubscriptionOfferDurationSchema = z.enum([
   "ONE_YEAR",
 ]);
 
-const PriceSchema = z.object({
+export const PriceSchema = z.object({
   price: z.string(),
   territory: TerritoryCodeSchema,
 });
@@ -43,14 +43,14 @@ const SubscriptionGroupLocalizationSchema = z.object({
 const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
-  priceSchedule: PriceScheduleSchema,
+  prices: z.array(PriceSchema),
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
   duration: SubscriptionOfferDurationSchema,
-  priceSchedule: PriceScheduleSchema,
+  prices: z.array(PriceSchema),
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
@@ -60,7 +60,7 @@ const IntroOfferFreeSchema = z.object({
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
 });
 
-const IntroductoryOfferSchema = z.discriminatedUnion("type", [
+export const IntroductoryOfferSchema = z.discriminatedUnion("type", [
   IntroOfferPayAsYouGoSchema,
   IntroOfferPayUpFrontSchema,
   IntroOfferFreeSchema,
@@ -71,7 +71,7 @@ const PromoOfferPayAsYouGoSchema = z.object({
   referenceName: z.string(),
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
-  priceSchedule: PriceScheduleSchema,
+  prices: z.array(PriceSchema),
 });
 
 const PromoOfferPayUpFrontSchema = z.object({
@@ -79,7 +79,7 @@ const PromoOfferPayUpFrontSchema = z.object({
   referenceName: z.string(),
   type: z.literal("PAY_UP_FRONT"),
   duration: SubscriptionOfferDurationSchema,
-  priceSchedule: PriceScheduleSchema,
+  prices: z.array(PriceSchema),
 });
 
 const PromoOfferFreeSchema = z.object({
@@ -110,7 +110,7 @@ export const SubscriptionSchema = z.object({
   groupLevel: z.number(),
   subscriptionPeriod: SubscriptionPeriodSchema,
   familySharable: z.boolean(),
-  priceSchedule: PriceScheduleSchema,
+  prices: z.array(PriceSchema),
   localizations: z.array(LocalizationSchema),
   introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
   promotionalOffers: z.array(PromotionalOfferSchema).optional(),

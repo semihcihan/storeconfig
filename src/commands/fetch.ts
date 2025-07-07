@@ -7,6 +7,8 @@ import {
   SubscriptionGroupSchema,
   SubscriptionOfferDurationSchema,
   SubscriptionSchema,
+  PriceSchema,
+  IntroductoryOfferSchema,
 } from "../models/app-store";
 import { z } from "zod";
 import { api } from "../services/api";
@@ -132,7 +134,7 @@ async function fetchSubscriptionLocalizations(subscriptionId: string) {
   const response = await api.GET(
     "/v1/subscriptions/{id}/subscriptionLocalizations",
     {
-      params: { path: { id: subscriptionId }, query: { limit: 50 } },
+      params: { path: { id: subscriptionId }, query: { limit: 200 } },
     }
   );
   if (response.error) {
@@ -145,7 +147,7 @@ async function fetchSubscriptionIntroductoryOffers(subscriptionId: string) {
   const response = await api.GET("/v1/subscriptions/{id}/introductoryOffers", {
     params: {
       path: { id: subscriptionId },
-      query: { limit: 50, include: ["territory"] },
+      query: { limit: 200, include: ["territory", "subscriptionPricePoint"] },
     },
   });
   if (response.error) {
@@ -156,8 +158,28 @@ async function fetchSubscriptionIntroductoryOffers(subscriptionId: string) {
 
 async function fetchSubscriptionPromotionalOffers(subscriptionId: string) {
   const response = await api.GET("/v1/subscriptions/{id}/promotionalOffers", {
-    params: { path: { id: subscriptionId }, query: { limit: 50 } },
+    params: { path: { id: subscriptionId }, query: { limit: 200 } },
   });
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+async function fetchPromotionalOfferPrices(offerId: string) {
+  const response = await api.GET(
+    "/v1/subscriptionPromotionalOffers/{id}/prices",
+    {
+      params: {
+        path: { id: offerId },
+        query: {
+          limit: 200,
+          include: ["territory", "subscriptionPricePoint"],
+        },
+      },
+    }
+  );
+
   if (response.error) {
     throw response.error;
   }
@@ -169,7 +191,7 @@ async function fetchSubscriptionPrices(subscriptionId: string) {
     params: {
       path: { id: subscriptionId },
       query: {
-        limit: 100,
+        limit: 200,
         include: ["territory", "subscriptionPricePoint"],
       },
     },
@@ -188,7 +210,7 @@ async function fetchManualPrices(priceScheduleId: string) {
       params: {
         path: { id: priceScheduleId },
         query: {
-          limit: 100,
+          limit: 200,
           include: ["territory", "inAppPurchasePricePoint"],
           "fields[inAppPurchasePrices]": ["startDate", "territory"],
         },
@@ -231,7 +253,7 @@ async function fetchSubscriptionGroups(appId: string) {
     params: {
       path: { id: appId },
       query: {
-        limit: 50,
+        limit: 200,
         include: ["subscriptions", "subscriptionGroupLocalizations"],
         "fields[subscriptions]": [
           "name",
@@ -264,8 +286,10 @@ async function fetchSubscriptionGroups(appId: string) {
 }
 
 function processSubscriptionPriceResponse(
-  response: APISubscriptionPricesResponse
-): { price: string; territory: z.infer<typeof TerritoryCodeSchema> }[] {
+  response:
+    | APISubscriptionPricesResponse
+    | components["schemas"]["SubscriptionPromotionalOfferPricesResponse"]
+): z.infer<typeof PriceSchema>[] {
   if (!response || !response.included) {
     return [];
   }
@@ -278,11 +302,8 @@ function processSubscriptionPriceResponse(
     {}
   );
 
-  const prices: {
-    price: string;
-    territory: z.infer<typeof TerritoryCodeSchema>;
-  }[] = [];
-  for (const priceData of response.data) {
+  const prices: z.infer<typeof PriceSchema>[] = [];
+  for (const priceData of response.data as any[]) {
     const priceRel = priceData.relationships?.subscriptionPricePoint?.data;
     const territoryRel = priceData.relationships?.territory?.data;
     if (priceRel && territoryRel) {
@@ -310,9 +331,7 @@ function processSubscriptionPriceResponse(
   return prices;
 }
 
-function processPriceResponse(
-  response: any
-): { price: string; territory: z.infer<typeof TerritoryCodeSchema> }[] {
+function processPriceResponse(response: any): z.infer<typeof PriceSchema>[] {
   if (!response || !response.included) {
     return [];
   }
@@ -410,10 +429,7 @@ async function fetchAndMapIAPPrices(
     | undefined,
   includedById: any
 ): Promise<InAppPurchase["priceSchedule"]> {
-  let prices: {
-    price: string;
-    territory: z.infer<typeof TerritoryCodeSchema>;
-  }[] = [];
+  let prices: z.infer<typeof PriceSchema>[] = [];
   let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
 
   if (priceScheduleRel) {
@@ -443,14 +459,13 @@ async function fetchAndMapIAPPrices(
 
 async function fetchAndMapSubscriptionPrices(
   subscription: APISubscription
-): Promise<Subscription["priceSchedule"]> {
+): Promise<z.infer<typeof PriceSchema>[]> {
   if (!subscription.id) {
     logger.warn(`Subscription has no ID. Cannot fetch prices.`);
-    return { baseTerritory: "USA", prices: [] };
+    return [];
   }
   const pricesResponse = await fetchSubscriptionPrices(subscription.id);
-  const prices = processSubscriptionPriceResponse(pricesResponse);
-  return { baseTerritory: "USA", prices };
+  return processSubscriptionPriceResponse(pricesResponse);
 }
 
 async function mapInAppPurchaseAvailability(
@@ -624,62 +639,103 @@ async function mapIntroductoryOffers(
     return map;
   }, {} as any);
 
-  const offers = await Promise.all(
-    (response.data || []).map(async (offerData) => {
-      if (!offerData.attributes) return null;
+  const groupedOffers: {
+    [key: string]: z.infer<typeof IntroductoryOfferSchema>;
+  } = {};
 
-      const territoryId = offerData.relationships?.territory?.data?.id;
-      const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
-      if (!territoryParseResult.success) {
-        logger.warn(
-          `Invalid territory code for introductory offer: ${territoryId}`
-        );
-        return null;
-      }
+  for (const offerData of response.data || []) {
+    if (!offerData.attributes || !offerData.relationships) {
+      continue;
+    }
 
-      const offerType = offerData.attributes?.offerMode;
-      const durationInfo = parseOfferDuration(offerData.attributes);
+    const territoryId = offerData.relationships.territory?.data?.id;
+    const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
+    if (!territoryParseResult.success) {
+      logger.warn(
+        `Invalid territory code for introductory offer: ${territoryId}`
+      );
+      continue;
+    }
 
-      const priceSchedule = {
-        baseTerritory: territoryParseResult.data,
-        prices: [],
-      };
+    const offerType = offerData.attributes.offerMode;
+    const durationInfo = parseOfferDuration(offerData.attributes);
+    const territory = territoryParseResult.data;
 
-      if (
-        offerType === "PAY_AS_YOU_GO" &&
-        "numberOfPeriods" in durationInfo &&
-        durationInfo.numberOfPeriods
-      ) {
-        return {
-          type: "PAY_AS_YOU_GO" as const,
+    if (
+      offerType === "PAY_AS_YOU_GO" &&
+      "numberOfPeriods" in durationInfo &&
+      durationInfo.numberOfPeriods
+    ) {
+      const key = `PAYG:${durationInfo.numberOfPeriods}`;
+      if (!groupedOffers[key]) {
+        groupedOffers[key] = {
+          type: "PAY_AS_YOU_GO",
           numberOfPeriods: durationInfo.numberOfPeriods,
-          priceSchedule: priceSchedule,
-        };
-      } else if (
-        offerType === "PAY_UP_FRONT" &&
-        "duration" in durationInfo &&
-        durationInfo.duration
-      ) {
-        return {
-          type: "PAY_UP_FRONT" as const,
-          duration: durationInfo.duration,
-          priceSchedule: priceSchedule,
-        };
-      } else if (
-        offerType === "FREE_TRIAL" &&
-        "duration" in durationInfo &&
-        durationInfo.duration
-      ) {
-        return {
-          type: "FREE" as const,
-          duration: durationInfo.duration,
+          prices: [],
         };
       }
-      return null;
-    })
-  );
+      const offer = groupedOffers[key] as any;
+      const pricePointRel =
+        offerData.relationships.subscriptionPricePoint?.data;
+      if (pricePointRel) {
+        const pricePoint = includedById[
+          `${pricePointRel.type}-${pricePointRel.id}`
+        ] as APISubscriptionPricePoint;
+        if (pricePoint?.attributes?.customerPrice) {
+          offer.prices.push({
+            price: pricePoint.attributes.customerPrice,
+            territory: territory,
+          });
+        }
+      }
+    } else if (
+      offerType === "PAY_UP_FRONT" &&
+      "duration" in durationInfo &&
+      durationInfo.duration
+    ) {
+      const key = `PUF:${durationInfo.duration}`;
+      if (!groupedOffers[key]) {
+        groupedOffers[key] = {
+          type: "PAY_UP_FRONT",
+          duration: durationInfo.duration,
+          prices: [],
+        };
+      }
+      const offer = groupedOffers[key] as any;
+      const pricePointRel =
+        offerData.relationships.subscriptionPricePoint?.data;
+      if (pricePointRel) {
+        const pricePoint = includedById[
+          `${pricePointRel.type}-${pricePointRel.id}`
+        ] as APISubscriptionPricePoint;
+        if (pricePoint?.attributes?.customerPrice) {
+          offer.prices.push({
+            price: pricePoint.attributes.customerPrice,
+            territory: territory,
+          });
+        }
+      }
+    } else if (
+      offerType === "FREE_TRIAL" &&
+      "duration" in durationInfo &&
+      durationInfo.duration
+    ) {
+      const key = `FREE:${durationInfo.duration}`;
+      if (!groupedOffers[key]) {
+        groupedOffers[key] = {
+          type: "FREE",
+          duration: durationInfo.duration,
+          availableTerritories: [],
+        };
+      }
+      const offer = groupedOffers[key] as any;
+      if (offer.availableTerritories) {
+        offer.availableTerritories.push(territory);
+      }
+    }
+  }
 
-  return offers.filter((o): o is NonNullable<typeof o> => o !== null);
+  return Object.values(groupedOffers);
 }
 
 async function mapPromotionalOffers(
@@ -691,16 +747,16 @@ async function mapPromotionalOffers(
 
   const offers = await Promise.all(
     response.data.map(async (offerData) => {
-      if (!offerData?.attributes) return null;
+      if (!offerData?.attributes || !offerData.id) return null;
 
-      const offerType = offerData.attributes?.offerMode;
+      const offerType = offerData.attributes.offerMode;
       const durationInfo = parseOfferDuration(offerData.attributes);
 
-      // TODO: Fetch price schedule for each offer
-      const priceSchedule = {
-        baseTerritory: "USA" as const, // Placeholder
-        prices: [],
-      };
+      let prices: z.infer<typeof PriceSchema>[] = [];
+      if (offerType !== "FREE_TRIAL") {
+        const pricesResponse = await fetchPromotionalOfferPrices(offerData.id);
+        prices = processSubscriptionPriceResponse(pricesResponse);
+      }
 
       const baseOffer = {
         id: offerData.id,
@@ -716,7 +772,7 @@ async function mapPromotionalOffers(
           ...baseOffer,
           type: "PAY_AS_YOU_GO" as const,
           numberOfPeriods: durationInfo.numberOfPeriods,
-          priceSchedule: priceSchedule,
+          prices: prices,
         };
       } else if (
         offerType === "PAY_UP_FRONT" &&
@@ -727,7 +783,7 @@ async function mapPromotionalOffers(
           ...baseOffer,
           type: "PAY_UP_FRONT" as const,
           duration: durationInfo.duration,
-          priceSchedule: priceSchedule,
+          prices: prices,
         };
       } else if (
         offerType === "FREE_TRIAL" &&
@@ -818,7 +874,7 @@ async function mapSubscriptionGroups(
               availabilityResponse
             );
 
-            const priceSchedule = await fetchAndMapSubscriptionPrices(subData);
+            const prices = await fetchAndMapSubscriptionPrices(subData);
 
             const sub: Subscription = {
               productId: subData.attributes?.productId || "",
@@ -829,7 +885,7 @@ async function mapSubscriptionGroups(
               localizations: localizations,
               introductoryOffers: introductoryOffers,
               promotionalOffers: promotionalOffers,
-              priceSchedule: priceSchedule,
+              prices: prices,
               availability: availability,
             };
             return sub;
