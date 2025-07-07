@@ -115,7 +115,7 @@ export const SubscriptionSchema = z.object({
   introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
   promotionalOffers: z.array(PromotionalOfferSchema).optional(),
   reviewNote: z.string().optional(),
-  availability: AvailabilitySchema.optional(),
+  availability: AvailabilitySchema,
 });
 
 export const SubscriptionGroupSchema = z.object({
@@ -132,7 +132,7 @@ export const InAppPurchaseSchema = z.object({
   priceSchedule: PriceScheduleSchema,
   localizations: z.array(LocalizationSchema),
   reviewNote: z.string().optional(),
-  availability: AvailabilitySchema.optional(),
+  availability: AvailabilitySchema,
 });
 
 export const AppStoreModelSchema = z.object({
