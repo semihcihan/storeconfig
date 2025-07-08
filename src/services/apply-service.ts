@@ -151,11 +151,6 @@ async function executeAction(action: AnyAction) {
       );
       logger.info(`  Offer: ${JSON.stringify(action.payload.offer)}`);
       break;
-    case "DELETE_ALL_INTRODUCTORY_OFFERS":
-      logger.info(
-        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
-      );
-      break;
     case "CREATE_PROMOTIONAL_OFFER":
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`

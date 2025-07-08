@@ -310,13 +310,6 @@ export type DeleteIntroductoryOfferAction = Action<
   }
 >;
 
-export type DeleteAllIntroductoryOffersAction = Action<
-  "DELETE_ALL_INTRODUCTORY_OFFERS",
-  {
-    subscriptionProductId: string;
-  }
->;
-
 export type CreatePromotionalOfferAction = Action<
   "CREATE_PROMOTIONAL_OFFER",
   {
@@ -376,7 +369,6 @@ export type AnyAction =
   // Subscription Offers
   | CreateIntroductoryOfferAction
   | DeleteIntroductoryOfferAction
-  | DeleteAllIntroductoryOffersAction
   | CreatePromotionalOfferAction
   | DeletePromotionalOfferAction;
 
