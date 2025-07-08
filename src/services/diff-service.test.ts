@@ -802,14 +802,13 @@ describe("diff-service", () => {
 
     it("should create a plan to delete and recreate introductory offers when they change", () => {
       const currentState = MOCK_STATE_1;
-      const newOffers: IntroductoryOffer[] = [
-        {
-          type: "PAY_AS_YOU_GO",
-          numberOfPeriods: 3,
-          prices: [{ territory: "USA", price: "1.99" }],
-          availableTerritories: ["USA"],
-        },
-      ];
+      const newOffer: IntroductoryOffer = {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "USA", price: "1.99" }],
+        availableTerritories: ["USA"],
+      };
+
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
         subscriptionGroups: [
@@ -818,7 +817,7 @@ describe("diff-service", () => {
             subscriptions: [
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                introductoryOffers: newOffers,
+                introductoryOffers: [newOffer],
               },
             ],
           },
@@ -826,20 +825,23 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(2); // 1 delete all, 1 create
+      expect(plan).toHaveLength(2); // 1 delete, 1 create
       expect(plan).toEqual(
         expect.arrayContaining([
           {
-            type: "DELETE_ALL_INTRODUCTORY_OFFERS",
+            type: "DELETE_INTRODUCTORY_OFFER",
             payload: {
               subscriptionProductId: "sub1",
+              offer:
+                MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                  .introductoryOffers![0],
             },
           },
           {
             type: "CREATE_INTRODUCTORY_OFFER",
             payload: {
               subscriptionProductId: "sub1",
-              offer: newOffers[0],
+              offer: newOffer,
             },
           },
         ])
