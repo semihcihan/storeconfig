@@ -326,18 +326,15 @@ function diffIntroductoryOffers(
   desiredOffers: IntroductoryOffer[]
 ): AnyAction[] {
   if (!isEqual(currentOffers, desiredOffers)) {
-    const actions: AnyAction[] = [];
-    if (currentOffers.length > 0) {
-      actions.push({
-        type: "DELETE_ALL_INTRODUCTORY_OFFERS",
-        payload: { subscriptionProductId },
-      });
-    }
+    const deleteActions: AnyAction[] = currentOffers.map((o) => ({
+      type: "DELETE_INTRODUCTORY_OFFER",
+      payload: { subscriptionProductId, offer: o },
+    }));
     const createActions: AnyAction[] = desiredOffers.map((o) => ({
       type: "CREATE_INTRODUCTORY_OFFER",
       payload: { subscriptionProductId, offer: o },
     }));
-    return [...actions, ...createActions];
+    return [...deleteActions, ...createActions];
   }
   return [];
 }

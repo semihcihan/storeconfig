@@ -2419,8 +2419,7 @@
                   "price": "0.99",
                   "territory": "ZWE"
                 }
-              ],
-              "availableTerritories": ["CAN"]
+              ]
             }
           ],
           "availability": {
@@ -3900,8 +3899,7 @@
                   "price": "1.99",
                   "territory": "ZWE"
                 }
-              ],
-              "availableTerritories": ["CAN"]
+              ]
             }
           ],
           "availability": {
