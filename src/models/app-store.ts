@@ -44,20 +44,20 @@ const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
   prices: z.array(PriceSchema),
-  availableTerritories: z.array(TerritoryCodeSchema).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema),
 });
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
   duration: SubscriptionOfferDurationSchema,
   prices: z.array(PriceSchema),
-  availableTerritories: z.array(TerritoryCodeSchema).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema),
 });
 
 const IntroOfferFreeSchema = z.object({
   type: z.literal("FREE"),
   duration: SubscriptionOfferDurationSchema,
-  availableTerritories: z.array(TerritoryCodeSchema).optional(),
+  availableTerritories: z.array(TerritoryCodeSchema),
 });
 
 export const IntroductoryOfferSchema = z.discriminatedUnion("type", [

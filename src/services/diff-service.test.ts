@@ -79,6 +79,7 @@ const MOCK_STATE_1: AppStoreModel = {
             {
               type: "FREE",
               duration: "ONE_WEEK",
+              availableTerritories: ["USA"],
             },
           ],
           promotionalOffers: [
@@ -420,25 +421,13 @@ describe("diff-service", () => {
       });
     });
 
-    it("should not create a plan to update availability of an IAP when it is not specified in desired state", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = JSON.parse(
-        JSON.stringify(MOCK_STATE_1)
-      );
-      delete desiredState.inAppPurchases![0].availability;
-
-      const plan = diff(currentState, desiredState);
-      const iapAvailabilityAction = plan.find(
-        (a) => a.type === "UPDATE_IAP_AVAILABILITY"
-      );
-      expect(iapAvailabilityAction).toBeUndefined();
-    });
-
     it("should create a plan to update the availability of an IAP when it is not specified in current state", () => {
       const currentState: AppStoreModel = JSON.parse(
         JSON.stringify(MOCK_STATE_1)
       );
-      delete currentState.inAppPurchases![0].availability;
+      if (currentState.inAppPurchases && currentState.inAppPurchases[0]) {
+        delete (currentState.inAppPurchases[0] as any).availability;
+      }
 
       const desiredState: AppStoreModel = MOCK_STATE_1;
 
@@ -818,6 +807,7 @@ describe("diff-service", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 3,
           prices: [{ territory: "USA", price: "1.99" }],
+          availableTerritories: ["USA"],
         },
       ];
       const desiredState: AppStoreModel = {
@@ -938,25 +928,18 @@ describe("diff-service", () => {
       });
     });
 
-    it("should not create a plan to update availability of a subscription when it is not specified in desired state", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = JSON.parse(
-        JSON.stringify(MOCK_STATE_1)
-      );
-      delete desiredState.subscriptionGroups![0].subscriptions[0].availability;
-
-      const plan = diff(currentState, desiredState);
-      const subAvailabilityAction = plan.find(
-        (a) => a.type === "UPDATE_SUBSCRIPTION_AVAILABILITY"
-      );
-      expect(subAvailabilityAction).toBeUndefined();
-    });
-
     it("should create a plan to update the availability of a subscription when it is not specified in current state", () => {
       const currentState: AppStoreModel = JSON.parse(
         JSON.stringify(MOCK_STATE_1)
       );
-      delete currentState.subscriptionGroups![0].subscriptions[0].availability;
+      if (
+        currentState.subscriptionGroups &&
+        currentState.subscriptionGroups[0] &&
+        currentState.subscriptionGroups[0].subscriptions[0]
+      ) {
+        delete (currentState.subscriptionGroups[0].subscriptions[0] as any)
+          .availability;
+      }
 
       const desiredState: AppStoreModel = MOCK_STATE_1;
 
