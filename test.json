@@ -25,10 +25,7 @@
       ],
       "availability": {
         "availableInNewTerritories": true,
-        "availableTerritories": [
-          "USA",
-          "CAN"
-        ]
+        "availableTerritories": ["USA", "CAN"]
       }
     },
     {
@@ -265,10 +262,7 @@
       ],
       "availability": {
         "availableInNewTerritories": false,
-        "availableTerritories": [
-          "USA",
-          "CAN"
-        ]
+        "availableTerritories": ["USA", "CAN"]
       }
     }
   ],
@@ -1704,6 +1698,17 @@
                   "territory": "ZWE"
                 }
               ]
+            },
+            {
+              "type": "PAY_UP_FRONT",
+              "duration": "ONE_WEEK",
+              "prices": [
+                {
+                  "price": "1.99",
+                  "territory": "USA"
+                }
+              ],
+              "availableTerritories": ["USA"]
             }
           ],
           "promotionalOffers": [
@@ -3179,7 +3184,13 @@
               "description": "sdfgdasg"
             }
           ],
-          "introductoryOffers": [],
+          "introductoryOffers": [
+            {
+              "type": "FREE",
+              "duration": "ONE_WEEK",
+              "availableTerritories": ["TUR"]
+            }
+          ],
           "promotionalOffers": [
             {
               "id": "eyJzIjoiNjc0ODI0Mzk1NCIsInIiOiJmeCJ9",
@@ -3892,10 +3903,7 @@
           ],
           "availability": {
             "availableInNewTerritories": false,
-            "availableTerritories": [
-              "USA",
-              "CAN"
-            ]
+            "availableTerritories": ["USA", "CAN"]
           }
         },
         {

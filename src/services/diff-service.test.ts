@@ -106,6 +106,37 @@ describe("diff-service", () => {
       expect(plan).toEqual([]);
     });
 
+    it("should throw an error if schema versions mismatch", () => {
+      const currentState = { ...EMPTY_STATE, schemaVersion: "1.0.0" };
+      const desiredState = { ...EMPTY_STATE, schemaVersion: "2.0.0" };
+      expect(() => diff(currentState, desiredState)).toThrow(
+        /Schema version mismatch/
+      );
+    });
+
+    it("should throw an error if app IDs mismatch", () => {
+      const currentState = { ...EMPTY_STATE, appId: "app1" };
+      const desiredState = { ...EMPTY_STATE, appId: "app2" };
+      expect(() => diff(currentState, desiredState)).toThrow(/App ID mismatch/);
+    });
+
+    it("should throw an error if an in-app purchase type is changed", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            type: "NON_CONSUMABLE",
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        `The type for in-app purchase iap1 cannot be changed. Current: CONSUMABLE, Desired: NON_CONSUMABLE.`
+      );
+    });
+
     it("should create a plan to add an in-app purchase", () => {
       const desiredState = {
         ...EMPTY_STATE,
@@ -352,7 +383,7 @@ describe("diff-service", () => {
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "CREATE_IAP_PRICE",
+        type: "UPDATE_IAP_PRICE",
         payload: {
           productId: MOCK_STATE_1.inAppPurchases![0].productId,
           price: updatedPrice,
@@ -385,6 +416,41 @@ describe("diff-service", () => {
             availableInNewTerritories: false,
             availableTerritories: ["USA", "CAN"],
           },
+        },
+      });
+    });
+
+    it("should not create a plan to update availability of an IAP when it is not specified in desired state", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete desiredState.inAppPurchases![0].availability;
+
+      const plan = diff(currentState, desiredState);
+      const iapAvailabilityAction = plan.find(
+        (a) => a.type === "UPDATE_IAP_AVAILABILITY"
+      );
+      expect(iapAvailabilityAction).toBeUndefined();
+    });
+
+    it("should create a plan to update the availability of an IAP when it is not specified in current state", () => {
+      const currentState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete currentState.inAppPurchases![0].availability;
+
+      const desiredState: AppStoreModel = MOCK_STATE_1;
+
+      const plan = diff(currentState, desiredState);
+      const iapAvailabilityAction = plan.find(
+        (a) => a.type === "UPDATE_IAP_AVAILABILITY"
+      );
+      expect(iapAvailabilityAction).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          availability: MOCK_STATE_1.inAppPurchases![0].availability,
         },
       });
     });
@@ -745,80 +811,6 @@ describe("diff-service", () => {
       });
     });
 
-    it("should create a plan to delete and recreate subscription prices when they change", () => {
-      const currentState = MOCK_STATE_1;
-      const newPrices: Price[] = [
-        { territory: "USA", price: "10.99" },
-        { territory: "CAN", price: "12.99" },
-      ];
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                prices: newPrices,
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(3); // 1 delete, 2 creates
-      expect(plan).toEqual(
-        expect.arrayContaining([
-          {
-            type: "DELETE_SUBSCRIPTION_PRICE",
-            payload: {
-              subscriptionProductId: "sub1",
-              territory: "USA",
-            },
-          },
-          {
-            type: "CREATE_SUBSCRIPTION_PRICE",
-            payload: {
-              subscriptionProductId: "sub1",
-              price: newPrices[0],
-            },
-          },
-          {
-            type: "CREATE_SUBSCRIPTION_PRICE",
-            payload: {
-              subscriptionProductId: "sub1",
-              price: newPrices[1],
-            },
-          },
-        ])
-      );
-    });
-
-    it("should not create a plan when subscription prices are unchanged", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                prices: [
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                    .prices,
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(0);
-    });
-
     it("should create a plan to delete and recreate introductory offers when they change", () => {
       const currentState = MOCK_STATE_1;
       const newOffers: IntroductoryOffer[] = [
@@ -944,6 +936,155 @@ describe("diff-service", () => {
           },
         },
       });
+    });
+
+    it("should not create a plan to update availability of a subscription when it is not specified in desired state", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete desiredState.subscriptionGroups![0].subscriptions[0].availability;
+
+      const plan = diff(currentState, desiredState);
+      const subAvailabilityAction = plan.find(
+        (a) => a.type === "UPDATE_SUBSCRIPTION_AVAILABILITY"
+      );
+      expect(subAvailabilityAction).toBeUndefined();
+    });
+
+    it("should create a plan to update the availability of a subscription when it is not specified in current state", () => {
+      const currentState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete currentState.subscriptionGroups![0].subscriptions[0].availability;
+
+      const desiredState: AppStoreModel = MOCK_STATE_1;
+
+      const plan = diff(currentState, desiredState);
+
+      const subAvailabilityAction = plan.find(
+        (a) => a.type === "UPDATE_SUBSCRIPTION_AVAILABILITY"
+      );
+
+      expect(subAvailabilityAction).toEqual({
+        type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+        payload: {
+          subscriptionProductId: "sub1",
+          availability:
+            MOCK_STATE_1.subscriptionGroups![0].subscriptions[0].availability,
+        },
+      });
+    });
+
+    it("should create a plan to add a subscription price", () => {
+      const currentState = MOCK_STATE_1;
+      const newPrice: Price = { territory: "CAN", price: "12.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                prices: [
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices,
+                  newPrice,
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId: "sub1",
+          price: newPrice,
+        },
+      });
+    });
+
+    it("should create a plan to delete a subscription price", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                prices: [],
+              },
+            ],
+          },
+        ],
+      };
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId: "sub1",
+          territory: "USA",
+        },
+      });
+    });
+
+    it("should create a plan to update a subscription price", () => {
+      const currentState = MOCK_STATE_1;
+      const updatedPrice: Price = { territory: "USA", price: "10.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                prices: [updatedPrice],
+              },
+            ],
+          },
+        ],
+      };
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId: "sub1",
+          price: updatedPrice,
+        },
+      });
+    });
+
+    it("should not create a plan when subscription prices are unchanged", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                prices: [
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices,
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(0);
     });
   });
 });

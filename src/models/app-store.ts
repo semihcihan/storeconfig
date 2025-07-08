@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TerritoryCodeSchema } from "./territories";
+import { TerritoryCodeSchema, territoryCodes } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 
 export const SubscriptionOfferDurationSchema = z.enum([
@@ -104,19 +104,40 @@ export const SubscriptionPeriodSchema = z.enum([
   "ONE_YEAR",
 ]);
 
-export const SubscriptionSchema = z.object({
-  productId: z.string(),
-  referenceName: z.string(),
-  groupLevel: z.number(),
-  subscriptionPeriod: SubscriptionPeriodSchema,
-  familySharable: z.boolean(),
-  prices: z.array(PriceSchema),
-  localizations: z.array(LocalizationSchema),
-  introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
-  promotionalOffers: z.array(PromotionalOfferSchema).optional(),
-  reviewNote: z.string().optional(),
-  availability: AvailabilitySchema,
-});
+export const SubscriptionSchema = z
+  .object({
+    productId: z.string(),
+    referenceName: z.string(),
+    groupLevel: z.number(),
+    subscriptionPeriod: SubscriptionPeriodSchema,
+    familySharable: z.boolean(),
+    prices: z.array(PriceSchema),
+    localizations: z.array(LocalizationSchema),
+    introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
+    promotionalOffers: z.array(PromotionalOfferSchema).optional(),
+    reviewNote: z.string().optional(),
+    availability: AvailabilitySchema,
+  })
+  .refine(
+    (data) => {
+      const allTerritoryCodes = new Set(territoryCodes);
+      const providedTerritoryCodes = new Set(
+        data.prices.map((price) => price.territory)
+      );
+
+      // Check if all territory codes are covered
+      for (const territoryCode of allTerritoryCodes) {
+        if (!providedTerritoryCodes.has(territoryCode)) {
+          return false;
+        }
+      }
+      return true;
+    },
+    {
+      message: "Subscription must include prices for all available territories",
+      path: ["prices"],
+    }
+  );
 
 export const SubscriptionGroupSchema = z.object({
   referenceName: z.string(),

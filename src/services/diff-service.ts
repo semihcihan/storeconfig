@@ -62,9 +62,14 @@ function diffPriceSchedule(
 
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
-    if (!currentPrice || currentPrice.price !== desiredPrice.price) {
+    if (!currentPrice) {
       actions.push({
         type: "CREATE_IAP_PRICE",
+        payload: { productId, price: desiredPrice },
+      });
+    } else if (currentPrice.price !== desiredPrice.price) {
+      actions.push({
+        type: "UPDATE_IAP_PRICE",
         payload: { productId, price: desiredPrice },
       });
     }
@@ -159,6 +164,11 @@ function diffInAppPurchases(
         payload: { inAppPurchase: desiredIap },
       });
     } else {
+      if (currentIap.type !== desiredIap.type) {
+        throw new Error(
+          `The type for in-app purchase ${productId} cannot be changed. Current: ${currentIap.type}, Desired: ${desiredIap.type}.`
+        );
+      }
       // Diff top-level properties
       const changes: any = {};
       if (desiredIap.referenceName !== currentIap.referenceName) {
@@ -193,7 +203,10 @@ function diffInAppPurchases(
         )
       );
 
-      if (!isEqual(currentIap.availability, desiredIap.availability)) {
+      if (
+        desiredIap.availability &&
+        !isEqual(currentIap.availability, desiredIap.availability)
+      ) {
         actions.push({
           type: "UPDATE_IAP_AVAILABILITY",
           payload: {
@@ -271,23 +284,40 @@ function diffSubscriptionPrices(
   currentPrices: Price[],
   desiredPrices: Price[]
 ): AnyAction[] {
-  // This is complex because prices are not updated, but re-created.
-  // A simple diff would create a lot of churn. For now, we'll assume
-  // that if the arrays are not equal, we delete all old prices and
-  // create all new ones.
-  // A more sophisticated approach could be used in the future.
-  if (!isEqual(currentPrices, desiredPrices)) {
-    const deleteActions: AnyAction[] = currentPrices.map((p) => ({
-      type: "DELETE_SUBSCRIPTION_PRICE",
-      payload: { subscriptionProductId, territory: p.territory },
-    }));
-    const createActions: AnyAction[] = desiredPrices.map((p) => ({
-      type: "CREATE_SUBSCRIPTION_PRICE",
-      payload: { subscriptionProductId, price: p },
-    }));
-    return [...deleteActions, ...createActions];
+  const actions: AnyAction[] = [];
+
+  const currentPricesByTerritory = new Map(
+    currentPrices.map((p) => [p.territory, p])
+  );
+  const desiredPricesByTerritory = new Map(
+    desiredPrices.map((p) => [p.territory, p])
+  );
+
+  for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
+    const currentPrice = currentPricesByTerritory.get(territory);
+    if (!currentPrice) {
+      actions.push({
+        type: "CREATE_SUBSCRIPTION_PRICE",
+        payload: { subscriptionProductId, price: desiredPrice },
+      });
+    } else if (currentPrice.price !== desiredPrice.price) {
+      actions.push({
+        type: "UPDATE_SUBSCRIPTION_PRICE",
+        payload: { subscriptionProductId, price: desiredPrice },
+      });
+    }
   }
-  return [];
+
+  for (const [territory] of currentPricesByTerritory.entries()) {
+    if (!desiredPricesByTerritory.has(territory)) {
+      actions.push({
+        type: "DELETE_SUBSCRIPTION_PRICE",
+        payload: { subscriptionProductId, territory },
+      });
+    }
+  }
+
+  return actions;
 }
 
 function diffIntroductoryOffers(
@@ -296,17 +326,18 @@ function diffIntroductoryOffers(
   desiredOffers: IntroductoryOffer[]
 ): AnyAction[] {
   if (!isEqual(currentOffers, desiredOffers)) {
-    const deleteActions: AnyAction[] = [
-      {
+    const actions: AnyAction[] = [];
+    if (currentOffers.length > 0) {
+      actions.push({
         type: "DELETE_ALL_INTRODUCTORY_OFFERS",
         payload: { subscriptionProductId },
-      },
-    ];
+      });
+    }
     const createActions: AnyAction[] = desiredOffers.map((o) => ({
       type: "CREATE_INTRODUCTORY_OFFER",
       payload: { subscriptionProductId, offer: o },
     }));
-    return [...deleteActions, ...createActions];
+    return [...actions, ...createActions];
   }
   return [];
 }
@@ -402,7 +433,10 @@ function diffSubscriptions(
         )
       );
 
-      if (!isEqual(currentSub.availability, desiredSub.availability)) {
+      if (
+        desiredSub.availability &&
+        !isEqual(currentSub.availability, desiredSub.availability)
+      ) {
         actions.push({
           type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
           payload: {
@@ -575,6 +609,18 @@ export function diff(
 ): Plan {
   logger.info("Starting diff...");
 
+  if (currentState.schemaVersion !== desiredState.schemaVersion) {
+    throw new Error(
+      `Schema version mismatch. Current: ${currentState.schemaVersion}, Desired: ${desiredState.schemaVersion}. Aborting.`
+    );
+  }
+
+  if (currentState.appId !== desiredState.appId) {
+    throw new Error(
+      `App ID mismatch. Current: ${currentState.appId}, Desired: ${desiredState.appId}. You cannot change the App ID of an existing configuration. Aborting.`
+    );
+  }
+
   const iapActions = diffInAppPurchases(currentState, desiredState);
   const subGroupActions = diffSubscriptionGroups(currentState, desiredState);
 
@@ -586,7 +632,8 @@ export function diff(
 }
 
 /*
-prices
+app pricing
+app availability
+
 offers considered as whole
-in app purchases not checked yet
 */

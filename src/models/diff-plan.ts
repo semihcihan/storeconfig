@@ -106,6 +106,14 @@ export type CreateIapPriceAction = Action<
   }
 >;
 
+export type UpdateIapPriceAction = Action<
+  "UPDATE_IAP_PRICE",
+  {
+    productId: string;
+    price: z.infer<typeof PriceSchema>;
+  }
+>;
+
 export type DeleteIapPriceAction = Action<
   "DELETE_IAP_PRICE",
   {
@@ -254,6 +262,14 @@ export type CreateSubscriptionPriceAction = Action<
   }
 >;
 
+export type UpdateSubscriptionPriceAction = Action<
+  "UPDATE_SUBSCRIPTION_PRICE",
+  {
+    subscriptionProductId: string;
+    price: z.infer<typeof PriceSchema>;
+  }
+>;
+
 export type DeleteSubscriptionPriceAction = Action<
   "DELETE_SUBSCRIPTION_PRICE",
   {
@@ -280,6 +296,14 @@ export type UpdateSubscriptionAvailabilityAction = Action<
 
 export type CreateIntroductoryOfferAction = Action<
   "CREATE_INTRODUCTORY_OFFER",
+  {
+    subscriptionProductId: string;
+    offer: z.infer<typeof IntroductoryOfferSchema>;
+  }
+>;
+
+export type DeleteIntroductoryOfferAction = Action<
+  "DELETE_INTRODUCTORY_OFFER",
   {
     subscriptionProductId: string;
     offer: z.infer<typeof IntroductoryOfferSchema>;
@@ -325,6 +349,7 @@ export type AnyAction =
   // IAP Prices
   | UpdateIapBaseTerritoryAction
   | CreateIapPriceAction
+  | UpdateIapPriceAction
   | DeleteIapPriceAction
   // IAP Availability
   | UpdateIapAvailabilityAction
@@ -344,11 +369,13 @@ export type AnyAction =
   | DeleteSubscriptionLocalizationAction
   // Subscription Prices
   | CreateSubscriptionPriceAction
+  | UpdateSubscriptionPriceAction
   | DeleteSubscriptionPriceAction
   // Subscription Availability
   | UpdateSubscriptionAvailabilityAction
   // Subscription Offers
   | CreateIntroductoryOfferAction
+  | DeleteIntroductoryOfferAction
   | DeleteAllIntroductoryOffersAction
   | CreatePromotionalOfferAction
   | DeletePromotionalOfferAction;
