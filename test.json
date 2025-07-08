@@ -1697,7 +1697,8 @@
                   "price": "5.99",
                   "territory": "ZWE"
                 }
-              ]
+              ],
+              "availableTerritories": ["CAN"]
             },
             {
               "type": "PAY_UP_FRONT",
@@ -2418,7 +2419,8 @@
                   "price": "0.99",
                   "territory": "ZWE"
                 }
-              ]
+              ],
+              "availableTerritories": ["CAN"]
             }
           ],
           "availability": {
@@ -3898,7 +3900,8 @@
                   "price": "1.99",
                   "territory": "ZWE"
                 }
-              ]
+              ],
+              "availableTerritories": ["CAN"]
             }
           ],
           "availability": {
