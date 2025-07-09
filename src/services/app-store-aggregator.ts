@@ -10,6 +10,8 @@ import {
   IntroductoryOfferSchema,
   SubscriptionOfferDurationSchema,
   SubscriptionPeriodSchema,
+  PriceScheduleSchema,
+  AvailabilitySchema,
 } from "../models/app-store";
 import { z } from "zod";
 import { api } from "../services/api";
@@ -1019,19 +1021,240 @@ function parseOfferDuration(
   return {};
 }
 
+async function fetchAppAvailability(appId: string) {
+  const response = await api.GET("/v1/apps/{id}/appAvailabilityV2", {
+    params: {
+      path: { id: appId },
+      query: {
+        include: ["territoryAvailabilities"],
+        "fields[appAvailabilities]": [
+          "availableInNewTerritories",
+          "territoryAvailabilities",
+        ],
+        "fields[territoryAvailabilities]": ["available", "territory"],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+async function fetchAppManualPrices(priceScheduleId: string) {
+  const response = await api.GET("/v1/appPriceSchedules/{id}/manualPrices", {
+    params: {
+      path: { id: priceScheduleId },
+      query: {
+        limit: 200,
+        include: ["territory", "appPricePoint"],
+        "fields[appPrices]": ["startDate", "endDate", "manual", "territory"],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+async function fetchAppAutomaticPrices(
+  priceScheduleId: string,
+  territoryId: string
+) {
+  const response = await api.GET("/v1/appPriceSchedules/{id}/automaticPrices", {
+    params: {
+      path: { id: priceScheduleId },
+      query: {
+        limit: 200,
+        include: ["territory", "appPricePoint"],
+        "fields[appPrices]": ["startDate", "endDate", "manual", "territory"],
+        "filter[territory]": [territoryId],
+      },
+    },
+  });
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+async function fetchAppPriceScheduleBaseTerritory(priceScheduleId: string) {
+  const response = await api.GET("/v1/appPriceSchedules/{id}/baseTerritory", {
+    params: { path: { id: priceScheduleId } },
+  });
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+function processAppPriceResponse(
+  response: components["schemas"]["AppPricesV2Response"]
+): z.infer<typeof PriceSchema>[] {
+  if (!response || !response.included) {
+    return [];
+  }
+
+  return (response.included as any[])
+    .filter(
+      (item): item is components["schemas"]["AppPricePointV3"] =>
+        item.type === "appPricePoints"
+    )
+    .map((pricePoint) => {
+      let territoryId: string | null = null;
+      try {
+        const decodedId = Buffer.from(pricePoint.id, "base64").toString(
+          "utf-8"
+        );
+        const idParts = JSON.parse(decodedId);
+        territoryId = idParts.t;
+      } catch (e) {
+        logger.warn(`Could not decode app price point ID: ${pricePoint.id}`);
+        return null;
+      }
+
+      if (!territoryId) return null;
+
+      const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
+      if (!territoryParseResult.success) {
+        logger.warn(
+          `Invalid territory code from app price point ID: ${territoryId}`
+        );
+        return null;
+      }
+
+      return {
+        price: pricePoint.attributes?.customerPrice || "",
+        territory: territoryParseResult.data,
+      };
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+}
+
+async function mapAppPricing(
+  appId: string
+): Promise<z.infer<typeof PriceScheduleSchema> | undefined> {
+  try {
+    let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
+    let prices: z.infer<typeof PriceSchema>[] = [];
+
+    const baseTerritoryResponse = await fetchAppPriceScheduleBaseTerritory(
+      appId
+    );
+    if (baseTerritoryResponse.data) {
+      const territoryParseResult = TerritoryCodeSchema.safeParse(
+        baseTerritoryResponse.data.id
+      );
+      if (territoryParseResult.success) {
+        baseTerritory = territoryParseResult.data;
+      }
+    }
+
+    const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
+      fetchAppManualPrices(appId),
+      fetchAppAutomaticPrices(appId, baseTerritory),
+    ]);
+
+    const manualPrices = processAppPriceResponse(manualPricesResponse);
+    const automaticPrices = processAppPriceResponse(automaticPricesResponse);
+
+    prices = [...manualPrices, ...automaticPrices];
+
+    // If there are no prices, we can assume there is no price schedule
+    if (prices.length === 0) {
+      const scheduleResponse = await api.GET("/v1/apps/{id}/appPriceSchedule", {
+        params: { path: { id: appId } },
+      });
+      if (scheduleResponse.error || !scheduleResponse.data) {
+        return undefined;
+      }
+    }
+
+    return { baseTerritory, prices };
+  } catch (error) {
+    logger.warn(
+      `Failed to process app pricing: ${
+        (error as any)?.message || JSON.stringify(error)
+      }`
+    );
+    return undefined;
+  }
+}
+
+async function mapAppAvailability(
+  response: components["schemas"]["AppAvailabilityV2Response"] | null
+): Promise<z.infer<typeof AvailabilitySchema> | undefined> {
+  if (!response || !response.data) {
+    return undefined;
+  }
+
+  const availability = response.data;
+  const availableInNewTerritories =
+    availability.attributes?.availableInNewTerritories || false;
+
+  const territoryAvailabilities = response.included || [];
+  const availableTerritories = territoryAvailabilities
+    .filter(
+      (item): item is components["schemas"]["TerritoryAvailability"] =>
+        item.type === "territoryAvailabilities" &&
+        item.attributes?.available === true
+    )
+    .map((territoryAvail) => {
+      const territoryId = territoryAvail.relationships?.territory?.data?.id;
+      if (!territoryId) return null;
+
+      const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
+      if (!territoryParseResult.success) {
+        logger.warn(`Invalid territory code from availability: ${territoryId}`);
+        return null;
+      }
+      return territoryParseResult.data;
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null);
+
+  return {
+    availableInNewTerritories,
+    availableTerritories,
+  };
+}
+
 export async function fetchAppStoreState(
   appId: string
 ): Promise<AppStoreModel> {
-  const inAppPurchasesData = await fetchInAppPurchases(appId);
-  const subscriptionGroupsData = await fetchSubscriptionGroups(appId);
-  const mappedIAPs = await mapInAppPurchases(inAppPurchasesData);
-  const mappedSubscriptionGroups = await mapSubscriptionGroups(
-    subscriptionGroupsData
-  );
+  const [inAppPurchasesData, subscriptionGroupsData, appAvailabilityData] =
+    await Promise.all([
+      fetchInAppPurchases(appId),
+      fetchSubscriptionGroups(appId),
+      fetchAppAvailability(appId).catch((error) => {
+        logger.warn(
+          `Failed to fetch app availability: ${
+            error?.message || JSON.stringify(error)
+          }`
+        );
+        return null;
+      }),
+    ]);
+
+  const [
+    mappedIAPs,
+    mappedSubscriptionGroups,
+    mappedPricing,
+    mappedAvailability,
+  ] = await Promise.all([
+    mapInAppPurchases(inAppPurchasesData),
+    mapSubscriptionGroups(subscriptionGroupsData),
+    mapAppPricing(appId),
+    mapAppAvailability(appAvailabilityData),
+  ]);
 
   const result: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: appId,
+    pricing: mappedPricing,
+    availability: mappedAvailability,
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
   };
