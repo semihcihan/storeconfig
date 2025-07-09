@@ -14,7 +14,7 @@
     "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
     "fetch": "npx ts-node src/cli.ts fetch --id 1523230470 --file fetch.json",
     "apply": "npx ts-node src/cli.ts apply --id 1523230470 --file fetch.json",
-    "apply-file": "npx ts-node src/cli.ts apply --current-state-file test.json --file fetch.json",
+    "apply-file": "npx ts-node src/cli.ts apply --current-state-file fetch.json --file apply.json",
     "plan": "npx ts-node src/cli.ts plan --id 1523230470 --file test2.json",
     "plan-file": "npx ts-node src/cli.ts plan --current-state-file test.json --file test2.json",
     "split-openapi": "npx redocly split openapi.json --outDir=openapi"
