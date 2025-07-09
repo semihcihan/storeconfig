@@ -49,6 +49,7 @@ const command: CommandModule = {
       const desiredState = AppStoreModelSchema.parse(JSON.parse(fileContents));
 
       let currentState: z.infer<typeof AppStoreModelSchema>;
+      let actualAppId: string;
 
       if (currentStateFile) {
         logger.info(`Using ${currentStateFile} as current state.`);
@@ -56,15 +57,17 @@ const command: CommandModule = {
         currentState = AppStoreModelSchema.parse(
           JSON.parse(currentFileContents)
         );
+        actualAppId = currentState.appId;
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
         currentState = await fetchAppStoreState(appId!);
+        actualAppId = appId!;
       }
 
       const plan = diff(currentState, desiredState);
 
       await showPlan(plan);
-      await apply(plan);
+      await apply(plan, actualAppId, currentState);
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.error("Data validation failed:", error.errors);

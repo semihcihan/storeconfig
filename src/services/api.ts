@@ -3,7 +3,7 @@ import type { paths } from "../generated/app-store-connect-api";
 import { getAuthToken } from "./auth";
 
 export const api = createClient<paths>({
-  baseUrl: "https://api.appstoreconnect.apple.com/v1",
+  baseUrl: "https://api.appstoreconnect.apple.com",
   headers: {
     Authorization: `Bearer ${getAuthToken()}`,
   },
