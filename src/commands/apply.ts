@@ -6,6 +6,7 @@ import { fetchAppStoreState } from "../services/app-store-aggregator";
 import { z } from "zod";
 import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
+import { showPlan } from "../services/plan-service";
 
 const command: CommandModule = {
   command: "apply",
@@ -62,8 +63,7 @@ const command: CommandModule = {
 
       const plan = diff(currentState, desiredState);
 
-      logger.info("Generated plan:", plan);
-
+      await showPlan(plan);
       await apply(plan);
     } catch (error) {
       if (error instanceof z.ZodError) {
