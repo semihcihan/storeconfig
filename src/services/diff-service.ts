@@ -391,6 +391,10 @@ function diffSubscriptions(
       if (desiredSub.subscriptionPeriod !== currentSub.subscriptionPeriod) {
         changes.subscriptionPeriod = desiredSub.subscriptionPeriod;
       }
+      if (desiredSub.reviewNote !== currentSub.reviewNote) {
+        changes.reviewNote = desiredSub.reviewNote;
+      }
+
       if (Object.keys(changes).length > 0) {
         actions.push({
           type: "UPDATE_SUBSCRIPTION",
@@ -475,13 +479,14 @@ function diffSubscriptionGroupLocalizations(
         payload: { groupReferenceName, localization: desiredLoc },
       });
     } else {
-      const changes: { name?: string; customAppName?: string } = {};
+      const changes: { name?: string; customName?: string } = {};
       if (desiredLoc.name !== currentLoc.name) {
         changes.name = desiredLoc.name;
       }
       if (desiredLoc.customName !== currentLoc.customName) {
-        changes.customAppName = desiredLoc.customName ?? undefined;
+        changes.customName = desiredLoc.customName ?? undefined;
       }
+
       if (Object.keys(changes).length > 0) {
         actions.push({
           type: "UPDATE_SUBSCRIPTION_GROUP_LOCALIZATION",
@@ -709,10 +714,3 @@ export function diff(
   logger.info(`Plan contains ${plan.length} actions.`);
   return plan;
 }
-
-/*
-app pricing
-app availability
-
-offers considered as whole
-*/

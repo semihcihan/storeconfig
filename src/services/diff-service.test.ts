@@ -716,7 +716,7 @@ describe("diff-service", () => {
           locale: "en-US",
           changes: {
             name: "Updated Group 1",
-            customAppName: "Updated Custom Group 1",
+            customName: "Updated Custom Group 1",
           },
         },
       });
@@ -1184,6 +1184,145 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(0);
+    });
+
+    it("should not create a plan when states are identical", () => {
+      const plan = diff(MOCK_STATE_1, MOCK_STATE_1);
+      expect(plan).toEqual([]);
+    });
+
+    it("should create a plan to update a subscription's review note", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                reviewNote: "This is a new review note.",
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_SUBSCRIPTION",
+        payload: {
+          productId: "sub1",
+          changes: {
+            reviewNote: "This is a new review note.",
+          },
+        },
+      });
+    });
+
+    it("should create a plan to add an introductory offer when none existed", () => {
+      const currentState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete currentState.subscriptionGroups![0].subscriptions[0]
+        .introductoryOffers;
+
+      const desiredState = MOCK_STATE_1;
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          offer:
+            MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+              .introductoryOffers![0],
+        },
+      });
+    });
+
+    it("should create a plan to remove all introductory offers", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          offer:
+            MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+              .introductoryOffers![0],
+        },
+      });
+    });
+
+    it("should create a plan to add a promotional offer when none existed", () => {
+      const currentState: AppStoreModel = JSON.parse(
+        JSON.stringify(MOCK_STATE_1)
+      );
+      delete currentState.subscriptionGroups![0].subscriptions[0]
+        .promotionalOffers;
+
+      const desiredState = MOCK_STATE_1;
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_PROMOTIONAL_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          offer:
+            MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+              .promotionalOffers![0],
+        },
+      });
+    });
+
+    it("should create a plan to remove all promotional offers", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                promotionalOffers: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_PROMOTIONAL_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          offerId:
+            MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+              .promotionalOffers![0].id,
+        },
+      });
     });
   });
 });
