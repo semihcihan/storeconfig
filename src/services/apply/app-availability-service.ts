@@ -1,6 +1,9 @@
-import { logger } from "../utils/logger";
-import { api } from "./api";
-import { AppStoreModelSchema, AvailabilitySchema } from "../models/app-store";
+import { logger } from "../../utils/logger";
+import { api } from "../api";
+import {
+  AppStoreModelSchema,
+  AvailabilitySchema,
+} from "../../models/app-store";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;

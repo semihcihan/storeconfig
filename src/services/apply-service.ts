@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
-import { updateAppAvailability } from "./app-availability-service";
+import { updateAppAvailability } from "./apply/app-availability-service";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
