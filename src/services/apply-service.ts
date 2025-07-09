@@ -2,6 +2,12 @@ import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./apply/app-availability-service";
+import {
+  updateAppBaseTerritory,
+  createAppPrice,
+  updateAppPrice,
+  deleteAppPrice,
+} from "./apply/app-pricing-service";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -79,20 +85,20 @@ async function executeAction(
       );
       break;
     case "UPDATE_APP_BASE_TERRITORY":
-      logger.info(`  Territory: ${action.payload.territory}`);
-      // Call API to update app base territory
+      await updateAppBaseTerritory(
+        action.payload.territory,
+        appId,
+        currentState
+      );
       break;
     case "CREATE_APP_PRICE":
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      // Call API to create app price
+      await createAppPrice(action.payload.price, appId, currentState);
       break;
     case "UPDATE_APP_PRICE":
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      // Call API to update app price
+      await updateAppPrice(action.payload.price, appId, currentState);
       break;
     case "DELETE_APP_PRICE":
-      logger.info(`  Territory: ${action.payload.territory}`);
-      // Call API to delete app price
+      await deleteAppPrice(action.payload.territory, appId, currentState);
       break;
 
     // Subscription Groups
