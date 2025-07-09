@@ -18,10 +18,21 @@ export const PriceSchema = z.object({
   territory: TerritoryCodeSchema,
 });
 
-export const PriceScheduleSchema = z.object({
-  baseTerritory: TerritoryCodeSchema,
-  prices: z.array(PriceSchema),
-});
+export const PriceScheduleSchema = z
+  .object({
+    baseTerritory: TerritoryCodeSchema,
+    prices: z.array(PriceSchema),
+  })
+  .refine(
+    (data) => {
+      return data.prices.some((p) => p.territory === data.baseTerritory);
+    },
+    {
+      message:
+        "The base territory must have a corresponding price in the prices array",
+      path: ["prices"],
+    }
+  );
 
 export const LocalizationSchema = z.object({
   locale: LocaleCodeSchema,
