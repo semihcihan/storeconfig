@@ -203,6 +203,11 @@ async function executeAction(action: AnyAction) {
       );
       logger.info(`  Offer ID: ${action.payload.offerId}`);
       break;
+    default:
+      const _exhaustiveCheck: never = action;
+      throw new Error(
+        `Unhandled action type: ${(_exhaustiveCheck as any).type}`
+      );
   }
 }
 
