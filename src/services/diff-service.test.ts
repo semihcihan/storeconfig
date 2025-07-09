@@ -27,6 +27,14 @@ const EMPTY_STATE: AppStoreModel = {
 
 const MOCK_STATE_1: AppStoreModel = {
   ...EMPTY_STATE,
+  pricing: {
+    baseTerritory: "USA",
+    prices: [{ territory: "USA", price: "4.99" }],
+  },
+  availability: {
+    availableInNewTerritories: true,
+    availableTerritories: ["USA"],
+  },
   inAppPurchases: [
     {
       productId: "iap1",
@@ -119,6 +127,112 @@ describe("diff-service", () => {
       const currentState = { ...EMPTY_STATE, appId: "app1" };
       const desiredState = { ...EMPTY_STATE, appId: "app2" };
       expect(() => diff(currentState, desiredState)).toThrow(/App ID mismatch/);
+    });
+
+    it("should create a plan to update app availability", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        availability: {
+          availableInNewTerritories: false,
+          availableTerritories: ["USA", "CAN"],
+        },
+      };
+      const plan = diff(currentState, desiredState);
+      const appAvailabilityAction = plan.find(
+        (a) => a.type === "UPDATE_APP_AVAILABILITY"
+      );
+      expect(appAvailabilityAction).toEqual({
+        type: "UPDATE_APP_AVAILABILITY",
+        payload: {
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA", "CAN"],
+          },
+        },
+      });
+    });
+
+    it("should create a plan to update the base territory of the app price schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN",
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+      const action = plan.find((a) => a.type === "UPDATE_APP_BASE_TERRITORY");
+      expect(action).toEqual({
+        type: "UPDATE_APP_BASE_TERRITORY",
+        payload: {
+          territory: "CAN",
+        },
+      });
+    });
+
+    it("should create a plan to add a price to the app price schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const newPrice: Price = { territory: "CAN", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+      const action = plan.find((a) => a.type === "CREATE_APP_PRICE");
+      expect(action).toEqual({
+        type: "CREATE_APP_PRICE",
+        payload: {
+          price: newPrice,
+        },
+      });
+    });
+
+    it("should create a plan to remove a price from the app price schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          prices: [],
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+      const action = plan.find((a) => a.type === "DELETE_APP_PRICE");
+      expect(action).toEqual({
+        type: "DELETE_APP_PRICE",
+        payload: {
+          territory: "USA",
+        },
+      });
+    });
+
+    it("should create a plan to update a price in the app price schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const updatedPrice: Price = { territory: "USA", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          prices: [updatedPrice],
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+      const action = plan.find((a) => a.type === "UPDATE_APP_PRICE");
+      expect(action).toEqual({
+        type: "UPDATE_APP_PRICE",
+        payload: {
+          price: updatedPrice,
+        },
+      });
     });
 
     it("should throw an error if an in-app purchase type is changed", () => {

@@ -134,6 +134,45 @@ export type UpdateIapAvailabilityAction = Action<
 >;
 
 // #################################################################################
+// App-level Action Types
+// #################################################################################
+
+export type UpdateAppAvailabilityAction = Action<
+  "UPDATE_APP_AVAILABILITY",
+  {
+    availability: z.infer<typeof AvailabilitySchema>;
+  }
+>;
+
+export type UpdateAppBaseTerritoryAction = Action<
+  "UPDATE_APP_BASE_TERRITORY",
+  {
+    territory: z.infer<typeof TerritoryCodeSchema>;
+  }
+>;
+
+export type CreateAppPriceAction = Action<
+  "CREATE_APP_PRICE",
+  {
+    price: z.infer<typeof PriceSchema>;
+  }
+>;
+
+export type UpdateAppPriceAction = Action<
+  "UPDATE_APP_PRICE",
+  {
+    price: z.infer<typeof PriceSchema>;
+  }
+>;
+
+export type DeleteAppPriceAction = Action<
+  "DELETE_APP_PRICE",
+  {
+    territory: z.infer<typeof TerritoryCodeSchema>;
+  }
+>;
+
+// #################################################################################
 // Subscription Group Action Types
 // #################################################################################
 
@@ -345,6 +384,12 @@ export type AnyAction =
   | DeleteIapPriceAction
   // IAP Availability
   | UpdateIapAvailabilityAction
+  // App-level
+  | UpdateAppAvailabilityAction
+  | UpdateAppBaseTerritoryAction
+  | CreateAppPriceAction
+  | UpdateAppPriceAction
+  | DeleteAppPriceAction
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction

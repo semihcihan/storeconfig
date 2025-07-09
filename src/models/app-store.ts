@@ -159,6 +159,8 @@ export const InAppPurchaseSchema = z.object({
 export const AppStoreModelSchema = z.object({
   schemaVersion: z.string(),
   appId: z.string(),
+  pricing: PriceScheduleSchema.optional(),
+  availability: AvailabilitySchema.optional(),
   inAppPurchases: z.array(InAppPurchaseSchema).optional(),
   subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
 });

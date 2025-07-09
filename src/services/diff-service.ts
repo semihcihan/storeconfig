@@ -597,6 +597,81 @@ function diffSubscriptionGroups(
   return actions;
 }
 
+function diffAppAvailability(
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
+): AnyAction[] {
+  const actions: AnyAction[] = [];
+  if (
+    desiredState.availability &&
+    !isEqual(currentState.availability, desiredState.availability)
+  ) {
+    actions.push({
+      type: "UPDATE_APP_AVAILABILITY",
+      payload: {
+        availability: desiredState.availability,
+      },
+    });
+  }
+  return actions;
+}
+
+function diffAppPricing(
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
+): AnyAction[] {
+  const actions: AnyAction[] = [];
+
+  const currentSchedule = currentState.pricing;
+  const desiredSchedule = desiredState.pricing;
+
+  if (!desiredSchedule) {
+    return actions;
+  }
+
+  const current = currentSchedule || { baseTerritory: "USA", prices: [] };
+
+  if (current.baseTerritory !== desiredSchedule.baseTerritory) {
+    actions.push({
+      type: "UPDATE_APP_BASE_TERRITORY",
+      payload: { territory: desiredSchedule.baseTerritory },
+    });
+  }
+
+  const currentPricesByTerritory = new Map(
+    current.prices.map((p) => [p.territory, p])
+  );
+  const desiredPricesByTerritory = new Map(
+    desiredSchedule.prices.map((p) => [p.territory, p])
+  );
+
+  for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
+    const currentPrice = currentPricesByTerritory.get(territory);
+    if (!currentPrice) {
+      actions.push({
+        type: "CREATE_APP_PRICE",
+        payload: { price: desiredPrice },
+      });
+    } else if (currentPrice.price !== desiredPrice.price) {
+      actions.push({
+        type: "UPDATE_APP_PRICE",
+        payload: { price: desiredPrice },
+      });
+    }
+  }
+
+  for (const [territory] of currentPricesByTerritory.entries()) {
+    if (!desiredPricesByTerritory.has(territory)) {
+      actions.push({
+        type: "DELETE_APP_PRICE",
+        payload: { territory },
+      });
+    }
+  }
+
+  return actions;
+}
+
 export function diff(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
@@ -617,8 +692,18 @@ export function diff(
 
   const iapActions = diffInAppPurchases(currentState, desiredState);
   const subGroupActions = diffSubscriptionGroups(currentState, desiredState);
+  const appAvailabilityActions = diffAppAvailability(
+    currentState,
+    desiredState
+  );
+  const appPricingActions = diffAppPricing(currentState, desiredState);
 
-  const plan: Plan = [...iapActions, ...subGroupActions];
+  const plan: Plan = [
+    ...iapActions,
+    ...subGroupActions,
+    ...appAvailabilityActions,
+    ...appPricingActions,
+  ];
 
   logger.info("Diff completed.");
   logger.info(`Plan contains ${plan.length} actions.`);
