@@ -140,7 +140,7 @@ export type UpdateIapAvailabilityAction = Action<
 export type UpdateAppAvailabilityAction = Action<
   "UPDATE_APP_AVAILABILITY",
   {
-    availability: z.infer<typeof AvailabilitySchema>;
+    availableTerritories: z.infer<typeof TerritoryCodeSchema>[];
   }
 >;
 

@@ -608,13 +608,16 @@ function diffAppAvailability(
 ): AnyAction[] {
   const actions: AnyAction[] = [];
   if (
-    desiredState.availability &&
-    !isEqual(currentState.availability, desiredState.availability)
+    desiredState.availableTerritories &&
+    !isEqual(
+      currentState.availableTerritories,
+      desiredState.availableTerritories
+    )
   ) {
     actions.push({
       type: "UPDATE_APP_AVAILABILITY",
       payload: {
-        availability: desiredState.availability,
+        availableTerritories: desiredState.availableTerritories,
       },
     });
   }

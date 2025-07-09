@@ -31,10 +31,7 @@ const MOCK_STATE_1: AppStoreModel = {
     baseTerritory: "USA",
     prices: [{ territory: "USA", price: "4.99" }],
   },
-  availability: {
-    availableInNewTerritories: true,
-    availableTerritories: ["USA"],
-  },
+  availableTerritories: ["USA"],
   inAppPurchases: [
     {
       productId: "iap1",
@@ -133,10 +130,7 @@ describe("diff-service", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
-        availability: {
-          availableInNewTerritories: false,
-          availableTerritories: ["USA", "CAN"],
-        },
+        availableTerritories: ["USA", "CAN"],
       };
       const plan = diff(currentState, desiredState);
       const appAvailabilityAction = plan.find(
@@ -145,10 +139,7 @@ describe("diff-service", () => {
       expect(appAvailabilityAction).toEqual({
         type: "UPDATE_APP_AVAILABILITY",
         payload: {
-          availability: {
-            availableInNewTerritories: false,
-            availableTerritories: ["USA", "CAN"],
-          },
+          availableTerritories: ["USA", "CAN"],
         },
       });
     });

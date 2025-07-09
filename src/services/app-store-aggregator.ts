@@ -1186,14 +1186,10 @@ async function mapAppPricing(
 
 async function mapAppAvailability(
   response: components["schemas"]["AppAvailabilityV2Response"] | null
-): Promise<z.infer<typeof AvailabilitySchema> | undefined> {
+): Promise<z.infer<typeof TerritoryCodeSchema>[] | undefined> {
   if (!response || !response.data) {
     return undefined;
   }
-
-  const availability = response.data;
-  const availableInNewTerritories =
-    availability.attributes?.availableInNewTerritories || false;
 
   const territoryAvailabilities = response.included || [];
   const availableTerritories = territoryAvailabilities
@@ -1215,10 +1211,7 @@ async function mapAppAvailability(
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
 
-  return {
-    availableInNewTerritories,
-    availableTerritories,
-  };
+  return availableTerritories;
 }
 
 export async function fetchAppStoreState(
@@ -1242,7 +1235,7 @@ export async function fetchAppStoreState(
     mappedIAPs,
     mappedSubscriptionGroups,
     mappedPricing,
-    mappedAvailability,
+    mappedAvailableTerritories,
   ] = await Promise.all([
     mapInAppPurchases(inAppPurchasesData),
     mapSubscriptionGroups(subscriptionGroupsData),
@@ -1254,7 +1247,7 @@ export async function fetchAppStoreState(
     schemaVersion: "1.0.0",
     appId: appId,
     pricing: mappedPricing,
-    availability: mappedAvailability,
+    availableTerritories: mappedAvailableTerritories,
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
   };

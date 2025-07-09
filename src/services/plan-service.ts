@@ -64,7 +64,9 @@ async function showAction(action: AnyAction) {
     // App-level
     case "UPDATE_APP_AVAILABILITY":
       logger.info(
-        `  Availability: ${JSON.stringify(action.payload.availability)}`
+        `  Available Territories: ${JSON.stringify(
+          action.payload.availableTerritories
+        )}`
       );
       // Call API to update app availability
       break;

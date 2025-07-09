@@ -73,7 +73,7 @@ async function executeAction(
     // App-level
     case "UPDATE_APP_AVAILABILITY":
       await updateAppAvailability(
-        action.payload.availability,
+        action.payload.availableTerritories,
         appId,
         currentState
       );

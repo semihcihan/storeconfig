@@ -4,6 +4,7 @@ import {
   AppStoreModelSchema,
   AvailabilitySchema,
 } from "../../models/app-store";
+import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -128,32 +129,16 @@ async function ensureAppAvailability(appId: string): Promise<string> {
 }
 
 export async function updateAppAvailability(
-  availability: Availability,
+  availableTerritories: z.infer<typeof TerritoryCodeSchema>[],
   appId: string,
   currentState: AppStoreModel
 ): Promise<void> {
-  logger.info(`  Availability: ${JSON.stringify(availability)}`);
+  logger.info(
+    `  Available Territories: ${JSON.stringify(availableTerritories)}`
+  );
 
   // Ensure app availability resource exists
   const appAvailabilityId = await ensureAppAvailability(appId);
-
-  // Update availableInNewTerritories setting if needed
-  const currentAvailability = currentState.availability;
-  const desiredAvailability = availability;
-
-  if (
-    !currentAvailability ||
-    currentAvailability.availableInNewTerritories !==
-      desiredAvailability.availableInNewTerritories
-  ) {
-    logger.info(
-      `Updating availableInNewTerritories: ${desiredAvailability.availableInNewTerritories}`
-    );
-    logger.warn(
-      "⚠️  availableInNewTerritories updates are not yet implemented"
-    );
-    logger.warn("📝 Please manually update this setting in App Store Connect");
-  }
 
   // Get territory availability mapping
   logger.info("Getting territory availability mappings...");
@@ -161,10 +146,8 @@ export async function updateAppAvailability(
   logger.info(`Found ${territoryMap.size} territories`);
 
   // Build sets of current and desired territories
-  const currentTerritories = new Set(
-    currentAvailability?.availableTerritories || []
-  );
-  const desiredTerritories = new Set(desiredAvailability.availableTerritories);
+  const currentTerritories = new Set(currentState.availableTerritories || []);
+  const desiredTerritories = new Set(availableTerritories);
 
   // Find territories that need to be enabled
   const territoriesToEnable = Array.from(desiredTerritories).filter(

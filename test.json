@@ -11,7 +11,6 @@
     ]
   },
   "availability": {
-    "availableInNewTerritories": true,
     "availableTerritories": ["USA", "CAN"]
   },
   "inAppPurchases": [
