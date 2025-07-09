@@ -43,6 +43,10 @@ async function showAction(action: AnyAction) {
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
       break;
+    case "UPDATE_IAP_PRICE":
+      logger.info(`  Product ID: ${action.payload.productId}`);
+      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
+      break;
     case "DELETE_IAP_PRICE":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Territory: ${action.payload.territory}`);
@@ -55,6 +59,30 @@ async function showAction(action: AnyAction) {
         `  Availability: ${JSON.stringify(action.payload.availability)}`
       );
       // Call API to update IAP availability
+      break;
+
+    // App-level
+    case "UPDATE_APP_AVAILABILITY":
+      logger.info(
+        `  Availability: ${JSON.stringify(action.payload.availability)}`
+      );
+      // Call API to update app availability
+      break;
+    case "UPDATE_APP_BASE_TERRITORY":
+      logger.info(`  Territory: ${action.payload.territory}`);
+      // Call API to update app base territory
+      break;
+    case "CREATE_APP_PRICE":
+      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
+      // Call API to create app price
+      break;
+    case "UPDATE_APP_PRICE":
+      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
+      // Call API to update app price
+      break;
+    case "DELETE_APP_PRICE":
+      logger.info(`  Territory: ${action.payload.territory}`);
+      // Call API to delete app price
       break;
 
     // Subscription Groups
@@ -125,6 +153,12 @@ async function showAction(action: AnyAction) {
       );
       logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
       break;
+    case "UPDATE_SUBSCRIPTION_PRICE":
+      logger.info(
+        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
+      );
+      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
+      break;
     case "DELETE_SUBSCRIPTION_PRICE":
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
@@ -145,6 +179,12 @@ async function showAction(action: AnyAction) {
 
     // Subscription Offers
     case "CREATE_INTRODUCTORY_OFFER":
+      logger.info(
+        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
+      );
+      logger.info(`  Offer: ${JSON.stringify(action.payload.offer)}`);
+      break;
+    case "DELETE_INTRODUCTORY_OFFER":
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
       );
