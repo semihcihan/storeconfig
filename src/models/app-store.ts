@@ -162,9 +162,3 @@ export const AppStoreModelSchema = z.object({
   inAppPurchases: z.array(InAppPurchaseSchema).optional(),
   subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
 });
-
-export const InAppPurchaseLocalizationSchema = z.object({
-  locale: LocaleCodeSchema,
-  name: z.string(),
-  description: z.string(),
-});

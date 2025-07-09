@@ -1,6 +1,5 @@
 import { z } from "zod";
 import {
-  InAppPurchaseLocalizationSchema,
   InAppPurchaseSchema,
   PriceSchema,
   SubscriptionGroupLocalizationSchema,
@@ -62,7 +61,7 @@ export type CreateIapLocalizationAction = Action<
   "CREATE_IAP_LOCALIZATION",
   {
     productId: string;
-    localization: z.infer<typeof InAppPurchaseLocalizationSchema>;
+    localization: z.infer<typeof LocalizationSchema>;
   }
 >;
 

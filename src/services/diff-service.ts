@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   AppStoreModelSchema,
-  InAppPurchaseLocalizationSchema,
   InAppPurchaseSchema,
   PriceScheduleSchema,
   SubscriptionGroupLocalizationSchema,
@@ -18,9 +17,7 @@ import { isEqual } from "lodash";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
-type InAppPurchaseLocalization = z.infer<
-  typeof InAppPurchaseLocalizationSchema
->;
+type InAppPurchaseLocalization = z.infer<typeof LocalizationSchema>;
 type SubscriptionGroup = z.infer<typeof SubscriptionGroupSchema>;
 type Subscription = z.infer<typeof SubscriptionSchema>;
 type SubscriptionLocalization = z.infer<typeof LocalizationSchema>;
