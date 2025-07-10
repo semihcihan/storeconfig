@@ -639,19 +639,19 @@ function diffAppPricing(
 
   // Handle case where pricing is being added (current undefined, desired defined)
   if (!currentSchedule && desiredSchedule) {
-    // Set the base territory
-    actions.push({
-      type: "UPDATE_APP_BASE_TERRITORY",
-      payload: { territory: desiredSchedule.baseTerritory },
-    });
-
-    // Create all prices
+    // Create all prices first
     for (const price of desiredSchedule.prices) {
       actions.push({
         type: "CREATE_APP_PRICE",
         payload: { price },
       });
     }
+
+    // Then set the base territory (after prices exist)
+    actions.push({
+      type: "UPDATE_APP_BASE_TERRITORY",
+      payload: { territory: desiredSchedule.baseTerritory },
+    });
 
     return actions;
   }
@@ -670,13 +670,6 @@ function diffAppPricing(
     return actions;
   }
 
-  if (currentSchedule.baseTerritory !== desiredSchedule.baseTerritory) {
-    actions.push({
-      type: "UPDATE_APP_BASE_TERRITORY",
-      payload: { territory: desiredSchedule.baseTerritory },
-    });
-  }
-
   const currentPricesByTerritory = new Map(
     currentSchedule.prices.map((p) => [p.territory, p])
   );
@@ -684,6 +677,11 @@ function diffAppPricing(
     desiredSchedule.prices.map((p) => [p.territory, p])
   );
 
+  const baseTerritoryChanging =
+    currentSchedule.baseTerritory !== desiredSchedule.baseTerritory;
+  const newBaseTerritory = desiredSchedule.baseTerritory;
+
+  // Step 1: Create new prices (especially important if the new base territory needs a price)
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
     if (!currentPrice) {
@@ -691,7 +689,13 @@ function diffAppPricing(
         type: "CREATE_APP_PRICE",
         payload: { price: desiredPrice },
       });
-    } else if (currentPrice.price !== desiredPrice.price) {
+    }
+  }
+
+  // Step 2: Update existing prices
+  for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
+    const currentPrice = currentPricesByTerritory.get(territory);
+    if (currentPrice && currentPrice.price !== desiredPrice.price) {
       actions.push({
         type: "UPDATE_APP_PRICE",
         payload: { price: desiredPrice },
@@ -699,6 +703,15 @@ function diffAppPricing(
     }
   }
 
+  // Step 3: Update base territory (now that all required prices exist)
+  if (baseTerritoryChanging) {
+    actions.push({
+      type: "UPDATE_APP_BASE_TERRITORY",
+      payload: { territory: newBaseTerritory },
+    });
+  }
+
+  // Step 4: Delete prices that are no longer needed (after base territory is updated)
   for (const [territory] of currentPricesByTerritory.entries()) {
     if (!desiredPricesByTerritory.has(territory)) {
       actions.push({

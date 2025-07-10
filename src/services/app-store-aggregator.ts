@@ -1,6 +1,4 @@
-import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
-import * as fs from "fs";
 import {
   AppStoreModelSchema,
   InAppPurchaseSchema,
@@ -1138,20 +1136,28 @@ async function mapAppPricing(
   appId: string
 ): Promise<z.infer<typeof PriceScheduleSchema> | undefined> {
   try {
-    let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
-    let prices: z.infer<typeof PriceSchema>[] = [];
-
+    // First, try to get the base territory from the price schedule
     const baseTerritoryResponse = await fetchAppPriceScheduleBaseTerritory(
       appId
     );
-    if (baseTerritoryResponse.data) {
-      const territoryParseResult = TerritoryCodeSchema.safeParse(
-        baseTerritoryResponse.data.id
-      );
-      if (territoryParseResult.success) {
-        baseTerritory = territoryParseResult.data;
-      }
+
+    if (!baseTerritoryResponse.data) {
+      // No base territory found - this means pricing was not created yet
+      return undefined;
     }
+
+    const territoryParseResult = TerritoryCodeSchema.safeParse(
+      baseTerritoryResponse.data.id
+    );
+
+    if (!territoryParseResult.success) {
+      logger.warn(
+        `Invalid base territory code: ${baseTerritoryResponse.data.id}`
+      );
+      return undefined;
+    }
+
+    const baseTerritory = territoryParseResult.data;
 
     const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
       fetchAppManualPrices(appId),
@@ -1161,26 +1167,22 @@ async function mapAppPricing(
     const manualPrices = processAppPriceResponse(manualPricesResponse);
     const automaticPrices = processAppPriceResponse(automaticPricesResponse);
 
-    prices = [...manualPrices, ...automaticPrices];
-
-    // If there are no prices, check if there's actually a price schedule
-    if (prices.length === 0) {
-      const scheduleResponse = await api.GET("/v1/apps/{id}/appPriceSchedule", {
-        params: { path: { id: appId } },
-      });
-      if (scheduleResponse.error || !scheduleResponse.data) {
-        // No price schedule exists - this is normal for new apps
-        return undefined;
-      }
-    }
+    const prices = [...manualPrices, ...automaticPrices];
 
     return { baseTerritory, prices };
   } catch (error) {
-    logger.error(
-      `Failed to process app pricing: ${
-        (error as any)?.message || JSON.stringify(error)
-      }`
-    );
+    // Only handle 404 errors gracefully - they mean pricing doesn't exist yet
+    const is404Error =
+      (error as any)?.status === 404 ||
+      (error as any)?.response?.status === 404;
+
+    if (is404Error) {
+      logger.info(
+        `App pricing not found or not configured yet for app ${appId}`
+      );
+      return undefined;
+    }
+    // For other errors (auth, server errors, etc.), re-throw so user knows something is wrong
     throw error;
   }
 }
@@ -1203,157 +1205,90 @@ async function mapAppAvailability(
       const territoryId = territoryAvail.relationships?.territory?.data?.id;
       if (!territoryId) return null;
 
-      const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
-      if (!territoryParseResult.success) {
-        logger.warn(`Invalid territory code from availability: ${territoryId}`);
-        return null;
-      }
-      return territoryParseResult.data;
+      return TerritoryCodeSchema.parse(territoryId);
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
 
   return availableTerritories;
 }
 
-async function fetchAppWithDetails(appId: string) {
-  const response = await api.GET("/v1/apps/{id}", {
-    params: {
-      path: { id: appId },
-      query: {
-        include: ["inAppPurchasesV2", "subscriptionGroups"],
-        "fields[apps]": [
-          "name",
-          "bundleId",
-          "sku",
-          "primaryLocale",
-          "inAppPurchasesV2",
-          "subscriptionGroups",
-          "appAvailabilityV2",
-          "appPriceSchedule",
-        ],
-      },
-    },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
-  return response.data;
-}
-
-function hasResource(
-  appResponse: components["schemas"]["AppResponse"],
-  resourceType: string
-): boolean {
-  return (
-    appResponse.included?.some((resource) => resource.type === resourceType) ||
-    false
-  );
-}
-
-function hasRelationship(
-  appResponse: components["schemas"]["AppResponse"],
-  relationshipName: string
-): boolean {
-  const relationships = appResponse.data.relationships;
-  if (!relationships) return false;
-
-  const relationship = (relationships as any)[relationshipName];
-  if (!relationship) return false;
-
-  // Check if the relationship has data (either array with items or single object)
-  if (Array.isArray(relationship.data)) {
-    return relationship.data.length > 0;
-  }
-
-  return !!relationship.data;
-}
-
 export async function fetchAppStoreState(
   appId: string
 ): Promise<AppStoreModel> {
-  // First, fetch the app with its basic details and relationships
-  const appResponse = await fetchAppWithDetails(appId);
+  logger.info(`Fetching app store state for app ID: ${appId}`);
 
-  logger.info(
-    `App details fetched: ${appResponse.data.attributes?.name || "Unknown"}`
-  );
+  // Make all four calls directly and handle 404s appropriately
+  const inAppPurchasesPromise = fetchInAppPurchases(appId).catch((error) => {
+    const is404Error =
+      (error as any)?.status === 404 ||
+      (error as any)?.response?.status === 404;
 
-  // Check what resources are available based on the app response
-  const hasInAppPurchases = hasResource(appResponse, "inAppPurchasesV2");
-  const hasSubscriptionGroups = hasResource(appResponse, "subscriptionGroups");
-  const hasAppAvailability = hasRelationship(appResponse, "appAvailabilityV2");
-  const hasAppPriceSchedule = hasRelationship(appResponse, "appPriceSchedule");
+    if (is404Error) {
+      logger.info(
+        `In-app purchases not found for app ${appId} (not created yet)`
+      );
+      return { data: [], included: [], links: { self: "" } };
+    }
+    // For non-404 errors, re-throw so the user knows something is wrong
+    throw error;
+  });
 
-  logger.info(
-    `Available resources: IAPs=${hasInAppPurchases}, Subscriptions=${hasSubscriptionGroups}, Availability=${hasAppAvailability}, PriceSchedule=${hasAppPriceSchedule}`
-  );
+  const subscriptionGroupsPromise = fetchSubscriptionGroups(appId).catch(
+    (error) => {
+      const is404Error =
+        (error as any)?.status === 404 ||
+        (error as any)?.response?.status === 404;
 
-  // Only fetch resources that actually exist
-  const fetchPromises: Promise<any>[] = [];
-
-  const inAppPurchasesPromise = hasInAppPurchases
-    ? fetchInAppPurchases(appId).catch((error) => {
-        logger.warn(
-          `Failed to fetch in-app purchases: ${
-            error?.message || JSON.stringify(error)
-          }`
+      if (is404Error) {
+        logger.info(
+          `Subscription groups not found for app ${appId} (not created yet)`
         );
         return { data: [], included: [], links: { self: "" } };
-      })
-    : Promise.resolve({ data: [], included: [], links: { self: "" } });
+      }
+      // For non-404 errors, re-throw so the user knows something is wrong
+      throw error;
+    }
+  );
 
-  const subscriptionGroupsPromise = hasSubscriptionGroups
-    ? fetchSubscriptionGroups(appId).catch((error) => {
-        logger.warn(
-          `Failed to fetch subscription groups: ${
-            error?.message || JSON.stringify(error)
-          }`
-        );
-        return { data: [], included: [], links: { self: "" } };
-      })
-    : Promise.resolve({ data: [], included: [], links: { self: "" } });
+  const appAvailabilityPromise = fetchAppAvailability(appId).catch((error) => {
+    const is404Error =
+      (error as any)?.status === 404 ||
+      (error as any)?.response?.status === 404;
 
-  const appAvailabilityPromise = hasAppAvailability
-    ? fetchAppAvailability(appId).catch((error) => {
-        logger.warn(
-          `Failed to fetch app availability: ${
-            error?.message || JSON.stringify(error)
-          }`
-        );
-        return null;
-      })
-    : Promise.resolve(null);
+    if (is404Error) {
+      logger.info(
+        `App availability not found for app ${appId} (not created yet)`
+      );
+      return null;
+    }
+    // For non-404 errors, re-throw so the user knows something is wrong
+    throw error;
+  });
 
-  const [inAppPurchasesData, subscriptionGroupsData, appAvailabilityData] =
-    await Promise.all([
-      inAppPurchasesPromise,
-      subscriptionGroupsPromise,
-      appAvailabilityPromise,
-    ]);
-
-  const appPricingPromise = hasAppPriceSchedule
-    ? mapAppPricing(appId).catch((error) => {
-        logger.warn(
-          `Failed to fetch app pricing: ${
-            error?.message || JSON.stringify(error)
-          }`
-        );
-        return undefined;
-      })
-    : Promise.resolve(undefined);
+  const appPricingPromise = mapAppPricing(appId).catch((error) => {
+    // mapAppPricing already handles 404s internally and returns undefined
+    // For any other errors, re-throw so the user knows something is wrong
+    throw error;
+  });
 
   const [
-    mappedIAPs,
-    mappedSubscriptionGroups,
+    inAppPurchasesData,
+    subscriptionGroupsData,
+    appAvailabilityData,
     mappedPricing,
-    mappedAvailableTerritories,
   ] = await Promise.all([
-    mapInAppPurchases(inAppPurchasesData),
-    mapSubscriptionGroups(subscriptionGroupsData),
+    inAppPurchasesPromise,
+    subscriptionGroupsPromise,
+    appAvailabilityPromise,
     appPricingPromise,
-    mapAppAvailability(appAvailabilityData),
   ]);
+
+  const [mappedIAPs, mappedSubscriptionGroups, mappedAvailableTerritories] =
+    await Promise.all([
+      mapInAppPurchases(inAppPurchasesData),
+      mapSubscriptionGroups(subscriptionGroupsData),
+      mapAppAvailability(appAvailabilityData),
+    ]);
 
   const result: AppStoreModel = {
     schemaVersion: "1.0.0",
