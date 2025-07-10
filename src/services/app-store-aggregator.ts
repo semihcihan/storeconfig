@@ -1214,22 +1214,133 @@ async function mapAppAvailability(
   return availableTerritories;
 }
 
+async function fetchAppWithDetails(appId: string) {
+  const response = await api.GET("/v1/apps/{id}", {
+    params: {
+      path: { id: appId },
+      query: {
+        include: ["inAppPurchasesV2", "subscriptionGroups"],
+        "fields[apps]": [
+          "name",
+          "bundleId",
+          "sku",
+          "primaryLocale",
+          "inAppPurchasesV2",
+          "subscriptionGroups",
+          "appAvailabilityV2",
+          "appPriceSchedule",
+        ],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+  return response.data;
+}
+
+function hasResource(
+  appResponse: components["schemas"]["AppResponse"],
+  resourceType: string
+): boolean {
+  return (
+    appResponse.included?.some((resource) => resource.type === resourceType) ||
+    false
+  );
+}
+
+function hasRelationship(
+  appResponse: components["schemas"]["AppResponse"],
+  relationshipName: string
+): boolean {
+  const relationships = appResponse.data.relationships;
+  if (!relationships) return false;
+
+  const relationship = (relationships as any)[relationshipName];
+  if (!relationship) return false;
+
+  // Check if the relationship has data (either array with items or single object)
+  if (Array.isArray(relationship.data)) {
+    return relationship.data.length > 0;
+  }
+
+  return !!relationship.data;
+}
+
 export async function fetchAppStoreState(
   appId: string
 ): Promise<AppStoreModel> {
-  const [inAppPurchasesData, subscriptionGroupsData, appAvailabilityData] =
-    await Promise.all([
-      fetchInAppPurchases(appId),
-      fetchSubscriptionGroups(appId),
-      fetchAppAvailability(appId).catch((error) => {
+  // First, fetch the app with its basic details and relationships
+  const appResponse = await fetchAppWithDetails(appId);
+
+  logger.info(
+    `App details fetched: ${appResponse.data.attributes?.name || "Unknown"}`
+  );
+
+  // Check what resources are available based on the app response
+  const hasInAppPurchases = hasResource(appResponse, "inAppPurchasesV2");
+  const hasSubscriptionGroups = hasResource(appResponse, "subscriptionGroups");
+  const hasAppAvailability = hasRelationship(appResponse, "appAvailabilityV2");
+  const hasAppPriceSchedule = hasRelationship(appResponse, "appPriceSchedule");
+
+  logger.info(
+    `Available resources: IAPs=${hasInAppPurchases}, Subscriptions=${hasSubscriptionGroups}, Availability=${hasAppAvailability}, PriceSchedule=${hasAppPriceSchedule}`
+  );
+
+  // Only fetch resources that actually exist
+  const fetchPromises: Promise<any>[] = [];
+
+  const inAppPurchasesPromise = hasInAppPurchases
+    ? fetchInAppPurchases(appId).catch((error) => {
+        logger.warn(
+          `Failed to fetch in-app purchases: ${
+            error?.message || JSON.stringify(error)
+          }`
+        );
+        return { data: [], included: [], links: { self: "" } };
+      })
+    : Promise.resolve({ data: [], included: [], links: { self: "" } });
+
+  const subscriptionGroupsPromise = hasSubscriptionGroups
+    ? fetchSubscriptionGroups(appId).catch((error) => {
+        logger.warn(
+          `Failed to fetch subscription groups: ${
+            error?.message || JSON.stringify(error)
+          }`
+        );
+        return { data: [], included: [], links: { self: "" } };
+      })
+    : Promise.resolve({ data: [], included: [], links: { self: "" } });
+
+  const appAvailabilityPromise = hasAppAvailability
+    ? fetchAppAvailability(appId).catch((error) => {
         logger.warn(
           `Failed to fetch app availability: ${
             error?.message || JSON.stringify(error)
           }`
         );
         return null;
-      }),
+      })
+    : Promise.resolve(null);
+
+  const [inAppPurchasesData, subscriptionGroupsData, appAvailabilityData] =
+    await Promise.all([
+      inAppPurchasesPromise,
+      subscriptionGroupsPromise,
+      appAvailabilityPromise,
     ]);
+
+  const appPricingPromise = hasAppPriceSchedule
+    ? mapAppPricing(appId).catch((error) => {
+        logger.warn(
+          `Failed to fetch app pricing: ${
+            error?.message || JSON.stringify(error)
+          }`
+        );
+        return undefined;
+      })
+    : Promise.resolve(undefined);
 
   const [
     mappedIAPs,
@@ -1239,7 +1350,7 @@ export async function fetchAppStoreState(
   ] = await Promise.all([
     mapInAppPurchases(inAppPurchasesData),
     mapSubscriptionGroups(subscriptionGroupsData),
-    mapAppPricing(appId),
+    appPricingPromise,
     mapAppAvailability(appAvailabilityData),
   ]);
 
