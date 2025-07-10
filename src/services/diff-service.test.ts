@@ -1357,31 +1357,20 @@ describe("Optional field detection - App pricing bug", () => {
       // This is the main test case - should NOT be empty
       expect(plan.length).toBeGreaterThan(0);
 
-      // Should contain pricing-related actions
-      const pricingActions = plan.filter(
-        (a) =>
-          a.type.includes("APP_PRICE") || a.type.includes("APP_BASE_TERRITORY")
-      );
-      expect(pricingActions.length).toBeGreaterThan(0);
-
-      // Specifically check for the base territory and price creation
-      const baseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(baseTerritoryAction?.payload.territory).toBe("USA");
-
-      const priceActions = plan.filter((a) => a.type === "CREATE_APP_PRICE");
-      expect(priceActions).toHaveLength(2);
-
-      const usaPrice = priceActions.find(
-        (a) => a.payload.price.territory === "USA"
-      );
-      expect(usaPrice?.payload.price.price).toBe("1.99");
-
-      const turPrice = priceActions.find(
-        (a) => a.payload.price.territory === "TUR"
-      );
-      expect(turPrice?.payload.price.price).toBe("19.99");
+      // Should contain exactly one CREATE_APP_PRICE_SCHEDULE action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_APP_PRICE_SCHEDULE",
+        payload: {
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [
+              { price: "1.99", territory: "USA" },
+              { price: "19.99", territory: "TUR" },
+            ],
+          },
+        },
+      });
     });
 
     it("should detect when pricing changes from undefined to defined with multiple territories", () => {
@@ -1414,12 +1403,20 @@ describe("Optional field detection - App pricing bug", () => {
       // Should not be empty - this is the main bug
       expect(plan.length).toBeGreaterThan(0);
 
-      // Should detect the need to create pricing structure
-      const pricingRelatedActions = plan.filter(
-        (a) =>
-          a.type.includes("APP_PRICE") || a.type.includes("APP_BASE_TERRITORY")
-      );
-      expect(pricingRelatedActions.length).toBeGreaterThan(0);
+      // Should contain exactly one CREATE_APP_PRICE_SCHEDULE action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_APP_PRICE_SCHEDULE",
+        payload: {
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [
+              { territory: "USA", price: "1.99" },
+              { territory: "TUR", price: "19.99" },
+            ],
+          },
+        },
+      });
     });
 
     it("should throw an error when trying to remove all pricing (going from defined to undefined)", () => {
