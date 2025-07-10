@@ -17,6 +17,19 @@ import type { components } from "../generated/app-store-connect-api";
 import { TerritoryCodeSchema } from "../models/territories";
 import { LocaleCodeSchema } from "../models/locales";
 
+// Helper function to check if an error is a 404 from the Apple API
+function isNotFoundError(error: any): boolean {
+  // Check for 404 status in the errors array (Apple API format)
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.some(
+      (err: any) => err.status === "404" || err.status === 404
+    );
+  }
+
+  // Fallback to other common error formats
+  return error?.status === 404 || error?.response?.status === 404;
+}
+
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 type SubscriptionGroup = z.infer<typeof SubscriptionGroupSchema>;
@@ -520,6 +533,8 @@ async function mapInAppPurchaseAvailability(
       availableTerritories: [],
     };
   }
+
+  logger.info(`  Availability: ${JSON.stringify(availability)}`);
 
   const availableInNewTerritories =
     availability.attributes?.availableInNewTerritories || false;
@@ -1172,9 +1187,7 @@ async function mapAppPricing(
     return { baseTerritory, prices };
   } catch (error) {
     // Only handle 404 errors gracefully - they mean pricing doesn't exist yet
-    const is404Error =
-      (error as any)?.status === 404 ||
-      (error as any)?.response?.status === 404;
+    const is404Error = isNotFoundError(error);
 
     if (is404Error) {
       logger.info(
@@ -1219,9 +1232,7 @@ export async function fetchAppStoreState(
 
   // Make all four calls directly and handle 404s appropriately
   const inAppPurchasesPromise = fetchInAppPurchases(appId).catch((error) => {
-    const is404Error =
-      (error as any)?.status === 404 ||
-      (error as any)?.response?.status === 404;
+    const is404Error = isNotFoundError(error);
 
     if (is404Error) {
       logger.info(
@@ -1235,9 +1246,7 @@ export async function fetchAppStoreState(
 
   const subscriptionGroupsPromise = fetchSubscriptionGroups(appId).catch(
     (error) => {
-      const is404Error =
-        (error as any)?.status === 404 ||
-        (error as any)?.response?.status === 404;
+      const is404Error = isNotFoundError(error);
 
       if (is404Error) {
         logger.info(
@@ -1251,9 +1260,7 @@ export async function fetchAppStoreState(
   );
 
   const appAvailabilityPromise = fetchAppAvailability(appId).catch((error) => {
-    const is404Error =
-      (error as any)?.status === 404 ||
-      (error as any)?.response?.status === 404;
+    const is404Error = isNotFoundError(error);
 
     if (is404Error) {
       logger.info(

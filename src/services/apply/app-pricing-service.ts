@@ -13,12 +13,22 @@ type Price = z.infer<typeof PriceSchema>;
 type Territory = z.infer<typeof TerritoryCodeSchema>;
 
 // Helper function to get app price schedule ID from app ID
-async function getAppPriceScheduleId(appId: string): Promise<string> {
+async function getAppPriceScheduleId(appId: string): Promise<string | null> {
   const response = await api.GET("/v1/apps/{id}/appPriceSchedule", {
     params: { path: { id: appId } },
   });
 
   if (response.error) {
+    // Check if it's a 404 error (no price schedule exists)
+    const is404Error = response.error.errors?.some(
+      (err: any) => err.status === "404" || err.status === 404
+    );
+
+    if (is404Error) {
+      // No price schedule exists yet
+      return null;
+    }
+
     logger.error(
       `Failed to get app price schedule: ${JSON.stringify(response.error)}`
     );
@@ -172,6 +182,14 @@ export async function updateAppBaseTerritory(
   try {
     // Get current price schedule to preserve manual prices
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
+
+    if (!currentPriceScheduleId) {
+      throw new Error(
+        "Cannot update base territory when no price schedule exists. " +
+          "Create prices first before updating the base territory."
+      );
+    }
+
     const currentManualPrices = await getCurrentManualPrices(
       currentPriceScheduleId
     );
@@ -246,30 +264,21 @@ export async function updateAppBaseTerritory(
   }
 }
 
-// Create app price by updating the existing price schedule
-export async function createAppPrice(
-  price: Price,
-  appId: string,
-  desiredState: AppStoreModel
+// Create app price schedule from scratch (when no pricing exists)
+export async function createAppPriceSchedule(
+  priceSchedule: z.infer<typeof PriceScheduleSchema>,
+  appId: string
 ): Promise<void> {
   logger.info(
-    `Creating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
+    `Creating app price schedule with base territory ${priceSchedule.baseTerritory} for app ${appId}`
   );
 
   try {
-    // Get current price schedule details
-    const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const allPrices = desiredState.pricing?.prices;
-
-    if (!allPrices || allPrices.length === 0) {
-      throw new Error("No prices found in desired state");
-    }
-
-    // Create manual price IDs for all territories in the desired state
+    // Create manual price IDs for all territories in the price schedule
     const manualPrices = [];
     const includedPrices = [];
 
-    for (const priceEntry of allPrices) {
+    for (const priceEntry of priceSchedule.prices) {
       const pricePointId = await findAppPricePointId(
         priceEntry.price,
         priceEntry.territory,
@@ -309,8 +318,186 @@ export async function createAppPrice(
       });
     }
 
-    // Get base territory for the new price schedule
-    const baseTerritory = await getBaseTerritory(currentPriceScheduleId);
+    // Create a new price schedule with the base territory and all prices
+    const response = await api.POST("/v1/appPriceSchedules", {
+      body: {
+        data: {
+          type: "appPriceSchedules" as const,
+          relationships: {
+            app: {
+              data: {
+                type: "apps" as const,
+                id: appId,
+              },
+            },
+            baseTerritory: {
+              data: {
+                type: "territories" as const,
+                id: priceSchedule.baseTerritory,
+              },
+            },
+            manualPrices: {
+              data: manualPrices,
+            },
+          },
+        },
+        included: includedPrices,
+      },
+    });
+
+    if (response.error) {
+      logger.error(
+        `Failed to create app price schedule: ${JSON.stringify(response.error)}`
+      );
+      throw new Error(
+        `Failed to create app price schedule: ${
+          response.error.errors?.[0]?.detail || "Unknown error"
+        }`
+      );
+    }
+
+    logger.info(
+      `Successfully created app price schedule with base territory ${priceSchedule.baseTerritory}`
+    );
+  } catch (error) {
+    logger.error(`Error creating app price schedule: ${error}`);
+    throw error;
+  }
+}
+
+// Create app price by updating the existing price schedule
+export async function createAppPrice(
+  price: Price,
+  appId: string,
+  desiredState: AppStoreModel
+): Promise<void> {
+  logger.info(
+    `Creating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
+  );
+
+  try {
+    // Check if a price schedule already exists
+    const currentPriceScheduleId = await getAppPriceScheduleId(appId);
+    const allPrices = desiredState.pricing?.prices;
+
+    if (!allPrices || allPrices.length === 0) {
+      throw new Error("No prices found in desired state");
+    }
+
+    if (!desiredState.pricing?.baseTerritory) {
+      throw new Error("No base territory found in desired state");
+    }
+
+    // Create manual price IDs for all territories in the desired state
+    const manualPrices = [];
+    const includedPrices = [];
+    const processedTerritories = new Set<string>();
+
+    for (const priceEntry of allPrices) {
+      const pricePointId = await findAppPricePointId(
+        priceEntry.price,
+        priceEntry.territory,
+        appId
+      );
+
+      // Use a temporary ID for this request
+      const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+
+      manualPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+      });
+
+      includedPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+        attributes: {
+          manual: true,
+          startDate: null,
+          endDate: null,
+        },
+        relationships: {
+          appPricePoint: {
+            data: {
+              type: "appPricePoints" as const,
+              id: pricePointId,
+            },
+          },
+          territory: {
+            data: {
+              type: "territories" as const,
+              id: priceEntry.territory,
+            },
+          },
+        },
+      });
+
+      processedTerritories.add(priceEntry.territory);
+    }
+
+    // Determine the base territory
+    let baseTerritory: string;
+    if (currentPriceScheduleId) {
+      // If price schedule exists, get the current base territory
+      baseTerritory = await getBaseTerritory(currentPriceScheduleId);
+
+      // Check if base territory is changing
+      const desiredBaseTerritory = desiredState.pricing.baseTerritory;
+      const baseTerritoryChanging = baseTerritory !== desiredBaseTerritory;
+
+      // If base territory is changing and current base territory is not in desired prices,
+      // temporarily include the current base territory price to satisfy Apple's requirement
+      if (baseTerritoryChanging && !processedTerritories.has(baseTerritory)) {
+        // Get current prices to find the current base territory price
+        const currentManualPrices = await getCurrentManualPrices(
+          currentPriceScheduleId
+        );
+        const currentBaseTerritoryPrice = currentManualPrices.find(
+          (p: any) => p.relationships?.territory?.data?.id === baseTerritory
+        );
+
+        if (currentBaseTerritoryPrice) {
+          const tempPriceId = `temp-price-${baseTerritory}-${Date.now()}`;
+
+          manualPrices.push({
+            type: "appPrices" as const,
+            id: tempPriceId,
+          });
+
+          includedPrices.push({
+            type: "appPrices" as const,
+            id: tempPriceId,
+            attributes: {
+              manual: true,
+              startDate: null,
+              endDate: null,
+            },
+            relationships: {
+              appPricePoint: {
+                data: {
+                  type: "appPricePoints" as const,
+                  id: currentBaseTerritoryPrice.relationships?.appPricePoint
+                    ?.data?.id,
+                },
+              },
+              territory: {
+                data: {
+                  type: "territories" as const,
+                  id: baseTerritory,
+                },
+              },
+            },
+          });
+
+          logger.info(
+            `Temporarily including current base territory ${baseTerritory} price during creation`
+          );
+        }
+      }
+    } else {
+      // If no price schedule exists, use the base territory from desired state
+      baseTerritory = desiredState.pricing.baseTerritory;
+    }
 
     // Create a new price schedule with all the desired prices
     const response = await api.POST("/v1/appPriceSchedules", {
@@ -327,7 +514,7 @@ export async function createAppPrice(
             baseTerritory: {
               data: {
                 type: "territories" as const,
-                id: baseTerritory,
+                id: baseTerritory, // Use current base territory until it's explicitly updated
               },
             },
             manualPrices: {
@@ -372,15 +559,29 @@ export async function updateAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
+
+    if (!currentPriceScheduleId) {
+      throw new Error(
+        "Cannot update price when no price schedule exists. " +
+          "Create prices first before updating them."
+      );
+    }
+
     const allPrices = desiredState.pricing?.prices;
 
     if (!allPrices || allPrices.length === 0) {
       throw new Error("No prices found in desired state");
     }
 
+    // Get current base territory and check if it's changing
+    const currentBaseTerritory = await getBaseTerritory(currentPriceScheduleId);
+    const desiredBaseTerritory = desiredState.pricing?.baseTerritory;
+    const baseTerritoryChanging = currentBaseTerritory !== desiredBaseTerritory;
+
     // Create manual price IDs for all territories in the desired state
     const manualPrices = [];
     const includedPrices = [];
+    const processedTerritories = new Set<string>();
 
     for (const priceEntry of allPrices) {
       const pricePointId = await findAppPricePointId(
@@ -420,12 +621,65 @@ export async function updateAppPrice(
           },
         },
       });
+
+      processedTerritories.add(priceEntry.territory);
     }
 
-    // Get base territory for the new price schedule
-    const baseTerritory = await getBaseTerritory(currentPriceScheduleId);
+    // If base territory is changing and current base territory is not in desired prices,
+    // temporarily include the current base territory price to satisfy Apple's requirement
+    if (
+      baseTerritoryChanging &&
+      !processedTerritories.has(currentBaseTerritory)
+    ) {
+      // Get current prices to find the current base territory price
+      const currentManualPrices = await getCurrentManualPrices(
+        currentPriceScheduleId
+      );
+      const currentBaseTerritoryPrice = currentManualPrices.find(
+        (p: any) =>
+          p.relationships?.territory?.data?.id === currentBaseTerritory
+      );
 
-    // Create a new price schedule with all the desired prices
+      if (currentBaseTerritoryPrice) {
+        const tempPriceId = `temp-price-${currentBaseTerritory}-${Date.now()}`;
+
+        manualPrices.push({
+          type: "appPrices" as const,
+          id: tempPriceId,
+        });
+
+        includedPrices.push({
+          type: "appPrices" as const,
+          id: tempPriceId,
+          attributes: {
+            manual: true,
+            startDate: null,
+            endDate: null,
+          },
+          relationships: {
+            appPricePoint: {
+              data: {
+                type: "appPricePoints" as const,
+                id: currentBaseTerritoryPrice.relationships?.appPricePoint?.data
+                  ?.id,
+              },
+            },
+            territory: {
+              data: {
+                type: "territories" as const,
+                id: currentBaseTerritory,
+              },
+            },
+          },
+        });
+
+        logger.info(
+          `Temporarily including current base territory ${currentBaseTerritory} price during update`
+        );
+      }
+    }
+
+    // Create a new price schedule with all the prices (including temporary base territory price if needed)
     const response = await api.POST("/v1/appPriceSchedules", {
       body: {
         data: {
@@ -440,7 +694,7 @@ export async function updateAppPrice(
             baseTerritory: {
               data: {
                 type: "territories" as const,
-                id: baseTerritory,
+                id: currentBaseTerritory, // Use current base territory until it's explicitly updated
               },
             },
             manualPrices: {
@@ -483,16 +737,27 @@ export async function deleteAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
+
+    if (!currentPriceScheduleId) {
+      throw new Error("Cannot delete price when no price schedule exists.");
+    }
+
     const allPrices = desiredState.pricing?.prices;
 
     if (!allPrices || allPrices.length === 0) {
       throw new Error("No prices found in desired state");
     }
 
+    // Get current base territory and check if it's changing
+    const currentBaseTerritory = await getBaseTerritory(currentPriceScheduleId);
+    const desiredBaseTerritory = desiredState.pricing?.baseTerritory;
+    const baseTerritoryChanging = currentBaseTerritory !== desiredBaseTerritory;
+
     // Create manual price IDs for all territories in the desired state
     // (excluding the territory to be deleted)
     const manualPrices = [];
     const includedPrices = [];
+    const processedTerritories = new Set<string>();
 
     for (const priceEntry of allPrices) {
       const pricePointId = await findAppPricePointId(
@@ -532,6 +797,62 @@ export async function deleteAppPrice(
           },
         },
       });
+
+      processedTerritories.add(priceEntry.territory);
+    }
+
+    // If base territory is changing and current base territory is not in desired prices,
+    // temporarily include the current base territory price to satisfy Apple's requirement
+    if (
+      baseTerritoryChanging &&
+      !processedTerritories.has(currentBaseTerritory)
+    ) {
+      // Get current prices to find the current base territory price
+      const currentManualPrices = await getCurrentManualPrices(
+        currentPriceScheduleId
+      );
+      const currentBaseTerritoryPrice = currentManualPrices.find(
+        (p: any) =>
+          p.relationships?.territory?.data?.id === currentBaseTerritory
+      );
+
+      if (currentBaseTerritoryPrice) {
+        const tempPriceId = `temp-price-${currentBaseTerritory}-${Date.now()}`;
+
+        manualPrices.push({
+          type: "appPrices" as const,
+          id: tempPriceId,
+        });
+
+        includedPrices.push({
+          type: "appPrices" as const,
+          id: tempPriceId,
+          attributes: {
+            manual: true,
+            startDate: null,
+            endDate: null,
+          },
+          relationships: {
+            appPricePoint: {
+              data: {
+                type: "appPricePoints" as const,
+                id: currentBaseTerritoryPrice.relationships?.appPricePoint?.data
+                  ?.id,
+              },
+            },
+            territory: {
+              data: {
+                type: "territories" as const,
+                id: currentBaseTerritory,
+              },
+            },
+          },
+        });
+
+        logger.info(
+          `Temporarily including current base territory ${currentBaseTerritory} price during deletion`
+        );
+      }
     }
 
     // Get base territory for the new price schedule

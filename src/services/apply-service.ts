@@ -3,10 +3,11 @@ import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./apply/app-availability-service";
 import {
-  updateAppBaseTerritory,
   createAppPrice,
   updateAppPrice,
   deleteAppPrice,
+  updateAppBaseTerritory,
+  createAppPriceSchedule,
 } from "./apply/app-pricing-service";
 import { z } from "zod";
 
@@ -91,6 +92,9 @@ async function executeAction(
         appId,
         desiredState
       );
+      break;
+    case "CREATE_APP_PRICE_SCHEDULE":
+      await createAppPriceSchedule(action.payload.priceSchedule, appId);
       break;
     case "CREATE_APP_PRICE":
       await createAppPrice(action.payload.price, appId, desiredState);

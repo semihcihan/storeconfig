@@ -74,6 +74,15 @@ async function showAction(action: AnyAction) {
       logger.info(`  Territory: ${action.payload.territory}`);
       // Call API to update app base territory
       break;
+    case "CREATE_APP_PRICE_SCHEDULE":
+      logger.info(
+        `  Base Territory: ${action.payload.priceSchedule.baseTerritory}`
+      );
+      logger.info(
+        `  Number of Prices: ${action.payload.priceSchedule.prices.length}`
+      );
+      // Call API to create app price schedule
+      break;
     case "CREATE_APP_PRICE":
       logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
       // Call API to create app price

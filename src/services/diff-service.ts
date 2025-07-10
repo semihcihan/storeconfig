@@ -639,18 +639,10 @@ function diffAppPricing(
 
   // Handle case where pricing is being added (current undefined, desired defined)
   if (!currentSchedule && desiredSchedule) {
-    // Create all prices first
-    for (const price of desiredSchedule.prices) {
-      actions.push({
-        type: "CREATE_APP_PRICE",
-        payload: { price },
-      });
-    }
-
-    // Then set the base territory (after prices exist)
+    // Create the entire price schedule at once
     actions.push({
-      type: "UPDATE_APP_BASE_TERRITORY",
-      payload: { territory: desiredSchedule.baseTerritory },
+      type: "CREATE_APP_PRICE_SCHEDULE",
+      payload: { priceSchedule: desiredSchedule },
     });
 
     return actions;

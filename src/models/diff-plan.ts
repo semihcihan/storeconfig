@@ -10,6 +10,7 @@ import {
   LocalizationSchema,
   AvailabilitySchema,
   SubscriptionPeriodSchema,
+  PriceScheduleSchema,
 } from "./app-store";
 import { LocaleCodeSchema } from "./locales";
 import { TerritoryCodeSchema } from "./territories";
@@ -148,6 +149,13 @@ export type UpdateAppBaseTerritoryAction = Action<
   "UPDATE_APP_BASE_TERRITORY",
   {
     territory: z.infer<typeof TerritoryCodeSchema>;
+  }
+>;
+
+export type CreateAppPriceScheduleAction = Action<
+  "CREATE_APP_PRICE_SCHEDULE",
+  {
+    priceSchedule: z.infer<typeof PriceScheduleSchema>;
   }
 >;
 
@@ -387,6 +395,7 @@ export type AnyAction =
   // App-level
   | UpdateAppAvailabilityAction
   | UpdateAppBaseTerritoryAction
+  | CreateAppPriceScheduleAction
   | CreateAppPriceAction
   | UpdateAppPriceAction
   | DeleteAppPriceAction
