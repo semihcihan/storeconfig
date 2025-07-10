@@ -15,7 +15,8 @@ type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 async function executeAction(
   action: AnyAction,
   appId: string,
-  currentState: AppStoreModel
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
@@ -88,17 +89,17 @@ async function executeAction(
       await updateAppBaseTerritory(
         action.payload.territory,
         appId,
-        currentState
+        desiredState
       );
       break;
     case "CREATE_APP_PRICE":
-      await createAppPrice(action.payload.price, appId, currentState);
+      await createAppPrice(action.payload.price, appId, desiredState);
       break;
     case "UPDATE_APP_PRICE":
-      await updateAppPrice(action.payload.price, appId, currentState);
+      await updateAppPrice(action.payload.price, appId, desiredState);
       break;
     case "DELETE_APP_PRICE":
-      await deleteAppPrice(action.payload.territory, appId, currentState);
+      await deleteAppPrice(action.payload.territory, appId, desiredState);
       break;
 
     // Subscription Groups
@@ -229,12 +230,13 @@ async function executeAction(
 export async function apply(
   plan: AnyAction[],
   appId: string,
-  currentState: AppStoreModel
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
 ) {
   logger.info(`Applying plan with ${plan.length} actions for app ${appId}`);
 
   for (const action of plan) {
-    await executeAction(action, appId, currentState);
+    await executeAction(action, appId, currentState, desiredState);
   }
 
   logger.info("Plan application completed");

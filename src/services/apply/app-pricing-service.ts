@@ -165,7 +165,7 @@ async function getBaseTerritory(priceScheduleId: string): Promise<string> {
 export async function updateAppBaseTerritory(
   territory: Territory,
   appId: string,
-  currentState: AppStoreModel
+  desiredState: AppStoreModel
 ): Promise<void> {
   logger.info(`Updating app base territory to ${territory} for app ${appId}`);
 
@@ -230,10 +230,10 @@ export async function updateAppBaseTerritory(
 
     if (response.error) {
       logger.error(
-        `Failed to update base territory: ${JSON.stringify(response.error)}`
+        `Failed to update app base territory: ${JSON.stringify(response.error)}`
       );
       throw new Error(
-        `Failed to update base territory: ${
+        `Failed to update app base territory: ${
           response.error.errors?.[0]?.detail || "Unknown error"
         }`
       );
@@ -246,11 +246,11 @@ export async function updateAppBaseTerritory(
   }
 }
 
-// Create app price by creating a new price schedule with the additional price
+// Create app price by updating the existing price schedule
 export async function createAppPrice(
   price: Price,
   appId: string,
-  currentState: AppStoreModel
+  desiredState: AppStoreModel
 ): Promise<void> {
   logger.info(
     `Creating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
@@ -259,44 +259,60 @@ export async function createAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const currentManualPrices = await getCurrentManualPrices(
-      currentPriceScheduleId
-    );
+    const allPrices = desiredState.pricing?.prices || [];
+
+    if (allPrices.length === 0) {
+      throw new Error("No prices found in desired state");
+    }
+
+    // Create manual price IDs for all territories in the desired state
+    const manualPrices = [];
+    const includedPrices = [];
+
+    for (const priceEntry of allPrices) {
+      const pricePointId = await findAppPricePointId(
+        priceEntry.price,
+        priceEntry.territory,
+        appId
+      );
+
+      // Use a temporary ID for this request
+      const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+
+      manualPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+      });
+
+      includedPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+        attributes: {
+          manual: true,
+          startDate: null,
+          endDate: null,
+        },
+        relationships: {
+          appPricePoint: {
+            data: {
+              type: "appPricePoints" as const,
+              id: pricePointId,
+            },
+          },
+          territory: {
+            data: {
+              type: "territories" as const,
+              id: priceEntry.territory,
+            },
+          },
+        },
+      });
+    }
+
+    // Get base territory for the new price schedule
     const baseTerritory = await getBaseTerritory(currentPriceScheduleId);
 
-    // Find the price point for the new price
-    const pricePointId = await findAppPricePointId(
-      price.price,
-      price.territory,
-      appId
-    );
-
-    // Create new price schedule with the additional price
-    const newPriceId = `new-price-${Date.now()}`;
-    const newPriceEntry = {
-      type: "appPrices" as const,
-      id: newPriceId,
-      attributes: {
-        startDate: new Date().toISOString().split("T")[0], // Start today
-        manual: true,
-        // No endDate = permanent
-      },
-      relationships: {
-        appPricePoint: {
-          data: {
-            type: "appPricePoints" as const,
-            id: pricePointId,
-          },
-        },
-        territory: {
-          data: {
-            type: "territories" as const,
-            id: price.territory,
-          },
-        },
-      },
-    };
-
+    // Create a new price schedule with all the desired prices
     const response = await api.POST("/v1/appPriceSchedules", {
       body: {
         data: {
@@ -315,44 +331,11 @@ export async function createAppPrice(
               },
             },
             manualPrices: {
-              data: [
-                ...currentManualPrices
-                  .filter(
-                    (price: any) =>
-                      price.relationships?.appPricePoint?.data?.id &&
-                      price.relationships?.territory?.data?.id
-                  )
-                  .map((price: any) => ({
-                    type: "appPrices" as const,
-                    id: price.id,
-                  })),
-                {
-                  type: "appPrices" as const,
-                  id: newPriceId,
-                },
-              ],
+              data: manualPrices,
             },
           },
         },
-        included: [
-          ...currentManualPrices
-            .filter(
-              (price: any) =>
-                price.relationships?.appPricePoint?.data?.id &&
-                price.relationships?.territory?.data?.id
-            )
-            .map((price: any) => ({
-              type: "appPrices" as const,
-              id: price.id,
-              attributes: {
-                startDate: new Date().toISOString().split("T")[0],
-                manual: true,
-                // No endDate = permanent
-              },
-              relationships: price.relationships, // Use existing relationships as-is
-            })),
-          newPriceEntry,
-        ],
+        included: includedPrices,
       },
     });
 
@@ -376,11 +359,11 @@ export async function createAppPrice(
   }
 }
 
-// Update app price by creating a new price schedule with updated price
+// Update app price by updating the existing price schedule
 export async function updateAppPrice(
   price: Price,
   appId: string,
-  currentState: AppStoreModel
+  desiredState: AppStoreModel
 ): Promise<void> {
   logger.info(
     `Updating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
@@ -389,47 +372,60 @@ export async function updateAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const currentManualPrices = await getCurrentManualPrices(
-      currentPriceScheduleId
-    );
+    const allPrices = desiredState.pricing?.prices || [];
+
+    if (allPrices.length === 0) {
+      throw new Error("No prices found in desired state");
+    }
+
+    // Create manual price IDs for all territories in the desired state
+    const manualPrices = [];
+    const includedPrices = [];
+
+    for (const priceEntry of allPrices) {
+      const pricePointId = await findAppPricePointId(
+        priceEntry.price,
+        priceEntry.territory,
+        appId
+      );
+
+      // Use a temporary ID for this request
+      const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+
+      manualPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+      });
+
+      includedPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+        attributes: {
+          manual: true,
+          startDate: null,
+          endDate: null,
+        },
+        relationships: {
+          appPricePoint: {
+            data: {
+              type: "appPricePoints" as const,
+              id: pricePointId,
+            },
+          },
+          territory: {
+            data: {
+              type: "territories" as const,
+              id: priceEntry.territory,
+            },
+          },
+        },
+      });
+    }
+
+    // Get base territory for the new price schedule
     const baseTerritory = await getBaseTerritory(currentPriceScheduleId);
 
-    // Find the price point for the new price
-    const pricePointId = await findAppPricePointId(
-      price.price,
-      price.territory,
-      appId
-    );
-
-    // Today's date for immediate effect
-    const today = new Date().toISOString().split("T")[0];
-
-    // Create a new price for the territory (this will replace any existing price)
-    const newPriceId = `new-price-${Date.now()}`;
-    const newPriceEntry = {
-      type: "appPrices" as const,
-      id: newPriceId,
-      attributes: {
-        startDate: today, // Start today
-        manual: true,
-        // No endDate = permanent
-      },
-      relationships: {
-        appPricePoint: {
-          data: {
-            type: "appPricePoints" as const,
-            id: pricePointId,
-          },
-        },
-        territory: {
-          data: {
-            type: "territories" as const,
-            id: price.territory,
-          },
-        },
-      },
-    };
-
+    // Create a new price schedule with all the desired prices
     const response = await api.POST("/v1/appPriceSchedules", {
       body: {
         data: {
@@ -448,16 +444,11 @@ export async function updateAppPrice(
               },
             },
             manualPrices: {
-              data: [
-                {
-                  type: "appPrices" as const,
-                  id: newPriceId,
-                },
-              ],
+              data: manualPrices,
             },
           },
         },
-        included: [newPriceEntry],
+        included: includedPrices,
       },
     });
 
@@ -481,45 +472,72 @@ export async function updateAppPrice(
   }
 }
 
-// Delete app price by creating a new price schedule without the price
+// Delete app price by updating the existing price schedule
 export async function deleteAppPrice(
   territory: Territory,
   appId: string,
-  currentState: AppStoreModel
+  desiredState: AppStoreModel
 ): Promise<void> {
   logger.info(`Deleting app price for territory ${territory} for app ${appId}`);
 
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const currentManualPrices = await getCurrentManualPrices(
-      currentPriceScheduleId
-    );
+    const allPrices = desiredState.pricing?.prices || [];
+
+    if (allPrices.length === 0) {
+      throw new Error("No prices found in desired state");
+    }
+
+    // Create manual price IDs for all territories in the desired state
+    // (excluding the territory to be deleted)
+    const manualPrices = [];
+    const includedPrices = [];
+
+    for (const priceEntry of allPrices) {
+      const pricePointId = await findAppPricePointId(
+        priceEntry.price,
+        priceEntry.territory,
+        appId
+      );
+
+      // Use a temporary ID for this request
+      const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+
+      manualPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+      });
+
+      includedPrices.push({
+        type: "appPrices" as const,
+        id: tempPriceId,
+        attributes: {
+          manual: true,
+          startDate: null,
+          endDate: null,
+        },
+        relationships: {
+          appPricePoint: {
+            data: {
+              type: "appPricePoints" as const,
+              id: pricePointId,
+            },
+          },
+          territory: {
+            data: {
+              type: "territories" as const,
+              id: priceEntry.territory,
+            },
+          },
+        },
+      });
+    }
+
+    // Get base territory for the new price schedule
     const baseTerritory = await getBaseTerritory(currentPriceScheduleId);
 
-    // Today's date for immediate effect
-    const today = new Date().toISOString().split("T")[0];
-
-    // Remove the price for the specified territory by setting end date
-    const updatedManualPrices = currentManualPrices.map(
-      (existingPrice: any) => {
-        const territoryId = existingPrice.relationships?.territory?.data?.id;
-
-        if (territoryId === territory) {
-          // Set end date to today to "delete" the price
-          return {
-            ...existingPrice,
-            attributes: {
-              ...existingPrice.attributes,
-              endDate: today, // End price today
-            },
-          };
-        }
-
-        return existingPrice;
-      }
-    );
-
+    // Create a new price schedule with all the desired prices
     const response = await api.POST("/v1/appPriceSchedules", {
       body: {
         data: {
@@ -538,19 +556,11 @@ export async function deleteAppPrice(
               },
             },
             manualPrices: {
-              data: updatedManualPrices.map((price: any) => ({
-                type: "appPrices" as const,
-                id: price.id,
-              })),
+              data: manualPrices,
             },
           },
         },
-        included: updatedManualPrices.map((price: any) => ({
-          type: "appPrices" as const,
-          id: price.id,
-          attributes: price.attributes,
-          relationships: price.relationships,
-        })),
+        included: includedPrices,
       },
     });
 

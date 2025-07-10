@@ -67,7 +67,7 @@ const command: CommandModule = {
       const plan = diff(currentState, desiredState);
 
       await showPlan(plan);
-      await apply(plan, actualAppId, currentState);
+      await apply(plan, actualAppId, currentState, desiredState);
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.error("Data validation failed:", error.errors);
