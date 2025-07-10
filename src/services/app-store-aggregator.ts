@@ -1163,32 +1163,33 @@ async function mapAppPricing(
 
     prices = [...manualPrices, ...automaticPrices];
 
-    // If there are no prices, we can assume there is no price schedule
+    // If there are no prices, check if there's actually a price schedule
     if (prices.length === 0) {
       const scheduleResponse = await api.GET("/v1/apps/{id}/appPriceSchedule", {
         params: { path: { id: appId } },
       });
       if (scheduleResponse.error || !scheduleResponse.data) {
+        // No price schedule exists - this is normal for new apps
         return undefined;
       }
     }
 
     return { baseTerritory, prices };
   } catch (error) {
-    logger.warn(
+    logger.error(
       `Failed to process app pricing: ${
         (error as any)?.message || JSON.stringify(error)
       }`
     );
-    return undefined;
+    throw error;
   }
 }
 
 async function mapAppAvailability(
   response: components["schemas"]["AppAvailabilityV2Response"] | null
-): Promise<z.infer<typeof TerritoryCodeSchema>[] | undefined> {
+): Promise<z.infer<typeof TerritoryCodeSchema>[]> {
   if (!response || !response.data) {
-    return undefined;
+    return [];
   }
 
   const territoryAvailabilities = response.included || [];

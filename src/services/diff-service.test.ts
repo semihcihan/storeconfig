@@ -21,6 +21,8 @@ type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
 const EMPTY_STATE: AppStoreModel = {
   schemaVersion: "1.0.0",
   appId: "com.example.app",
+  pricing: undefined,
+  availableTerritories: [],
   inAppPurchases: [],
   subscriptionGroups: [],
 };
@@ -1314,6 +1316,144 @@ describe("diff-service", () => {
               .promotionalOffers![0].id,
         },
       });
+    });
+  });
+});
+
+describe("Optional field detection - App pricing bug", () => {
+  describe("Real-world scenario: fetch.json vs apply.json", () => {
+    it("should detect all differences between fetch.json (no pricing) and apply.json (with pricing)", () => {
+      // Simulate the actual fetch.json content
+      const fetchState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+        // No pricing field
+      };
+
+      // Simulate the actual apply.json content
+      const applyState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [
+            { price: "1.99", territory: "USA" },
+            { price: "19.99", territory: "TUR" },
+          ],
+        },
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const plan = diff(fetchState, applyState);
+
+      // This is the main test case - should NOT be empty
+      expect(plan.length).toBeGreaterThan(0);
+
+      // Should contain pricing-related actions
+      const pricingActions = plan.filter(
+        (a) =>
+          a.type.includes("APP_PRICE") || a.type.includes("APP_BASE_TERRITORY")
+      );
+      expect(pricingActions.length).toBeGreaterThan(0);
+
+      // Specifically check for the base territory and price creation
+      const baseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(baseTerritoryAction?.payload.territory).toBe("USA");
+
+      const priceActions = plan.filter((a) => a.type === "CREATE_APP_PRICE");
+      expect(priceActions).toHaveLength(2);
+
+      const usaPrice = priceActions.find(
+        (a) => a.payload.price.territory === "USA"
+      );
+      expect(usaPrice?.payload.price.price).toBe("1.99");
+
+      const turPrice = priceActions.find(
+        (a) => a.payload.price.territory === "TUR"
+      );
+      expect(turPrice?.payload.price.price).toBe("19.99");
+    });
+
+    it("should detect when pricing changes from undefined to defined with multiple territories", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+        // pricing is undefined (like fetch.json)
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [
+            { territory: "USA", price: "1.99" },
+            { territory: "TUR", price: "19.99" },
+          ],
+        },
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should not be empty - this is the main bug
+      expect(plan.length).toBeGreaterThan(0);
+
+      // Should detect the need to create pricing structure
+      const pricingRelatedActions = plan.filter(
+        (a) =>
+          a.type.includes("APP_PRICE") || a.type.includes("APP_BASE_TERRITORY")
+      );
+      expect(pricingRelatedActions.length).toBeGreaterThan(0);
+    });
+
+    it("should detect when pricing is removed (going from defined to undefined)", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [
+            { territory: "USA", price: "1.99" },
+            { territory: "TUR", price: "19.99" },
+          ],
+        },
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "1615187332",
+        availableTerritories: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+        // pricing is undefined (removed)
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should not be empty - this is also part of the bug
+      expect(plan.length).toBeGreaterThan(0);
+
+      // Should detect the need to remove pricing structure
+      const pricingRelatedActions = plan.filter(
+        (a) => a.type.includes("APP_PRICE") || a.type.includes("DELETE")
+      );
+      expect(pricingRelatedActions.length).toBeGreaterThan(0);
     });
   });
 });

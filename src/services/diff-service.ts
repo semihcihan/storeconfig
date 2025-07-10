@@ -608,7 +608,6 @@ function diffAppAvailability(
 ): AnyAction[] {
   const actions: AnyAction[] = [];
   if (
-    desiredState.availableTerritories &&
     !isEqual(
       currentState.availableTerritories,
       desiredState.availableTerritories
@@ -633,13 +632,20 @@ function diffAppPricing(
   const currentSchedule = currentState.pricing;
   const desiredSchedule = desiredState.pricing;
 
-  if (!desiredSchedule) {
+  // If neither current nor desired have pricing, no action needed
+  if (!currentSchedule && !desiredSchedule) {
     return actions;
   }
 
-  const current = currentSchedule || { baseTerritory: "USA", prices: [] };
+  // If current has pricing but desired doesn't, or vice versa
+  if (!currentSchedule || !desiredSchedule) {
+    // This would require creating or deleting the entire price schedule
+    // For now, we'll skip this complex case
+    logger.warn("Cannot handle creating/deleting entire price schedules yet");
+    return actions;
+  }
 
-  if (current.baseTerritory !== desiredSchedule.baseTerritory) {
+  if (currentSchedule.baseTerritory !== desiredSchedule.baseTerritory) {
     actions.push({
       type: "UPDATE_APP_BASE_TERRITORY",
       payload: { territory: desiredSchedule.baseTerritory },
@@ -647,7 +653,7 @@ function diffAppPricing(
   }
 
   const currentPricesByTerritory = new Map(
-    current.prices.map((p) => [p.territory, p])
+    currentSchedule.prices.map((p) => [p.territory, p])
   );
   const desiredPricesByTerritory = new Map(
     desiredSchedule.prices.map((p) => [p.territory, p])

@@ -146,7 +146,7 @@ export async function updateAppAvailability(
   logger.info(`Found ${territoryMap.size} territories`);
 
   // Build sets of current and desired territories
-  const currentTerritories = new Set(currentState.availableTerritories || []);
+  const currentTerritories = new Set(currentState.availableTerritories);
   const desiredTerritories = new Set(availableTerritories);
 
   // Find territories that need to be enabled

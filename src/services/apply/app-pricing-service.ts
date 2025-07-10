@@ -259,9 +259,9 @@ export async function createAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const allPrices = desiredState.pricing?.prices || [];
+    const allPrices = desiredState.pricing?.prices;
 
-    if (allPrices.length === 0) {
+    if (!allPrices || allPrices.length === 0) {
       throw new Error("No prices found in desired state");
     }
 
@@ -372,9 +372,9 @@ export async function updateAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const allPrices = desiredState.pricing?.prices || [];
+    const allPrices = desiredState.pricing?.prices;
 
-    if (allPrices.length === 0) {
+    if (!allPrices || allPrices.length === 0) {
       throw new Error("No prices found in desired state");
     }
 
@@ -483,9 +483,9 @@ export async function deleteAppPrice(
   try {
     // Get current price schedule details
     const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-    const allPrices = desiredState.pricing?.prices || [];
+    const allPrices = desiredState.pricing?.prices;
 
-    if (allPrices.length === 0) {
+    if (!allPrices || allPrices.length === 0) {
       throw new Error("No prices found in desired state");
     }
 
