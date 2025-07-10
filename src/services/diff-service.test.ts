@@ -613,7 +613,10 @@ describe("diff-service", () => {
 
     it("should create a plan to delete a subscription group", () => {
       const currentState = MOCK_STATE_1;
-      const desiredState = EMPTY_STATE;
+      const desiredState = {
+        ...EMPTY_STATE,
+        pricing: MOCK_STATE_1.pricing, // Keep the same pricing to avoid triggering pricing validation
+      };
       const plan = diff(currentState, desiredState);
 
       // We expect a DELETE_SUBSCRIPTION_GROUP action.
@@ -1419,7 +1422,7 @@ describe("Optional field detection - App pricing bug", () => {
       expect(pricingRelatedActions.length).toBeGreaterThan(0);
     });
 
-    it("should detect when pricing is removed (going from defined to undefined)", () => {
+    it("should throw an error when trying to remove all pricing (going from defined to undefined)", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "1615187332",
@@ -1444,16 +1447,10 @@ describe("Optional field detection - App pricing bug", () => {
         // pricing is undefined (removed)
       };
 
-      const plan = diff(currentState, desiredState);
-
-      // Should not be empty - this is also part of the bug
-      expect(plan.length).toBeGreaterThan(0);
-
-      // Should detect the need to remove pricing structure
-      const pricingRelatedActions = plan.filter(
-        (a) => a.type.includes("APP_PRICE") || a.type.includes("DELETE")
+      // Should throw an error because you can't remove all pricing
+      expect(() => diff(currentState, desiredState)).toThrow(
+        /Cannot remove all pricing from an app/
       );
-      expect(pricingRelatedActions.length).toBeGreaterThan(0);
     });
   });
 });

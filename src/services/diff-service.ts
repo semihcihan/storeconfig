@@ -637,11 +637,36 @@ function diffAppPricing(
     return actions;
   }
 
-  // If current has pricing but desired doesn't, or vice versa
+  // Handle case where pricing is being added (current undefined, desired defined)
+  if (!currentSchedule && desiredSchedule) {
+    // Set the base territory
+    actions.push({
+      type: "UPDATE_APP_BASE_TERRITORY",
+      payload: { territory: desiredSchedule.baseTerritory },
+    });
+
+    // Create all prices
+    for (const price of desiredSchedule.prices) {
+      actions.push({
+        type: "CREATE_APP_PRICE",
+        payload: { price },
+      });
+    }
+
+    return actions;
+  }
+
+  // Handle case where pricing is being removed (current defined, desired undefined)
+  if (currentSchedule && !desiredSchedule) {
+    throw new Error(
+      "Cannot remove all pricing from an app. Apps must have at least one price configured. " +
+        "If you want to remove the app from sale, use app availability settings instead."
+    );
+  }
+
+  // At this point, both currentSchedule and desiredSchedule are defined
   if (!currentSchedule || !desiredSchedule) {
-    // This would require creating or deleting the entire price schedule
-    // For now, we'll skip this complex case
-    logger.warn("Cannot handle creating/deleting entire price schedules yet");
+    // This should never happen due to the checks above, but TypeScript needs this
     return actions;
   }
 
