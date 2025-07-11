@@ -157,40 +157,27 @@ export async function updateAppBaseTerritory(
       );
     }
 
-    const currentManualPrices = await getCurrentManualPrices(
-      currentPriceScheduleId
-    );
-
-    // Create new price schedule with new base territory
+    // Create new price schedule with new base territory using the desired state prices
+    // This ensures we properly resolve all price point IDs instead of reusing potentially invalid ones
     const createRequest = buildPriceScheduleRequest(
       appId,
       territory,
       desiredState.pricing?.prices || []
     );
 
-    // Update included prices with actual relationships
-    createRequest.included = currentManualPrices.map((price: any) => ({
-      type: "appPrices" as const,
-      id: price.id,
-      attributes: {
-        startDate: new Date().toISOString().split("T")[0],
-        manual: true,
-      },
-      relationships: {
-        appPricePoint: {
-          data: {
-            type: "appPricePoints" as const,
-            id: price.relationships?.appPricePoint?.data?.id,
-          },
-        },
-        territory: {
-          data: {
-            type: "territories" as const,
-            id: price.relationships?.territory?.data?.id,
-          },
-        },
-      },
-    }));
+    // Resolve actual price point IDs for each price (same logic as createAppPriceSchedule)
+    const prices = desiredState.pricing?.prices || [];
+    for (let i = 0; i < prices.length; i++) {
+      const priceEntry = prices[i];
+      const pricePointId = await findAppPricePointId(
+        priceEntry.price,
+        priceEntry.territory,
+        appId
+      );
+
+      createRequest.included[i].relationships.appPricePoint.data.id =
+        pricePointId;
+    }
 
     await createAppPriceScheduleAPI(createRequest);
     logger.info(`Successfully updated app base territory to ${territory}`);
