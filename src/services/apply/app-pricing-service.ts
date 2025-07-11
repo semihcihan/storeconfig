@@ -139,54 +139,6 @@ function buildPriceScheduleRequest(
   };
 }
 
-// Update app base territory by creating a new price schedule
-export async function updateAppBaseTerritory(
-  territory: Territory,
-  appId: string,
-  desiredState: AppStoreModel
-): Promise<void> {
-  logger.info(`Updating app base territory to ${territory} for app ${appId}`);
-
-  try {
-    const currentPriceScheduleId = await getAppPriceScheduleId(appId);
-
-    if (!currentPriceScheduleId) {
-      throw new Error(
-        "Cannot update base territory when no price schedule exists. " +
-          "Create prices first before updating the base territory."
-      );
-    }
-
-    // Create new price schedule with new base territory using the desired state prices
-    // This ensures we properly resolve all price point IDs instead of reusing potentially invalid ones
-    const createRequest = buildPriceScheduleRequest(
-      appId,
-      territory,
-      desiredState.pricing?.prices || []
-    );
-
-    // Resolve actual price point IDs for each price (same logic as createAppPriceSchedule)
-    const prices = desiredState.pricing?.prices || [];
-    for (let i = 0; i < prices.length; i++) {
-      const priceEntry = prices[i];
-      const pricePointId = await findAppPricePointId(
-        priceEntry.price,
-        priceEntry.territory,
-        appId
-      );
-
-      createRequest.included[i].relationships.appPricePoint.data.id =
-        pricePointId;
-    }
-
-    await createAppPriceScheduleAPI(createRequest);
-    logger.info(`Successfully updated app base territory to ${territory}`);
-  } catch (error) {
-    logger.error(`Error updating app base territory: ${error}`);
-    throw error;
-  }
-}
-
 // Create app price schedule from scratch
 export async function createAppPriceSchedule(
   priceSchedule: z.infer<typeof PriceScheduleSchema>,
@@ -224,49 +176,4 @@ export async function createAppPriceSchedule(
     logger.error(`Error creating app price schedule: ${error}`);
     throw error;
   }
-}
-
-// Simplified create/update/delete functions that use the price schedule builder
-export async function createAppPrice(
-  price: Price,
-  appId: string,
-  desiredState: AppStoreModel
-): Promise<void> {
-  logger.info(
-    `Creating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
-  );
-
-  const allPrices = desiredState.pricing?.prices || [];
-  const baseTerritory = desiredState.pricing?.baseTerritory;
-
-  if (!baseTerritory) {
-    throw new Error("No base territory found in desired state");
-  }
-
-  return await createAppPriceSchedule(
-    { baseTerritory, prices: allPrices },
-    appId
-  );
-}
-
-export async function updateAppPrice(
-  price: Price,
-  appId: string,
-  desiredState: AppStoreModel
-): Promise<void> {
-  logger.info(
-    `Updating app price for territory ${price.territory} with price ${price.price} for app ${appId}`
-  );
-
-  return await createAppPrice(price, appId, desiredState);
-}
-
-export async function deleteAppPrice(
-  territory: Territory,
-  appId: string,
-  desiredState: AppStoreModel
-): Promise<void> {
-  logger.info(`Deleting app price for territory ${territory} for app ${appId}`);
-
-  return await createAppPrice({ price: "", territory }, appId, desiredState);
 }

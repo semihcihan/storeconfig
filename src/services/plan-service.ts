@@ -66,30 +66,39 @@ async function showAction(action: AnyAction) {
       );
       // Call API to update app availability
       break;
-    case "UPDATE_APP_BASE_TERRITORY":
-      logger.info(`  Territory: ${action.payload.territory}`);
-      // Call API to update app base territory
-      break;
-    case "CREATE_APP_PRICE_SCHEDULE":
-      logger.info(
-        `  Base Territory: ${action.payload.priceSchedule.baseTerritory}`
-      );
-      logger.info(
-        `  Number of Prices: ${action.payload.priceSchedule.prices.length}`
-      );
-      // Call API to create app price schedule
-      break;
-    case "CREATE_APP_PRICE":
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      // Call API to create app price
-      break;
-    case "UPDATE_APP_PRICE":
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      // Call API to update app price
-      break;
-    case "DELETE_APP_PRICE":
-      logger.info(`  Territory: ${action.payload.territory}`);
-      // Call API to delete app price
+    case "UPDATE_APP_PRICING":
+      logger.info("  Pricing changes:");
+      if (action.payload.priceSchedule) {
+        logger.info(
+          `    Creating new schedule with base territory: ${action.payload.priceSchedule.baseTerritory}`
+        );
+        logger.info(
+          `    Number of prices: ${action.payload.priceSchedule.prices.length}`
+        );
+      }
+      if (action.payload.changes.addedPrices.length > 0) {
+        logger.info(
+          `    Added Prices: ${action.payload.changes.addedPrices.length}`
+        );
+        action.payload.changes.addedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.updatedPrices.length > 0) {
+        logger.info(
+          `    Updated Prices: ${action.payload.changes.updatedPrices.length}`
+        );
+        action.payload.changes.updatedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.deletedTerritories.length > 0) {
+        logger.info(
+          `    Deleted Territories: ${action.payload.changes.deletedTerritories.join(
+            ", "
+          )}`
+        );
+      }
       break;
 
     // Subscription Groups

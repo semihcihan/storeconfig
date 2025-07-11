@@ -157,11 +157,19 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      const action = plan.find((a) => a.type === "UPDATE_APP_BASE_TERRITORY");
+      const action = plan.find((a) => a.type === "UPDATE_APP_PRICING");
       expect(action).toEqual({
-        type: "UPDATE_APP_BASE_TERRITORY",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          territory: "CAN",
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: MOCK_STATE_1.pricing!.prices,
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
     });
@@ -178,11 +186,19 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      const action = plan.find((a) => a.type === "CREATE_APP_PRICE");
+      const action = plan.find((a) => a.type === "UPDATE_APP_PRICING");
       expect(action).toEqual({
-        type: "CREATE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: newPrice,
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
+          },
+          changes: {
+            addedPrices: [newPrice],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
     });
@@ -198,11 +214,19 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      const action = plan.find((a) => a.type === "DELETE_APP_PRICE");
+      const action = plan.find((a) => a.type === "UPDATE_APP_PRICING");
       expect(action).toEqual({
-        type: "DELETE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          territory: "USA",
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: ["USA"],
+          },
         },
       });
     });
@@ -219,46 +243,57 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      const action = plan.find((a) => a.type === "UPDATE_APP_PRICE");
+      const action = plan.find((a) => a.type === "UPDATE_APP_PRICING");
       expect(action).toEqual({
-        type: "UPDATE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: updatedPrice,
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [updatedPrice],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [updatedPrice],
+            deletedTerritories: [],
+          },
         },
       });
     });
 
-    it("should not generate UPDATE_APP_BASE_TERRITORY when CREATE_APP_PRICE is already recreating the schedule", () => {
+    it("should create a single UPDATE_APP_PRICING action for complex changes", () => {
       const currentState = MOCK_STATE_1;
       const newPrice: Price = { territory: "CAN", price: "5.99" };
+      const updatedPrice: Price = { territory: "USA", price: "3.99" };
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
         pricing: {
           ...MOCK_STATE_1.pricing!,
           baseTerritory: "CAN", // Changing base territory
-          prices: [...MOCK_STATE_1.pricing!.prices, newPrice], // Adding new price
+          prices: [updatedPrice, newPrice], // Updating existing and adding new
         },
       };
 
       const plan = diff(currentState, desiredState);
 
-      // Should have CREATE_APP_PRICE action
-      const createPriceAction = plan.find((a) => a.type === "CREATE_APP_PRICE");
-      expect(createPriceAction).toEqual({
-        type: "CREATE_APP_PRICE",
+      // Should have one UPDATE_APP_PRICING action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: newPrice,
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: [updatedPrice, newPrice],
+          },
+          changes: {
+            addedPrices: [newPrice],
+            updatedPrices: [updatedPrice],
+            deletedTerritories: [],
+          },
         },
       });
-
-      // Should NOT have UPDATE_APP_BASE_TERRITORY action because CREATE_APP_PRICE handles it
-      const updateBaseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(updateBaseTerritoryAction).toBeUndefined();
     });
 
-    it("should generate UPDATE_APP_BASE_TERRITORY when changing base territory without touching prices", () => {
+    it("should create UPDATE_APP_PRICING when changing base territory without touching prices", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
@@ -270,28 +305,25 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
 
-      // Should have UPDATE_APP_BASE_TERRITORY action
-      const updateBaseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(updateBaseTerritoryAction).toEqual({
-        type: "UPDATE_APP_BASE_TERRITORY",
+      // Should have UPDATE_APP_PRICING action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICING",
         payload: {
-          territory: "CAN",
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: MOCK_STATE_1.pricing!.prices,
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
-
-      // Should NOT have any price actions
-      const priceActions = plan.filter(
-        (a) =>
-          a.type === "CREATE_APP_PRICE" ||
-          a.type === "UPDATE_APP_PRICE" ||
-          a.type === "DELETE_APP_PRICE"
-      );
-      expect(priceActions).toHaveLength(0);
     });
 
-    it("should not generate UPDATE_APP_BASE_TERRITORY when UPDATE_APP_PRICE is already recreating the schedule", () => {
+    it("should include base territory change in UPDATE_APP_PRICING when also changing prices", () => {
       const currentState = MOCK_STATE_1;
       const updatedPrice: Price = { territory: "USA", price: "5.99" };
       const desiredState: AppStoreModel = {
@@ -305,23 +337,25 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
 
-      // Should have UPDATE_APP_PRICE action
-      const updatePriceAction = plan.find((a) => a.type === "UPDATE_APP_PRICE");
-      expect(updatePriceAction).toEqual({
-        type: "UPDATE_APP_PRICE",
+      // Should have one UPDATE_APP_PRICING action with both changes
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: updatedPrice,
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: [updatedPrice],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [updatedPrice],
+            deletedTerritories: [],
+          },
         },
       });
-
-      // Should NOT have UPDATE_APP_BASE_TERRITORY action because UPDATE_APP_PRICE handles it
-      const updateBaseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(updateBaseTerritoryAction).toBeUndefined();
     });
 
-    it("should not generate UPDATE_APP_BASE_TERRITORY when DELETE_APP_PRICE is already recreating the schedule", () => {
+    it("should handle deleting prices with base territory change", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
@@ -334,23 +368,25 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
 
-      // Should have DELETE_APP_PRICE action
-      const deletePriceAction = plan.find((a) => a.type === "DELETE_APP_PRICE");
-      expect(deletePriceAction).toEqual({
-        type: "DELETE_APP_PRICE",
+      // Should have one UPDATE_APP_PRICING action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICING",
         payload: {
-          territory: "USA",
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: [],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: ["USA"],
+          },
         },
       });
-
-      // Should NOT have UPDATE_APP_BASE_TERRITORY action because DELETE_APP_PRICE handles it
-      const updateBaseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(updateBaseTerritoryAction).toBeUndefined();
     });
 
-    it("should not generate UPDATE_APP_BASE_TERRITORY when multiple price actions are recreating the schedule", () => {
+    it("should create UPDATE_APP_PRICING with all types of changes", () => {
       const currentState = MOCK_STATE_1;
       const newPrice: Price = { territory: "CAN", price: "3.99" };
       const updatedPrice: Price = { territory: "USA", price: "5.99" };
@@ -359,38 +395,31 @@ describe("diff-service", () => {
         pricing: {
           ...MOCK_STATE_1.pricing!,
           baseTerritory: "CAN", // Changing base territory
-          prices: [updatedPrice, newPrice], // Both updating existing and adding new
+          prices: [updatedPrice, newPrice], // Both updating existing and adding new (implicitly deleting nothing)
         },
       };
 
       const plan = diff(currentState, desiredState);
 
-      // Should have both CREATE_APP_PRICE and UPDATE_APP_PRICE actions
-      const createPriceAction = plan.find((a) => a.type === "CREATE_APP_PRICE");
-      const updatePriceAction = plan.find((a) => a.type === "UPDATE_APP_PRICE");
-
-      expect(createPriceAction).toEqual({
-        type: "CREATE_APP_PRICE",
+      // Should have one UPDATE_APP_PRICING action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: newPrice,
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: [updatedPrice, newPrice],
+          },
+          changes: {
+            addedPrices: [newPrice],
+            updatedPrices: [updatedPrice],
+            deletedTerritories: [],
+          },
         },
       });
-
-      expect(updatePriceAction).toEqual({
-        type: "UPDATE_APP_PRICE",
-        payload: {
-          price: updatedPrice,
-        },
-      });
-
-      // Should NOT have UPDATE_APP_BASE_TERRITORY action because price actions handle it
-      const updateBaseTerritoryAction = plan.find(
-        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
-      );
-      expect(updateBaseTerritoryAction).toBeUndefined();
     });
 
-    it("should generate only CREATE_APP_PRICE when adding price without base territory change", () => {
+    it("should generate only UPDATE_APP_PRICING when adding price without base territory change", () => {
       const currentState = MOCK_STATE_1;
       const newPrice: Price = { territory: "CAN", price: "5.99" };
       const desiredState: AppStoreModel = {
@@ -404,17 +433,25 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
 
-      // Should have only CREATE_APP_PRICE action
+      // Should have only UPDATE_APP_PRICING action
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "CREATE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: newPrice,
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
+          },
+          changes: {
+            addedPrices: [newPrice],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
     });
 
-    it("should generate only UPDATE_APP_PRICE when updating price without base territory change", () => {
+    it("should generate only UPDATE_APP_PRICING when updating price without base territory change", () => {
       const currentState = MOCK_STATE_1;
       const updatedPrice: Price = { territory: "USA", price: "5.99" };
       const desiredState: AppStoreModel = {
@@ -428,35 +465,51 @@ describe("diff-service", () => {
 
       const plan = diff(currentState, desiredState);
 
-      // Should have only UPDATE_APP_PRICE action
+      // Should have only UPDATE_APP_PRICING action
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          price: updatedPrice,
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [updatedPrice],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [updatedPrice],
+            deletedTerritories: [],
+          },
         },
       });
     });
 
-    it("should generate only DELETE_APP_PRICE when deleting price without base territory change", () => {
+    it("should generate only UPDATE_APP_PRICING when deleting price without base territory change", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
         pricing: {
           ...MOCK_STATE_1.pricing!,
           // baseTerritory stays "USA"
-          prices: [], // Deleting all prices
+          prices: [], // Deleting the only price
         },
       };
 
       const plan = diff(currentState, desiredState);
 
-      // Should have only DELETE_APP_PRICE action
+      // Should have only UPDATE_APP_PRICING action
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "DELETE_APP_PRICE",
+        type: "UPDATE_APP_PRICING",
         payload: {
-          territory: "USA",
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: ["USA"],
+          },
         },
       });
     });
@@ -1780,10 +1833,10 @@ describe("Optional field detection - App pricing bug", () => {
       // This is the main test case - should NOT be empty
       expect(plan.length).toBeGreaterThan(0);
 
-      // Should contain exactly one CREATE_APP_PRICE_SCHEDULE action
+      // Should contain exactly one UPDATE_APP_PRICING action
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "CREATE_APP_PRICE_SCHEDULE",
+        type: "UPDATE_APP_PRICING",
         payload: {
           priceSchedule: {
             baseTerritory: "USA",
@@ -1791,6 +1844,14 @@ describe("Optional field detection - App pricing bug", () => {
               { price: "1.99", territory: "USA" },
               { price: "19.99", territory: "TUR" },
             ],
+          },
+          changes: {
+            addedPrices: [
+              { price: "1.99", territory: "USA" },
+              { price: "19.99", territory: "TUR" },
+            ],
+            updatedPrices: [],
+            deletedTerritories: [],
           },
         },
       });
@@ -1826,10 +1887,10 @@ describe("Optional field detection - App pricing bug", () => {
       // Should not be empty - this is the main bug
       expect(plan.length).toBeGreaterThan(0);
 
-      // Should contain exactly one CREATE_APP_PRICE_SCHEDULE action
+      // Should contain exactly one UPDATE_APP_PRICING action
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "CREATE_APP_PRICE_SCHEDULE",
+        type: "UPDATE_APP_PRICING",
         payload: {
           priceSchedule: {
             baseTerritory: "USA",
@@ -1837,6 +1898,14 @@ describe("Optional field detection - App pricing bug", () => {
               { territory: "USA", price: "1.99" },
               { territory: "TUR", price: "19.99" },
             ],
+          },
+          changes: {
+            addedPrices: [
+              { territory: "USA", price: "1.99" },
+              { territory: "TUR", price: "19.99" },
+            ],
+            updatedPrices: [],
+            deletedTerritories: [],
           },
         },
       });

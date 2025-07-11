@@ -11,6 +11,7 @@ import {
   PromotionalOfferSchema,
   LocalizationSchema,
 } from "../models/app-store";
+import { TerritoryCodeSchema } from "../models/territories";
 import { logger } from "../utils/logger";
 import { AnyAction, Plan } from "../models/diff-plan";
 import { isEqual } from "lodash";
@@ -638,23 +639,29 @@ function diffAppPricing(
     return actions;
   }
 
-  // Handle case where pricing is being added (current undefined, desired defined)
-  if (!currentSchedule && desiredSchedule) {
-    // Create the entire price schedule at once
-    actions.push({
-      type: "CREATE_APP_PRICE_SCHEDULE",
-      payload: { priceSchedule: desiredSchedule },
-    });
-
-    return actions;
-  }
-
   // Handle case where pricing is being removed (current defined, desired undefined)
   if (currentSchedule && !desiredSchedule) {
     throw new Error(
       "Cannot remove all pricing from an app. Apps must have at least one price configured. " +
         "If you want to remove the app from sale, use app availability settings instead."
     );
+  }
+
+  // Handle case where pricing is being added (current undefined, desired defined)
+  if (!currentSchedule && desiredSchedule) {
+    // Create the entire price schedule at once
+    actions.push({
+      type: "UPDATE_APP_PRICING",
+      payload: {
+        priceSchedule: desiredSchedule,
+        changes: {
+          addedPrices: desiredSchedule.prices,
+          updatedPrices: [],
+          deletedTerritories: [],
+        },
+      },
+    });
+    return actions;
   }
 
   // At this point, both currentSchedule and desiredSchedule are defined
@@ -672,54 +679,47 @@ function diffAppPricing(
 
   const baseTerritoryChanging =
     currentSchedule.baseTerritory !== desiredSchedule.baseTerritory;
-  const newBaseTerritory = desiredSchedule.baseTerritory;
 
-  // Track if we're creating, updating, or deleting any prices
-  let willRecreateSchedule = false;
+  // Track all price changes
+  const addedPrices: Price[] = [];
+  const updatedPrices: Price[] = [];
+  const deletedTerritories: z.infer<typeof TerritoryCodeSchema>[] = [];
 
-  // Step 1: Create new prices (especially important if the new base territory needs a price)
+  // Find added and updated prices
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
     if (!currentPrice) {
-      actions.push({
-        type: "CREATE_APP_PRICE",
-        payload: { price: desiredPrice },
-      });
-      willRecreateSchedule = true;
+      addedPrices.push(desiredPrice);
+    } else if (currentPrice.price !== desiredPrice.price) {
+      updatedPrices.push(desiredPrice);
     }
   }
 
-  // Step 2: Update existing prices
-  for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
-    const currentPrice = currentPricesByTerritory.get(territory);
-    if (currentPrice && currentPrice.price !== desiredPrice.price) {
-      actions.push({
-        type: "UPDATE_APP_PRICE",
-        payload: { price: desiredPrice },
-      });
-      willRecreateSchedule = true;
-    }
-  }
-
-  // Step 3: Delete prices that are no longer needed
+  // Find deleted prices
   for (const [territory] of currentPricesByTerritory.entries()) {
     if (!desiredPricesByTerritory.has(territory)) {
-      actions.push({
-        type: "DELETE_APP_PRICE",
-        payload: { territory },
-      });
-      willRecreateSchedule = true;
+      deletedTerritories.push(territory);
     }
   }
 
-  // Step 4: Update base territory (only if we're not already recreating the schedule)
-  // CREATE_APP_PRICE, UPDATE_APP_PRICE, and DELETE_APP_PRICE all recreate the entire price schedule
-  // with the correct base territory, so we only need UPDATE_APP_BASE_TERRITORY
-  // if we're changing the base territory without touching any prices
-  if (baseTerritoryChanging && !willRecreateSchedule) {
+  // If there are any changes, generate the UPDATE_APP_PRICING action
+  const hasChanges =
+    baseTerritoryChanging ||
+    addedPrices.length > 0 ||
+    updatedPrices.length > 0 ||
+    deletedTerritories.length > 0;
+
+  if (hasChanges) {
     actions.push({
-      type: "UPDATE_APP_BASE_TERRITORY",
-      payload: { territory: newBaseTerritory },
+      type: "UPDATE_APP_PRICING",
+      payload: {
+        priceSchedule: desiredSchedule, // Always provide the complete target state
+        changes: {
+          addedPrices,
+          updatedPrices,
+          deletedTerritories,
+        },
+      },
     });
   }
 

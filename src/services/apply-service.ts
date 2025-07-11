@@ -2,13 +2,7 @@ import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./apply/app-availability-service";
-import {
-  createAppPrice,
-  updateAppPrice,
-  deleteAppPrice,
-  updateAppBaseTerritory,
-  createAppPriceSchedule,
-} from "./apply/app-pricing-service";
+import { createAppPriceSchedule } from "./apply/app-pricing-service";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -74,7 +68,7 @@ async function executeAction(
       // Call API to update IAP availability
       break;
 
-    // App-level
+    // App-level availability (non-pricing)
     case "UPDATE_APP_AVAILABILITY":
       await updateAppAvailability(
         action.payload.availableTerritories,
@@ -82,24 +76,39 @@ async function executeAction(
         currentState
       );
       break;
-    case "UPDATE_APP_BASE_TERRITORY":
-      await updateAppBaseTerritory(
-        action.payload.territory,
-        appId,
-        desiredState
+
+    // App-level pricing
+    case "UPDATE_APP_PRICING":
+      logger.info(`  Pricing changes:`);
+      logger.info(
+        `    Base Territory: ${action.payload.priceSchedule.baseTerritory}`
       );
-      break;
-    case "CREATE_APP_PRICE_SCHEDULE":
+      if (action.payload.changes.addedPrices.length > 0) {
+        logger.info(
+          `    Added Prices: ${action.payload.changes.addedPrices.length}`
+        );
+        action.payload.changes.addedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.updatedPrices.length > 0) {
+        logger.info(
+          `    Updated Prices: ${action.payload.changes.updatedPrices.length}`
+        );
+        action.payload.changes.updatedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.deletedTerritories.length > 0) {
+        logger.info(
+          `    Deleted Territories: ${action.payload.changes.deletedTerritories.join(
+            ", "
+          )}`
+        );
+      }
+
+      // Execute the pricing update with the complete schedule provided by diff-service
       await createAppPriceSchedule(action.payload.priceSchedule, appId);
-      break;
-    case "CREATE_APP_PRICE":
-      await createAppPrice(action.payload.price, appId, desiredState);
-      break;
-    case "UPDATE_APP_PRICE":
-      await updateAppPrice(action.payload.price, appId, desiredState);
-      break;
-    case "DELETE_APP_PRICE":
-      await deleteAppPrice(action.payload.territory, appId, desiredState);
       break;
 
     // Subscription Groups
@@ -235,6 +244,7 @@ export async function apply(
 ) {
   logger.info(`Applying plan with ${plan.length} actions for app ${appId}`);
 
+  // Execute all actions individually
   for (const action of plan) {
     await executeAction(action, appId, currentState, desiredState);
   }

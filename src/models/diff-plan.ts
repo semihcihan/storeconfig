@@ -138,38 +138,15 @@ export type UpdateAppAvailabilityAction = Action<
   }
 >;
 
-export type UpdateAppBaseTerritoryAction = Action<
-  "UPDATE_APP_BASE_TERRITORY",
-  {
-    territory: z.infer<typeof TerritoryCodeSchema>;
-  }
->;
-
-export type CreateAppPriceScheduleAction = Action<
-  "CREATE_APP_PRICE_SCHEDULE",
+export type UpdateAppPricingAction = Action<
+  "UPDATE_APP_PRICING",
   {
     priceSchedule: z.infer<typeof PriceScheduleSchema>;
-  }
->;
-
-export type CreateAppPriceAction = Action<
-  "CREATE_APP_PRICE",
-  {
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type UpdateAppPriceAction = Action<
-  "UPDATE_APP_PRICE",
-  {
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type DeleteAppPriceAction = Action<
-  "DELETE_APP_PRICE",
-  {
-    territory: z.infer<typeof TerritoryCodeSchema>;
+    changes: {
+      addedPrices: z.infer<typeof PriceSchema>[];
+      updatedPrices: z.infer<typeof PriceSchema>[];
+      deletedTerritories: z.infer<typeof TerritoryCodeSchema>[];
+    };
   }
 >;
 
@@ -386,11 +363,7 @@ export type AnyAction =
   | UpdateIapAvailabilityAction
   // App-level
   | UpdateAppAvailabilityAction
-  | UpdateAppBaseTerritoryAction
-  | CreateAppPriceScheduleAction
-  | CreateAppPriceAction
-  | UpdateAppPriceAction
-  | DeleteAppPriceAction
+  | UpdateAppPricingAction
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction
