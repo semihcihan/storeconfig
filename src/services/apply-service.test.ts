@@ -14,6 +14,9 @@ const mockUpdateAppAvailability = jest.fn();
 const mockCreateAppPriceSchedule = jest.fn();
 const mockCreateNewInAppPurchase = jest.fn();
 const mockUpdateExistingInAppPurchase = jest.fn();
+const mockCreateIAPLocalization = jest.fn();
+const mockUpdateIAPLocalization = jest.fn();
+const mockDeleteIAPLocalization = jest.fn();
 const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
@@ -30,6 +33,12 @@ jest.mocked(require("./apply/in-app-purchase-service")).createNewInAppPurchase =
 jest.mocked(
   require("./apply/in-app-purchase-service")
 ).updateExistingInAppPurchase = mockUpdateExistingInAppPurchase;
+jest.mocked(require("./apply/in-app-purchase-service")).createIAPLocalization =
+  mockCreateIAPLocalization;
+jest.mocked(require("./apply/in-app-purchase-service")).updateIAPLocalization =
+  mockUpdateIAPLocalization;
+jest.mocked(require("./apply/in-app-purchase-service")).deleteIAPLocalization =
+  mockDeleteIAPLocalization;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -417,5 +426,138 @@ describe("apply-service", () => {
         "test-app-id"
       );
     });
+  });
+});
+
+describe("IAP Localization Actions", () => {
+  const testAppId = "test-app-id";
+  const mockCurrentState: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: testAppId,
+    pricing: {
+      baseTerritory: "USA",
+      prices: [{ territory: "USA", price: "4.99" }],
+    },
+    availableTerritories: ["USA"],
+    inAppPurchases: [
+      {
+        productId: "test-iap",
+        type: "CONSUMABLE",
+        referenceName: "Test IAP",
+        familySharable: false,
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test IAP",
+            description: "A test in-app purchase",
+          },
+        ],
+      },
+    ],
+    subscriptionGroups: [],
+  };
+  const mockDesiredState: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: testAppId,
+    pricing: {
+      baseTerritory: "USA",
+      prices: [{ territory: "USA", price: "4.99" }],
+    },
+    availableTerritories: ["USA"],
+    inAppPurchases: [
+      {
+        productId: "test-iap",
+        type: "CONSUMABLE",
+        referenceName: "Test IAP",
+        familySharable: false,
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test IAP",
+            description: "A test in-app purchase",
+          },
+          {
+            locale: "fr",
+            name: "Test IAP FR",
+            description: "A test in-app purchase FR",
+          },
+        ],
+      },
+    ],
+    subscriptionGroups: [],
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should handle CREATE_IAP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "CREATE_IAP_LOCALIZATION",
+      payload: {
+        productId: "test-product",
+        localization: {
+          locale: "en-US",
+          name: "Test Product",
+          description: "A test product",
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockCreateIAPLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-product",
+      {
+        locale: "en-US",
+        name: "Test Product",
+        description: "A test product",
+      }
+    );
+  });
+
+  it("should handle UPDATE_IAP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "UPDATE_IAP_LOCALIZATION",
+      payload: {
+        productId: "test-product",
+        locale: "en-US",
+        changes: {
+          name: "Updated Product Name",
+          description: "Updated description",
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockUpdateIAPLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-product",
+      "en-US",
+      {
+        name: "Updated Product Name",
+        description: "Updated description",
+      }
+    );
+  });
+
+  it("should handle DELETE_IAP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "DELETE_IAP_LOCALIZATION",
+      payload: {
+        productId: "test-product",
+        locale: "en-US",
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockDeleteIAPLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-product",
+      "en-US"
+    );
   });
 });

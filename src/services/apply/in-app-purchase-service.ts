@@ -5,14 +5,22 @@ import {
   createInAppPurchase,
   updateInAppPurchase,
   fetchInAppPurchases,
+  createInAppPurchaseLocalization,
+  updateInAppPurchaseLocalization,
+  deleteInAppPurchaseLocalization,
 } from "../../domains/in-app-purchases/api-client";
 import type { components } from "../../generated/app-store-connect-api";
 
-type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchaseV2CreateRequest =
   components["schemas"]["InAppPurchaseV2CreateRequest"];
 type InAppPurchaseV2UpdateRequest =
   components["schemas"]["InAppPurchaseV2UpdateRequest"];
+type InAppPurchaseLocalizationCreateRequest =
+  components["schemas"]["InAppPurchaseLocalizationCreateRequest"];
+type InAppPurchaseLocalizationUpdateRequest =
+  components["schemas"]["InAppPurchaseLocalizationUpdateRequest"];
+
+type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 // Helper function to map IAP type from our model to API enum
 function mapIAPType(
@@ -40,6 +48,34 @@ async function getIAPIdByProductId(
     (iap) => iap.attributes?.productId === productId
   );
   return iap?.id || null;
+}
+
+// Helper function to get existing IAP localization ID by IAP ID and locale
+async function getIAPLocalizationId(
+  appId: string,
+  productId: string,
+  locale: string
+): Promise<string | null> {
+  const iapsResponse = await fetchInAppPurchases(appId);
+  const iap = iapsResponse.data?.find(
+    (iap) => iap.attributes?.productId === productId
+  );
+
+  if (!iap || !iapsResponse.included) {
+    return null;
+  }
+
+  // Find the localization in the included resources
+  const localization = iapsResponse.included.find(
+    (item: any) =>
+      item.type === "inAppPurchaseLocalizations" &&
+      item.attributes?.locale === locale &&
+      iap.relationships?.inAppPurchaseLocalizations?.data?.some(
+        (rel: any) => rel.id === item.id
+      )
+  );
+
+  return localization?.id || null;
 }
 
 // Create a new in-app purchase
@@ -122,4 +158,109 @@ export async function updateExistingInAppPurchase(
   }
 
   logger.info(`Successfully updated in-app purchase: ${response.data.id}`);
+}
+
+// Create a new IAP localization
+export async function createIAPLocalization(
+  appId: string,
+  productId: string,
+  localization: { locale: string; name: string; description: string }
+): Promise<void> {
+  logger.info(
+    `Creating IAP localization: ${productId} - ${localization.locale}`
+  );
+
+  // Get the existing IAP ID
+  const iapId = await getIAPIdByProductId(appId, productId);
+  if (!iapId) {
+    throw new Error(`Could not find IAP with product ID: ${productId}`);
+  }
+
+  const createRequest: InAppPurchaseLocalizationCreateRequest = {
+    data: {
+      type: "inAppPurchaseLocalizations",
+      attributes: {
+        name: localization.name,
+        locale: localization.locale,
+        description: localization.description,
+      },
+      relationships: {
+        inAppPurchaseV2: {
+          data: {
+            type: "inAppPurchases",
+            id: iapId,
+          },
+        },
+      },
+    },
+  };
+
+  const response = await createInAppPurchaseLocalization(createRequest);
+
+  if (!response.data?.id) {
+    throw new Error("No localization ID returned from creation");
+  }
+
+  logger.info(`Successfully created IAP localization: ${response.data.id}`);
+}
+
+// Update an existing IAP localization
+export async function updateIAPLocalization(
+  appId: string,
+  productId: string,
+  locale: string,
+  changes: { name?: string; description?: string }
+): Promise<void> {
+  logger.info(`Updating IAP localization: ${productId} - ${locale}`);
+
+  // Get the existing localization ID
+  const localizationId = await getIAPLocalizationId(appId, productId, locale);
+  if (!localizationId) {
+    throw new Error(
+      `Could not find IAP localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  const updateRequest: InAppPurchaseLocalizationUpdateRequest = {
+    data: {
+      type: "inAppPurchaseLocalizations",
+      id: localizationId,
+      attributes: {
+        ...(changes.name && { name: changes.name }),
+        ...(changes.description && { description: changes.description }),
+      },
+    },
+  };
+
+  const response = await updateInAppPurchaseLocalization(
+    localizationId,
+    updateRequest
+  );
+
+  if (!response.data?.id) {
+    throw new Error("No localization ID returned from update");
+  }
+
+  logger.info(`Successfully updated IAP localization: ${response.data.id}`);
+}
+
+// Delete an IAP localization
+export async function deleteIAPLocalization(
+  appId: string,
+  productId: string,
+  locale: string
+): Promise<void> {
+  logger.info(`Deleting IAP localization: ${productId} - ${locale}`);
+
+  // Get the existing localization ID
+  const localizationId = await getIAPLocalizationId(appId, productId, locale);
+  if (!localizationId) {
+    throw new Error(
+      `Could not find IAP localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  await deleteInAppPurchaseLocalization(localizationId);
+
+  logger.info(`Successfully deleted IAP localization: ${localizationId}`);
 }

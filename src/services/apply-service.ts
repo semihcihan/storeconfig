@@ -6,6 +6,9 @@ import { createAppPriceSchedule } from "./apply/app-pricing-service";
 import {
   createNewInAppPurchase,
   updateExistingInAppPurchase,
+  createIAPLocalization,
+  updateIAPLocalization,
+  deleteIAPLocalization,
 } from "./apply/in-app-purchase-service";
 import { z } from "zod";
 
@@ -38,15 +41,31 @@ async function executeAction(
     case "CREATE_IAP_LOCALIZATION":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Locale: ${action.payload.localization.locale}`);
+      await createIAPLocalization(
+        appId,
+        action.payload.productId,
+        action.payload.localization
+      );
       break;
     case "UPDATE_IAP_LOCALIZATION":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Locale: ${action.payload.locale}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
+      await updateIAPLocalization(
+        appId,
+        action.payload.productId,
+        action.payload.locale,
+        action.payload.changes
+      );
       break;
     case "DELETE_IAP_LOCALIZATION":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Locale: ${action.payload.locale}`);
+      await deleteIAPLocalization(
+        appId,
+        action.payload.productId,
+        action.payload.locale
+      );
       break;
 
     // IAP Prices

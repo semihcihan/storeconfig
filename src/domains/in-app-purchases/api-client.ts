@@ -16,6 +16,13 @@ type InAppPurchaseV2UpdateRequest =
   components["schemas"]["InAppPurchaseV2UpdateRequest"];
 type InAppPurchaseV2Response = components["schemas"]["InAppPurchaseV2Response"];
 
+type InAppPurchaseLocalizationCreateRequest =
+  components["schemas"]["InAppPurchaseLocalizationCreateRequest"];
+type InAppPurchaseLocalizationUpdateRequest =
+  components["schemas"]["InAppPurchaseLocalizationUpdateRequest"];
+type InAppPurchaseLocalizationResponse =
+  components["schemas"]["InAppPurchaseLocalizationResponse"];
+
 // Fetch in-app purchases for an app
 export async function fetchInAppPurchases(
   appId: string
@@ -198,4 +205,53 @@ export async function updateInAppPurchase(
   }
 
   return response.data;
+}
+
+// Create a new IAP localization
+export async function createInAppPurchaseLocalization(
+  request: InAppPurchaseLocalizationCreateRequest
+): Promise<InAppPurchaseLocalizationResponse> {
+  const response = await api.POST("/v1/inAppPurchaseLocalizations", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update an existing IAP localization
+export async function updateInAppPurchaseLocalization(
+  localizationId: string,
+  request: InAppPurchaseLocalizationUpdateRequest
+): Promise<InAppPurchaseLocalizationResponse> {
+  const response = await api.PATCH("/v1/inAppPurchaseLocalizations/{id}", {
+    params: {
+      path: { id: localizationId },
+    },
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Delete an IAP localization
+export async function deleteInAppPurchaseLocalization(
+  localizationId: string
+): Promise<void> {
+  const response = await api.DELETE("/v1/inAppPurchaseLocalizations/{id}", {
+    params: {
+      path: { id: localizationId },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
 }
