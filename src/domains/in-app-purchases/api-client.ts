@@ -79,6 +79,24 @@ export async function fetchInAppPurchases(
   return response.data;
 }
 
+// Fetch availability for an in-app purchase
+export async function fetchInAppPurchaseAvailability(
+  iapId: string
+): Promise<components["schemas"]["InAppPurchaseAvailabilityResponse"]> {
+  const response = await api.GET(
+    "/v2/inAppPurchases/{id}/inAppPurchaseAvailability",
+    {
+      params: { path: { id: iapId } },
+    }
+  );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
 // Fetch availability territories for an in-app purchase
 export async function fetchInAppPurchaseAvailabilityTerritories(
   availabilityId: string

@@ -7,6 +7,8 @@ import { z } from "zod";
 jest.mock("./apply/app-availability-service");
 jest.mock("./apply/app-pricing-service");
 jest.mock("./apply/in-app-purchase-service");
+jest.mock("./apply/iap-availability-service");
+jest.mock("../domains/in-app-purchases/api-client");
 jest.mock("../utils/logger");
 
 // Mock implementations
@@ -17,6 +19,8 @@ const mockUpdateExistingInAppPurchase = jest.fn();
 const mockCreateIAPLocalization = jest.fn();
 const mockUpdateIAPLocalization = jest.fn();
 const mockDeleteIAPLocalization = jest.fn();
+const mockUpdateIAPAvailability = jest.fn();
+const mockFetchInAppPurchases = jest.fn();
 const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
@@ -39,6 +43,11 @@ jest.mocked(require("./apply/in-app-purchase-service")).updateIAPLocalization =
   mockUpdateIAPLocalization;
 jest.mocked(require("./apply/in-app-purchase-service")).deleteIAPLocalization =
   mockDeleteIAPLocalization;
+jest.mocked(require("./apply/iap-availability-service")).updateIAPAvailability =
+  mockUpdateIAPAvailability;
+jest.mocked(
+  require("../domains/in-app-purchases/api-client")
+).fetchInAppPurchases = mockFetchInAppPurchases;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -79,6 +88,12 @@ describe("apply-service", () => {
     jest.clearAllMocks();
     mockCreateNewInAppPurchase.mockResolvedValue(undefined);
     mockUpdateExistingInAppPurchase.mockResolvedValue(undefined);
+    mockUpdateIAPAvailability.mockResolvedValue(undefined);
+    mockFetchInAppPurchases.mockResolvedValue({
+      data: [],
+      included: [],
+      links: { self: "" },
+    });
   });
 
   describe("apply", () => {
@@ -489,6 +504,11 @@ describe("IAP Localization Actions", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFetchInAppPurchases.mockResolvedValue({
+      data: [],
+      included: [],
+      links: { self: "" },
+    });
   });
 
   it("should handle CREATE_IAP_LOCALIZATION action", async () => {
@@ -561,6 +581,36 @@ describe("IAP Localization Actions", () => {
       "test-product",
       "en-US",
       expect.any(Object) // currentIAPsResponse
+    );
+  });
+
+  it("should handle UPDATE_IAP_AVAILABILITY action", async () => {
+    const action: AnyAction = {
+      type: "UPDATE_IAP_AVAILABILITY",
+      payload: {
+        productId: "test-product",
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA", "GBR", "DEU"],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockFetchInAppPurchases).toHaveBeenCalledWith(testAppId);
+    expect(mockUpdateIAPAvailability).toHaveBeenCalledWith(
+      "test-product",
+      {
+        availableInNewTerritories: true,
+        availableTerritories: ["USA", "GBR", "DEU"],
+      },
+      testAppId,
+      expect.objectContaining({
+        data: expect.any(Array),
+        included: expect.any(Array),
+        links: expect.any(Object),
+      })
     );
   });
 });

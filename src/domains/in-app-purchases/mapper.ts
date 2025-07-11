@@ -107,12 +107,18 @@ export async function fetchAndMapIAPPrices(
 ): Promise<InAppPurchase["priceSchedule"]> {
   if (!priceScheduleRel) {
     // Return undefined when there's no price schedule (e.g., MISSING_METADATA state)
+    logger.info(`  No price schedule relationship found`);
     return undefined;
   }
+
+  logger.info(`  Fetching price schedule for ID: ${priceScheduleRel.id}`);
 
   const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
   if (!baseTerritoryResponse.data) {
     // No base territory means no valid price schedule
+    logger.info(
+      `  No base territory found for price schedule ${priceScheduleRel.id}`
+    );
     return undefined;
   }
 
@@ -121,10 +127,12 @@ export async function fetchAndMapIAPPrices(
   );
   if (!territoryParseResult.success) {
     // Invalid base territory means no valid price schedule
+    logger.warn(`  Invalid base territory: ${baseTerritoryResponse.data.id}`);
     return undefined;
   }
 
   const baseTerritory = territoryParseResult.data;
+  logger.info(`  Base territory: ${baseTerritory}`);
   let prices: z.infer<typeof PriceSchema>[] = [];
 
   const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
@@ -137,47 +145,106 @@ export async function fetchAndMapIAPPrices(
 
   prices = [...manualPrices, ...automaticPrices];
 
+  logger.info(`  Found ${prices.length} prices: ${JSON.stringify(prices)}`);
+
+  // If we have a base territory but no prices, this is an incomplete price schedule
+  // This commonly happens with IAPs in MISSING_METADATA state
+  if (prices.length === 0) {
+    logger.info(
+      `  Incomplete price schedule (no prices found) - returning undefined`
+    );
+    return undefined;
+  }
+
+  // Ensure the base territory has a corresponding price
+  const hasBaseTerritoryPrice = prices.some(
+    (p) => p.territory === baseTerritory
+  );
+  if (!hasBaseTerritoryPrice) {
+    logger.warn(
+      `  Base territory ${baseTerritory} not found in prices - returning undefined`
+    );
+    return undefined;
+  }
+
   return { baseTerritory, prices };
 }
 
 // Map in-app purchase availability
 export async function mapInAppPurchaseAvailability(
-  availabilityRel:
-    | { id: string; type: "inAppPurchaseAvailabilities" }
-    | undefined,
-  includedById: IncludedByIdMap
+  iapId: string
 ): Promise<InAppPurchase["availability"]> {
-  if (!availabilityRel) {
-    // Return undefined when there's no availability data (e.g., MISSING_METADATA state)
+  logger.info(`  Fetching availability for IAP ID: ${iapId}`);
+
+  try {
+    const {
+      fetchInAppPurchaseAvailability,
+      fetchInAppPurchaseAvailabilityTerritories,
+    } = await import("./api-client");
+
+    // First, fetch the availability data for the IAP
+    const availabilityResponse = await fetchInAppPurchaseAvailability(iapId);
+
+    if (!availabilityResponse.data) {
+      logger.info(`  No availability data found for IAP ${iapId}`);
+      return undefined;
+    }
+
+    logger.info(
+      `  Availability attributes: ${JSON.stringify(
+        availabilityResponse.data.attributes
+      )}`
+    );
+
+    const availableInNewTerritories =
+      availabilityResponse.data.attributes?.availableInNewTerritories || false;
+
+    // Fetch the actual territories using the availability ID
+    let availableTerritories: z.infer<typeof TerritoryCodeSchema>[] = [];
+
+    try {
+      const territoriesResponse =
+        await fetchInAppPurchaseAvailabilityTerritories(
+          availabilityResponse.data.id
+        );
+
+      if (territoriesResponse.data) {
+        availableTerritories = territoriesResponse.data
+          .map((territory) => {
+            const territoryParseResult = TerritoryCodeSchema.safeParse(
+              territory.id
+            );
+            if (!territoryParseResult.success) {
+              logger.warn(`Invalid territory code: ${territory.id}. Skipping.`);
+              return null;
+            }
+            return territoryParseResult.data;
+          })
+          .filter((t): t is NonNullable<typeof t> => t !== null);
+      }
+
+      logger.info(
+        `  Found ${
+          availableTerritories.length
+        } available territories: ${JSON.stringify(availableTerritories)}`
+      );
+    } catch (territoryError) {
+      logger.warn(
+        `  Failed to fetch territories for availability ${availabilityResponse.data.id}: ${territoryError}`
+      );
+      availableTerritories = [];
+    }
+
+    return {
+      availableInNewTerritories,
+      availableTerritories,
+    };
+  } catch (error) {
+    logger.info(
+      `  No availability found for IAP ${iapId} (likely MISSING_METADATA state): ${error}`
+    );
     return undefined;
   }
-
-  const availability = getIncludedResource<InAppPurchaseAvailability>(
-    includedById,
-    availabilityRel.type,
-    availabilityRel.id
-  );
-
-  if (!availability) {
-    return {
-      availableInNewTerritories: true,
-      availableTerritories: [],
-    };
-  }
-
-  logger.info(`  Availability: ${JSON.stringify(availability)}`);
-
-  const availableInNewTerritories =
-    availability.attributes?.availableInNewTerritories || false;
-
-  // For now, we'll return empty territories - the full implementation would fetch them
-  // This is a simplification for the refactoring
-  const availableTerritories: z.infer<typeof TerritoryCodeSchema>[] = [];
-
-  return {
-    availableInNewTerritories,
-    availableTerritories,
-  };
 }
 
 // Map single in-app purchase
@@ -185,6 +252,10 @@ export async function mapInAppPurchase(
   iap: InAppPurchaseV2,
   includedById: IncludedByIdMap
 ): Promise<InAppPurchase | null> {
+  logger.info(
+    `Mapping IAP: ${iap.attributes?.productId} (${iap.attributes?.name}) - State: ${iap.attributes?.state}`
+  );
+
   const localizations = mapLocalizations(
     iap.relationships?.inAppPurchaseLocalizations?.data,
     includedById
@@ -195,13 +266,10 @@ export async function mapInAppPurchase(
     includedById
   );
 
-  const availability = await mapInAppPurchaseAvailability(
-    iap.relationships?.inAppPurchaseAvailability?.data,
-    includedById
-  );
+  const availability = await mapInAppPurchaseAvailability(iap.id);
 
   const reviewNote = iap.attributes?.reviewNote;
-  return {
+  const mappedIAP = {
     productId: iap.attributes?.productId || "",
     type: iap.attributes?.inAppPurchaseType as
       | "CONSUMABLE"
@@ -214,6 +282,17 @@ export async function mapInAppPurchase(
     priceSchedule: priceSchedule,
     availability: availability,
   };
+
+  logger.info(
+    `  Final IAP mapping: ${JSON.stringify({
+      productId: mappedIAP.productId,
+      hasLocalizations: mappedIAP.localizations.length > 0,
+      hasPriceSchedule: !!mappedIAP.priceSchedule,
+      hasAvailability: !!mappedIAP.availability,
+    })}`
+  );
+
+  return mappedIAP;
 }
 
 // Map in-app purchases response

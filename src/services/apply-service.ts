@@ -10,6 +10,7 @@ import {
   updateIAPLocalization,
   deleteIAPLocalization,
 } from "./apply/in-app-purchase-service";
+import { updateIAPAvailability } from "./apply/iap-availability-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
@@ -101,7 +102,12 @@ async function executeAction(
       logger.info(
         `  Availability: ${JSON.stringify(action.payload.availability)}`
       );
-      // Call API to update IAP availability
+      await updateIAPAvailability(
+        action.payload.productId,
+        action.payload.availability,
+        appId,
+        currentIAPsResponse!
+      );
       break;
 
     // App-level availability (non-pricing)
