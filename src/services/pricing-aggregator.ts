@@ -19,9 +19,7 @@ function processAppPriceResponse(
 
   return (response.included as any[])
     .filter(
-      (
-        item
-      ): item is any => item.type === "appPricePoints" // Using any for now
+      (item): item is any => item.type === "appPricePoints" // Using any for now
     )
     .map((pricePoint) => {
       const territoryId = decodeTerritoryFromId(pricePoint.id);

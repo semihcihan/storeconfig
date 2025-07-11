@@ -22,5 +22,18 @@ export function extractErrorMessage(error: any): string {
 // Helper function to throw formatted error
 export function throwFormattedError(prefix: string, error: any): never {
   const message = extractErrorMessage(error);
-  throw new Error(`${prefix}: ${message}`);
+  const formattedError = new Error(`${prefix}: ${message}`);
+
+  // Preserve original error properties for status checking
+  if (error?.status) {
+    (formattedError as any).status = error.status;
+  }
+  if (error?.response?.status) {
+    (formattedError as any).response = { status: error.response.status };
+  }
+  if (error?.errors) {
+    (formattedError as any).errors = error.errors;
+  }
+
+  throw formattedError;
 }

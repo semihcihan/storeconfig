@@ -8,6 +8,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "tsc --watch",
     "start": "node dist/cli.js",
     "test": "jest",
     "prepublishOnly": "npm run build",
