@@ -1035,24 +1035,70 @@ function parseOfferDuration(
 }
 
 async function fetchAppAvailability(appId: string) {
-  const response = await api.GET("/v1/apps/{id}/appAvailabilityV2", {
-    params: {
-      path: { id: appId },
-      query: {
-        include: ["territoryAvailabilities"],
-        "fields[appAvailabilities]": [
-          "availableInNewTerritories",
-          "territoryAvailabilities",
-        ],
-        "fields[territoryAvailabilities]": ["available", "territory"],
+  // First, get the app availability ID without including territoryAvailabilities
+  const appAvailabilityResponse = await api.GET(
+    "/v1/apps/{id}/appAvailabilityV2",
+    {
+      params: {
+        path: { id: appId },
+        query: {
+          "fields[appAvailabilities]": ["availableInNewTerritories"],
+        },
       },
-    },
-  });
+    }
+  );
 
-  if (response.error) {
-    throw response.error;
+  if (appAvailabilityResponse.error) {
+    throw appAvailabilityResponse.error;
   }
-  return response.data;
+
+  const appAvailabilityId = appAvailabilityResponse.data?.data?.id;
+  if (!appAvailabilityId) {
+    logger.warn(`No app availability found for app ${appId}`);
+    return null;
+  }
+
+  // Now fetch all territory availabilities using the v2 endpoint with proper pagination
+  let allTerritoryAvailabilities: any[] = [];
+  let cursor: string | undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const territoryAvailabilitiesResponse = await api.GET(
+      "/v2/appAvailabilities/{id}/territoryAvailabilities",
+      {
+        params: {
+          path: { id: appAvailabilityId },
+          query: {
+            limit: 200,
+            "fields[territoryAvailabilities]": ["available", "territory"],
+            ...(cursor ? { cursor } : {}),
+          },
+        },
+      }
+    );
+
+    if (territoryAvailabilitiesResponse.error) {
+      throw territoryAvailabilitiesResponse.error;
+    }
+
+    const territories = territoryAvailabilitiesResponse.data?.data || [];
+    allTerritoryAvailabilities = [
+      ...allTerritoryAvailabilities,
+      ...territories,
+    ];
+
+    // Check for more pages
+    cursor = territoryAvailabilitiesResponse.data?.meta?.paging?.nextCursor;
+    hasMore = !!cursor;
+  }
+
+  // Combine the results to match the expected structure
+  return {
+    data: appAvailabilityResponse.data.data,
+    included: allTerritoryAvailabilities,
+    links: appAvailabilityResponse.data.links,
+  };
 }
 
 async function fetchAppManualPrices(priceScheduleId: string) {
