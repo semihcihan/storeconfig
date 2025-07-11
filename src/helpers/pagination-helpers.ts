@@ -1,6 +1,7 @@
 import { api } from "../services/api";
 import { logger } from "../utils/logger";
 import { API_LIMITS } from "./constants";
+import { throwFormattedError } from "./error-handling-helpers";
 
 // Generic pagination helper for v2 endpoints with cursor-based pagination
 export async function paginateV2<T>(
@@ -29,11 +30,7 @@ export async function paginateV2<T>(
       logger.error(
         `Failed to paginate ${endpoint}: ${JSON.stringify(response.error)}`
       );
-      throw new Error(
-        `Failed to paginate ${endpoint}: ${
-          response.error.errors?.[0]?.detail || "Unknown error"
-        }`
-      );
+      throwFormattedError(`Failed to paginate ${endpoint}`, response.error);
     }
 
     const data = response.data?.data || [];
@@ -74,11 +71,7 @@ export async function paginateV1<T>(
       logger.error(
         `Failed to paginate ${endpoint}: ${JSON.stringify(response.error)}`
       );
-      throw new Error(
-        `Failed to paginate ${endpoint}: ${
-          response.error.errors?.[0]?.detail || "Unknown error"
-        }`
-      );
+      throwFormattedError(`Failed to paginate ${endpoint}`, response.error);
     }
 
     const data = response.data?.data || [];
