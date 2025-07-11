@@ -478,6 +478,214 @@ describe("diff-service", () => {
       );
     });
 
+    it("should throw error when trying to delete an in-app purchase", () => {
+      const currentState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          {
+            productId: "iap1",
+            referenceName: "IAP 1",
+            type: "CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+          {
+            productId: "iap2",
+            referenceName: "IAP 2",
+            type: "NON_CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          // Only iap2, missing iap1 - should throw
+          {
+            productId: "iap2",
+            referenceName: "IAP 2",
+            type: "NON_CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        `In-app purchase with productId 'iap1' cannot be deleted. In-app purchases cannot be removed once created.`
+      );
+    });
+
+    it("should throw error when type is changed for existing productId", () => {
+      const currentState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          {
+            productId: "iap1",
+            referenceName: "IAP 1",
+            type: "CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...currentState,
+        inAppPurchases: [
+          {
+            productId: "iap1", // Same productId
+            referenceName: "IAP 1",
+            type: "NON_CONSUMABLE", // But different type - should fail
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        `The type for in-app purchase iap1 cannot be changed. Current: CONSUMABLE, Desired: NON_CONSUMABLE.`
+      );
+    });
+
+    it("should allow adding new IAPs while keeping all existing ones", () => {
+      const currentState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          {
+            productId: "iap1",
+            referenceName: "IAP 1",
+            type: "CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          // Keep existing IAP
+          {
+            productId: "iap1",
+            referenceName: "IAP 1",
+            type: "CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+          // Add new IAP
+          {
+            productId: "iap2",
+            referenceName: "IAP 2",
+            type: "NON_CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      // Should not throw - all existing IAPs are preserved
+      expect(() => diff(currentState, desiredState)).not.toThrow();
+
+      const plan = diff(currentState, desiredState);
+      expect(
+        plan.some((action) => action.type === "CREATE_IN_APP_PURCHASE")
+      ).toBe(true);
+    });
+
+    it("should allow updating existing IAP content while keeping same type", () => {
+      const currentState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          {
+            productId: "iap1",
+            referenceName: "IAP 1",
+            type: "CONSUMABLE",
+            familySharable: false,
+            priceSchedule: { baseTerritory: "USA", prices: [] },
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...EMPTY_STATE,
+        inAppPurchases: [
+          {
+            productId: "iap1", // Same productId
+            referenceName: "Updated IAP 1", // Different content
+            type: "CONSUMABLE", // Same type - OK
+            familySharable: true, // Different content
+            priceSchedule: {
+              baseTerritory: "CAN",
+              prices: [{ territory: "CAN", price: "1.99" }],
+            }, // Different content
+            localizations: [
+              { locale: "en-US", name: "New Name", description: "New Desc" },
+            ], // Different content
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["CAN"],
+            }, // Different content
+          },
+        ],
+      };
+
+      // Should not throw - content can change, type is the same
+      expect(() => diff(currentState, desiredState)).not.toThrow();
+
+      const plan = diff(currentState, desiredState);
+      expect(
+        plan.some((action) => action.type === "UPDATE_IN_APP_PURCHASE")
+      ).toBe(true);
+    });
+
     it("should create a plan to add an in-app purchase", () => {
       const desiredState = {
         ...EMPTY_STATE,
@@ -489,21 +697,6 @@ describe("diff-service", () => {
         type: "CREATE_IN_APP_PURCHASE",
         payload: {
           inAppPurchase: MOCK_STATE_1.inAppPurchases![0],
-        },
-      });
-    });
-
-    it("should create a plan to delete an in-app purchase", () => {
-      const currentState = {
-        ...EMPTY_STATE,
-        inAppPurchases: MOCK_STATE_1.inAppPurchases,
-      };
-      const plan = diff(currentState, EMPTY_STATE);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "DELETE_IN_APP_PURCHASE",
-        payload: {
-          productId: MOCK_STATE_1.inAppPurchases![0].productId,
         },
       });
     });
@@ -847,17 +1040,14 @@ describe("diff-service", () => {
     it("should create a plan to delete a subscription group", () => {
       const currentState = MOCK_STATE_1;
       const desiredState = {
-        ...EMPTY_STATE,
-        pricing: MOCK_STATE_1.pricing, // Keep the same pricing to avoid triggering pricing validation
+        ...MOCK_STATE_1,
+        subscriptionGroups: [], // Only remove subscription groups
       };
       const plan = diff(currentState, desiredState);
 
       // We expect a DELETE_SUBSCRIPTION_GROUP action.
-      // The mock state also contains an IAP, so we filter for the group action.
-      const groupAction = plan.find(
-        (a) => a.type === "DELETE_SUBSCRIPTION_GROUP"
-      );
-      expect(groupAction).toEqual({
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
         type: "DELETE_SUBSCRIPTION_GROUP",
         payload: {
           referenceName: MOCK_STATE_1.subscriptionGroups![0].referenceName,

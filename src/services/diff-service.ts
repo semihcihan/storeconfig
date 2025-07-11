@@ -152,6 +152,16 @@ function diffInAppPurchases(
     desiredIaps.map((iap) => [iap.productId, iap])
   );
 
+  // First, check that all current IAPs are present in desired state
+  // In-app purchases cannot be deleted once created
+  for (const [productId] of currentIapsByProductId.entries()) {
+    if (!desiredIapsByProductId.has(productId)) {
+      throw new Error(
+        `In-app purchase with productId '${productId}' cannot be deleted. In-app purchases cannot be removed once created.`
+      );
+    }
+  }
+
   for (const [productId, desiredIap] of desiredIapsByProductId.entries()) {
     const currentIap = currentIapsByProductId.get(productId);
 
@@ -212,15 +222,6 @@ function diffInAppPurchases(
           },
         });
       }
-    }
-  }
-
-  for (const [productId] of currentIapsByProductId.entries()) {
-    if (!desiredIapsByProductId.has(productId)) {
-      actions.push({
-        type: "DELETE_IN_APP_PURCHASE",
-        payload: { productId },
-      });
     }
   }
 

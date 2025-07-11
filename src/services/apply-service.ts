@@ -31,10 +31,6 @@ async function executeAction(
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
       // Call API to update an in-app purchase
       break;
-    case "DELETE_IN_APP_PURCHASE":
-      logger.info(`  Product ID: ${action.payload.productId}`);
-      // Call API to delete an in-app purchase
-      break;
 
     // IAP Localizations
     case "CREATE_IAP_LOCALIZATION":

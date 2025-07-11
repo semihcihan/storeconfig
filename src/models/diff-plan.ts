@@ -47,13 +47,6 @@ export type UpdateInAppPurchaseAction = Action<
   }
 >;
 
-export type DeleteInAppPurchaseAction = Action<
-  "DELETE_IN_APP_PURCHASE",
-  {
-    productId: string;
-  }
->;
-
 // #################################################################################
 // IAP Localization Action Types
 // #################################################################################
@@ -380,7 +373,6 @@ export type AnyAction =
   // In-App Purchases
   | CreateInAppPurchaseAction
   | UpdateInAppPurchaseAction
-  | DeleteInAppPurchaseAction
   // IAP Localizations
   | CreateIapLocalizationAction
   | UpdateIapLocalizationAction
