@@ -105,30 +105,37 @@ export async function fetchAndMapIAPPrices(
     | undefined,
   includedById: IncludedByIdMap
 ): Promise<InAppPurchase["priceSchedule"]> {
-  let prices: z.infer<typeof PriceSchema>[] = [];
-  let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA"; // TODO: should not have a default value
-
-  if (priceScheduleRel) {
-    const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
-    if (baseTerritoryResponse.data) {
-      const territoryParseResult = TerritoryCodeSchema.safeParse(
-        baseTerritoryResponse.data.id
-      );
-      if (territoryParseResult.success) {
-        baseTerritory = territoryParseResult.data;
-      }
-    }
-
-    const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
-      fetchManualPrices(priceScheduleRel.id),
-      fetchAutomaticPrices(priceScheduleRel.id, baseTerritory),
-    ]);
-
-    const manualPrices = processPriceResponse(manualPricesResponse);
-    const automaticPrices = processPriceResponse(automaticPricesResponse);
-
-    prices = [...manualPrices, ...automaticPrices];
+  if (!priceScheduleRel) {
+    // Return undefined when there's no price schedule (e.g., MISSING_METADATA state)
+    return undefined;
   }
+
+  const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
+  if (!baseTerritoryResponse.data) {
+    // No base territory means no valid price schedule
+    return undefined;
+  }
+
+  const territoryParseResult = TerritoryCodeSchema.safeParse(
+    baseTerritoryResponse.data.id
+  );
+  if (!territoryParseResult.success) {
+    // Invalid base territory means no valid price schedule
+    return undefined;
+  }
+
+  const baseTerritory = territoryParseResult.data;
+  let prices: z.infer<typeof PriceSchema>[] = [];
+
+  const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
+    fetchManualPrices(priceScheduleRel.id),
+    fetchAutomaticPrices(priceScheduleRel.id, baseTerritory),
+  ]);
+
+  const manualPrices = processPriceResponse(manualPricesResponse);
+  const automaticPrices = processPriceResponse(automaticPricesResponse);
+
+  prices = [...manualPrices, ...automaticPrices];
 
   return { baseTerritory, prices };
 }
@@ -139,15 +146,10 @@ export async function mapInAppPurchaseAvailability(
     | { id: string; type: "inAppPurchaseAvailabilities" }
     | undefined,
   includedById: IncludedByIdMap
-): Promise<{
-  availableInNewTerritories: boolean;
-  availableTerritories: z.infer<typeof TerritoryCodeSchema>[];
-}> {
+): Promise<InAppPurchase["availability"]> {
   if (!availabilityRel) {
-    return {
-      availableInNewTerritories: true,
-      availableTerritories: [],
-    };
+    // Return undefined when there's no availability data (e.g., MISSING_METADATA state)
+    return undefined;
   }
 
   const availability = getIncludedResource<InAppPurchaseAvailability>(

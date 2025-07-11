@@ -3,6 +3,10 @@ import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./apply/app-availability-service";
 import { createAppPriceSchedule } from "./apply/app-pricing-service";
+import {
+  createNewInAppPurchase,
+  updateExistingInAppPurchase,
+} from "./apply/in-app-purchase-service";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -18,12 +22,16 @@ async function executeAction(
     // In-App Purchases
     case "CREATE_IN_APP_PURCHASE":
       logger.info(`  Product ID: ${action.payload.inAppPurchase.productId}`);
-      // Call API to create an in-app purchase
+      await createNewInAppPurchase(appId, action.payload.inAppPurchase);
       break;
     case "UPDATE_IN_APP_PURCHASE":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
-      // Call API to update an in-app purchase
+      await updateExistingInAppPurchase(
+        appId,
+        action.payload.productId,
+        action.payload.changes
+      );
       break;
 
     // IAP Localizations

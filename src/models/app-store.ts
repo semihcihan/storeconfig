@@ -161,10 +161,10 @@ export const InAppPurchaseSchema = z.object({
   type: z.enum(["CONSUMABLE", "NON_CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"]),
   referenceName: z.string(),
   familySharable: z.boolean(),
-  priceSchedule: PriceScheduleSchema,
+  priceSchedule: PriceScheduleSchema.optional(),
   localizations: z.array(LocalizationSchema),
   reviewNote: z.string().optional(),
-  availability: AvailabilitySchema,
+  availability: AvailabilitySchema.optional(),
 });
 
 export const AppStoreModelSchema = z.object({

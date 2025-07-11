@@ -10,6 +10,11 @@ type InAppPurchasePricesResponse =
   components["schemas"]["InAppPurchasePricesResponse"];
 type TerritoryResponse = components["schemas"]["TerritoryResponse"];
 type TerritoriesResponse = components["schemas"]["TerritoriesResponse"];
+type InAppPurchaseV2CreateRequest =
+  components["schemas"]["InAppPurchaseV2CreateRequest"];
+type InAppPurchaseV2UpdateRequest =
+  components["schemas"]["InAppPurchaseV2UpdateRequest"];
+type InAppPurchaseV2Response = components["schemas"]["InAppPurchaseV2Response"];
 
 // Fetch in-app purchases for an app
 export async function fetchInAppPurchases(
@@ -17,21 +22,30 @@ export async function fetchInAppPurchases(
 ): Promise<InAppPurchasesV2Response> {
   const config = API_FIELD_CONFIGS.inAppPurchases;
 
+  const queryParams = {
+    limit: 200,
+    include: ["inAppPurchaseLocalizations", "iapPriceSchedule"],
+    "fields[inAppPurchaseLocalizations]":
+      config.fieldsInAppPurchaseLocalizations as any,
+  };
+
+  logger.info(
+    `Fetching IAPs for app ${appId} with URL: /v1/apps/${appId}/inAppPurchasesV2`
+  );
+  logger.info(`Query parameters: ${JSON.stringify(queryParams, null, 2)}`);
+
   const response = await api.GET("/v1/apps/{id}/inAppPurchasesV2", {
     params: {
       path: { id: appId },
-      query: {
-        limit: 200,
-        include: config.include as any,
-        "fields[inAppPurchaseLocalizations]":
-          config.fieldsInAppPurchaseLocalizations as any,
-        "fields[inAppPurchaseAvailabilities]":
-          config.fieldsInAppPurchaseAvailabilities as any,
-      },
+      query: queryParams as any,
     },
   });
 
   if (response.error) {
+    logger.error(
+      "Error fetching IAPs:",
+      JSON.stringify(response.error, null, 2)
+    );
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
       logger.info(
@@ -40,6 +54,19 @@ export async function fetchInAppPurchases(
       return { data: [], included: [], links: { self: "" } };
     }
     throw response.error;
+  }
+
+  logger.info(
+    `Successfully fetched ${
+      response.data.data?.length || 0
+    } IAPs for app ${appId}`
+  );
+  if (response.data.data && response.data.data.length > 0) {
+    response.data.data.forEach((iap) => {
+      logger.info(
+        `  IAP: ${iap.attributes?.productId} (${iap.attributes?.name}) - State: ${iap.attributes?.state}`
+      );
+    });
   }
 
   return response.data;
@@ -131,6 +158,40 @@ export async function fetchAutomaticPrices(
       },
     }
   );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Create a new in-app purchase
+export async function createInAppPurchase(
+  request: InAppPurchaseV2CreateRequest
+): Promise<InAppPurchaseV2Response> {
+  const response = await api.POST("/v2/inAppPurchases", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update an existing in-app purchase
+export async function updateInAppPurchase(
+  iapId: string,
+  request: InAppPurchaseV2UpdateRequest
+): Promise<InAppPurchaseV2Response> {
+  const response = await api.PATCH("/v2/inAppPurchases/{id}", {
+    params: {
+      path: { id: iapId },
+    },
+    body: request,
+  });
 
   if (response.error) {
     throw response.error;

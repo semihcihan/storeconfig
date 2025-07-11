@@ -6,11 +6,14 @@ import { z } from "zod";
 // Mock the services
 jest.mock("./apply/app-availability-service");
 jest.mock("./apply/app-pricing-service");
+jest.mock("./apply/in-app-purchase-service");
 jest.mock("../utils/logger");
 
 // Mock implementations
 const mockUpdateAppAvailability = jest.fn();
 const mockCreateAppPriceSchedule = jest.fn();
+const mockCreateNewInAppPurchase = jest.fn();
+const mockUpdateExistingInAppPurchase = jest.fn();
 const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
@@ -22,6 +25,11 @@ jest.mocked(require("./apply/app-availability-service")).updateAppAvailability =
   mockUpdateAppAvailability;
 jest.mocked(require("./apply/app-pricing-service")).createAppPriceSchedule =
   mockCreateAppPriceSchedule;
+jest.mocked(require("./apply/in-app-purchase-service")).createNewInAppPurchase =
+  mockCreateNewInAppPurchase;
+jest.mocked(
+  require("./apply/in-app-purchase-service")
+).updateExistingInAppPurchase = mockUpdateExistingInAppPurchase;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -60,6 +68,8 @@ const MOCK_DESIRED_STATE: AppStoreModel = {
 describe("apply-service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCreateNewInAppPurchase.mockResolvedValue(undefined);
+    mockUpdateExistingInAppPurchase.mockResolvedValue(undefined);
   });
 
   describe("apply", () => {
@@ -168,15 +178,13 @@ describe("apply-service", () => {
               type: "CONSUMABLE",
               referenceName: "Test IAP",
               familySharable: false,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [{ territory: "USA", price: "0.99" }],
-              },
-              localizations: [],
-              availability: {
-                availableInNewTerritories: true,
-                availableTerritories: [],
-              },
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Test IAP",
+                  description: "A test in-app purchase",
+                },
+              ],
             },
           },
         },
@@ -191,6 +199,22 @@ describe("apply-service", () => {
         "test-app-id",
         MOCK_CURRENT_STATE
       );
+
+      // Should call createNewInAppPurchase for the IAP creation action
+      expect(mockCreateNewInAppPurchase).toHaveBeenCalledTimes(1);
+      expect(mockCreateNewInAppPurchase).toHaveBeenCalledWith("test-app-id", {
+        productId: "test-iap",
+        type: "CONSUMABLE",
+        referenceName: "Test IAP",
+        familySharable: false,
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test IAP",
+            description: "A test in-app purchase",
+          },
+        ],
+      });
 
       // Should not call pricing service for non-pricing actions
       expect(mockCreateAppPriceSchedule).not.toHaveBeenCalled();
