@@ -10,15 +10,20 @@ import {
   updateIAPLocalization,
   deleteIAPLocalization,
 } from "./apply/in-app-purchase-service";
+import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { z } from "zod";
+import type { components } from "../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
+type InAppPurchasesV2Response =
+  components["schemas"]["InAppPurchasesV2Response"];
 
 async function executeAction(
   action: AnyAction,
   appId: string,
   currentState: AppStoreModel,
-  desiredState: AppStoreModel
+  desiredState: AppStoreModel,
+  currentIAPsResponse?: InAppPurchasesV2Response
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
@@ -33,7 +38,8 @@ async function executeAction(
       await updateExistingInAppPurchase(
         appId,
         action.payload.productId,
-        action.payload.changes
+        action.payload.changes,
+        currentIAPsResponse
       );
       break;
 
@@ -44,7 +50,8 @@ async function executeAction(
       await createIAPLocalization(
         appId,
         action.payload.productId,
-        action.payload.localization
+        action.payload.localization,
+        currentIAPsResponse
       );
       break;
     case "UPDATE_IAP_LOCALIZATION":
@@ -55,7 +62,8 @@ async function executeAction(
         appId,
         action.payload.productId,
         action.payload.locale,
-        action.payload.changes
+        action.payload.changes,
+        currentIAPsResponse
       );
       break;
     case "DELETE_IAP_LOCALIZATION":
@@ -64,7 +72,8 @@ async function executeAction(
       await deleteIAPLocalization(
         appId,
         action.payload.productId,
-        action.payload.locale
+        action.payload.locale,
+        currentIAPsResponse
       );
       break;
 
@@ -271,9 +280,27 @@ export async function apply(
 ) {
   logger.info(`Applying plan with ${plan.length} actions for app ${appId}`);
 
+  // Check if we have any IAP-related actions to avoid unnecessary API call
+  const hasIAPActions = plan.some(
+    (action) =>
+      action.type.includes("IAP") || action.type.includes("IN_APP_PURCHASE")
+  );
+
+  // Fetch raw IAP response once if needed
+  let currentIAPsResponse: InAppPurchasesV2Response | undefined;
+  if (hasIAPActions) {
+    currentIAPsResponse = await fetchInAppPurchases(appId);
+  }
+
   // Execute all actions individually
   for (const action of plan) {
-    await executeAction(action, appId, currentState, desiredState);
+    await executeAction(
+      action,
+      appId,
+      currentState,
+      desiredState,
+      currentIAPsResponse
+    );
   }
 
   logger.info("Plan application completed");

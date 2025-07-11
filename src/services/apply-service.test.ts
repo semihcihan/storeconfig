@@ -513,7 +513,8 @@ describe("IAP Localization Actions", () => {
         locale: "en-US",
         name: "Test Product",
         description: "A test product",
-      }
+      },
+      expect.any(Object) // currentIAPsResponse
     );
   });
 
@@ -539,7 +540,8 @@ describe("IAP Localization Actions", () => {
       {
         name: "Updated Product Name",
         description: "Updated description",
-      }
+      },
+      expect.any(Object) // currentIAPsResponse
     );
   });
 
@@ -557,7 +559,8 @@ describe("IAP Localization Actions", () => {
     expect(mockDeleteIAPLocalization).toHaveBeenCalledWith(
       testAppId,
       "test-product",
-      "en-US"
+      "en-US",
+      expect.any(Object) // currentIAPsResponse
     );
   });
 });
