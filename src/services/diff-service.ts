@@ -673,6 +673,9 @@ function diffAppPricing(
     currentSchedule.baseTerritory !== desiredSchedule.baseTerritory;
   const newBaseTerritory = desiredSchedule.baseTerritory;
 
+  // Track if we're creating, updating, or deleting any prices
+  let willRecreateSchedule = false;
+
   // Step 1: Create new prices (especially important if the new base territory needs a price)
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
@@ -681,6 +684,7 @@ function diffAppPricing(
         type: "CREATE_APP_PRICE",
         payload: { price: desiredPrice },
       });
+      willRecreateSchedule = true;
     }
   }
 
@@ -692,25 +696,30 @@ function diffAppPricing(
         type: "UPDATE_APP_PRICE",
         payload: { price: desiredPrice },
       });
+      willRecreateSchedule = true;
     }
   }
 
-  // Step 3: Update base territory (now that all required prices exist)
-  if (baseTerritoryChanging) {
-    actions.push({
-      type: "UPDATE_APP_BASE_TERRITORY",
-      payload: { territory: newBaseTerritory },
-    });
-  }
-
-  // Step 4: Delete prices that are no longer needed (after base territory is updated)
+  // Step 3: Delete prices that are no longer needed
   for (const [territory] of currentPricesByTerritory.entries()) {
     if (!desiredPricesByTerritory.has(territory)) {
       actions.push({
         type: "DELETE_APP_PRICE",
         payload: { territory },
       });
+      willRecreateSchedule = true;
     }
+  }
+
+  // Step 4: Update base territory (only if we're not already recreating the schedule)
+  // CREATE_APP_PRICE, UPDATE_APP_PRICE, and DELETE_APP_PRICE all recreate the entire price schedule
+  // with the correct base territory, so we only need UPDATE_APP_BASE_TERRITORY
+  // if we're changing the base territory without touching any prices
+  if (baseTerritoryChanging && !willRecreateSchedule) {
+    actions.push({
+      type: "UPDATE_APP_BASE_TERRITORY",
+      payload: { territory: newBaseTerritory },
+    });
   }
 
   return actions;

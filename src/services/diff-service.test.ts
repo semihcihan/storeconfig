@@ -228,6 +228,239 @@ describe("diff-service", () => {
       });
     });
 
+    it("should not generate UPDATE_APP_BASE_TERRITORY when CREATE_APP_PRICE is already recreating the schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const newPrice: Price = { territory: "CAN", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN", // Changing base territory
+          prices: [...MOCK_STATE_1.pricing!.prices, newPrice], // Adding new price
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have CREATE_APP_PRICE action
+      const createPriceAction = plan.find((a) => a.type === "CREATE_APP_PRICE");
+      expect(createPriceAction).toEqual({
+        type: "CREATE_APP_PRICE",
+        payload: {
+          price: newPrice,
+        },
+      });
+
+      // Should NOT have UPDATE_APP_BASE_TERRITORY action because CREATE_APP_PRICE handles it
+      const updateBaseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(updateBaseTerritoryAction).toBeUndefined();
+    });
+
+    it("should generate UPDATE_APP_BASE_TERRITORY when changing base territory without touching prices", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN", // Only changing base territory, keeping same prices
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have UPDATE_APP_BASE_TERRITORY action
+      const updateBaseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(updateBaseTerritoryAction).toEqual({
+        type: "UPDATE_APP_BASE_TERRITORY",
+        payload: {
+          territory: "CAN",
+        },
+      });
+
+      // Should NOT have any price actions
+      const priceActions = plan.filter(
+        (a) =>
+          a.type === "CREATE_APP_PRICE" ||
+          a.type === "UPDATE_APP_PRICE" ||
+          a.type === "DELETE_APP_PRICE"
+      );
+      expect(priceActions).toHaveLength(0);
+    });
+
+    it("should not generate UPDATE_APP_BASE_TERRITORY when UPDATE_APP_PRICE is already recreating the schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const updatedPrice: Price = { territory: "USA", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN", // Changing base territory
+          prices: [updatedPrice], // Updating existing price
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have UPDATE_APP_PRICE action
+      const updatePriceAction = plan.find((a) => a.type === "UPDATE_APP_PRICE");
+      expect(updatePriceAction).toEqual({
+        type: "UPDATE_APP_PRICE",
+        payload: {
+          price: updatedPrice,
+        },
+      });
+
+      // Should NOT have UPDATE_APP_BASE_TERRITORY action because UPDATE_APP_PRICE handles it
+      const updateBaseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(updateBaseTerritoryAction).toBeUndefined();
+    });
+
+    it("should not generate UPDATE_APP_BASE_TERRITORY when DELETE_APP_PRICE is already recreating the schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN", // Changing base territory
+          prices: [], // Deleting all prices
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have DELETE_APP_PRICE action
+      const deletePriceAction = plan.find((a) => a.type === "DELETE_APP_PRICE");
+      expect(deletePriceAction).toEqual({
+        type: "DELETE_APP_PRICE",
+        payload: {
+          territory: "USA",
+        },
+      });
+
+      // Should NOT have UPDATE_APP_BASE_TERRITORY action because DELETE_APP_PRICE handles it
+      const updateBaseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(updateBaseTerritoryAction).toBeUndefined();
+    });
+
+    it("should not generate UPDATE_APP_BASE_TERRITORY when multiple price actions are recreating the schedule", () => {
+      const currentState = MOCK_STATE_1;
+      const newPrice: Price = { territory: "CAN", price: "3.99" };
+      const updatedPrice: Price = { territory: "USA", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          baseTerritory: "CAN", // Changing base territory
+          prices: [updatedPrice, newPrice], // Both updating existing and adding new
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have both CREATE_APP_PRICE and UPDATE_APP_PRICE actions
+      const createPriceAction = plan.find((a) => a.type === "CREATE_APP_PRICE");
+      const updatePriceAction = plan.find((a) => a.type === "UPDATE_APP_PRICE");
+
+      expect(createPriceAction).toEqual({
+        type: "CREATE_APP_PRICE",
+        payload: {
+          price: newPrice,
+        },
+      });
+
+      expect(updatePriceAction).toEqual({
+        type: "UPDATE_APP_PRICE",
+        payload: {
+          price: updatedPrice,
+        },
+      });
+
+      // Should NOT have UPDATE_APP_BASE_TERRITORY action because price actions handle it
+      const updateBaseTerritoryAction = plan.find(
+        (a) => a.type === "UPDATE_APP_BASE_TERRITORY"
+      );
+      expect(updateBaseTerritoryAction).toBeUndefined();
+    });
+
+    it("should generate only CREATE_APP_PRICE when adding price without base territory change", () => {
+      const currentState = MOCK_STATE_1;
+      const newPrice: Price = { territory: "CAN", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          // baseTerritory stays "USA"
+          prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have only CREATE_APP_PRICE action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_APP_PRICE",
+        payload: {
+          price: newPrice,
+        },
+      });
+    });
+
+    it("should generate only UPDATE_APP_PRICE when updating price without base territory change", () => {
+      const currentState = MOCK_STATE_1;
+      const updatedPrice: Price = { territory: "USA", price: "5.99" };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          // baseTerritory stays "USA"
+          prices: [updatedPrice],
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have only UPDATE_APP_PRICE action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_PRICE",
+        payload: {
+          price: updatedPrice,
+        },
+      });
+    });
+
+    it("should generate only DELETE_APP_PRICE when deleting price without base territory change", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        pricing: {
+          ...MOCK_STATE_1.pricing!,
+          // baseTerritory stays "USA"
+          prices: [], // Deleting all prices
+        },
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should have only DELETE_APP_PRICE action
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_APP_PRICE",
+        payload: {
+          territory: "USA",
+        },
+      });
+    });
+
     it("should throw an error if an in-app purchase type is changed", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
