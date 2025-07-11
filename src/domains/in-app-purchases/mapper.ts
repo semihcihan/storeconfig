@@ -106,7 +106,7 @@ export async function fetchAndMapIAPPrices(
   includedById: IncludedByIdMap
 ): Promise<InAppPurchase["priceSchedule"]> {
   let prices: z.infer<typeof PriceSchema>[] = [];
-  let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA";
+  let baseTerritory: z.infer<typeof TerritoryCodeSchema> = "USA"; // TODO: should not have a default value
 
   if (priceScheduleRel) {
     const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
