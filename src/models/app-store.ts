@@ -137,7 +137,7 @@ export const SubscriptionSchema = z
       );
 
       // Check if all territory codes are covered
-      for (const territoryCode of allTerritoryCodes) {
+      for (const territoryCode of Array.from(allTerritoryCodes)) {
         if (!providedTerritoryCodes.has(territoryCode)) {
           return false;
         }
