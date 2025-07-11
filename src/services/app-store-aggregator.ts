@@ -1215,10 +1215,35 @@ async function mapAppAvailability(
         item.attributes?.available === true
     )
     .map((territoryAvail) => {
+      // First try to get territory from relationships
       const territoryId = territoryAvail.relationships?.territory?.data?.id;
-      if (!territoryId) return null;
+      if (territoryId) {
+        const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
+        if (territoryParseResult.success) {
+          return territoryParseResult.data;
+        }
+      }
 
-      return TerritoryCodeSchema.parse(territoryId);
+      // Fallback: decode territory from the territoryAvailability ID
+      try {
+        const decodedId = Buffer.from(territoryAvail.id, "base64").toString(
+          "utf-8"
+        );
+        const idParts = JSON.parse(decodedId);
+        const territoryCode = idParts.t;
+
+        const territoryParseResult =
+          TerritoryCodeSchema.safeParse(territoryCode);
+        if (territoryParseResult.success) {
+          return territoryParseResult.data;
+        }
+      } catch (e) {
+        logger.warn(
+          `Could not decode territory availability ID: ${territoryAvail.id}`
+        );
+      }
+
+      return null;
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
 

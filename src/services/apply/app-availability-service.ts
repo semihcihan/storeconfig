@@ -106,9 +106,102 @@ async function updateTerritoryAvailability(
   logger.info(`Territory availability updated successfully`);
 }
 
-// Helper function to ensure app availability resource exists
-async function ensureAppAvailability(appId: string): Promise<string> {
-  // First try to get existing app availability
+// Helper function to create app availability for a new app
+async function createAppAvailability(
+  appId: string,
+  availableTerritories: string[]
+): Promise<string> {
+  logger.info("Creating new app availability...");
+
+  // Import territory codes
+  const { territoryCodes } = await import("../../models/territories");
+
+  // Create territory availability objects for all territories
+  const territoryAvailabilityData = [];
+  const includedTerritoryAvailabilities = [];
+
+  for (let i = 0; i < territoryCodes.length; i++) {
+    const territoryCode = territoryCodes[i];
+    // Create a unique ID for this territory availability (using index-based approach)
+    const territoryAvailabilityId = `temp-territory-availability-${i}`;
+
+    // Set available to true only if this territory is in the desired list
+    const available = availableTerritories.includes(territoryCode);
+
+    // Add to relationship data
+    territoryAvailabilityData.push({
+      type: "territoryAvailabilities" as const,
+      id: territoryAvailabilityId,
+    });
+
+    // Add to included objects
+    includedTerritoryAvailabilities.push({
+      type: "territoryAvailabilities" as const,
+      id: territoryAvailabilityId,
+      attributes: {
+        available,
+      },
+      relationships: {
+        territory: {
+          data: {
+            type: "territories" as const,
+            id: territoryCode,
+          },
+        },
+      },
+    });
+  }
+
+  const response = await api.POST("/v2/appAvailabilities", {
+    body: {
+      data: {
+        type: "appAvailabilities",
+        attributes: {
+          availableInNewTerritories: true,
+        },
+        relationships: {
+          app: {
+            data: {
+              type: "apps",
+              id: appId,
+            },
+          },
+          territoryAvailabilities: {
+            data: territoryAvailabilityData,
+          },
+        },
+      },
+      included: includedTerritoryAvailabilities,
+    },
+  });
+
+  if (response.error) {
+    logger.error(
+      `Failed to create app availability: ${JSON.stringify(response.error)}`
+    );
+    throw new Error(
+      `Failed to create app availability: ${
+        response.error.errors?.[0]?.detail || "Unknown error"
+      }`
+    );
+  }
+
+  if (!response.data?.data?.id) {
+    throw new Error("No app availability ID returned from creation");
+  }
+
+  logger.info(
+    `Successfully created app availability: ${response.data.data.id}`
+  );
+  return response.data.data.id;
+}
+
+// Helper function to get or create app availability resource
+async function ensureAppAvailability(
+  appId: string,
+  availableTerritories: string[]
+): Promise<string> {
+  // Try to get existing app availability
   const existingResponse = await api.GET("/v1/apps/{id}/appAvailabilityV2", {
     params: {
       path: { id: appId },
@@ -122,10 +215,11 @@ async function ensureAppAvailability(appId: string): Promise<string> {
     return existingResponse.data.data.id;
   }
 
-  // If no existing availability exists, throw an error with helpful message
-  throw new Error(
-    `App availability not found for app ${appId}. Please ensure the app has availability settings configured in App Store Connect.`
+  // If no existing availability exists, create one
+  logger.info(
+    `No app availability found for app ${appId}. Creating new availability...`
   );
+  return await createAppAvailability(appId, availableTerritories);
 }
 
 export async function updateAppAvailability(
@@ -137,8 +231,11 @@ export async function updateAppAvailability(
     `  Available Territories: ${JSON.stringify(availableTerritories)}`
   );
 
-  // Ensure app availability resource exists
-  const appAvailabilityId = await ensureAppAvailability(appId);
+  // Ensure app availability resource exists (create if needed)
+  const appAvailabilityId = await ensureAppAvailability(
+    appId,
+    availableTerritories
+  );
 
   // Get territory availability mapping
   logger.info("Getting territory availability mappings...");
