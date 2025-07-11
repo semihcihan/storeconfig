@@ -91,6 +91,13 @@ export async function fetchInAppPurchaseAvailability(
   );
 
   if (response.error) {
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.info(
+        `No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
+      );
+      throw response.error;
+    }
     throw response.error;
   }
 
@@ -109,6 +116,11 @@ export async function fetchInAppPurchaseAvailabilityTerritories(
   );
 
   if (response.error) {
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.warn(`No territories found for availability ${availabilityId}`);
+      throw response.error;
+    }
     throw response.error;
   }
 

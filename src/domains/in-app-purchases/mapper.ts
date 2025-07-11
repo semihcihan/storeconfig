@@ -9,6 +9,7 @@ import {
   type IncludedByIdMap,
 } from "../../helpers/relationship-helpers";
 import { decodeTerritoryFromId } from "../../helpers/id-encoding-helpers";
+import { isNotFoundError } from "../../helpers/error-handling-helpers";
 import {
   fetchBaseTerritory,
   fetchManualPrices,
@@ -229,10 +230,18 @@ export async function mapInAppPurchaseAvailability(
         } available territories: ${JSON.stringify(availableTerritories)}`
       );
     } catch (territoryError) {
-      logger.warn(
-        `  Failed to fetch territories for availability ${availabilityResponse.data.id}: ${territoryError}`
-      );
-      availableTerritories = [];
+      const is404Error = isNotFoundError(territoryError);
+      if (is404Error) {
+        logger.info(
+          `  No territories found for availability ${availabilityResponse.data.id}`
+        );
+        availableTerritories = [];
+      } else {
+        logger.warn(
+          `  Failed to fetch territories for availability ${availabilityResponse.data.id}: ${territoryError}`
+        );
+        throw territoryError;
+      }
     }
 
     return {
@@ -240,10 +249,16 @@ export async function mapInAppPurchaseAvailability(
       availableTerritories,
     };
   } catch (error) {
-    logger.info(
-      `  No availability found for IAP ${iapId} (likely MISSING_METADATA state): ${error}`
-    );
-    return undefined;
+    const is404Error = isNotFoundError(error);
+    if (is404Error) {
+      logger.info(
+        `  No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
+      );
+      return undefined;
+    } else {
+      logger.warn(`  Failed to fetch availability for IAP ${iapId}: ${error}`);
+      throw error;
+    }
   }
 }
 

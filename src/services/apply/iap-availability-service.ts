@@ -6,6 +6,10 @@ import {
 import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 import { api } from "../api";
+import {
+  isNotFoundError,
+  throwFormattedError,
+} from "../../helpers/error-handling-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -48,8 +52,17 @@ export async function getIAPAvailability(
   );
 
   if (response.error) {
-    logger.info(`No IAP availability found for IAP ${iapId}`);
-    return null;
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.info(
+        `No IAP availability found for IAP ${iapId} (likely MISSING_METADATA state)`
+      );
+      return null;
+    }
+    throwFormattedError(
+      `Failed to fetch IAP availability for ${iapId}`,
+      response.error
+    );
   }
 
   return response.data;
@@ -64,7 +77,7 @@ export async function createIAPAvailability(
   });
 
   if (response.error) {
-    throw response.error;
+    throwFormattedError("Failed to create IAP availability", response.error);
   }
 
   return response.data;
