@@ -559,6 +559,17 @@ function diffSubscriptionGroups(
         type: "CREATE_SUBSCRIPTION_GROUP",
         payload: { group: desiredGroup },
       });
+      // Also create actions for localizations and subscriptions
+      actions.push(
+        ...diffSubscriptionGroupLocalizations(
+          refName,
+          [],
+          desiredGroup.localizations
+        )
+      );
+      actions.push(
+        ...diffSubscriptions(refName, [], desiredGroup.subscriptions)
+      );
     } else {
       // It's an existing group, check for updates within it
       actions.push(

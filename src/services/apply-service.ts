@@ -35,7 +35,8 @@ async function executeAction(
   currentState: AppStoreModel,
   desiredState: AppStoreModel,
   currentIAPsResponse?: InAppPurchasesV2Response,
-  currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
+  currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptionGroups?: Map<string, string>
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
@@ -188,7 +189,16 @@ async function executeAction(
     // Subscription Groups
     case "CREATE_SUBSCRIPTION_GROUP":
       logger.info(`  Group Ref Name: ${action.payload.group.referenceName}`);
-      await createNewSubscriptionGroup(appId, action.payload.group);
+      const groupId = await createNewSubscriptionGroup(
+        appId,
+        action.payload.group
+      );
+      if (newlyCreatedSubscriptionGroups && groupId) {
+        newlyCreatedSubscriptionGroups.set(
+          action.payload.group.referenceName,
+          groupId
+        );
+      }
       break;
     case "UPDATE_SUBSCRIPTION_GROUP":
       logger.info(`  Group Ref Name: ${action.payload.referenceName}`);
@@ -209,7 +219,8 @@ async function executeAction(
         appId,
         action.payload.groupReferenceName,
         action.payload.localization,
-        currentSubscriptionGroupsResponse
+        currentSubscriptionGroupsResponse,
+        newlyCreatedSubscriptionGroups
       );
       break;
     case "UPDATE_SUBSCRIPTION_GROUP_LOCALIZATION":
@@ -221,7 +232,8 @@ async function executeAction(
         action.payload.groupReferenceName,
         action.payload.locale,
         action.payload.changes,
-        currentSubscriptionGroupsResponse
+        currentSubscriptionGroupsResponse,
+        newlyCreatedSubscriptionGroups
       );
       break;
     case "DELETE_SUBSCRIPTION_GROUP_LOCALIZATION":
@@ -231,7 +243,8 @@ async function executeAction(
         appId,
         action.payload.groupReferenceName,
         action.payload.locale,
-        currentSubscriptionGroupsResponse
+        currentSubscriptionGroupsResponse,
+        newlyCreatedSubscriptionGroups
       );
       break;
 
@@ -369,6 +382,9 @@ export async function apply(
     currentSubscriptionGroupsResponse = await fetchSubscriptionGroups(appId);
   }
 
+  // Track newly created subscription groups for use in subsequent actions
+  const newlyCreatedSubscriptionGroups = new Map<string, string>();
+
   // Execute all actions individually
   for (const action of plan) {
     await executeAction(
@@ -377,7 +393,8 @@ export async function apply(
       currentState,
       desiredState,
       currentIAPsResponse,
-      currentSubscriptionGroupsResponse
+      currentSubscriptionGroupsResponse,
+      newlyCreatedSubscriptionGroups
     );
   }
 

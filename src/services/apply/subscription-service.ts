@@ -114,7 +114,7 @@ async function getSubscriptionGroupLocalizationId(
 export async function createNewSubscriptionGroup(
   appId: string,
   group: AppStoreModel["subscriptionGroups"][0]
-): Promise<void> {
+): Promise<string> {
   logger.info(`Creating new subscription group: ${group.referenceName}`);
 
   const createRequest: SubscriptionGroupCreateRequest = {
@@ -149,6 +149,8 @@ export async function createNewSubscriptionGroup(
   logger.info(
     `Successfully created subscription group: ${response.data.data.id}`
   );
+
+  return response.data.data.id;
 }
 
 // Update an existing subscription group
@@ -206,16 +208,29 @@ export async function createSubscriptionGroupLocalization(
   appId: string,
   groupReferenceName: string,
   localization: { locale: string; name: string; customName?: string | null },
-  currentStateResponse?: SubscriptionGroupsResponse
+  currentStateResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
   logger.info(
     `Creating subscription group localization: ${groupReferenceName} - ${localization.locale}`
   );
 
-  // Get the existing subscription group ID using utility function or fallback
-  const groupId = currentStateResponse
-    ? extractSubscriptionGroupId(currentStateResponse, groupReferenceName)
-    : await getSubscriptionGroupIdByReferenceName(appId, groupReferenceName);
+  // Get the subscription group ID, checking newly created subscription groups first
+  let groupId: string | null = null;
+
+  if (newlyCreatedSubscriptionGroups?.has(groupReferenceName)) {
+    groupId = newlyCreatedSubscriptionGroups.get(groupReferenceName)!;
+  } else if (currentStateResponse) {
+    groupId = extractSubscriptionGroupId(
+      currentStateResponse,
+      groupReferenceName
+    );
+  } else {
+    groupId = await getSubscriptionGroupIdByReferenceName(
+      appId,
+      groupReferenceName
+    );
+  }
 
   if (!groupId) {
     throw new Error(
@@ -269,7 +284,8 @@ export async function updateSubscriptionGroupLocalization(
   groupReferenceName: string,
   locale: string,
   changes: { name?: string; customName?: string | null },
-  currentStateResponse?: SubscriptionGroupsResponse
+  currentStateResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
   logger.info(
     `Updating subscription group localization: ${groupReferenceName} - ${locale}`
@@ -330,7 +346,8 @@ export async function deleteSubscriptionGroupLocalization(
   appId: string,
   groupReferenceName: string,
   locale: string,
-  currentStateResponse?: SubscriptionGroupsResponse
+  currentStateResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
   logger.info(
     `Deleting subscription group localization: ${groupReferenceName} - ${locale}`
