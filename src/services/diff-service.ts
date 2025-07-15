@@ -44,12 +44,9 @@ function diffPriceSchedule(
 
   const current = currentSchedule || { baseTerritory: "USA", prices: [] };
 
-  if (current.baseTerritory !== desiredSchedule.baseTerritory) {
-    actions.push({
-      type: "UPDATE_IAP_BASE_TERRITORY",
-      payload: { productId, territory: desiredSchedule.baseTerritory },
-    });
-  }
+  // Check if any changes are needed
+  const baseTerritoryChanging =
+    current.baseTerritory !== desiredSchedule.baseTerritory;
 
   const currentPricesByTerritory = new Map(
     current.prices.map((p) => [p.territory, p])
@@ -58,28 +55,48 @@ function diffPriceSchedule(
     desiredSchedule.prices.map((p) => [p.territory, p])
   );
 
+  // Track all price changes
+  const addedPrices: Price[] = [];
+  const updatedPrices: Price[] = [];
+  const deletedTerritories: z.infer<typeof TerritoryCodeSchema>[] = [];
+
+  // Find added and updated prices
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
     if (!currentPrice) {
-      actions.push({
-        type: "CREATE_IAP_PRICE",
-        payload: { productId, price: desiredPrice },
-      });
+      addedPrices.push(desiredPrice);
     } else if (currentPrice.price !== desiredPrice.price) {
-      actions.push({
-        type: "UPDATE_IAP_PRICE",
-        payload: { productId, price: desiredPrice },
-      });
+      updatedPrices.push(desiredPrice);
     }
   }
 
+  // Find deleted prices
   for (const [territory] of currentPricesByTerritory.entries()) {
     if (!desiredPricesByTerritory.has(territory)) {
-      actions.push({
-        type: "DELETE_IAP_PRICE",
-        payload: { productId, territory },
-      });
+      deletedTerritories.push(territory);
     }
+  }
+
+  // If there are any changes, generate a single comprehensive UPDATE_IAP_PRICING action
+  const hasChanges =
+    baseTerritoryChanging ||
+    addedPrices.length > 0 ||
+    updatedPrices.length > 0 ||
+    deletedTerritories.length > 0;
+
+  if (hasChanges) {
+    actions.push({
+      type: "UPDATE_IAP_PRICING",
+      payload: {
+        productId,
+        priceSchedule: desiredSchedule, // Always provide the complete target state
+        changes: {
+          addedPrices,
+          updatedPrices,
+          deletedTerritories,
+        },
+      },
+    });
   }
 
   return actions;

@@ -11,6 +11,7 @@ import {
   deleteIAPLocalization,
 } from "./apply/in-app-purchase-service";
 import { updateIAPAvailability } from "./apply/iap-availability-service";
+import { updateIAPPricing } from "./apply/iap-pricing-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
@@ -78,22 +79,43 @@ async function executeAction(
       );
       break;
 
-    // IAP Prices
-    case "UPDATE_IAP_BASE_TERRITORY":
+    // IAP Pricing (Comprehensive)
+    case "UPDATE_IAP_PRICING":
       logger.info(`  Product ID: ${action.payload.productId}`);
-      logger.info(`  Territory: ${action.payload.territory}`);
-      break;
-    case "CREATE_IAP_PRICE":
-      logger.info(`  Product ID: ${action.payload.productId}`);
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "UPDATE_IAP_PRICE":
-      logger.info(`  Product ID: ${action.payload.productId}`);
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "DELETE_IAP_PRICE":
-      logger.info(`  Product ID: ${action.payload.productId}`);
-      logger.info(`  Territory: ${action.payload.territory}`);
+      logger.info(`  Pricing changes:`);
+      logger.info(
+        `    Base Territory: ${action.payload.priceSchedule.baseTerritory}`
+      );
+      if (action.payload.changes.addedPrices.length > 0) {
+        logger.info(
+          `    Added Prices: ${action.payload.changes.addedPrices.length}`
+        );
+        action.payload.changes.addedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.updatedPrices.length > 0) {
+        logger.info(
+          `    Updated Prices: ${action.payload.changes.updatedPrices.length}`
+        );
+        action.payload.changes.updatedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.deletedTerritories.length > 0) {
+        logger.info(
+          `    Deleted Territories: ${action.payload.changes.deletedTerritories.join(
+            ", "
+          )}`
+        );
+      }
+
+      // Execute the comprehensive IAP pricing update
+      await updateIAPPricing(
+        action.payload.productId,
+        action.payload.priceSchedule,
+        currentIAPsResponse!
+      );
       break;
 
     // IAP Availability

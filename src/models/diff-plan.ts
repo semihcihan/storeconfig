@@ -83,35 +83,16 @@ export type DeleteIapLocalizationAction = Action<
 // IAP Price Schedule Action Types
 // #################################################################################
 
-export type UpdateIapBaseTerritoryAction = Action<
-  "UPDATE_IAP_BASE_TERRITORY",
+export type UpdateIapPricingAction = Action<
+  "UPDATE_IAP_PRICING",
   {
     productId: string;
-    territory: z.infer<typeof TerritoryCodeSchema>;
-  }
->;
-
-export type CreateIapPriceAction = Action<
-  "CREATE_IAP_PRICE",
-  {
-    productId: string;
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type UpdateIapPriceAction = Action<
-  "UPDATE_IAP_PRICE",
-  {
-    productId: string;
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type DeleteIapPriceAction = Action<
-  "DELETE_IAP_PRICE",
-  {
-    productId: string;
-    territory: z.infer<typeof TerritoryCodeSchema>;
+    priceSchedule: z.infer<typeof PriceScheduleSchema>;
+    changes: {
+      addedPrices: z.infer<typeof PriceSchema>[];
+      updatedPrices: z.infer<typeof PriceSchema>[];
+      deletedTerritories: z.infer<typeof TerritoryCodeSchema>[];
+    };
   }
 >;
 
@@ -355,10 +336,7 @@ export type AnyAction =
   | UpdateIapLocalizationAction
   | DeleteIapLocalizationAction
   // IAP Prices
-  | UpdateIapBaseTerritoryAction
-  | CreateIapPriceAction
-  | UpdateIapPriceAction
-  | DeleteIapPriceAction
+  | UpdateIapPricingAction
   // IAP Availability
   | UpdateIapAvailabilityAction
   // App-level
