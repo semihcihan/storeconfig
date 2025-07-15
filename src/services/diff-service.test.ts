@@ -890,10 +890,23 @@ describe("diff-service", () => {
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "UPDATE_IAP_BASE_TERRITORY",
+        type: "UPDATE_IAP_PRICING",
         payload: {
           productId: MOCK_STATE_1.inAppPurchases![0].productId,
-          territory: "CAN",
+          priceSchedule: {
+            baseTerritory: "CAN",
+            prices: [
+              {
+                price: "0.99",
+                territory: "USA",
+              },
+            ],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
     });
@@ -924,10 +937,32 @@ describe("diff-service", () => {
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "CREATE_IAP_PRICE",
+        type: "UPDATE_IAP_PRICING",
         payload: {
           productId: MOCK_STATE_1.inAppPurchases![0].productId,
-          price: newPrice,
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [
+              {
+                price: "0.99",
+                territory: "USA",
+              },
+              {
+                price: "1.29",
+                territory: "CAN",
+              },
+            ],
+          },
+          changes: {
+            addedPrices: [
+              {
+                price: "1.29",
+                territory: "CAN",
+              },
+            ],
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
         },
       });
     });
@@ -950,10 +985,18 @@ describe("diff-service", () => {
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "DELETE_IAP_PRICE",
+        type: "UPDATE_IAP_PRICING",
         payload: {
           productId: MOCK_STATE_1.inAppPurchases![0].productId,
-          territory: "USA",
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [],
+          },
+          changes: {
+            addedPrices: [],
+            updatedPrices: [],
+            deletedTerritories: ["USA"],
+          },
         },
       });
     });
@@ -1037,7 +1080,7 @@ describe("diff-service", () => {
       });
     });
 
-    it("should correctly identify a subscription group rename and diff its contents", () => {
+    it("should throw an error when trying to rename a subscription group", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
@@ -1054,28 +1097,9 @@ describe("diff-service", () => {
           },
         ],
       };
-      const plan = diff(currentState, desiredState);
-      expect(plan).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            type: "UPDATE_SUBSCRIPTION_GROUP",
-            payload: {
-              referenceName: "group1",
-              changes: {
-                referenceName: "group1_renamed",
-              },
-            },
-          }),
-          expect.objectContaining({
-            type: "UPDATE_SUBSCRIPTION",
-            payload: {
-              productId: "sub1",
-              changes: {
-                groupLevel: 2,
-              },
-            },
-          }),
-        ])
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Subscription group with reference name 'group1' cannot be deleted. Subscription groups cannot be removed once created."
       );
     });
 
@@ -1097,22 +1121,16 @@ describe("diff-service", () => {
       });
     });
 
-    it("should create a plan to delete a subscription group", () => {
+    it("should throw an error when trying to delete a subscription group", () => {
       const currentState = MOCK_STATE_1;
       const desiredState = {
         ...MOCK_STATE_1,
         subscriptionGroups: [], // Only remove subscription groups
       };
-      const plan = diff(currentState, desiredState);
 
-      // We expect a DELETE_SUBSCRIPTION_GROUP action.
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "DELETE_SUBSCRIPTION_GROUP",
-        payload: {
-          referenceName: MOCK_STATE_1.subscriptionGroups![0].referenceName,
-        },
-      });
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Subscription group with reference name 'group1' cannot be deleted. Subscription groups cannot be removed once created."
+      );
     });
 
     it("should create a plan to add a localization to a subscription group", () => {

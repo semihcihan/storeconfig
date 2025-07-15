@@ -123,9 +123,6 @@ async function showAction(action: AnyAction) {
       logger.info(`  Group Ref Name: ${action.payload.referenceName}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
       break;
-    case "DELETE_SUBSCRIPTION_GROUP":
-      logger.info(`  Group Ref Name: ${action.payload.referenceName}`);
-      break;
 
     // Subscription Group Localizations
     case "CREATE_SUBSCRIPTION_GROUP_LOCALIZATION":

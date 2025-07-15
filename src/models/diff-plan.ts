@@ -152,13 +152,6 @@ export type UpdateSubscriptionGroupAction = Action<
   }
 >;
 
-export type DeleteSubscriptionGroupAction = Action<
-  "DELETE_SUBSCRIPTION_GROUP",
-  {
-    referenceName: string;
-  }
->;
-
 export type CreateSubscriptionGroupLocalizationAction = Action<
   "CREATE_SUBSCRIPTION_GROUP_LOCALIZATION",
   {
@@ -345,7 +338,6 @@ export type AnyAction =
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction
-  | DeleteSubscriptionGroupAction
   | CreateSubscriptionGroupLocalizationAction
   | UpdateSubscriptionGroupLocalizationAction
   | DeleteSubscriptionGroupLocalizationAction

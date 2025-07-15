@@ -541,14 +541,24 @@ function diffSubscriptionGroups(
     desiredGroups.map((g) => [g.referenceName, g])
   );
 
-  const addedGroups: SubscriptionGroup[] = [];
-  const removedGroups: SubscriptionGroup[] = [];
+  // First, check that all current subscription groups are present in desired state
+  // Subscription groups cannot be deleted once created
+  for (const [referenceName] of currentGroupsByName.entries()) {
+    if (!desiredGroupsByName.has(referenceName)) {
+      throw new Error(
+        `Subscription group with reference name '${referenceName}' cannot be deleted. Subscription groups cannot be removed once created.`
+      );
+    }
+  }
 
   for (const [refName, desiredGroup] of desiredGroupsByName.entries()) {
     const currentGroup = currentGroupsByName.get(refName);
 
     if (!currentGroup) {
-      addedGroups.push(desiredGroup);
+      actions.push({
+        type: "CREATE_SUBSCRIPTION_GROUP",
+        payload: { group: desiredGroup },
+      });
     } else {
       // It's an existing group, check for updates within it
       actions.push(
@@ -565,56 +575,6 @@ function diffSubscriptionGroups(
           desiredGroup.subscriptions
         )
       );
-    }
-  }
-
-  for (const [refName, currentGroup] of currentGroupsByName.entries()) {
-    if (!desiredGroupsByName.has(refName)) {
-      removedGroups.push(currentGroup);
-    }
-  }
-
-  // Smart rename detection
-  if (addedGroups.length === 1 && removedGroups.length === 1) {
-    const oldName = removedGroups[0].referenceName;
-    const newName = addedGroups[0].referenceName;
-    actions.push({
-      type: "UPDATE_SUBSCRIPTION_GROUP",
-      payload: {
-        referenceName: oldName,
-        changes: { referenceName: newName },
-      },
-    });
-
-    // Since we've handled the rename, we need to diff the contents
-    // of the renamed group.
-    actions.push(
-      ...diffSubscriptionGroupLocalizations(
-        newName, // use new name for context in sub-diffs
-        removedGroups[0].localizations,
-        addedGroups[0].localizations
-      )
-    );
-    actions.push(
-      ...diffSubscriptions(
-        newName, // use new name for context
-        removedGroups[0].subscriptions,
-        addedGroups[0].subscriptions
-      )
-    );
-  } else {
-    // If it's not a simple rename, treat them as separate add/delete
-    for (const group of addedGroups) {
-      actions.push({
-        type: "CREATE_SUBSCRIPTION_GROUP",
-        payload: { group },
-      });
-    }
-    for (const group of removedGroups) {
-      actions.push({
-        type: "DELETE_SUBSCRIPTION_GROUP",
-        payload: { referenceName: group.referenceName },
-      });
     }
   }
 

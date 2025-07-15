@@ -13,19 +13,29 @@ import {
 import { updateIAPAvailability } from "./apply/iap-availability-service";
 import { updateIAPPricing } from "./apply/iap-pricing-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
+import {
+  createNewSubscriptionGroup,
+  updateExistingSubscriptionGroup,
+  createSubscriptionGroupLocalization,
+  updateSubscriptionGroupLocalization,
+  deleteSubscriptionGroupLocalization,
+} from "./apply/subscription-service";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchasesV2Response =
   components["schemas"]["InAppPurchasesV2Response"];
+type SubscriptionGroupsResponse =
+  components["schemas"]["SubscriptionGroupsResponse"];
 
 async function executeAction(
   action: AnyAction,
   appId: string,
   currentState: AppStoreModel,
   desiredState: AppStoreModel,
-  currentIAPsResponse?: InAppPurchasesV2Response
+  currentIAPsResponse?: InAppPurchasesV2Response,
+  currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
@@ -178,28 +188,51 @@ async function executeAction(
     // Subscription Groups
     case "CREATE_SUBSCRIPTION_GROUP":
       logger.info(`  Group Ref Name: ${action.payload.group.referenceName}`);
+      await createNewSubscriptionGroup(appId, action.payload.group);
       break;
     case "UPDATE_SUBSCRIPTION_GROUP":
       logger.info(`  Group Ref Name: ${action.payload.referenceName}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
-      break;
-    case "DELETE_SUBSCRIPTION_GROUP":
-      logger.info(`  Group Ref Name: ${action.payload.referenceName}`);
+      await updateExistingSubscriptionGroup(
+        appId,
+        action.payload.referenceName,
+        action.payload.changes,
+        currentSubscriptionGroupsResponse
+      );
       break;
 
     // Subscription Group Localizations
     case "CREATE_SUBSCRIPTION_GROUP_LOCALIZATION":
       logger.info(`  Group Ref Name: ${action.payload.groupReferenceName}`);
       logger.info(`  Locale: ${action.payload.localization.locale}`);
+      await createSubscriptionGroupLocalization(
+        appId,
+        action.payload.groupReferenceName,
+        action.payload.localization,
+        currentSubscriptionGroupsResponse
+      );
       break;
     case "UPDATE_SUBSCRIPTION_GROUP_LOCALIZATION":
       logger.info(`  Group Ref Name: ${action.payload.groupReferenceName}`);
       logger.info(`  Locale: ${action.payload.locale}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
+      await updateSubscriptionGroupLocalization(
+        appId,
+        action.payload.groupReferenceName,
+        action.payload.locale,
+        action.payload.changes,
+        currentSubscriptionGroupsResponse
+      );
       break;
     case "DELETE_SUBSCRIPTION_GROUP_LOCALIZATION":
       logger.info(`  Group Ref Name: ${action.payload.groupReferenceName}`);
       logger.info(`  Locale: ${action.payload.locale}`);
+      await deleteSubscriptionGroupLocalization(
+        appId,
+        action.payload.groupReferenceName,
+        action.payload.locale,
+        currentSubscriptionGroupsResponse
+      );
       break;
 
     // Subscriptions
@@ -314,10 +347,26 @@ export async function apply(
       action.type.includes("IAP") || action.type.includes("IN_APP_PURCHASE")
   );
 
+  // Check if we have any subscription-related actions to avoid unnecessary API call
+  const hasSubscriptionActions = plan.some(
+    (action) =>
+      action.type.includes("SUBSCRIPTION_GROUP") ||
+      action.type.includes("SUBSCRIPTION")
+  );
+
   // Fetch raw IAP response once if needed
   let currentIAPsResponse: InAppPurchasesV2Response | undefined;
   if (hasIAPActions) {
     currentIAPsResponse = await fetchInAppPurchases(appId);
+  }
+
+  // Fetch raw subscription groups response once if needed
+  let currentSubscriptionGroupsResponse: SubscriptionGroupsResponse | undefined;
+  if (hasSubscriptionActions) {
+    const { fetchSubscriptionGroups } = await import(
+      "../domains/subscriptions/api-client"
+    );
+    currentSubscriptionGroupsResponse = await fetchSubscriptionGroups(appId);
   }
 
   // Execute all actions individually
@@ -327,7 +376,8 @@ export async function apply(
       appId,
       currentState,
       desiredState,
-      currentIAPsResponse
+      currentIAPsResponse,
+      currentSubscriptionGroupsResponse
     );
   }
 

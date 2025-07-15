@@ -8,7 +8,9 @@ jest.mock("./apply/app-availability-service");
 jest.mock("./apply/app-pricing-service");
 jest.mock("./apply/in-app-purchase-service");
 jest.mock("./apply/iap-availability-service");
+jest.mock("./apply/subscription-service");
 jest.mock("../domains/in-app-purchases/api-client");
+jest.mock("../domains/subscriptions/api-client");
 jest.mock("../utils/logger");
 
 // Mock implementations
@@ -21,6 +23,13 @@ const mockUpdateIAPLocalization = jest.fn();
 const mockDeleteIAPLocalization = jest.fn();
 const mockUpdateIAPAvailability = jest.fn();
 const mockFetchInAppPurchases = jest.fn();
+const mockCreateNewSubscriptionGroup = jest.fn();
+const mockUpdateExistingSubscriptionGroup = jest.fn();
+
+const mockCreateSubscriptionGroupLocalization = jest.fn();
+const mockUpdateSubscriptionGroupLocalization = jest.fn();
+const mockDeleteSubscriptionGroupLocalization = jest.fn();
+const mockFetchSubscriptionGroups = jest.fn();
 const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
@@ -48,6 +57,25 @@ jest.mocked(require("./apply/iap-availability-service")).updateIAPAvailability =
 jest.mocked(
   require("../domains/in-app-purchases/api-client")
 ).fetchInAppPurchases = mockFetchInAppPurchases;
+jest.mocked(
+  require("./apply/subscription-service")
+).createNewSubscriptionGroup = mockCreateNewSubscriptionGroup;
+jest.mocked(
+  require("./apply/subscription-service")
+).updateExistingSubscriptionGroup = mockUpdateExistingSubscriptionGroup;
+
+jest.mocked(
+  require("./apply/subscription-service")
+).createSubscriptionGroupLocalization = mockCreateSubscriptionGroupLocalization;
+jest.mocked(
+  require("./apply/subscription-service")
+).updateSubscriptionGroupLocalization = mockUpdateSubscriptionGroupLocalization;
+jest.mocked(
+  require("./apply/subscription-service")
+).deleteSubscriptionGroupLocalization = mockDeleteSubscriptionGroupLocalization;
+jest.mocked(
+  require("../domains/subscriptions/api-client")
+).fetchSubscriptionGroups = mockFetchSubscriptionGroups;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -90,6 +118,17 @@ describe("apply-service", () => {
     mockUpdateExistingInAppPurchase.mockResolvedValue(undefined);
     mockUpdateIAPAvailability.mockResolvedValue(undefined);
     mockFetchInAppPurchases.mockResolvedValue({
+      data: [],
+      included: [],
+      links: { self: "" },
+    });
+    mockCreateNewSubscriptionGroup.mockResolvedValue(undefined);
+    mockUpdateExistingSubscriptionGroup.mockResolvedValue(undefined);
+
+    mockCreateSubscriptionGroupLocalization.mockResolvedValue(undefined);
+    mockUpdateSubscriptionGroupLocalization.mockResolvedValue(undefined);
+    mockDeleteSubscriptionGroupLocalization.mockResolvedValue(undefined);
+    mockFetchSubscriptionGroups.mockResolvedValue({
       data: [],
       included: [],
       links: { self: "" },
@@ -612,5 +651,186 @@ describe("IAP Localization Actions", () => {
         links: expect.any(Object),
       })
     );
+  });
+});
+
+describe("Subscription Group Actions", () => {
+  const testAppId = "test-app-id";
+  const mockCurrentState: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: testAppId,
+    pricing: {
+      baseTerritory: "USA",
+      prices: [{ territory: "USA", price: "4.99" }],
+    },
+    availableTerritories: ["USA"],
+    inAppPurchases: [],
+    subscriptionGroups: [],
+  };
+  const mockDesiredState: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: testAppId,
+    pricing: {
+      baseTerritory: "USA",
+      prices: [{ territory: "USA", price: "4.99" }],
+    },
+    availableTerritories: ["USA"],
+    inAppPurchases: [],
+    subscriptionGroups: [
+      {
+        referenceName: "test-group",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test Group",
+            customName: null,
+          },
+        ],
+        subscriptions: [],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFetchSubscriptionGroups.mockResolvedValue({
+      data: [],
+      included: [],
+      links: { self: "" },
+    });
+  });
+
+  it("should handle CREATE_SUBSCRIPTION_GROUP action", async () => {
+    const action: AnyAction = {
+      type: "CREATE_SUBSCRIPTION_GROUP",
+      payload: {
+        group: {
+          referenceName: "test-group",
+          localizations: [],
+          subscriptions: [],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockCreateNewSubscriptionGroup).toHaveBeenCalledWith(testAppId, {
+      referenceName: "test-group",
+      localizations: [],
+      subscriptions: [],
+    });
+  });
+
+  it("should handle UPDATE_SUBSCRIPTION_GROUP action", async () => {
+    const action: AnyAction = {
+      type: "UPDATE_SUBSCRIPTION_GROUP",
+      payload: {
+        referenceName: "test-group",
+        changes: {
+          referenceName: "updated-group",
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockUpdateExistingSubscriptionGroup).toHaveBeenCalledWith(
+      testAppId,
+      "test-group",
+      {
+        referenceName: "updated-group",
+      },
+      expect.any(Object) // currentSubscriptionGroupsResponse
+    );
+  });
+
+  it("should handle CREATE_SUBSCRIPTION_GROUP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "CREATE_SUBSCRIPTION_GROUP_LOCALIZATION",
+      payload: {
+        groupReferenceName: "test-group",
+        localization: {
+          locale: "en-US",
+          name: "Test Group",
+          customName: null,
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockCreateSubscriptionGroupLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-group",
+      {
+        locale: "en-US",
+        name: "Test Group",
+        customName: null,
+      },
+      expect.any(Object) // currentSubscriptionGroupsResponse
+    );
+  });
+
+  it("should handle UPDATE_SUBSCRIPTION_GROUP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "UPDATE_SUBSCRIPTION_GROUP_LOCALIZATION",
+      payload: {
+        groupReferenceName: "test-group",
+        locale: "en-US",
+        changes: {
+          name: "Updated Group Name",
+          customAppName: "Custom App Name",
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockUpdateSubscriptionGroupLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-group",
+      "en-US",
+      {
+        name: "Updated Group Name",
+        customAppName: "Custom App Name",
+      },
+      expect.any(Object) // currentSubscriptionGroupsResponse
+    );
+  });
+
+  it("should handle DELETE_SUBSCRIPTION_GROUP_LOCALIZATION action", async () => {
+    const action: AnyAction = {
+      type: "DELETE_SUBSCRIPTION_GROUP_LOCALIZATION",
+      payload: {
+        groupReferenceName: "test-group",
+        locale: "en-US",
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockDeleteSubscriptionGroupLocalization).toHaveBeenCalledWith(
+      testAppId,
+      "test-group",
+      "en-US",
+      expect.any(Object) // currentSubscriptionGroupsResponse
+    );
+  });
+
+  it("should fetch subscription groups when subscription actions are present", async () => {
+    const action: AnyAction = {
+      type: "CREATE_SUBSCRIPTION_GROUP",
+      payload: {
+        group: {
+          referenceName: "test-group",
+          localizations: [],
+          subscriptions: [],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
   });
 });
