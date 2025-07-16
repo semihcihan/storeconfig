@@ -162,6 +162,83 @@ async function getSubscriptionGroupIdByReferenceName(
   return extractSubscriptionGroupId(response.data, referenceName);
 }
 
+// Utility function to extract subscription localization ID from raw API response
+function extractSubscriptionLocalizationId(
+  apiResponse: SubscriptionGroupsResponse,
+  productId: string,
+  locale: string
+): string | null {
+  if (!apiResponse.included) {
+    return null;
+  }
+
+  // Find the subscription in the included resources
+  const subscription = apiResponse.included.find(
+    (item: any) =>
+      item.type === "subscriptions" && item.attributes?.productId === productId
+  );
+
+  if (!subscription) {
+    return null;
+  }
+
+  // Find the localization in the included resources
+  const localization = apiResponse.included.find(
+    (item: any) =>
+      item.type === "subscriptionLocalizations" &&
+      item.attributes?.locale === locale &&
+      (
+        subscription.relationships as any
+      )?.subscriptionLocalizations?.data?.some((rel: any) => rel.id === item.id)
+  );
+
+  return localization?.id || null;
+}
+
+// Helper function to get existing subscription localization ID (fallback when no raw response provided)
+async function getSubscriptionLocalizationId(
+  appId: string,
+  productId: string,
+  locale: string
+): Promise<string | null> {
+  // First get the subscription ID
+  const subscriptionId = await getSubscriptionIdByProductId(appId, productId);
+
+  if (!subscriptionId) {
+    return null;
+  }
+
+  // Then fetch the subscription localizations
+  const response = await api.GET(
+    "/v1/subscriptions/{id}/subscriptionLocalizations",
+    {
+      params: {
+        path: { id: subscriptionId },
+        query: {
+          limit: 200,
+          "fields[subscriptionLocalizations]": [
+            "name",
+            "locale",
+            "description",
+            "state",
+          ],
+        },
+      },
+    }
+  );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  // Find the localization with the matching locale
+  const localization = response.data.data?.find(
+    (item: any) => item.attributes?.locale === locale
+  );
+
+  return localization?.id || null;
+}
+
 // Create a new subscription group
 export async function createNewSubscriptionGroup(
   appId: string,
@@ -578,4 +655,184 @@ export async function updateExistingSubscription(
   }
 
   logger.info(`Successfully updated subscription: ${response.data.data.id}`);
+}
+
+// Create a new subscription localization
+export async function createSubscriptionLocalization(
+  appId: string,
+  productId: string,
+  localization: { locale: string; name: string; description?: string },
+  currentStateResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptions?: Map<string, string>
+): Promise<void> {
+  logger.info(
+    `Creating subscription localization: ${productId} - ${localization.locale}`
+  );
+
+  // Get the subscription ID, checking newly created subscriptions first
+  let subscriptionId: string | null = null;
+
+  if (newlyCreatedSubscriptions?.has(productId)) {
+    subscriptionId = newlyCreatedSubscriptions.get(productId)!;
+  } else if (currentStateResponse) {
+    subscriptionId = extractSubscriptionId(currentStateResponse, productId);
+  } else {
+    subscriptionId = await getSubscriptionIdByProductId(appId, productId);
+  }
+
+  if (!subscriptionId) {
+    throw new Error(
+      `Could not find subscription with product ID: ${productId}`
+    );
+  }
+
+  const createRequest = {
+    data: {
+      type: "subscriptionLocalizations" as const,
+      attributes: {
+        name: localization.name,
+        locale: localization.locale,
+        ...(localization.description && {
+          description: localization.description,
+        }),
+      },
+      relationships: {
+        subscription: {
+          data: {
+            type: "subscriptions" as const,
+            id: subscriptionId,
+          },
+        },
+      },
+    },
+  };
+
+  const response = await api.POST("/v1/subscriptionLocalizations", {
+    body: createRequest,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  if (!response.data?.data?.id) {
+    throw new Error("No subscription localization ID returned from creation");
+  }
+
+  logger.info(
+    `Successfully created subscription localization: ${response.data.data.id}`
+  );
+}
+
+// Update an existing subscription localization
+export async function updateSubscriptionLocalization(
+  appId: string,
+  productId: string,
+  locale: string,
+  changes: { name?: string; description?: string },
+  currentStateResponse?: SubscriptionGroupsResponse
+): Promise<void> {
+  logger.info(`Updating subscription localization: ${productId} - ${locale}`);
+
+  // Try to get the localization ID from included resources first
+  let localizationId: string | null = null;
+
+  if (currentStateResponse) {
+    localizationId = extractSubscriptionLocalizationId(
+      currentStateResponse,
+      productId,
+      locale
+    );
+  }
+
+  // If not found in included resources, fall back to individual fetch
+  if (!localizationId) {
+    localizationId = await getSubscriptionLocalizationId(
+      appId,
+      productId,
+      locale
+    );
+  }
+
+  if (!localizationId) {
+    throw new Error(
+      `Could not find subscription localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  const updateRequest = {
+    data: {
+      type: "subscriptionLocalizations" as const,
+      id: localizationId,
+      attributes: {
+        ...(changes.name && { name: changes.name }),
+        ...(changes.description && { description: changes.description }),
+      },
+    },
+  };
+
+  const response = await api.PATCH("/v1/subscriptionLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+    body: updateRequest,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  if (!response.data?.data?.id) {
+    throw new Error("No subscription localization ID returned from update");
+  }
+
+  logger.info(
+    `Successfully updated subscription localization: ${response.data.data.id}`
+  );
+}
+
+// Delete a subscription localization
+export async function deleteSubscriptionLocalization(
+  appId: string,
+  productId: string,
+  locale: string,
+  currentStateResponse?: SubscriptionGroupsResponse
+): Promise<void> {
+  logger.info(`Deleting subscription localization: ${productId} - ${locale}`);
+
+  // Try to get the localization ID from included resources first
+  let localizationId: string | null = null;
+
+  if (currentStateResponse) {
+    localizationId = extractSubscriptionLocalizationId(
+      currentStateResponse,
+      productId,
+      locale
+    );
+  }
+
+  // If not found in included resources, fall back to individual fetch
+  if (!localizationId) {
+    localizationId = await getSubscriptionLocalizationId(
+      appId,
+      productId,
+      locale
+    );
+  }
+
+  if (!localizationId) {
+    throw new Error(
+      `Could not find subscription localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  const response = await api.DELETE("/v1/subscriptionLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  logger.info(
+    `Successfully deleted subscription localization: ${localizationId}`
+  );
 }

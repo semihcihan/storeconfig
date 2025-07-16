@@ -21,6 +21,9 @@ import {
   deleteSubscriptionGroupLocalization,
   createNewSubscription,
   updateExistingSubscription,
+  createSubscriptionLocalization,
+  updateSubscriptionLocalization,
+  deleteSubscriptionLocalization,
 } from "./apply/subscription-service";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
@@ -39,7 +42,8 @@ async function executeAction(
   currentIAPsResponse?: InAppPurchasesV2Response,
   currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptionGroups?: Map<string, string>,
-  newlyCreatedIAPs?: Map<string, string>
+  newlyCreatedIAPs?: Map<string, string>,
+  newlyCreatedSubscriptions?: Map<string, string>
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
@@ -264,13 +268,19 @@ async function executeAction(
     case "CREATE_SUBSCRIPTION":
       logger.info(`  Group Ref Name: ${action.payload.groupReferenceName}`);
       logger.info(`  Product ID: ${action.payload.subscription.productId}`);
-      await createNewSubscription(
+      const subscriptionId = await createNewSubscription(
         appId,
         action.payload.groupReferenceName,
         action.payload.subscription,
         currentSubscriptionGroupsResponse,
         newlyCreatedSubscriptionGroups
       );
+      if (newlyCreatedSubscriptions && subscriptionId) {
+        newlyCreatedSubscriptions.set(
+          action.payload.subscription.productId,
+          subscriptionId
+        );
+      }
       break;
     case "UPDATE_SUBSCRIPTION":
       logger.info(`  Product ID: ${action.payload.productId}`);
@@ -289,6 +299,13 @@ async function executeAction(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
       );
       logger.info(`  Locale: ${action.payload.localization.locale}`);
+      await createSubscriptionLocalization(
+        appId,
+        action.payload.subscriptionProductId,
+        action.payload.localization,
+        currentSubscriptionGroupsResponse,
+        newlyCreatedSubscriptions
+      );
       break;
     case "UPDATE_SUBSCRIPTION_LOCALIZATION":
       logger.info(
@@ -296,12 +313,25 @@ async function executeAction(
       );
       logger.info(`  Locale: ${action.payload.locale}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
+      await updateSubscriptionLocalization(
+        appId,
+        action.payload.subscriptionProductId,
+        action.payload.locale,
+        action.payload.changes,
+        currentSubscriptionGroupsResponse
+      );
       break;
     case "DELETE_SUBSCRIPTION_LOCALIZATION":
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
       );
       logger.info(`  Locale: ${action.payload.locale}`);
+      await deleteSubscriptionLocalization(
+        appId,
+        action.payload.subscriptionProductId,
+        action.payload.locale,
+        currentSubscriptionGroupsResponse
+      );
       break;
 
     // Subscription Prices
@@ -404,9 +434,10 @@ export async function apply(
     currentSubscriptionGroupsResponse = await fetchSubscriptionGroups(appId);
   }
 
-  // Track newly created subscription groups and IAPs for use in subsequent actions
+  // Track newly created subscription groups, IAPs, and subscriptions for use in subsequent actions
   const newlyCreatedSubscriptionGroups = new Map<string, string>();
   const newlyCreatedIAPs = new Map<string, string>();
+  const newlyCreatedSubscriptions = new Map<string, string>();
 
   // Execute all actions individually
   for (const action of plan) {
@@ -418,7 +449,8 @@ export async function apply(
       currentIAPsResponse,
       currentSubscriptionGroupsResponse,
       newlyCreatedSubscriptionGroups,
-      newlyCreatedIAPs
+      newlyCreatedIAPs,
+      newlyCreatedSubscriptions
     );
   }
 

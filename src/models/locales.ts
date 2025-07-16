@@ -14,7 +14,7 @@ export const localeCodes = [
   "en-GB",
   "en-US",
   "fi",
-  "fr",
+  "fr-FR",
   "fr-CA",
   "de",
   "el",
