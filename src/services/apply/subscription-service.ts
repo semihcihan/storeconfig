@@ -1,7 +1,20 @@
 import { logger } from "../../utils/logger";
 import { AppStoreModelSchema } from "../../models/app-store";
 import { z } from "zod";
-import { api } from "../api";
+import {
+  fetchSubscriptionGroups,
+  createSubscriptionGroup as createSubscriptionGroupAPI,
+  updateSubscriptionGroup as updateSubscriptionGroupAPI,
+  createSubscriptionGroupLocalization as createSubscriptionGroupLocalizationAPI,
+  updateSubscriptionGroupLocalization as updateSubscriptionGroupLocalizationAPI,
+  deleteSubscriptionGroupLocalization as deleteSubscriptionGroupLocalizationAPI,
+  createSubscription as createSubscriptionAPI,
+  updateSubscription as updateSubscriptionAPI,
+  createSubscriptionLocalization as createSubscriptionLocalizationAPI,
+  updateSubscriptionLocalization as updateSubscriptionLocalizationAPI,
+  deleteSubscriptionLocalization as deleteSubscriptionLocalizationAPI,
+  fetchSubscriptionLocalizations,
+} from "../../domains/subscriptions/api-client";
 import type { components } from "../../generated/app-store-connect-api";
 
 type SubscriptionGroupCreateRequest =
@@ -69,27 +82,9 @@ async function getSubscriptionGroupLocalizationId(
   groupReferenceName: string,
   locale: string
 ): Promise<string | null> {
-  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
-    params: {
-      path: { id: appId },
-      query: {
-        limit: 200,
-        include: ["subscriptionGroupLocalizations"],
-        "fields[subscriptionGroupLocalizations]": [
-          "name",
-          "customAppName",
-          "locale",
-        ],
-      },
-    },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
-
+  const response = await fetchSubscriptionGroups(appId);
   return extractSubscriptionGroupLocalizationId(
-    response.data,
+    response,
     groupReferenceName,
     locale
   );
@@ -118,29 +113,8 @@ async function getSubscriptionIdByProductId(
   appId: string,
   productId: string
 ): Promise<string | null> {
-  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
-    params: {
-      path: { id: appId },
-      query: {
-        limit: 200,
-        include: ["subscriptions"],
-        "fields[subscriptions]": [
-          "name",
-          "productId",
-          "familySharable",
-          "subscriptionPeriod",
-          "reviewNote",
-          "groupLevel",
-        ],
-      },
-    },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
-
-  return extractSubscriptionId(response.data, productId);
+  const response = await fetchSubscriptionGroups(appId);
+  return extractSubscriptionId(response, productId);
 }
 
 // Helper function to get existing subscription group ID by reference name (fallback when no raw response provided)
@@ -148,18 +122,8 @@ async function getSubscriptionGroupIdByReferenceName(
   appId: string,
   referenceName: string
 ): Promise<string | null> {
-  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
-    params: {
-      path: { id: appId },
-      query: { limit: 200 },
-    },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
-
-  return extractSubscriptionGroupId(response.data, referenceName);
+  const response = await fetchSubscriptionGroups(appId);
+  return extractSubscriptionGroupId(response, referenceName);
 }
 
 // Utility function to extract subscription localization ID from raw API response
@@ -209,30 +173,10 @@ async function getSubscriptionLocalizationId(
   }
 
   // Then fetch the subscription localizations
-  const response = await api.GET(
-    "/v1/subscriptions/{id}/subscriptionLocalizations",
-    {
-      params: {
-        path: { id: subscriptionId },
-        query: {
-          limit: 200,
-          "fields[subscriptionLocalizations]": [
-            "name",
-            "locale",
-            "description",
-            "state",
-          ],
-        },
-      },
-    }
-  );
-
-  if (response.error) {
-    throw response.error;
-  }
+  const response = await fetchSubscriptionLocalizations(subscriptionId);
 
   // Find the localization with the matching locale
-  const localization = response.data.data?.find(
+  const localization = response.data?.find(
     (item: any) => item.attributes?.locale === locale
   );
 
@@ -263,23 +207,15 @@ export async function createNewSubscriptionGroup(
     },
   };
 
-  const response = await api.POST("/v1/subscriptionGroups", {
-    body: createRequest,
-  });
+  const response = await createSubscriptionGroupAPI(createRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription group ID returned from creation");
   }
 
-  logger.info(
-    `Successfully created subscription group: ${response.data.data.id}`
-  );
+  logger.info(`Successfully created subscription group: ${response.data.id}`);
 
-  return response.data.data.id;
+  return response.data.id;
 }
 
 // Update an existing subscription group
@@ -314,22 +250,13 @@ export async function updateExistingSubscriptionGroup(
     },
   };
 
-  const response = await api.PATCH("/v1/subscriptionGroups/{id}", {
-    params: { path: { id: groupId } },
-    body: updateRequest,
-  });
+  const response = await updateSubscriptionGroupAPI(groupId, updateRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription group ID returned from update");
   }
 
-  logger.info(
-    `Successfully updated subscription group: ${response.data.data.id}`
-  );
+  logger.info(`Successfully updated subscription group: ${response.data.id}`);
 }
 
 // Create a new subscription group localization
@@ -388,22 +315,16 @@ export async function createSubscriptionGroupLocalization(
     },
   };
 
-  const response = await api.POST("/v1/subscriptionGroupLocalizations", {
-    body: createRequest,
-  });
+  const response = await createSubscriptionGroupLocalizationAPI(createRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error(
       "No subscription group localization ID returned from creation"
     );
   }
 
   logger.info(
-    `Successfully created subscription group localization: ${response.data.data.id}`
+    `Successfully created subscription group localization: ${response.data.id}`
   );
 }
 
@@ -450,23 +371,19 @@ export async function updateSubscriptionGroupLocalization(
     },
   };
 
-  const response = await api.PATCH("/v1/subscriptionGroupLocalizations/{id}", {
-    params: { path: { id: localizationId } },
-    body: updateRequest,
-  });
+  const response = await updateSubscriptionGroupLocalizationAPI(
+    localizationId,
+    updateRequest
+  );
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error(
       "No subscription group localization ID returned from update"
     );
   }
 
   logger.info(
-    `Successfully updated subscription group localization: ${response.data.data.id}`
+    `Successfully updated subscription group localization: ${response.data.id}`
   );
 }
 
@@ -501,13 +418,7 @@ export async function deleteSubscriptionGroupLocalization(
     );
   }
 
-  const response = await api.DELETE("/v1/subscriptionGroupLocalizations/{id}", {
-    params: { path: { id: localizationId } },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
+  await deleteSubscriptionGroupLocalizationAPI(localizationId);
 
   logger.info(
     `Successfully deleted subscription group localization: ${localizationId}`
@@ -576,21 +487,15 @@ export async function createNewSubscription(
     },
   };
 
-  const response = await api.POST("/v1/subscriptions", {
-    body: createRequest,
-  });
+  const response = await createSubscriptionAPI(createRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription ID returned from creation");
   }
 
-  logger.info(`Successfully created subscription: ${response.data.data.id}`);
+  logger.info(`Successfully created subscription: ${response.data.id}`);
 
-  return response.data.data.id;
+  return response.data.id;
 }
 
 // Update an existing subscription
@@ -641,20 +546,13 @@ export async function updateExistingSubscription(
     },
   };
 
-  const response = await api.PATCH("/v1/subscriptions/{id}", {
-    params: { path: { id: subscriptionId } },
-    body: updateRequest,
-  });
+  const response = await updateSubscriptionAPI(subscriptionId, updateRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription ID returned from update");
   }
 
-  logger.info(`Successfully updated subscription: ${response.data.data.id}`);
+  logger.info(`Successfully updated subscription: ${response.data.id}`);
 }
 
 // Create a new subscription localization
@@ -707,20 +605,14 @@ export async function createSubscriptionLocalization(
     },
   };
 
-  const response = await api.POST("/v1/subscriptionLocalizations", {
-    body: createRequest,
-  });
+  const response = await createSubscriptionLocalizationAPI(createRequest);
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription localization ID returned from creation");
   }
 
   logger.info(
-    `Successfully created subscription localization: ${response.data.data.id}`
+    `Successfully created subscription localization: ${response.data.id}`
   );
 }
 
@@ -771,21 +663,17 @@ export async function updateSubscriptionLocalization(
     },
   };
 
-  const response = await api.PATCH("/v1/subscriptionLocalizations/{id}", {
-    params: { path: { id: localizationId } },
-    body: updateRequest,
-  });
+  const response = await updateSubscriptionLocalizationAPI(
+    localizationId,
+    updateRequest
+  );
 
-  if (response.error) {
-    throw response.error;
-  }
-
-  if (!response.data?.data?.id) {
+  if (!response.data?.id) {
     throw new Error("No subscription localization ID returned from update");
   }
 
   logger.info(
-    `Successfully updated subscription localization: ${response.data.data.id}`
+    `Successfully updated subscription localization: ${response.data.id}`
   );
 }
 
@@ -824,13 +712,7 @@ export async function deleteSubscriptionLocalization(
     );
   }
 
-  const response = await api.DELETE("/v1/subscriptionLocalizations/{id}", {
-    params: { path: { id: localizationId } },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
+  await deleteSubscriptionLocalizationAPI(localizationId);
 
   logger.info(
     `Successfully deleted subscription localization: ${localizationId}`

@@ -6,7 +6,11 @@ import {
 } from "../../models/app-store";
 import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
-import { api } from "../api";
+import {
+  getIAPPriceScheduleId,
+  findIAPPricePointId,
+  createIAPPriceSchedule,
+} from "../../domains/in-app-purchases/api-client";
 import { throwFormattedError } from "../../helpers/error-handling-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
@@ -28,79 +32,6 @@ function extractIAPId(
     (iap) => iap.attributes?.productId === productId
   );
   return iap?.id || null;
-}
-
-// Helper function to get IAP price schedule ID from IAP ID
-async function getIAPPriceScheduleId(iapId: string): Promise<string | null> {
-  const response = await api.GET("/v2/inAppPurchases/{id}/iapPriceSchedule", {
-    params: { path: { id: iapId } },
-  });
-
-  if (response.error) {
-    const is404Error = response.error.errors?.some(
-      (err: any) => err.status === "404" || err.status === 404
-    );
-    if (is404Error) {
-      return null;
-    }
-    throwFormattedError("Failed to get IAP price schedule", response.error);
-  }
-
-  return response.data.data?.id || null;
-}
-
-// Helper function to find IAP price point ID for a given price and territory
-async function findIAPPricePointId(
-  price: string,
-  territory: Territory,
-  iapId: string
-): Promise<string> {
-  const response = await api.GET("/v2/inAppPurchases/{id}/pricePoints", {
-    params: {
-      path: { id: iapId },
-      query: {
-        limit: 200,
-        include: ["territory"],
-        "filter[territory]": [territory],
-      },
-    },
-  });
-
-  if (response.error) {
-    throwFormattedError("Failed to get IAP price points", response.error);
-  }
-
-  let pricePoints: any[] = [];
-  if (
-    response.data &&
-    typeof response.data === "object" &&
-    Array.isArray((response.data as any).data)
-  ) {
-    pricePoints = (response.data as any).data;
-  }
-
-  // Find the price point that matches the price and territory
-  const pricePoint = pricePoints.find((point: any) => {
-    const pointPrice = point.attributes?.customerPrice;
-    const pointTerritoryId = point.relationships?.territory?.data?.id;
-    return pointPrice === price && pointTerritoryId === territory;
-  });
-
-  if (!pricePoint) {
-    logger.error(
-      `No price point found for price ${price} in territory ${territory}. ` +
-        `Found ${pricePoints.length} price points for territory ${territory}. ` +
-        `Available prices: ${pricePoints
-          .map((p: any) => p.attributes?.customerPrice)
-          .join(", ")}`
-    );
-
-    throw new Error(
-      `No price point found for price ${price} in territory ${territory}`
-    );
-  }
-
-  return pricePoint.id;
 }
 
 // Create price schedule request builder
@@ -171,7 +102,7 @@ function buildIAPPriceScheduleRequest(
 }
 
 // Create IAP price schedule from scratch
-async function createIAPPriceSchedule(
+async function createIAPPriceScheduleForIAP(
   priceSchedule: z.infer<typeof PriceScheduleSchema>,
   iapId: string
 ): Promise<void> {
@@ -200,16 +131,7 @@ async function createIAPPriceSchedule(
       ].relationships.inAppPurchasePricePoint.data.id = pricePointId;
     }
 
-    const response = await api.POST("/v1/inAppPurchasePriceSchedules", {
-      body: createRequest,
-    });
-
-    if (response.error) {
-      throwFormattedError(
-        "Failed to create IAP price schedule",
-        response.error
-      );
-    }
+    await createIAPPriceSchedule(createRequest);
 
     logger.info(
       `Successfully created IAP price schedule with base territory ${priceSchedule.baseTerritory}`
@@ -257,7 +179,7 @@ export async function updateIAPPricing(
   }
 
   // Create the price schedule (this will update if one exists)
-  await createIAPPriceSchedule(priceSchedule, iapId);
+  await createIAPPriceScheduleForIAP(priceSchedule, iapId);
 
   logger.info(`Successfully updated IAP pricing for ${productId}`);
 }

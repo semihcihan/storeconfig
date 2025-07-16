@@ -210,3 +210,157 @@ export async function fetchPromotionalOfferPrices(
 
   return response.data;
 }
+
+// Create subscription group
+export async function createSubscriptionGroup(
+  request: components["schemas"]["SubscriptionGroupCreateRequest"]
+): Promise<components["schemas"]["SubscriptionGroupResponse"]> {
+  const response = await api.POST("/v1/subscriptionGroups", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update subscription group
+export async function updateSubscriptionGroup(
+  groupId: string,
+  request: components["schemas"]["SubscriptionGroupUpdateRequest"]
+): Promise<components["schemas"]["SubscriptionGroupResponse"]> {
+  const response = await api.PATCH("/v1/subscriptionGroups/{id}", {
+    params: { path: { id: groupId } },
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Create subscription group localization
+export async function createSubscriptionGroupLocalization(
+  request: components["schemas"]["SubscriptionGroupLocalizationCreateRequest"]
+): Promise<components["schemas"]["SubscriptionGroupLocalizationResponse"]> {
+  const response = await api.POST("/v1/subscriptionGroupLocalizations", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update subscription group localization
+export async function updateSubscriptionGroupLocalization(
+  localizationId: string,
+  request: components["schemas"]["SubscriptionGroupLocalizationUpdateRequest"]
+): Promise<components["schemas"]["SubscriptionGroupLocalizationResponse"]> {
+  const response = await api.PATCH("/v1/subscriptionGroupLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Delete subscription group localization
+export async function deleteSubscriptionGroupLocalization(
+  localizationId: string
+): Promise<void> {
+  const response = await api.DELETE("/v1/subscriptionGroupLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}
+
+// Create subscription
+export async function createSubscription(
+  request: components["schemas"]["SubscriptionCreateRequest"]
+): Promise<components["schemas"]["SubscriptionResponse"]> {
+  const response = await api.POST("/v1/subscriptions", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update subscription
+export async function updateSubscription(
+  subscriptionId: string,
+  request: components["schemas"]["SubscriptionUpdateRequest"]
+): Promise<components["schemas"]["SubscriptionResponse"]> {
+  const response = await api.PATCH("/v1/subscriptions/{id}", {
+    params: { path: { id: subscriptionId } },
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Create subscription localization
+export async function createSubscriptionLocalization(
+  request: components["schemas"]["SubscriptionLocalizationCreateRequest"]
+): Promise<components["schemas"]["SubscriptionLocalizationResponse"]> {
+  const response = await api.POST("/v1/subscriptionLocalizations", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Update subscription localization
+export async function updateSubscriptionLocalization(
+  localizationId: string,
+  request: components["schemas"]["SubscriptionLocalizationUpdateRequest"]
+): Promise<components["schemas"]["SubscriptionLocalizationResponse"]> {
+  const response = await api.PATCH("/v1/subscriptionLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Delete subscription localization
+export async function deleteSubscriptionLocalization(
+  localizationId: string
+): Promise<void> {
+  const response = await api.DELETE("/v1/subscriptionLocalizations/{id}", {
+    params: { path: { id: localizationId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}

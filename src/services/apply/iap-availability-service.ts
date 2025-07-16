@@ -5,7 +5,10 @@ import {
 } from "../../models/app-store";
 import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
-import { api } from "../api";
+import {
+  getIAPAvailability,
+  createIAPAvailability,
+} from "../../domains/in-app-purchases/api-client";
 import {
   isNotFoundError,
   throwFormattedError,
@@ -29,58 +32,6 @@ function extractIAPId(
     (iap) => iap.attributes?.productId === productId
   );
   return iap?.id || null;
-}
-
-// Get IAP availability for a specific IAP
-export async function getIAPAvailability(
-  iapId: string
-): Promise<InAppPurchaseAvailabilityResponse | null> {
-  const response = await api.GET(
-    "/v2/inAppPurchases/{id}/inAppPurchaseAvailability",
-    {
-      params: {
-        path: { id: iapId },
-        query: {
-          include: ["availableTerritories"],
-          "fields[inAppPurchaseAvailabilities]": [
-            "availableInNewTerritories",
-            "availableTerritories",
-          ],
-        },
-      },
-    }
-  );
-
-  if (response.error) {
-    const is404Error = isNotFoundError(response.error);
-    if (is404Error) {
-      logger.info(
-        `No IAP availability found for IAP ${iapId} (likely MISSING_METADATA state)`
-      );
-      return null;
-    }
-    throwFormattedError(
-      `Failed to fetch IAP availability for ${iapId}`,
-      response.error
-    );
-  }
-
-  return response.data;
-}
-
-// Create IAP availability
-export async function createIAPAvailability(
-  request: InAppPurchaseAvailabilityCreateRequest
-): Promise<InAppPurchaseAvailabilityResponse> {
-  const response = await api.POST("/v1/inAppPurchaseAvailabilities", {
-    body: request,
-  });
-
-  if (response.error) {
-    throwFormattedError("Failed to create IAP availability", response.error);
-  }
-
-  return response.data;
 }
 
 // Helper function to create IAP availability for a specific IAP

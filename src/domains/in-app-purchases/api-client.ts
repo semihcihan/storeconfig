@@ -285,3 +285,142 @@ export async function deleteInAppPurchaseLocalization(
     throw response.error;
   }
 }
+
+// Get IAP availability for a specific IAP
+export async function getIAPAvailability(
+  iapId: string
+): Promise<components["schemas"]["InAppPurchaseAvailabilityResponse"] | null> {
+  const response = await api.GET(
+    "/v2/inAppPurchases/{id}/inAppPurchaseAvailability",
+    {
+      params: {
+        path: { id: iapId },
+        query: {
+          include: ["availableTerritories"],
+          "fields[inAppPurchaseAvailabilities]": [
+            "availableInNewTerritories",
+            "availableTerritories",
+          ],
+        },
+      },
+    }
+  );
+
+  if (response.error) {
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.info(
+        `No IAP availability found for IAP ${iapId} (likely MISSING_METADATA state)`
+      );
+      return null;
+    }
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Create IAP availability
+export async function createIAPAvailability(
+  request: components["schemas"]["InAppPurchaseAvailabilityCreateRequest"]
+): Promise<components["schemas"]["InAppPurchaseAvailabilityResponse"]> {
+  const response = await api.POST("/v1/inAppPurchaseAvailabilities", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Get IAP price schedule ID from IAP ID
+export async function getIAPPriceScheduleId(
+  iapId: string
+): Promise<string | null> {
+  const response = await api.GET("/v2/inAppPurchases/{id}/iapPriceSchedule", {
+    params: { path: { id: iapId } },
+  });
+
+  if (response.error) {
+    const is404Error = response.error.errors?.some(
+      (err: any) => err.status === "404" || err.status === 404
+    );
+    if (is404Error) {
+      return null;
+    }
+    throw response.error;
+  }
+
+  return response.data.data?.id || null;
+}
+
+// Find IAP price point ID for a given price and territory
+export async function findIAPPricePointId(
+  price: string,
+  territory: string,
+  iapId: string
+): Promise<string> {
+  const response = await api.GET("/v2/inAppPurchases/{id}/pricePoints", {
+    params: {
+      path: { id: iapId },
+      query: {
+        limit: 200,
+        include: ["territory"],
+        "filter[territory]": [territory],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  let pricePoints: any[] = [];
+  if (
+    response.data &&
+    typeof response.data === "object" &&
+    Array.isArray((response.data as any).data)
+  ) {
+    pricePoints = (response.data as any).data;
+  }
+
+  // Find the price point that matches the price and territory
+  const pricePoint = pricePoints.find((point: any) => {
+    const pointPrice = point.attributes?.customerPrice;
+    const pointTerritoryId = point.relationships?.territory?.data?.id;
+    return pointPrice === price && pointTerritoryId === territory;
+  });
+
+  if (!pricePoint) {
+    logger.error(
+      `No price point found for price ${price} in territory ${territory}. ` +
+        `Found ${pricePoints.length} price points for territory ${territory}. ` +
+        `Available prices: ${pricePoints
+          .map((p: any) => p.attributes?.customerPrice)
+          .join(", ")}`
+    );
+
+    throw new Error(
+      `No price point found for price ${price} in territory ${territory}`
+    );
+  }
+
+  return pricePoint.id;
+}
+
+// Create IAP price schedule
+export async function createIAPPriceSchedule(
+  request: components["schemas"]["InAppPurchasePriceScheduleCreateRequest"]
+): Promise<components["schemas"]["InAppPurchasePriceScheduleResponse"]> {
+  const response = await api.POST("/v1/inAppPurchasePriceSchedules", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
