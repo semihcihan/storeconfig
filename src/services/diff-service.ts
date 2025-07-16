@@ -42,7 +42,24 @@ function diffPriceSchedule(
     return actions;
   }
 
-  const current = currentSchedule || { baseTerritory: "USA", prices: [] };
+  // If current schedule is undefined, we're creating a new price schedule
+  if (!currentSchedule) {
+    actions.push({
+      type: "UPDATE_IAP_PRICING",
+      payload: {
+        productId,
+        priceSchedule: desiredSchedule,
+        changes: {
+          addedPrices: desiredSchedule.prices,
+          updatedPrices: [],
+          deletedTerritories: [],
+        },
+      },
+    });
+    return actions;
+  }
+
+  const current = currentSchedule;
 
   // Check if any changes are needed
   const baseTerritoryChanging =
