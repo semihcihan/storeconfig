@@ -224,13 +224,22 @@ async function createIAPPriceSchedule(
 export async function updateIAPPricing(
   productId: string,
   priceSchedule: z.infer<typeof PriceScheduleSchema>,
-  currentIAPsResponse: InAppPurchasesV2Response
+  currentIAPsResponse: InAppPurchasesV2Response,
+  newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
   logger.info(
     `Updating IAP pricing for ${productId} with comprehensive schedule`
   );
 
-  const iapId = extractIAPId(currentIAPsResponse, productId);
+  // Get the IAP ID, checking newly created IAPs first
+  let iapId: string | null = null;
+
+  if (newlyCreatedIAPs?.has(productId)) {
+    iapId = newlyCreatedIAPs.get(productId)!;
+  } else {
+    iapId = extractIAPId(currentIAPsResponse, productId);
+  }
+
   if (!iapId) {
     throw new Error(`IAP with product ID ${productId} not found`);
   }

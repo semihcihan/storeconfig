@@ -130,7 +130,8 @@ export async function updateIAPAvailability(
   productId: string,
   availability: z.infer<typeof AvailabilitySchema>,
   appId: string,
-  currentIAPsResponse: InAppPurchasesV2Response
+  currentIAPsResponse: InAppPurchasesV2Response,
+  newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
   logger.info(`Updating IAP availability for product ${productId}`);
   logger.info(
@@ -142,8 +143,15 @@ export async function updateIAPAvailability(
     `Available in new territories: ${availability.availableInNewTerritories}`
   );
 
-  // Find the IAP by product ID
-  const iapId = extractIAPId(currentIAPsResponse, productId);
+  // Get the IAP ID, checking newly created IAPs first
+  let iapId: string | null = null;
+
+  if (newlyCreatedIAPs?.has(productId)) {
+    iapId = newlyCreatedIAPs.get(productId)!;
+  } else {
+    iapId = extractIAPId(currentIAPsResponse, productId);
+  }
+
   if (!iapId) {
     throw new Error(`IAP with product ID ${productId} not found`);
   }

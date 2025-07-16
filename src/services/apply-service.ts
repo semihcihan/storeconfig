@@ -133,7 +133,8 @@ async function executeAction(
       await updateIAPPricing(
         action.payload.productId,
         action.payload.priceSchedule,
-        currentIAPsResponse!
+        currentIAPsResponse!,
+        newlyCreatedIAPs
       );
       break;
 
@@ -147,7 +148,8 @@ async function executeAction(
         action.payload.productId,
         action.payload.availability,
         appId,
-        currentIAPsResponse!
+        currentIAPsResponse!,
+        newlyCreatedIAPs
       );
       break;
 

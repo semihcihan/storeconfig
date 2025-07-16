@@ -650,7 +650,8 @@ describe("IAP Localization Actions", () => {
         data: expect.any(Array),
         included: expect.any(Array),
         links: expect.any(Object),
-      })
+      }),
+      expect.any(Map) // newlyCreatedIAPs
     );
   });
 });
