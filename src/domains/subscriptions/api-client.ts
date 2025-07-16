@@ -133,8 +133,6 @@ export async function fetchSubscriptionAvailability(
         data: {
           type: "subscriptionAvailabilities",
           id: "",
-          attributes: { availableInNewTerritories: false },
-          relationships: { availableTerritories: { data: [] } },
         },
         included: [],
         links: { self: "" },

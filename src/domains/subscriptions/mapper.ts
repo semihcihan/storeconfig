@@ -319,20 +319,21 @@ export async function mapPromotionalOffers(
 // Map subscription availability
 export async function mapSubscriptionAvailability(
   response: components["schemas"]["SubscriptionAvailabilityResponse"]
-): Promise<{
-  availableInNewTerritories: boolean;
-  availableTerritories: z.infer<typeof TerritoryCodeSchema>[];
-}> {
+): Promise<
+  | {
+      availableInNewTerritories: boolean;
+      availableTerritories: z.infer<typeof TerritoryCodeSchema>[];
+    }
+  | undefined
+> {
   const availability = response.data;
-  const availableInNewTerritories =
-    availability.attributes?.availableInNewTerritories || false;
 
   if (!availability.id) {
-    return {
-      availableInNewTerritories,
-      availableTerritories: [],
-    };
+    return undefined;
   }
+
+  const availableInNewTerritories =
+    availability.attributes?.availableInNewTerritories || false;
 
   const territoriesResponse = await fetchSubscriptionAvailabilityTerritories(
     availability.id
@@ -426,7 +427,7 @@ export async function mapSubscription(
     introductoryOffers: introductoryOffers,
     promotionalOffers: promotionalOffers,
     prices: prices,
-    availability: availability,
+    ...(availability !== undefined && { availability }),
     reviewNote: reviewNote === null ? undefined : reviewNote,
   };
   return sub;
