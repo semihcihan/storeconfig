@@ -440,6 +440,40 @@ function diffSubscriptions(
         type: "CREATE_SUBSCRIPTION",
         payload: { groupReferenceName, subscription: desiredSub },
       });
+
+      // For new subscriptions, also generate actions for localizations, pricing, offers, and availability
+      actions.push(
+        ...diffSubscriptionLocalizations(
+          productId,
+          [],
+          desiredSub.localizations
+        )
+      );
+      actions.push(...diffSubscriptionPrices(productId, [], desiredSub.prices));
+      actions.push(
+        ...diffIntroductoryOffers(
+          productId,
+          [],
+          desiredSub.introductoryOffers || []
+        )
+      );
+      actions.push(
+        ...diffPromotionalOffers(
+          productId,
+          [],
+          desiredSub.promotionalOffers || []
+        )
+      );
+
+      if (desiredSub.availability) {
+        actions.push({
+          type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+          payload: {
+            subscriptionProductId: productId,
+            availability: desiredSub.availability,
+          },
+        });
+      }
     } else {
       const changes: any = {};
       if (desiredSub.referenceName !== currentSub.referenceName) {

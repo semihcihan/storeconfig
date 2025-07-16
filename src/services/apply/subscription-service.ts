@@ -18,6 +18,10 @@ type SubscriptionGroupLocalizationResponse =
   components["schemas"]["SubscriptionGroupLocalizationResponse"];
 type SubscriptionGroupsResponse =
   components["schemas"]["SubscriptionGroupsResponse"];
+type SubscriptionCreateRequest =
+  components["schemas"]["SubscriptionCreateRequest"];
+type SubscriptionUpdateRequest =
+  components["schemas"]["SubscriptionUpdateRequest"];
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -59,25 +63,6 @@ function extractSubscriptionGroupLocalizationId(
   return localization?.id || null;
 }
 
-// Helper function to get existing subscription group ID by reference name (fallback when no raw response provided)
-async function getSubscriptionGroupIdByReferenceName(
-  appId: string,
-  referenceName: string
-): Promise<string | null> {
-  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
-    params: {
-      path: { id: appId },
-      query: { limit: 200 },
-    },
-  });
-
-  if (response.error) {
-    throw response.error;
-  }
-
-  return extractSubscriptionGroupId(response.data, referenceName);
-}
-
 // Helper function to get existing subscription group localization ID (fallback when no raw response provided)
 async function getSubscriptionGroupLocalizationId(
   appId: string,
@@ -108,6 +93,73 @@ async function getSubscriptionGroupLocalizationId(
     groupReferenceName,
     locale
   );
+}
+
+// Utility function to extract subscription ID from raw API response
+function extractSubscriptionId(
+  apiResponse: SubscriptionGroupsResponse,
+  productId: string
+): string | null {
+  if (!apiResponse.included) {
+    return null;
+  }
+
+  // Find the subscription in the included resources
+  const subscription = apiResponse.included.find(
+    (item: any) =>
+      item.type === "subscriptions" && item.attributes?.productId === productId
+  );
+
+  return subscription?.id || null;
+}
+
+// Helper function to get existing subscription ID by product ID (fallback when no raw response provided)
+async function getSubscriptionIdByProductId(
+  appId: string,
+  productId: string
+): Promise<string | null> {
+  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
+    params: {
+      path: { id: appId },
+      query: {
+        limit: 200,
+        include: ["subscriptions"],
+        "fields[subscriptions]": [
+          "name",
+          "productId",
+          "familySharable",
+          "subscriptionPeriod",
+          "reviewNote",
+          "groupLevel",
+        ],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return extractSubscriptionId(response.data, productId);
+}
+
+// Helper function to get existing subscription group ID by reference name (fallback when no raw response provided)
+async function getSubscriptionGroupIdByReferenceName(
+  appId: string,
+  referenceName: string
+): Promise<string | null> {
+  const response = await api.GET("/v1/apps/{id}/subscriptionGroups", {
+    params: {
+      path: { id: appId },
+      query: { limit: 200 },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return extractSubscriptionGroupId(response.data, referenceName);
 }
 
 // Create a new subscription group
@@ -383,4 +435,147 @@ export async function deleteSubscriptionGroupLocalization(
   logger.info(
     `Successfully deleted subscription group localization: ${localizationId}`
   );
+}
+
+// Create a new subscription
+export async function createNewSubscription(
+  appId: string,
+  groupReferenceName: string,
+  subscription: {
+    productId: string;
+    referenceName: string;
+    familySharable: boolean;
+    groupLevel: number;
+    subscriptionPeriod: string;
+    reviewNote?: string;
+  },
+  currentStateResponse?: SubscriptionGroupsResponse,
+  newlyCreatedSubscriptionGroups?: Map<string, string>
+): Promise<string> {
+  logger.info(`Creating new subscription: ${subscription.productId}`);
+
+  // Get the subscription group ID, checking newly created subscription groups first
+  let groupId: string | null = null;
+
+  if (newlyCreatedSubscriptionGroups?.has(groupReferenceName)) {
+    groupId = newlyCreatedSubscriptionGroups.get(groupReferenceName)!;
+  } else if (currentStateResponse) {
+    groupId = extractSubscriptionGroupId(
+      currentStateResponse,
+      groupReferenceName
+    );
+  } else {
+    groupId = await getSubscriptionGroupIdByReferenceName(
+      appId,
+      groupReferenceName
+    );
+  }
+
+  if (!groupId) {
+    throw new Error(
+      `Could not find subscription group with reference name: ${groupReferenceName}`
+    );
+  }
+
+  const createRequest: SubscriptionCreateRequest = {
+    data: {
+      type: "subscriptions",
+      attributes: {
+        name: subscription.referenceName,
+        productId: subscription.productId,
+        familySharable: subscription.familySharable,
+        subscriptionPeriod: subscription.subscriptionPeriod as any,
+        groupLevel: subscription.groupLevel,
+        ...(subscription.reviewNote && { reviewNote: subscription.reviewNote }),
+      },
+      relationships: {
+        group: {
+          data: {
+            type: "subscriptionGroups",
+            id: groupId,
+          },
+        },
+      },
+    },
+  };
+
+  const response = await api.POST("/v1/subscriptions", {
+    body: createRequest,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  if (!response.data?.data?.id) {
+    throw new Error("No subscription ID returned from creation");
+  }
+
+  logger.info(`Successfully created subscription: ${response.data.data.id}`);
+
+  return response.data.data.id;
+}
+
+// Update an existing subscription
+export async function updateExistingSubscription(
+  appId: string,
+  productId: string,
+  changes: {
+    referenceName?: string;
+    familySharable?: boolean;
+    groupLevel?: number;
+    subscriptionPeriod?: string;
+    reviewNote?: string;
+  },
+  currentStateResponse?: SubscriptionGroupsResponse
+): Promise<void> {
+  logger.info(`Updating subscription: ${productId}`);
+
+  // Get the subscription ID using utility function or fallback
+  const subscriptionId = currentStateResponse
+    ? extractSubscriptionId(currentStateResponse, productId)
+    : await getSubscriptionIdByProductId(appId, productId);
+
+  if (!subscriptionId) {
+    throw new Error(
+      `Could not find subscription with product ID: ${productId}`
+    );
+  }
+
+  const updateRequest: SubscriptionUpdateRequest = {
+    data: {
+      type: "subscriptions",
+      id: subscriptionId,
+      attributes: {
+        ...(changes.referenceName && { name: changes.referenceName }),
+        ...(changes.familySharable !== undefined && {
+          familySharable: changes.familySharable,
+        }),
+        ...(changes.groupLevel !== undefined && {
+          groupLevel: changes.groupLevel,
+        }),
+        ...(changes.subscriptionPeriod && {
+          subscriptionPeriod: changes.subscriptionPeriod as any,
+        }),
+        ...(changes.reviewNote !== undefined && {
+          reviewNote: changes.reviewNote,
+        }),
+      },
+    },
+  };
+
+  const response = await api.PATCH("/v1/subscriptions/{id}", {
+    params: { path: { id: subscriptionId } },
+    body: updateRequest,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  if (!response.data?.data?.id) {
+    throw new Error("No subscription ID returned from update");
+  }
+
+  logger.info(`Successfully updated subscription: ${response.data.data.id}`);
 }

@@ -19,6 +19,8 @@ import {
   createSubscriptionGroupLocalization,
   updateSubscriptionGroupLocalization,
   deleteSubscriptionGroupLocalization,
+  createNewSubscription,
+  updateExistingSubscription,
 } from "./apply/subscription-service";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
@@ -262,10 +264,23 @@ async function executeAction(
     case "CREATE_SUBSCRIPTION":
       logger.info(`  Group Ref Name: ${action.payload.groupReferenceName}`);
       logger.info(`  Product ID: ${action.payload.subscription.productId}`);
+      await createNewSubscription(
+        appId,
+        action.payload.groupReferenceName,
+        action.payload.subscription,
+        currentSubscriptionGroupsResponse,
+        newlyCreatedSubscriptionGroups
+      );
       break;
     case "UPDATE_SUBSCRIPTION":
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
+      await updateExistingSubscription(
+        appId,
+        action.payload.productId,
+        action.payload.changes,
+        currentSubscriptionGroupsResponse
+      );
       break;
 
     // Subscription Localizations

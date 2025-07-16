@@ -4,6 +4,7 @@ import {
   LocalizationSchema,
   PriceSchema,
   SubscriptionGroupLocalizationSchema,
+  SubscriptionSchema,
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
 } from "../models/app-store";
@@ -15,6 +16,7 @@ type Price = z.infer<typeof PriceSchema>;
 type SubscriptionGroupLocalization = z.infer<
   typeof SubscriptionGroupLocalizationSchema
 >;
+type Subscription = z.infer<typeof SubscriptionSchema>;
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
 
@@ -386,357 +388,111 @@ describe("diff-service", () => {
       });
     });
 
-    it("should create UPDATE_APP_PRICING with all types of changes", () => {
-      const currentState = MOCK_STATE_1;
-      const newPrice: Price = { territory: "CAN", price: "3.99" };
-      const updatedPrice: Price = { territory: "USA", price: "5.99" };
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        pricing: {
-          ...MOCK_STATE_1.pricing!,
-          baseTerritory: "CAN", // Changing base territory
-          prices: [updatedPrice, newPrice], // Both updating existing and adding new (implicitly deleting nothing)
-        },
-      };
-
-      const plan = diff(currentState, desiredState);
-
-      // Should have one UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "CAN",
-            prices: [updatedPrice, newPrice],
-          },
-          changes: {
-            addedPrices: [newPrice],
-            updatedPrices: [updatedPrice],
-            deletedTerritories: [],
-          },
-        },
-      });
-    });
-
-    it("should generate only UPDATE_APP_PRICING when adding price without base territory change", () => {
-      const currentState = MOCK_STATE_1;
-      const newPrice: Price = { territory: "CAN", price: "5.99" };
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        pricing: {
-          ...MOCK_STATE_1.pricing!,
-          // baseTerritory stays "USA"
-          prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
-        },
-      };
-
-      const plan = diff(currentState, desiredState);
-
-      // Should have only UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "USA",
-            prices: [...MOCK_STATE_1.pricing!.prices, newPrice],
-          },
-          changes: {
-            addedPrices: [newPrice],
-            updatedPrices: [],
-            deletedTerritories: [],
-          },
-        },
-      });
-    });
-
-    it("should generate only UPDATE_APP_PRICING when updating price without base territory change", () => {
-      const currentState = MOCK_STATE_1;
-      const updatedPrice: Price = { territory: "USA", price: "5.99" };
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        pricing: {
-          ...MOCK_STATE_1.pricing!,
-          // baseTerritory stays "USA"
-          prices: [updatedPrice],
-        },
-      };
-
-      const plan = diff(currentState, desiredState);
-
-      // Should have only UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "USA",
-            prices: [updatedPrice],
-          },
-          changes: {
-            addedPrices: [],
-            updatedPrices: [updatedPrice],
-            deletedTerritories: [],
-          },
-        },
-      });
-    });
-
-    it("should generate only UPDATE_APP_PRICING when deleting price without base territory change", () => {
+    it("should create a plan to update a subscription in a group", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
-        pricing: {
-          ...MOCK_STATE_1.pricing!,
-          // baseTerritory stays "USA"
-          prices: [], // Deleting the only price
-        },
-      };
-
-      const plan = diff(currentState, desiredState);
-
-      // Should have only UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "USA",
-            prices: [],
-          },
-          changes: {
-            addedPrices: [],
-            updatedPrices: [],
-            deletedTerritories: ["USA"],
-          },
-        },
-      });
-    });
-
-    it("should throw an error if an in-app purchase type is changed", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        inAppPurchases: [
+        subscriptionGroups: [
           {
-            ...MOCK_STATE_1.inAppPurchases![0],
-            type: "NON_CONSUMABLE",
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                referenceName: "Updated Subscription 1",
+                groupLevel: 2,
+                familySharable: true,
+                subscriptionPeriod: "ONE_YEAR",
+              },
+            ],
           },
         ],
       };
 
-      expect(() => diff(currentState, desiredState)).toThrow(
-        `The type for in-app purchase iap1 cannot be changed. Current: CONSUMABLE, Desired: NON_CONSUMABLE.`
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_SUBSCRIPTION",
+        payload: {
+          productId: "sub1",
+          changes: {
+            referenceName: "Updated Subscription 1",
+            groupLevel: 2,
+            familySharable: true,
+            subscriptionPeriod: "ONE_YEAR",
+          },
+        },
+      });
+    });
+
+    it("should create a plan to create a new subscription in a group", () => {
+      const currentState = MOCK_STATE_1;
+      const newSubscription: Subscription = {
+        productId: "sub2",
+        referenceName: "New Subscription 2",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [{ territory: "USA", price: "4.99" }],
+        localizations: [
+          {
+            locale: "en-US",
+            name: "New Subscription 2",
+            description: "This is a new subscription",
+          },
+        ],
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA"],
+        },
+      };
+
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              newSubscription,
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+      expect(plan).toEqual(
+        expect.arrayContaining([
+          {
+            type: "CREATE_SUBSCRIPTION",
+            payload: {
+              groupReferenceName: "group1",
+              subscription: newSubscription,
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+            payload: {
+              subscriptionProductId: "sub2",
+              localization: newSubscription.localizations[0],
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_PRICE",
+            payload: {
+              subscriptionProductId: "sub2",
+              price: newSubscription.prices[0],
+            },
+          },
+          {
+            type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+            payload: {
+              subscriptionProductId: "sub2",
+              availability: newSubscription.availability,
+            },
+          },
+        ])
       );
-    });
-
-    it("should throw error when trying to delete an in-app purchase", () => {
-      const currentState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          {
-            productId: "iap1",
-            referenceName: "IAP 1",
-            type: "CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-          {
-            productId: "iap2",
-            referenceName: "IAP 2",
-            type: "NON_CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          // Only iap2, missing iap1 - should throw
-          {
-            productId: "iap2",
-            referenceName: "IAP 2",
-            type: "NON_CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      expect(() => diff(currentState, desiredState)).toThrow(
-        `In-app purchase with productId 'iap1' cannot be deleted. In-app purchases cannot be removed once created.`
-      );
-    });
-
-    it("should throw error when type is changed for existing productId", () => {
-      const currentState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          {
-            productId: "iap1",
-            referenceName: "IAP 1",
-            type: "CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...currentState,
-        inAppPurchases: [
-          {
-            productId: "iap1", // Same productId
-            referenceName: "IAP 1",
-            type: "NON_CONSUMABLE", // But different type - should fail
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      expect(() => diff(currentState, desiredState)).toThrow(
-        `The type for in-app purchase iap1 cannot be changed. Current: CONSUMABLE, Desired: NON_CONSUMABLE.`
-      );
-    });
-
-    it("should allow adding new IAPs while keeping all existing ones", () => {
-      const currentState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          {
-            productId: "iap1",
-            referenceName: "IAP 1",
-            type: "CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          // Keep existing IAP
-          {
-            productId: "iap1",
-            referenceName: "IAP 1",
-            type: "CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-          // Add new IAP
-          {
-            productId: "iap2",
-            referenceName: "IAP 2",
-            type: "NON_CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      // Should not throw - all existing IAPs are preserved
-      expect(() => diff(currentState, desiredState)).not.toThrow();
-
-      const plan = diff(currentState, desiredState);
-      expect(
-        plan.some((action) => action.type === "CREATE_IN_APP_PURCHASE")
-      ).toBe(true);
-    });
-
-    it("should allow updating existing IAP content while keeping same type", () => {
-      const currentState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          {
-            productId: "iap1",
-            referenceName: "IAP 1",
-            type: "CONSUMABLE",
-            familySharable: false,
-            priceSchedule: { baseTerritory: "USA", prices: [] },
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [],
-            },
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...EMPTY_STATE,
-        inAppPurchases: [
-          {
-            productId: "iap1", // Same productId
-            referenceName: "Updated IAP 1", // Different content
-            type: "CONSUMABLE", // Same type - OK
-            familySharable: true, // Different content
-            priceSchedule: {
-              baseTerritory: "CAN",
-              prices: [{ territory: "CAN", price: "1.99" }],
-            }, // Different content
-            localizations: [
-              { locale: "en-US", name: "New Name", description: "New Desc" },
-            ], // Different content
-            availability: {
-              availableInNewTerritories: false,
-              availableTerritories: ["CAN"],
-            }, // Different content
-          },
-        ],
-      };
-
-      // Should not throw - content can change, type is the same
-      expect(() => diff(currentState, desiredState)).not.toThrow();
-
-      const plan = diff(currentState, desiredState);
-      expect(
-        plan.some((action) => action.type === "UPDATE_IN_APP_PURCHASE")
-      ).toBe(true);
     });
 
     it("should create a plan to add an in-app purchase", () => {
@@ -1240,14 +996,53 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "CREATE_SUBSCRIPTION",
-        payload: {
-          groupReferenceName: "group1",
-          subscription: newSubscription,
-        },
-      });
+      expect(plan).toHaveLength(6); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + CREATE_INTRODUCTORY_OFFER + CREATE_PROMOTIONAL_OFFER + UPDATE_SUBSCRIPTION_AVAILABILITY
+      expect(plan).toEqual(
+        expect.arrayContaining([
+          {
+            type: "CREATE_SUBSCRIPTION",
+            payload: {
+              groupReferenceName: "group1",
+              subscription: newSubscription,
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+            payload: {
+              subscriptionProductId: "sub2",
+              localization: newSubscription.localizations[0],
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_PRICE",
+            payload: {
+              subscriptionProductId: "sub2",
+              price: newSubscription.prices[0],
+            },
+          },
+          {
+            type: "CREATE_INTRODUCTORY_OFFER",
+            payload: {
+              subscriptionProductId: "sub2",
+              offer: newSubscription.introductoryOffers![0],
+            },
+          },
+          {
+            type: "CREATE_PROMOTIONAL_OFFER",
+            payload: {
+              subscriptionProductId: "sub2",
+              offer: newSubscription.promotionalOffers![0],
+            },
+          },
+          {
+            type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+            payload: {
+              subscriptionProductId: "sub2",
+              availability: newSubscription.availability,
+            },
+          },
+        ])
+      );
     });
 
     it("should throw an error when trying to delete a subscription", () => {
@@ -1925,36 +1720,6 @@ describe("diff-service", () => {
               ],
               subscriptions: [
                 {
-                  productId: "sub1",
-                  referenceName: "Subscription 1",
-                  groupLevel: 1,
-                  subscriptionPeriod: "ONE_MONTH",
-                  familySharable: false,
-                  prices: [{ territory: "USA", price: "9.99" }],
-                  localizations: [
-                    {
-                      locale: "en-US",
-                      name: "Subscription 1",
-                      description: "This is Subscription 1",
-                    },
-                  ],
-                  availability: {
-                    availableInNewTerritories: true,
-                    availableTerritories: ["USA"],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          subscriptionGroups: [
-            {
-              ...currentState.subscriptionGroups![0],
-              subscriptions: [
-                {
                   productId: "sub1", // Same productId
                   referenceName: "Updated Subscription 1", // Different content
                   groupLevel: 2, // Different content
@@ -1971,6 +1736,36 @@ describe("diff-service", () => {
                   availability: {
                     availableInNewTerritories: false,
                     availableTerritories: ["USA", "CAN"],
+                  }, // Different content
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  productId: "sub1", // Same productId
+                  referenceName: "Different Subscription 1", // Different content
+                  groupLevel: 3, // Different content
+                  subscriptionPeriod: "SIX_MONTHS", // Different content
+                  familySharable: false, // Different content
+                  prices: [{ territory: "USA", price: "29.99" }], // Different content
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Different Subscription 1",
+                      description: "This is a different subscription 1",
+                    },
+                  ], // Different content
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
                   }, // Different content
                 },
               ],
@@ -2015,6 +1810,751 @@ describe("diff-service", () => {
             reviewNote: "This is a new review note.",
           },
         },
+      });
+    });
+
+    // Additional test cases for CREATE_SUBSCRIPTION and UPDATE_SUBSCRIPTION
+    describe("CREATE_SUBSCRIPTION edge cases", () => {
+      it("should create a plan for subscription with no localizations", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub3",
+          referenceName: "Subscription 3",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [{ territory: "USA", price: "4.99" }],
+          localizations: [], // No localizations
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_PRICE",
+              payload: {
+                subscriptionProductId: "sub3",
+                price: newSubscription.prices[0],
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub3",
+                availability: newSubscription.availability,
+              },
+            },
+          ])
+        );
+      });
+
+      it("should create a plan for subscription with no prices", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub4",
+          referenceName: "Subscription 4",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [], // No prices
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 4",
+              description: "This is Subscription 4",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+              payload: {
+                subscriptionProductId: "sub4",
+                localization: newSubscription.localizations[0],
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub4",
+                availability: newSubscription.availability,
+              },
+            },
+          ])
+        );
+      });
+
+      it("should create a plan for subscription with no availability", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub5",
+          referenceName: "Subscription 5",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [{ territory: "USA", price: "4.99" }],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 5",
+              description: "This is Subscription 5",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+              payload: {
+                subscriptionProductId: "sub5",
+                localization: newSubscription.localizations[0],
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_PRICE",
+              payload: {
+                subscriptionProductId: "sub5",
+                price: newSubscription.prices[0],
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub5",
+                availability: newSubscription.availability,
+              },
+            },
+          ])
+        );
+      });
+
+      it("should create a plan for subscription with multiple localizations", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub6",
+          referenceName: "Subscription 6",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [{ territory: "USA", price: "4.99" }],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 6",
+              description: "This is Subscription 6",
+            },
+            {
+              locale: "de",
+              name: "Abonnement 6",
+              description: "Dies ist Abonnement 6",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(5); // CREATE_SUBSCRIPTION + 2 CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+              payload: {
+                subscriptionProductId: "sub6",
+                localization: newSubscription.localizations[0],
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+              payload: {
+                subscriptionProductId: "sub6",
+                localization: newSubscription.localizations[1],
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_PRICE",
+              payload: {
+                subscriptionProductId: "sub6",
+                price: newSubscription.prices[0],
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub6",
+                availability: newSubscription.availability,
+              },
+            },
+          ])
+        );
+      });
+
+      it("should create a plan for subscription with multiple prices", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub7",
+          referenceName: "Subscription 7",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [
+            { territory: "USA", price: "4.99" },
+            { territory: "CAN", price: "5.99" },
+          ],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 7",
+              description: "This is Subscription 7",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(5); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + 2 CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+              payload: {
+                subscriptionProductId: "sub7",
+                localization: newSubscription.localizations[0],
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_PRICE",
+              payload: {
+                subscriptionProductId: "sub7",
+                price: newSubscription.prices[0],
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION_PRICE",
+              payload: {
+                subscriptionProductId: "sub7",
+                price: newSubscription.prices[1],
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub7",
+                availability: newSubscription.availability,
+              },
+            },
+          ])
+        );
+      });
+    });
+
+    describe("UPDATE_SUBSCRIPTION edge cases", () => {
+      it("should create a plan for partial update - only referenceName", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  referenceName: "Updated Reference Name Only",
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              referenceName: "Updated Reference Name Only",
+            },
+          },
+        });
+      });
+
+      it("should create a plan for partial update - only familySharable", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  familySharable: true,
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              familySharable: true,
+            },
+          },
+        });
+      });
+
+      it("should create a plan for partial update - only groupLevel", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  groupLevel: 3,
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              groupLevel: 3,
+            },
+          },
+        });
+      });
+
+      it("should create a plan for partial update - only subscriptionPeriod", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  subscriptionPeriod: "SIX_MONTHS",
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              subscriptionPeriod: "SIX_MONTHS",
+            },
+          },
+        });
+      });
+
+      it("should not create a plan when no changes are made", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState = MOCK_STATE_1; // Same state
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(0);
+      });
+
+      it("should create a plan for updating all fields at once", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  referenceName: "All Fields Updated",
+                  familySharable: true,
+                  groupLevel: 3,
+                  subscriptionPeriod: "ONE_YEAR",
+                  reviewNote: "Updated review note for all fields",
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              referenceName: "All Fields Updated",
+              familySharable: true,
+              groupLevel: 3,
+              subscriptionPeriod: "ONE_YEAR",
+              reviewNote: "Updated review note for all fields",
+            },
+          },
+        });
+      });
+
+      it("should create a plan for updating just the review note", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  reviewNote: "Just updating the review note",
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              reviewNote: "Just updating the review note",
+            },
+          },
+        });
+      });
+
+      it("should create a plan for removing the review note", () => {
+        const currentStateWithReviewNote: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  reviewNote: "This is the current review note",
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  reviewNote: undefined,
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentStateWithReviewNote, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              reviewNote: undefined,
+            },
+          },
+        });
+      });
+    });
+
+    describe("Complex subscription scenarios", () => {
+      it("should create a plan for creating multiple subscriptions in the same group", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription1: Subscription = {
+          productId: "sub8",
+          referenceName: "Subscription 8",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [{ territory: "USA", price: "4.99" }],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 8",
+              description: "This is Subscription 8",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const newSubscription2: Subscription = {
+          productId: "sub9",
+          referenceName: "Subscription 9",
+          groupLevel: 2,
+          subscriptionPeriod: "ONE_YEAR",
+          familySharable: true,
+          prices: [{ territory: "USA", price: "49.99" }],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 9",
+              description: "This is Subscription 9",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA", "CAN"],
+          },
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                newSubscription1,
+                newSubscription2,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(8); // 2 * (CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY)
+
+        // Check that both subscriptions are created
+        const createActions = plan.filter(
+          (action) => action.type === "CREATE_SUBSCRIPTION"
+        );
+        expect(createActions).toHaveLength(2);
+        expect(createActions).toEqual(
+          expect.arrayContaining([
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription1,
+              },
+            },
+            {
+              type: "CREATE_SUBSCRIPTION",
+              payload: {
+                groupReferenceName: "group1",
+                subscription: newSubscription2,
+              },
+            },
+          ])
+        );
+      });
+
+      it("should create a plan for creating and immediately updating a subscription", () => {
+        const currentState = MOCK_STATE_1;
+        const newSubscription: Subscription = {
+          productId: "sub10",
+          referenceName: "Subscription 10",
+          groupLevel: 1,
+          subscriptionPeriod: "ONE_MONTH",
+          familySharable: false,
+          prices: [{ territory: "USA", price: "4.99" }],
+          localizations: [
+            {
+              locale: "en-US",
+              name: "Subscription 10",
+              description: "This is Subscription 10",
+            },
+          ],
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        };
+
+        const updatedSubscription: Subscription = {
+          ...newSubscription,
+          referenceName: "Updated Subscription 10",
+          familySharable: true,
+        };
+
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+                updatedSubscription,
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+
+        // Check that subscription is created with the updated values
+        const createAction = plan.find(
+          (action) => action.type === "CREATE_SUBSCRIPTION"
+        );
+        expect(createAction).toEqual({
+          type: "CREATE_SUBSCRIPTION",
+          payload: {
+            groupReferenceName: "group1",
+            subscription: updatedSubscription,
+          },
+        });
       });
     });
 
