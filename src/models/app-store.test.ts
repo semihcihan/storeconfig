@@ -102,18 +102,13 @@ describe("AppStore Models", () => {
       }
     });
 
-    it("should fail validation if the prices array is empty", () => {
+    it("should pass validation if the prices array is empty", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [],
       };
       const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe(
-          "Subscription must include prices for all available territories"
-        );
-      }
+      expect(result.success).toBe(true);
     });
   });
 });

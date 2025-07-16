@@ -2744,6 +2744,70 @@ describe("diff-service", () => {
         ])
       );
     });
+
+    it("should create a plan for subscription with empty prices array", () => {
+      const currentState = MOCK_STATE_1;
+      const newSubscription: Subscription = {
+        productId: "sub5c",
+        referenceName: "Subscription 5c",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [], // Empty prices array
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Subscription 5c",
+            description: "This is Subscription 5c",
+          },
+        ],
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA"],
+        },
+      };
+
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+              newSubscription,
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + UPDATE_SUBSCRIPTION_AVAILABILITY (no CREATE_SUBSCRIPTION_PRICE)
+      expect(plan).toEqual(
+        expect.arrayContaining([
+          {
+            type: "CREATE_SUBSCRIPTION",
+            payload: {
+              groupReferenceName: "group1",
+              subscription: newSubscription,
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+            payload: {
+              subscriptionProductId: "sub5c",
+              localization: newSubscription.localizations[0],
+            },
+          },
+          {
+            type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+            payload: {
+              subscriptionProductId: "sub5c",
+              availability: newSubscription.availability,
+            },
+          },
+        ])
+      );
+    });
   });
 });
 

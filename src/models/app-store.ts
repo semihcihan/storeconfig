@@ -131,6 +131,11 @@ export const SubscriptionSchema = z
   })
   .refine(
     (data) => {
+      // Only validate territory coverage if there are prices
+      if (data.prices.length === 0) {
+        return true;
+      }
+
       const allTerritoryCodes = new Set(territoryCodes);
       const providedTerritoryCodes = new Set(
         data.prices.map((price) => price.territory)
