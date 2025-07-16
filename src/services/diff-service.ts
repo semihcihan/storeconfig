@@ -423,6 +423,15 @@ function diffSubscriptions(
     desiredSubscriptions.map((s) => [s.productId, s])
   );
 
+  // Subscriptions cannot be deleted once created
+  for (const [productId] of currentSubsByProductId.entries()) {
+    if (!desiredSubsByProductId.has(productId)) {
+      throw new Error(
+        `Subscription with productId '${productId}' cannot be deleted. Subscriptions cannot be removed once created.`
+      );
+    }
+  }
+
   for (const [productId, desiredSub] of desiredSubsByProductId.entries()) {
     const currentSub = currentSubsByProductId.get(productId);
 
@@ -497,15 +506,6 @@ function diffSubscriptions(
           },
         });
       }
-    }
-  }
-
-  for (const [productId] of currentSubsByProductId.entries()) {
-    if (!desiredSubsByProductId.has(productId)) {
-      actions.push({
-        type: "DELETE_SUBSCRIPTION",
-        payload: { productId },
-      });
     }
   }
 

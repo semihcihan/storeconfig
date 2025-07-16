@@ -205,13 +205,6 @@ export type UpdateSubscriptionAction = Action<
   }
 >;
 
-export type DeleteSubscriptionAction = Action<
-  "DELETE_SUBSCRIPTION",
-  {
-    productId: string;
-  }
->;
-
 export type CreateSubscriptionLocalizationAction = Action<
   "CREATE_SUBSCRIPTION_LOCALIZATION",
   {
@@ -344,7 +337,6 @@ export type AnyAction =
   // Subscriptions
   | CreateSubscriptionAction
   | UpdateSubscriptionAction
-  | DeleteSubscriptionAction
   | CreateSubscriptionLocalizationAction
   | UpdateSubscriptionLocalizationAction
   | DeleteSubscriptionLocalizationAction

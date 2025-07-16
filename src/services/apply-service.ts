@@ -267,9 +267,6 @@ async function executeAction(
       logger.info(`  Product ID: ${action.payload.productId}`);
       logger.info(`  Changes: ${JSON.stringify(action.payload.changes)}`);
       break;
-    case "DELETE_SUBSCRIPTION":
-      logger.info(`  Product ID: ${action.payload.productId}`);
-      break;
 
     // Subscription Localizations
     case "CREATE_SUBSCRIPTION_LOCALIZATION":
