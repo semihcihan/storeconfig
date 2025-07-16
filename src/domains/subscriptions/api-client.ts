@@ -124,6 +124,22 @@ export async function fetchSubscriptionAvailability(
   );
 
   if (response.error) {
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.info(
+        `Subscription availability not found for subscription ${subscriptionId} (not created yet)`
+      );
+      return {
+        data: {
+          type: "subscriptionAvailabilities",
+          id: "",
+          attributes: { availableInNewTerritories: false },
+          relationships: { availableTerritories: { data: [] } },
+        },
+        included: [],
+        links: { self: "" },
+      };
+    }
     throw response.error;
   }
 
