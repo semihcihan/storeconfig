@@ -101,7 +101,7 @@ async function getIAPLocalizationId(
 export async function createNewInAppPurchase(
   appId: string,
   inAppPurchase: AppStoreModel["inAppPurchases"][0]
-): Promise<void> {
+): Promise<string> {
   logger.info(`Creating new in-app purchase: ${inAppPurchase.productId}`);
 
   const createRequest: InAppPurchaseV2CreateRequest = {
@@ -134,6 +134,8 @@ export async function createNewInAppPurchase(
   }
 
   logger.info(`Successfully created in-app purchase: ${response.data.id}`);
+
+  return response.data.id;
 }
 
 // Update an existing in-app purchase
@@ -188,16 +190,23 @@ export async function createIAPLocalization(
   appId: string,
   productId: string,
   localization: { locale: string; name: string; description: string },
-  currentStateResponse?: InAppPurchasesV2Response
+  currentStateResponse?: InAppPurchasesV2Response,
+  newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
   logger.info(
     `Creating IAP localization: ${productId} - ${localization.locale}`
   );
 
-  // Get the existing IAP ID using utility function or fallback
-  const iapId = currentStateResponse
-    ? extractIAPId(currentStateResponse, productId)
-    : await getIAPIdByProductId(appId, productId);
+  // Get the IAP ID, checking newly created IAPs first
+  let iapId: string | null = null;
+
+  if (newlyCreatedIAPs?.has(productId)) {
+    iapId = newlyCreatedIAPs.get(productId)!;
+  } else if (currentStateResponse) {
+    iapId = extractIAPId(currentStateResponse, productId);
+  } else {
+    iapId = await getIAPIdByProductId(appId, productId);
+  }
 
   if (!iapId) {
     throw new Error(`Could not find IAP with product ID: ${productId}`);

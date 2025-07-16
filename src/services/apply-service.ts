@@ -36,14 +36,21 @@ async function executeAction(
   desiredState: AppStoreModel,
   currentIAPsResponse?: InAppPurchasesV2Response,
   currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse,
-  newlyCreatedSubscriptionGroups?: Map<string, string>
+  newlyCreatedSubscriptionGroups?: Map<string, string>,
+  newlyCreatedIAPs?: Map<string, string>
 ) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
     // In-App Purchases
     case "CREATE_IN_APP_PURCHASE":
       logger.info(`  Product ID: ${action.payload.inAppPurchase.productId}`);
-      await createNewInAppPurchase(appId, action.payload.inAppPurchase);
+      const iapId = await createNewInAppPurchase(
+        appId,
+        action.payload.inAppPurchase
+      );
+      if (newlyCreatedIAPs && iapId) {
+        newlyCreatedIAPs.set(action.payload.inAppPurchase.productId, iapId);
+      }
       break;
     case "UPDATE_IN_APP_PURCHASE":
       logger.info(`  Product ID: ${action.payload.productId}`);
@@ -64,7 +71,8 @@ async function executeAction(
         appId,
         action.payload.productId,
         action.payload.localization,
-        currentIAPsResponse
+        currentIAPsResponse,
+        newlyCreatedIAPs
       );
       break;
     case "UPDATE_IAP_LOCALIZATION":
@@ -382,8 +390,9 @@ export async function apply(
     currentSubscriptionGroupsResponse = await fetchSubscriptionGroups(appId);
   }
 
-  // Track newly created subscription groups for use in subsequent actions
+  // Track newly created subscription groups and IAPs for use in subsequent actions
   const newlyCreatedSubscriptionGroups = new Map<string, string>();
+  const newlyCreatedIAPs = new Map<string, string>();
 
   // Execute all actions individually
   for (const action of plan) {
@@ -394,7 +403,8 @@ export async function apply(
       desiredState,
       currentIAPsResponse,
       currentSubscriptionGroupsResponse,
-      newlyCreatedSubscriptionGroups
+      newlyCreatedSubscriptionGroups,
+      newlyCreatedIAPs
     );
   }
 

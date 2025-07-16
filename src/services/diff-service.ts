@@ -188,6 +188,24 @@ function diffInAppPurchases(
         type: "CREATE_IN_APP_PURCHASE",
         payload: { inAppPurchase: desiredIap },
       });
+
+      // For new IAPs, also generate actions for localizations and pricing
+      actions.push(
+        ...diffLocalizations(productId, [], desiredIap.localizations || [])
+      );
+      actions.push(
+        ...diffPriceSchedule(productId, undefined, desiredIap.priceSchedule)
+      );
+
+      if (desiredIap.availability) {
+        actions.push({
+          type: "UPDATE_IAP_AVAILABILITY",
+          payload: {
+            productId,
+            availability: desiredIap.availability,
+          },
+        });
+      }
     } else {
       if (currentIap.type !== desiredIap.type) {
         throw new Error(

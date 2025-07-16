@@ -745,11 +745,37 @@ describe("diff-service", () => {
         inAppPurchases: MOCK_STATE_1.inAppPurchases,
       };
       const plan = diff(EMPTY_STATE, desiredState);
-      expect(plan).toHaveLength(1);
+      expect(plan).toHaveLength(4);
       expect(plan[0]).toEqual({
         type: "CREATE_IN_APP_PURCHASE",
         payload: {
           inAppPurchase: MOCK_STATE_1.inAppPurchases![0],
+        },
+      });
+      expect(plan[1]).toEqual({
+        type: "CREATE_IAP_LOCALIZATION",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          localization: MOCK_STATE_1.inAppPurchases![0].localizations![0],
+        },
+      });
+      expect(plan[2]).toEqual({
+        type: "UPDATE_IAP_PRICING",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          priceSchedule: MOCK_STATE_1.inAppPurchases![0].priceSchedule,
+          changes: {
+            addedPrices: MOCK_STATE_1.inAppPurchases![0].priceSchedule!.prices,
+            updatedPrices: [],
+            deletedTerritories: [],
+          },
+        },
+      });
+      expect(plan[3]).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          availability: MOCK_STATE_1.inAppPurchases![0].availability,
         },
       });
     });

@@ -573,7 +573,8 @@ describe("IAP Localization Actions", () => {
         name: "Test Product",
         description: "A test product",
       },
-      expect.any(Object) // currentIAPsResponse
+      expect.any(Object), // currentIAPsResponse
+      expect.any(Map) // newlyCreatedIAPs
     );
   });
 
@@ -767,7 +768,8 @@ describe("Subscription Group Actions", () => {
         name: "Test Group",
         customName: null,
       },
-      expect.any(Object) // currentSubscriptionGroupsResponse
+      expect.any(Object), // currentSubscriptionGroupsResponse
+      expect.any(Map) // newlyCreatedSubscriptionGroups
     );
   });
 
@@ -794,7 +796,8 @@ describe("Subscription Group Actions", () => {
         name: "Updated Group Name",
         customAppName: "Custom App Name",
       },
-      expect.any(Object) // currentSubscriptionGroupsResponse
+      expect.any(Object), // currentSubscriptionGroupsResponse
+      expect.any(Map) // newlyCreatedSubscriptionGroups
     );
   });
 
@@ -813,7 +816,8 @@ describe("Subscription Group Actions", () => {
       testAppId,
       "test-group",
       "en-US",
-      expect.any(Object) // currentSubscriptionGroupsResponse
+      expect.any(Object), // currentSubscriptionGroupsResponse
+      expect.any(Map) // newlyCreatedSubscriptionGroups
     );
   });
 
