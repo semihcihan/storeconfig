@@ -87,6 +87,20 @@ To reflect this, our JSON model for subscriptions (and their introductory/promot
 
 To address the challenge of managing over 170 individual prices, a new command will be introduced to automate this process.
 
+## API Limitations
+
+### App Availability Limitations
+
+The App Store Connect API has significant limitations regarding app-level availability management:
+
+#### `availableInNewTerritories` Field
+
+- **Cannot be updated after creation:** Once an app availability is created, the `availableInNewTerritories` field cannot be modified via the API.
+- **No DELETE endpoint:** There is no documented DELETE endpoint for `/v2/appAvailabilities/{id}`.
+- **No PATCH/PUT endpoint:** There is no documented PATCH or PUT endpoint for updating app availability.
+- **One-to-one relationship:** Each app can only have one app availability object. Attempting to create a second one results in a 409 Conflict error.
+- **No relationship deletion:** The relationship between an app and its availability cannot be broken or deleted via the API.
+
 ## CLI Commands
 
 - `app-store-sync new`: Creates a sample `iaps.json` file.
