@@ -401,7 +401,7 @@ describe("diff-service", () => {
                 referenceName: "Updated Subscription 1",
                 groupLevel: 2,
                 familySharable: true,
-                subscriptionPeriod: "ONE_YEAR",
+                subscriptionPeriod: "ONE_MONTH", // Keep same period
               },
             ],
           },
@@ -418,7 +418,6 @@ describe("diff-service", () => {
             referenceName: "Updated Subscription 1",
             groupLevel: 2,
             familySharable: true,
-            subscriptionPeriod: "ONE_YEAR",
           },
         },
       });
@@ -1075,7 +1074,7 @@ describe("diff-service", () => {
                 referenceName: "Updated Subscription 1",
                 groupLevel: 2,
                 familySharable: true,
-                subscriptionPeriod: "ONE_YEAR",
+                subscriptionPeriod: "ONE_MONTH", // Keep same period
               },
             ],
           },
@@ -1092,7 +1091,6 @@ describe("diff-service", () => {
             referenceName: "Updated Subscription 1",
             groupLevel: 2,
             familySharable: true,
-            subscriptionPeriod: "ONE_YEAR",
           },
         },
       });
@@ -1753,8 +1751,8 @@ describe("diff-service", () => {
                   productId: "sub1", // Same productId
                   referenceName: "Different Subscription 1", // Different content
                   groupLevel: 3, // Different content
-                  subscriptionPeriod: "SIX_MONTHS", // Different content
-                  familySharable: false, // Different content
+                  subscriptionPeriod: "ONE_YEAR", // Keep same period
+                  familySharable: true, // Keep family sharing enabled
                   prices: [{ territory: "USA", price: "29.99" }], // Different content
                   localizations: [
                     {
@@ -2271,17 +2269,9 @@ describe("diff-service", () => {
           ],
         };
 
-        const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(1);
-        expect(plan[0]).toEqual({
-          type: "UPDATE_SUBSCRIPTION",
-          payload: {
-            productId: "sub1",
-            changes: {
-              subscriptionPeriod: "SIX_MONTHS",
-            },
-          },
-        });
+        expect(() => diff(currentState, desiredState)).toThrow(
+          /Subscription period for subscription sub1 cannot be changed once created/
+        );
       });
 
       it("should not create a plan when no changes are made", () => {
@@ -2305,7 +2295,7 @@ describe("diff-service", () => {
                   referenceName: "All Fields Updated",
                   familySharable: true,
                   groupLevel: 3,
-                  subscriptionPeriod: "ONE_YEAR",
+                  subscriptionPeriod: "ONE_MONTH", // Keep same period
                   reviewNote: "Updated review note for all fields",
                 },
               ],
@@ -2323,7 +2313,6 @@ describe("diff-service", () => {
               referenceName: "All Fields Updated",
               familySharable: true,
               groupLevel: 3,
-              subscriptionPeriod: "ONE_YEAR",
               reviewNote: "Updated review note for all fields",
             },
           },
@@ -2952,6 +2941,317 @@ describe("Optional field detection - App pricing bug", () => {
       expect(() => diff(currentState, desiredState)).toThrow(
         /Cannot remove all pricing from an app/
       );
+    });
+  });
+});
+
+describe("Subscription and IAP validation constraints", () => {
+  describe("Subscription period validation", () => {
+    it("should throw an error when trying to change subscription period", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                subscriptionPeriod: "ONE_MONTH",
+              },
+            ],
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...currentState,
+        subscriptionGroups: [
+          {
+            ...currentState.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...currentState.subscriptionGroups![0].subscriptions[0],
+                subscriptionPeriod: "ONE_YEAR",
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        /Subscription period for subscription sub1 cannot be changed once created/
+      );
+    });
+
+    it("should allow subscription period to remain the same", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                subscriptionPeriod: "ONE_MONTH",
+              },
+            ],
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        ...currentState,
+        subscriptionGroups: [
+          {
+            ...currentState.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...currentState.subscriptionGroups![0].subscriptions[0],
+                subscriptionPeriod: "ONE_MONTH", // Same period
+                referenceName: "Updated Name", // Different field
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_SUBSCRIPTION",
+        payload: {
+          productId: "sub1",
+          changes: {
+            referenceName: "Updated Name",
+          },
+        },
+      });
+    });
+  });
+
+  describe("Family sharing validation", () => {
+    describe("Subscription family sharing", () => {
+      it("should throw an error when trying to turn off family sharing for subscription", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  familySharable: true,
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  familySharable: false,
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          /Family sharing cannot be turned off for subscription sub1 once it has been enabled/
+        );
+      });
+
+      it("should allow turning on family sharing for subscription", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  familySharable: false,
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  familySharable: true,
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              familySharable: true,
+            },
+          },
+        });
+      });
+
+      it("should allow family sharing to remain the same for subscription", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  familySharable: true,
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  familySharable: true, // Same value
+                  referenceName: "Updated Name", // Different field
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION",
+          payload: {
+            productId: "sub1",
+            changes: {
+              referenceName: "Updated Name",
+            },
+          },
+        });
+      });
+    });
+
+    describe("IAP family sharing", () => {
+      it("should throw an error when trying to turn off family sharing for IAP", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          inAppPurchases: [
+            {
+              ...MOCK_STATE_1.inAppPurchases[0],
+              familySharable: true,
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          inAppPurchases: [
+            {
+              ...currentState.inAppPurchases[0],
+              familySharable: false,
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          /Family sharing cannot be turned off for in-app purchase iap1 once it has been enabled/
+        );
+      });
+
+      it("should allow turning on family sharing for IAP", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          inAppPurchases: [
+            {
+              ...MOCK_STATE_1.inAppPurchases[0],
+              familySharable: false,
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          inAppPurchases: [
+            {
+              ...currentState.inAppPurchases[0],
+              familySharable: true,
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_IN_APP_PURCHASE",
+          payload: {
+            productId: "iap1",
+            changes: {
+              familySharable: true,
+            },
+          },
+        });
+      });
+
+      it("should allow family sharing to remain the same for IAP", () => {
+        const currentState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          inAppPurchases: [
+            {
+              ...MOCK_STATE_1.inAppPurchases[0],
+              familySharable: true,
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          inAppPurchases: [
+            {
+              ...currentState.inAppPurchases[0],
+              familySharable: true, // Same value
+              referenceName: "Updated Name", // Different field
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_IN_APP_PURCHASE",
+          payload: {
+            productId: "iap1",
+            changes: {
+              referenceName: "Updated Name",
+            },
+          },
+        });
+      });
     });
   });
 });

@@ -229,6 +229,14 @@ function diffInAppPurchases(
           `The type for in-app purchase ${productId} cannot be changed. Current: ${currentIap.type}, Desired: ${desiredIap.type}.`
         );
       }
+
+      // Validate IAP update constraints
+      if (currentIap.familySharable && !desiredIap.familySharable) {
+        throw new Error(
+          `Family sharing cannot be turned off for in-app purchase ${productId} once it has been enabled.`
+        );
+      }
+
       // Diff top-level properties
       const changes: any = {};
       if (desiredIap.referenceName !== currentIap.referenceName) {
@@ -475,6 +483,19 @@ function diffSubscriptions(
         });
       }
     } else {
+      // Validate subscription update constraints
+      if (desiredSub.subscriptionPeriod !== currentSub.subscriptionPeriod) {
+        throw new Error(
+          `Subscription period for subscription ${productId} cannot be changed once created. Current: ${currentSub.subscriptionPeriod}, Desired: ${desiredSub.subscriptionPeriod}.`
+        );
+      }
+
+      if (currentSub.familySharable && !desiredSub.familySharable) {
+        throw new Error(
+          `Family sharing cannot be turned off for subscription ${productId} once it has been enabled.`
+        );
+      }
+
       const changes: any = {};
       if (desiredSub.referenceName !== currentSub.referenceName) {
         changes.referenceName = desiredSub.referenceName;
@@ -484,9 +505,6 @@ function diffSubscriptions(
       }
       if (desiredSub.groupLevel !== currentSub.groupLevel) {
         changes.groupLevel = desiredSub.groupLevel;
-      }
-      if (desiredSub.subscriptionPeriod !== currentSub.subscriptionPeriod) {
-        changes.subscriptionPeriod = desiredSub.subscriptionPeriod;
       }
       if (desiredSub.reviewNote !== currentSub.reviewNote) {
         changes.reviewNote = desiredSub.reviewNote;
