@@ -528,10 +528,12 @@ function diffSubscriptions(
         )
       );
 
+      // Handle availability changes
       if (
         desiredSub.availability &&
         !isEqual(currentSub.availability, desiredSub.availability)
       ) {
+        // Availability is being added or updated
         actions.push({
           type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
           payload: {
@@ -539,6 +541,11 @@ function diffSubscriptions(
             availability: desiredSub.availability,
           },
         });
+      } else if (currentSub.availability && !desiredSub.availability) {
+        // Availability is being removed
+        throw new Error(
+          `Cannot remove availability from subscription ${productId}. Availability cannot be removed once set.`
+        );
       }
     }
   }

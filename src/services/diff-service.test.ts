@@ -1953,10 +1953,7 @@ describe("diff-service", () => {
               description: "This is Subscription 5",
             },
           ],
-          availability: {
-            availableInNewTerritories: true,
-            availableTerritories: ["USA"],
-          },
+          // No availability field
         };
 
         const desiredState: AppStoreModel = {
@@ -1973,7 +1970,7 @@ describe("diff-service", () => {
         };
 
         const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE
         expect(plan).toEqual(
           expect.arrayContaining([
             {
@@ -1995,13 +1992,6 @@ describe("diff-service", () => {
               payload: {
                 subscriptionProductId: "sub5",
                 price: newSubscription.prices[0],
-              },
-            },
-            {
-              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
-              payload: {
-                subscriptionProductId: "sub5",
-                availability: newSubscription.availability,
               },
             },
           ])
@@ -2413,6 +2403,28 @@ describe("diff-service", () => {
           },
         });
       });
+
+      it("should throw an error when trying to remove availability from existing subscription", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  availability: undefined, // Explicitly set to undefined to remove it
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          /Cannot remove availability from subscription sub1\. Availability cannot be removed once set\./
+        );
+      });
     });
 
     describe("Complex subscription scenarios", () => {
@@ -2660,6 +2672,77 @@ describe("diff-service", () => {
               .promotionalOffers![0].id,
         },
       });
+    });
+
+    it("should create a plan for subscription with availability", () => {
+      const currentState = MOCK_STATE_1;
+      const newSubscription: Subscription = {
+        productId: "sub5b",
+        referenceName: "Subscription 5b",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [{ territory: "USA", price: "4.99" }],
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Subscription 5b",
+            description: "This is Subscription 5b",
+          },
+        ],
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA"],
+        },
+      };
+
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions,
+              newSubscription,
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+      expect(plan).toEqual(
+        expect.arrayContaining([
+          {
+            type: "CREATE_SUBSCRIPTION",
+            payload: {
+              groupReferenceName: "group1",
+              subscription: newSubscription,
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+            payload: {
+              subscriptionProductId: "sub5b",
+              localization: newSubscription.localizations[0],
+            },
+          },
+          {
+            type: "CREATE_SUBSCRIPTION_PRICE",
+            payload: {
+              subscriptionProductId: "sub5b",
+              price: newSubscription.prices[0],
+            },
+          },
+          {
+            type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+            payload: {
+              subscriptionProductId: "sub5b",
+              availability: newSubscription.availability,
+            },
+          },
+        ])
+      );
     });
   });
 });

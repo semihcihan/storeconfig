@@ -127,7 +127,7 @@ export const SubscriptionSchema = z
     introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
     promotionalOffers: z.array(PromotionalOfferSchema).optional(),
     reviewNote: z.string().optional(),
-    availability: AvailabilitySchema,
+    availability: AvailabilitySchema.optional(),
   })
   .refine(
     (data) => {
