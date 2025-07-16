@@ -1027,33 +1027,6 @@ describe("diff-service", () => {
       });
     });
 
-    it.skip("should create a plan to update a price in an IAP price schedule", () => {
-      const currentState = MOCK_STATE_1;
-      const updatedPrice: Price = { territory: "USA", price: "1.99" };
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        inAppPurchases: [
-          {
-            ...MOCK_STATE_1.inAppPurchases![0],
-            priceSchedule: {
-              baseTerritory: "USA",
-              prices: [updatedPrice],
-            },
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_IAP_PRICE",
-        payload: {
-          productId: MOCK_STATE_1.inAppPurchases![0].productId,
-          price: updatedPrice,
-        },
-      });
-    });
-
     it("should create a plan to update the availability of an IAP", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
