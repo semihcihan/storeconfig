@@ -1250,7 +1250,7 @@ describe("diff-service", () => {
       });
     });
 
-    it("should create a plan to delete a subscription from a group", () => {
+    it("should throw an error when trying to delete a subscription", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
@@ -1262,14 +1262,9 @@ describe("diff-service", () => {
         ],
       };
 
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "DELETE_SUBSCRIPTION",
-        payload: {
-          productId: "sub1",
-        },
-      });
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Subscription with productId 'sub1' cannot be deleted. Subscriptions cannot be removed once created."
+      );
     });
 
     it("should create a plan to update a subscription in a group", () => {
@@ -1685,6 +1680,312 @@ describe("diff-service", () => {
     it("should not create a plan when states are identical", () => {
       const plan = diff(MOCK_STATE_1, MOCK_STATE_1);
       expect(plan).toEqual([]);
+    });
+
+    describe("Subscription deletion scenarios", () => {
+      it("should throw an error when trying to delete multiple subscriptions from a group", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [{ territory: "USA", price: "9.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+                {
+                  productId: "sub2",
+                  referenceName: "Subscription 2",
+                  groupLevel: 2,
+                  subscriptionPeriod: "ONE_YEAR",
+                  familySharable: true,
+                  prices: [{ territory: "USA", price: "99.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 2",
+                      description: "This is Subscription 2",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [], // Remove both subscriptions
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Subscription with productId 'sub1' cannot be deleted. Subscriptions cannot be removed once created."
+        );
+      });
+
+      it("should throw an error when trying to delete a subscription while keeping others", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [{ territory: "USA", price: "9.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+                {
+                  productId: "sub2",
+                  referenceName: "Subscription 2",
+                  groupLevel: 2,
+                  subscriptionPeriod: "ONE_YEAR",
+                  familySharable: true,
+                  prices: [{ territory: "USA", price: "99.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 2",
+                      description: "This is Subscription 2",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                // Only keep sub2, remove sub1
+                currentState.subscriptionGroups![0].subscriptions[1],
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Subscription with productId 'sub1' cannot be deleted. Subscriptions cannot be removed once created."
+        );
+      });
+
+      it("should allow adding new subscriptions while keeping all existing ones", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [{ territory: "USA", price: "9.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                // Keep existing subscription
+                currentState.subscriptionGroups![0].subscriptions[0],
+                // Add new subscription
+                {
+                  productId: "sub2",
+                  referenceName: "Subscription 2",
+                  groupLevel: 2,
+                  subscriptionPeriod: "ONE_YEAR",
+                  familySharable: true,
+                  prices: [{ territory: "USA", price: "99.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 2",
+                      description: "This is Subscription 2",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        // Should not throw - all existing subscriptions are preserved
+        expect(() => diff(currentState, desiredState)).not.toThrow();
+
+        const plan = diff(currentState, desiredState);
+        expect(
+          plan.some((action) => action.type === "CREATE_SUBSCRIPTION")
+        ).toBe(true);
+      });
+
+      it("should allow updating existing subscription content while keeping same productId", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [{ territory: "USA", price: "9.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  productId: "sub1", // Same productId
+                  referenceName: "Updated Subscription 1", // Different content
+                  groupLevel: 2, // Different content
+                  subscriptionPeriod: "ONE_YEAR", // Different content
+                  familySharable: true, // Different content
+                  prices: [{ territory: "USA", price: "19.99" }], // Different content
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Updated Subscription 1",
+                      description: "This is the updated subscription 1",
+                    },
+                  ], // Different content
+                  availability: {
+                    availableInNewTerritories: false,
+                    availableTerritories: ["USA", "CAN"],
+                  }, // Different content
+                },
+              ],
+            },
+          ],
+        };
+
+        // Should not throw - content can change, productId is the same
+        expect(() => diff(currentState, desiredState)).not.toThrow();
+
+        const plan = diff(currentState, desiredState);
+        expect(
+          plan.some((action) => action.type === "UPDATE_SUBSCRIPTION")
+        ).toBe(true);
+      });
     });
 
     it("should create a plan to update a subscription's review note", () => {
