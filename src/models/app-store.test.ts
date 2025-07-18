@@ -97,7 +97,7 @@ describe("AppStore Models", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toBe(
-          "Subscription must include prices for all available territories"
+          "Subscription must include prices for all territories"
         );
       }
     });

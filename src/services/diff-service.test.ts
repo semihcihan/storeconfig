@@ -8,6 +8,7 @@ import {
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
 } from "../models/app-store";
+import { CreateSubscriptionPriceAction } from "../models/diff-plan";
 import { z } from "zod";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -480,7 +481,10 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_PRICE",
             payload: {
               subscriptionProductId: "sub2",
-              price: newSubscription.prices[0],
+              changes: {
+                addedPrices: newSubscription.prices,
+                updatedPrices: [],
+              },
             },
           },
           {
@@ -1016,7 +1020,10 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_PRICE",
             payload: {
               subscriptionProductId: "sub2",
-              price: newSubscription.prices[0],
+              changes: {
+                addedPrices: newSubscription.prices,
+                updatedPrices: [],
+              },
             },
           },
           {
@@ -1386,12 +1393,15 @@ describe("diff-service", () => {
         type: "CREATE_SUBSCRIPTION_PRICE",
         payload: {
           subscriptionProductId: "sub1",
-          price: newPrice,
+          changes: {
+            addedPrices: [newPrice],
+            updatedPrices: [],
+          },
         },
       });
     });
 
-    it("should create a plan to delete a subscription price", () => {
+    it("should throw an error when trying to delete a subscription price", () => {
       const currentState = MOCK_STATE_1;
       const desiredState: AppStoreModel = {
         ...MOCK_STATE_1,
@@ -1407,15 +1417,9 @@ describe("diff-service", () => {
           },
         ],
       };
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "DELETE_SUBSCRIPTION_PRICE",
-        payload: {
-          subscriptionProductId: "sub1",
-          territory: "USA",
-        },
-      });
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Cannot delete pricing for territory 'USA' in subscription 'sub1'. Subscriptions must maintain pricing for all territories."
+      );
     });
 
     it("should create a plan to update a subscription price", () => {
@@ -1438,10 +1442,13 @@ describe("diff-service", () => {
       const plan = diff(currentState, desiredState);
       expect(plan).toHaveLength(1);
       expect(plan[0]).toEqual({
-        type: "UPDATE_SUBSCRIPTION_PRICE",
+        type: "CREATE_SUBSCRIPTION_PRICE",
         payload: {
           subscriptionProductId: "sub1",
-          price: updatedPrice,
+          changes: {
+            addedPrices: [],
+            updatedPrices: [updatedPrice],
+          },
         },
       });
     });
@@ -1473,6 +1480,467 @@ describe("diff-service", () => {
     it("should not create a plan when states are identical", () => {
       const plan = diff(MOCK_STATE_1, MOCK_STATE_1);
       expect(plan).toEqual([]);
+    });
+
+    describe("Subscription pricing territory deletion prevention", () => {
+      it("should throw an error when trying to delete a single territory from subscription pricing", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [], // Remove all prices (which includes USA)
+                },
+              ],
+            },
+          ],
+        };
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Cannot delete pricing for territory 'USA' in subscription 'sub1'. Subscriptions must maintain pricing for all territories."
+        );
+      });
+
+      it("should throw an error when trying to delete multiple territories from subscription pricing", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [
+                    { territory: "USA", price: "9.99" },
+                    { territory: "CAN", price: "12.99" },
+                    { territory: "GBR", price: "8.99" },
+                  ],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA", "CAN", "GBR"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "9.99" },
+                    // Removed CAN and GBR
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Cannot delete pricing for territory 'CAN' in subscription 'sub1'. Subscriptions must maintain pricing for all territories."
+        );
+      });
+
+      it("should throw an error when trying to delete territory from subscription with multiple prices", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [
+                    { territory: "USA", price: "9.99" },
+                    { territory: "CAN", price: "12.99" },
+                  ],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA", "CAN"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "9.99" },
+                    // Removed CAN
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Cannot delete pricing for territory 'CAN' in subscription 'sub1'. Subscriptions must maintain pricing for all territories."
+        );
+      });
+
+      it("should allow adding new territories to subscription pricing", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices,
+                    { territory: "CAN", price: "12.99" },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "CREATE_SUBSCRIPTION_PRICE",
+          payload: {
+            subscriptionProductId: "sub1",
+            changes: {
+              addedPrices: [{ territory: "CAN", price: "12.99" }],
+              updatedPrices: [],
+            },
+          },
+        });
+      });
+
+      it("should allow updating existing territories in subscription pricing", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "10.99" }, // Updated price
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "CREATE_SUBSCRIPTION_PRICE",
+          payload: {
+            subscriptionProductId: "sub1",
+            changes: {
+              addedPrices: [],
+              updatedPrices: [{ territory: "USA", price: "10.99" }],
+            },
+          },
+        });
+      });
+
+      it("should allow adding and updating territories simultaneously", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "10.99" }, // Updated price
+                    { territory: "CAN", price: "12.99" }, // New territory
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "CREATE_SUBSCRIPTION_PRICE",
+          payload: {
+            subscriptionProductId: "sub1",
+            changes: {
+              addedPrices: [{ territory: "CAN", price: "12.99" }],
+              updatedPrices: [{ territory: "USA", price: "10.99" }],
+            },
+          },
+        });
+      });
+
+      it("should not create action when no pricing changes are made", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices,
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(0);
+      });
+
+      it("should throw error with correct subscription ID when deleting territory from specific subscription", () => {
+        const currentState: AppStoreModel = {
+          ...EMPTY_STATE,
+          subscriptionGroups: [
+            {
+              referenceName: "group1",
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: "Group 1",
+                  customName: "Custom Group 1",
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: "sub1",
+                  referenceName: "Subscription 1",
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                  prices: [{ territory: "USA", price: "9.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 1",
+                      description: "This is Subscription 1",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+                {
+                  productId: "sub2",
+                  referenceName: "Subscription 2",
+                  groupLevel: 2,
+                  subscriptionPeriod: "ONE_YEAR",
+                  familySharable: true,
+                  prices: [{ territory: "USA", price: "99.99" }],
+                  localizations: [
+                    {
+                      locale: "en-US",
+                      name: "Subscription 2",
+                      description: "This is Subscription 2",
+                    },
+                  ],
+                  availability: {
+                    availableInNewTerritories: true,
+                    availableTerritories: ["USA"],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...currentState,
+          subscriptionGroups: [
+            {
+              ...currentState.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[0],
+                  prices: [{ territory: "USA", price: "9.99" }],
+                },
+                {
+                  ...currentState.subscriptionGroups![0].subscriptions[1],
+                  prices: [], // Remove pricing from sub2
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() => diff(currentState, desiredState)).toThrow(
+          "Cannot delete pricing for territory 'USA' in subscription 'sub2'. Subscriptions must maintain pricing for all territories."
+        );
+      });
+
+      it("should verify CREATE_SUBSCRIPTION_PRICE action payload structure", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "10.99" }, // Updated price
+                    { territory: "CAN", price: "12.99" }, // New territory
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+
+        const action = plan[0] as CreateSubscriptionPriceAction;
+        expect(action.type).toBe("CREATE_SUBSCRIPTION_PRICE");
+        expect(action.payload).toHaveProperty("subscriptionProductId");
+        expect(action.payload).toHaveProperty("changes");
+        expect(action.payload.changes).toHaveProperty("addedPrices");
+        expect(action.payload.changes).toHaveProperty("updatedPrices");
+
+        // Verify deletedTerritories is NOT present
+        expect(action.payload.changes).not.toHaveProperty("deletedTerritories");
+
+        // Verify the structure matches the expected type
+        expect(action.payload.changes.addedPrices).toEqual([
+          { territory: "CAN", price: "12.99" },
+        ]);
+        expect(action.payload.changes.updatedPrices).toEqual([
+          { territory: "USA", price: "10.99" },
+        ]);
+      });
+
+      it("should verify action payload structure for add-only changes", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices,
+                    { territory: "CAN", price: "12.99" },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+
+        const action = plan[0] as CreateSubscriptionPriceAction;
+        expect(action.type).toBe("CREATE_SUBSCRIPTION_PRICE");
+        expect(action.payload.changes).not.toHaveProperty("deletedTerritories");
+        expect(action.payload.changes.addedPrices).toHaveLength(1);
+        expect(action.payload.changes.updatedPrices).toHaveLength(0);
+      });
+
+      it("should verify action payload structure for update-only changes", () => {
+        const currentState = MOCK_STATE_1;
+        const desiredState: AppStoreModel = {
+          ...MOCK_STATE_1,
+          subscriptionGroups: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0],
+              subscriptions: [
+                {
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                  prices: [
+                    { territory: "USA", price: "10.99" }, // Updated price only
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+
+        const action = plan[0] as CreateSubscriptionPriceAction;
+        expect(action.type).toBe("CREATE_SUBSCRIPTION_PRICE");
+        expect(action.payload.changes).not.toHaveProperty("deletedTerritories");
+        expect(action.payload.changes.addedPrices).toHaveLength(0);
+        expect(action.payload.changes.updatedPrices).toHaveLength(1);
+      });
     });
 
     describe("Subscription deletion scenarios", () => {
@@ -1857,7 +2325,10 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_PRICE",
               payload: {
                 subscriptionProductId: "sub3",
-                price: newSubscription.prices[0],
+                changes: {
+                  addedPrices: newSubscription.prices,
+                  updatedPrices: [],
+                },
               },
             },
             {
@@ -1989,7 +2460,10 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_PRICE",
               payload: {
                 subscriptionProductId: "sub5",
-                price: newSubscription.prices[0],
+                changes: {
+                  addedPrices: newSubscription.prices,
+                  updatedPrices: [],
+                },
               },
             },
           ])
@@ -2065,7 +2539,10 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_PRICE",
               payload: {
                 subscriptionProductId: "sub6",
-                price: newSubscription.prices[0],
+                changes: {
+                  addedPrices: newSubscription.prices,
+                  updatedPrices: [],
+                },
               },
             },
             {
@@ -2118,7 +2595,7 @@ describe("diff-service", () => {
         };
 
         const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(5); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + 2 CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
         expect(plan).toEqual(
           expect.arrayContaining([
             {
@@ -2139,14 +2616,10 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_PRICE",
               payload: {
                 subscriptionProductId: "sub7",
-                price: newSubscription.prices[0],
-              },
-            },
-            {
-              type: "CREATE_SUBSCRIPTION_PRICE",
-              payload: {
-                subscriptionProductId: "sub7",
-                price: newSubscription.prices[1],
+                changes: {
+                  addedPrices: newSubscription.prices,
+                  updatedPrices: [],
+                },
               },
             },
             {
@@ -2720,7 +3193,10 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_PRICE",
             payload: {
               subscriptionProductId: "sub5b",
-              price: newSubscription.prices[0],
+              changes: {
+                addedPrices: newSubscription.prices,
+                updatedPrices: [],
+              },
             },
           },
           {

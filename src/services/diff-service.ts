@@ -343,8 +343,6 @@ function diffSubscriptionPrices(
   currentPrices: Price[],
   desiredPrices: Price[]
 ): AnyAction[] {
-  const actions: AnyAction[] = [];
-
   const currentPricesByTerritory = new Map(
     currentPrices.map((p) => [p.territory, p])
   );
@@ -352,31 +350,45 @@ function diffSubscriptionPrices(
     desiredPrices.map((p) => [p.territory, p])
   );
 
+  const addedPrices: Price[] = [];
+  const updatedPrices: Price[] = [];
+
+  // Find added and updated prices
   for (const [territory, desiredPrice] of desiredPricesByTerritory.entries()) {
     const currentPrice = currentPricesByTerritory.get(territory);
     if (!currentPrice) {
-      actions.push({
-        type: "CREATE_SUBSCRIPTION_PRICE",
-        payload: { subscriptionProductId, price: desiredPrice },
-      });
+      addedPrices.push(desiredPrice);
     } else if (currentPrice.price !== desiredPrice.price) {
-      actions.push({
-        type: "UPDATE_SUBSCRIPTION_PRICE",
-        payload: { subscriptionProductId, price: desiredPrice },
-      });
+      updatedPrices.push(desiredPrice);
     }
   }
 
+  // Check for deleted territories - this is not allowed for subscriptions
   for (const [territory] of currentPricesByTerritory.entries()) {
     if (!desiredPricesByTerritory.has(territory)) {
-      actions.push({
-        type: "DELETE_SUBSCRIPTION_PRICE",
-        payload: { subscriptionProductId, territory },
-      });
+      throw new Error(
+        `Cannot delete pricing for territory '${territory}' in subscription '${subscriptionProductId}'. Subscriptions must maintain pricing for all territories.`
+      );
     }
   }
 
-  return actions;
+  // Only create action if there are changes
+  if (addedPrices.length > 0 || updatedPrices.length > 0) {
+    return [
+      {
+        type: "CREATE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId,
+          changes: {
+            addedPrices,
+            updatedPrices,
+          },
+        },
+      },
+    ];
+  }
+
+  return [];
 }
 
 function diffIntroductoryOffers(

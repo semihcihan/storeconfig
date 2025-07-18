@@ -340,19 +340,24 @@ async function executeAction(
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
       );
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "UPDATE_SUBSCRIPTION_PRICE":
-      logger.info(
-        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
-      );
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "DELETE_SUBSCRIPTION_PRICE":
-      logger.info(
-        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
-      );
-      logger.info(`  Territory: ${action.payload.territory}`);
+      logger.info(`  Pricing changes:`);
+      if (action.payload.changes.addedPrices.length > 0) {
+        logger.info(
+          `    Added Prices: ${action.payload.changes.addedPrices.length}`
+        );
+        action.payload.changes.addedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.updatedPrices.length > 0) {
+        logger.info(
+          `    Updated Prices: ${action.payload.changes.updatedPrices.length}`
+        );
+        action.payload.changes.updatedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      // TODO: Implement subscription pricing API calls
       break;
 
     // Subscription Availability

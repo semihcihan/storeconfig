@@ -53,13 +53,6 @@ async function showAction(action: AnyAction) {
           logger.info(`      ${price.territory}: ${price.price}`);
         });
       }
-      if (action.payload.changes.deletedTerritories.length > 0) {
-        logger.info(
-          `    Deleted Territories: ${action.payload.changes.deletedTerritories.join(
-            ", "
-          )}`
-        );
-      }
       break;
 
     // IAP Availability
@@ -105,13 +98,6 @@ async function showAction(action: AnyAction) {
         action.payload.changes.updatedPrices.forEach((price) => {
           logger.info(`      ${price.territory}: ${price.price}`);
         });
-      }
-      if (action.payload.changes.deletedTerritories.length > 0) {
-        logger.info(
-          `    Deleted Territories: ${action.payload.changes.deletedTerritories.join(
-            ", "
-          )}`
-        );
       }
       break;
 
@@ -175,19 +161,23 @@ async function showAction(action: AnyAction) {
       logger.info(
         `  Subscription Product ID: ${action.payload.subscriptionProductId}`
       );
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "UPDATE_SUBSCRIPTION_PRICE":
-      logger.info(
-        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
-      );
-      logger.info(`  Price: ${JSON.stringify(action.payload.price)}`);
-      break;
-    case "DELETE_SUBSCRIPTION_PRICE":
-      logger.info(
-        `  Subscription Product ID: ${action.payload.subscriptionProductId}`
-      );
-      logger.info(`  Territory: ${action.payload.territory}`);
+      logger.info(`  Pricing changes:`);
+      if (action.payload.changes.addedPrices.length > 0) {
+        logger.info(
+          `    Added Prices: ${action.payload.changes.addedPrices.length}`
+        );
+        action.payload.changes.addedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
+      if (action.payload.changes.updatedPrices.length > 0) {
+        logger.info(
+          `    Updated Prices: ${action.payload.changes.updatedPrices.length}`
+        );
+        action.payload.changes.updatedPrices.forEach((price) => {
+          logger.info(`      ${price.territory}: ${price.price}`);
+        });
+      }
       break;
 
     // Subscription Availability

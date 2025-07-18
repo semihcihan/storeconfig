@@ -241,23 +241,10 @@ export type CreateSubscriptionPriceAction = Action<
   "CREATE_SUBSCRIPTION_PRICE",
   {
     subscriptionProductId: string;
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type UpdateSubscriptionPriceAction = Action<
-  "UPDATE_SUBSCRIPTION_PRICE",
-  {
-    subscriptionProductId: string;
-    price: z.infer<typeof PriceSchema>;
-  }
->;
-
-export type DeleteSubscriptionPriceAction = Action<
-  "DELETE_SUBSCRIPTION_PRICE",
-  {
-    subscriptionProductId: string;
-    territory: z.infer<typeof TerritoryCodeSchema>;
+    changes: {
+      addedPrices: z.infer<typeof PriceSchema>[];
+      updatedPrices: z.infer<typeof PriceSchema>[];
+    };
   }
 >;
 
@@ -342,8 +329,6 @@ export type AnyAction =
   | DeleteSubscriptionLocalizationAction
   // Subscription Prices
   | CreateSubscriptionPriceAction
-  | UpdateSubscriptionPriceAction
-  | DeleteSubscriptionPriceAction
   // Subscription Availability
   | UpdateSubscriptionAvailabilityAction
   // Subscription Offers
