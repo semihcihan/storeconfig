@@ -5,7 +5,6 @@ import {
   fetchAllSubscriptionPricePoints,
   createSubscriptionPrice,
 } from "../../domains/subscriptions/api-client";
-import { withRetry } from "../../helpers/retry-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
 type SubscriptionPriceCreateRequest =
@@ -81,13 +80,11 @@ async function createSubscriptionPriceForTerritory(
   subscriptionId: string,
   price: Price
 ): Promise<void> {
-  const pricePointId = await withRetry(async () => {
-    return await findSubscriptionPricePointId(
-      price.price,
-      price.territory,
-      subscriptionId
-    );
-  });
+  const pricePointId = await findSubscriptionPricePointId(
+    price.price,
+    price.territory,
+    subscriptionId
+  );
 
   const createRequest: SubscriptionPriceCreateRequest = {
     data: {
@@ -118,9 +115,7 @@ async function createSubscriptionPriceForTerritory(
     },
   };
 
-  await withRetry(async () => {
-    await createSubscriptionPrice(createRequest);
-  });
+  await createSubscriptionPrice(createRequest);
 
   logger.info(
     `Created subscription price for territory ${price.territory} with price ${price.price}`
