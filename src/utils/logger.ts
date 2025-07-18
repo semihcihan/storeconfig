@@ -1,6 +1,6 @@
 // Logger interface
 export interface Logger {
-  log: (...args: any[]) => void;
+  debug: (...args: any[]) => void;
   info: (...args: any[]) => void;
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
@@ -8,8 +8,8 @@ export interface Logger {
 
 // Console logger implementation
 class ConsoleLogger implements Logger {
-  log(...args: any[]) {
-    console.log(...args);
+  debug(...args: any[]) {
+    console.debug(...args);
   }
   info(...args: any[]) {
     console.info(...args);
