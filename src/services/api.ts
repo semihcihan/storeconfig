@@ -1,8 +1,9 @@
 import createClient from "openapi-fetch";
 import type { paths } from "../generated/app-store-connect-api";
 import { getAuthToken } from "./auth";
+import { createRateLimitMiddleware } from "./rate-limit-middleware";
 
-export const api = createClient<paths>({
+const baseApi = createClient<paths>({
   baseUrl: "https://api.appstoreconnect.apple.com",
   headers: {
     Authorization: `Bearer ${getAuthToken()}`,
@@ -19,3 +20,6 @@ export const api = createClient<paths>({
     return search.toString();
   },
 });
+
+// Wrap the API client with rate limit middleware
+export const api = createRateLimitMiddleware(baseApi);
