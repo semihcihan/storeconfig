@@ -150,7 +150,7 @@ export const SubscriptionSchema = z
       return true;
     },
     {
-      message: "Subscription must include prices for all available territories",
+      message: "Subscription must include prices for all territories",
       path: ["prices"],
     }
   );

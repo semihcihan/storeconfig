@@ -10,3 +10,4 @@ so in app purchases might not exist
 or an in app purchase might exist but maybe it doesn't have any availability and or localizations and or priceSchedule
 
 - filtering is available on stuff with states, like in app purchases etc
+- The familySharable field is editable only for auto-renewable subscriptions and non-consumable in-app purchases.
