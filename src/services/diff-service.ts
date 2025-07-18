@@ -461,7 +461,8 @@ function diffSubscriptions(
         payload: { groupReferenceName, subscription: desiredSub },
       });
 
-      // For new subscriptions, also generate actions for localizations, pricing, offers, and availability
+      // For new subscriptions, also generate actions for localizations, availability, pricing, and offers
+      // Availability must be created before pricing to ensure the subscription is properly configured
       actions.push(
         ...diffSubscriptionLocalizations(
           productId,
@@ -469,7 +470,21 @@ function diffSubscriptions(
           desiredSub.localizations
         )
       );
+
+      // Create availability first (required field)
+      if (desiredSub.availability) {
+        actions.push({
+          type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+          payload: {
+            subscriptionProductId: productId,
+            availability: desiredSub.availability,
+          },
+        });
+      }
+
+      // Create pricing after availability is set up
       actions.push(...diffSubscriptionPrices(productId, [], desiredSub.prices));
+
       actions.push(
         ...diffIntroductoryOffers(
           productId,
@@ -484,16 +499,6 @@ function diffSubscriptions(
           desiredSub.promotionalOffers || []
         )
       );
-
-      if (desiredSub.availability) {
-        actions.push({
-          type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
-          payload: {
-            subscriptionProductId: productId,
-            availability: desiredSub.availability,
-          },
-        });
-      }
     } else {
       // Validate subscription update constraints
       if (desiredSub.subscriptionPeriod !== currentSub.subscriptionPeriod) {

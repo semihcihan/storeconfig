@@ -3194,7 +3194,13 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+
+      // Verify the correct order: CREATE_SUBSCRIPTION, CREATE_SUBSCRIPTION_LOCALIZATION, UPDATE_SUBSCRIPTION_AVAILABILITY, CREATE_SUBSCRIPTION_PRICE
+      expect(plan).toHaveLength(4);
+      expect(plan[0].type).toBe("CREATE_SUBSCRIPTION");
+      expect(plan[1].type).toBe("CREATE_SUBSCRIPTION_LOCALIZATION");
+      expect(plan[2].type).toBe("UPDATE_SUBSCRIPTION_AVAILABILITY");
+      expect(plan[3].type).toBe("CREATE_SUBSCRIPTION_PRICE");
       expect(plan).toEqual(
         expect.arrayContaining([
           {
