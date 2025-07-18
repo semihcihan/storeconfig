@@ -12,6 +12,7 @@ import {
 } from "./apply/in-app-purchase-service";
 import { updateIAPAvailability } from "./apply/iap-availability-service";
 import { updateIAPPricing } from "./apply/iap-pricing-service";
+import { updateSubscriptionAvailability } from "./apply/subscription-availability-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,
@@ -362,7 +363,13 @@ async function executeAction(
       logger.info(
         `  Availability: ${JSON.stringify(action.payload.availability)}`
       );
-      // Call API to update subscription availability
+      await updateSubscriptionAvailability(
+        action.payload.subscriptionProductId,
+        action.payload.availability,
+        appId,
+        currentSubscriptionGroupsResponse!,
+        newlyCreatedSubscriptions
+      );
       break;
 
     // Subscription Offers

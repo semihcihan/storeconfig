@@ -364,3 +364,52 @@ export async function deleteSubscriptionLocalization(
     throw response.error;
   }
 }
+
+// Get subscription availability for a specific subscription
+export async function getSubscriptionAvailability(
+  subscriptionId: string
+): Promise<components["schemas"]["SubscriptionAvailabilityResponse"] | null> {
+  const response = await api.GET(
+    "/v1/subscriptions/{id}/subscriptionAvailability",
+    {
+      params: {
+        path: { id: subscriptionId },
+        query: {
+          include: ["availableTerritories"],
+          "fields[subscriptionAvailabilities]": [
+            "availableInNewTerritories",
+            "availableTerritories",
+          ],
+        },
+      },
+    }
+  );
+
+  if (response.error) {
+    const is404Error = isNotFoundError(response.error);
+    if (is404Error) {
+      logger.info(
+        `No subscription availability found for subscription ${subscriptionId} (likely MISSING_METADATA state)`
+      );
+      return null;
+    }
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Create subscription availability
+export async function createSubscriptionAvailability(
+  request: components["schemas"]["SubscriptionAvailabilityCreateRequest"]
+): Promise<components["schemas"]["SubscriptionAvailabilityResponse"]> {
+  const response = await api.POST("/v1/subscriptionAvailabilities", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}

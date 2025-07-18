@@ -8,6 +8,7 @@ jest.mock("./apply/app-availability-service");
 jest.mock("./apply/app-pricing-service");
 jest.mock("./apply/in-app-purchase-service");
 jest.mock("./apply/iap-availability-service");
+jest.mock("./apply/subscription-availability-service");
 jest.mock("./apply/subscription-service");
 jest.mock("../domains/in-app-purchases/api-client");
 jest.mock("../domains/subscriptions/api-client");
@@ -22,6 +23,7 @@ const mockCreateIAPLocalization = jest.fn();
 const mockUpdateIAPLocalization = jest.fn();
 const mockDeleteIAPLocalization = jest.fn();
 const mockUpdateIAPAvailability = jest.fn();
+const mockUpdateSubscriptionAvailability = jest.fn();
 const mockFetchInAppPurchases = jest.fn();
 const mockCreateNewSubscriptionGroup = jest.fn();
 const mockUpdateExistingSubscriptionGroup = jest.fn();
@@ -54,6 +56,9 @@ jest.mocked(require("./apply/in-app-purchase-service")).deleteIAPLocalization =
   mockDeleteIAPLocalization;
 jest.mocked(require("./apply/iap-availability-service")).updateIAPAvailability =
   mockUpdateIAPAvailability;
+jest.mocked(
+  require("./apply/subscription-availability-service")
+).updateSubscriptionAvailability = mockUpdateSubscriptionAvailability;
 jest.mocked(
   require("../domains/in-app-purchases/api-client")
 ).fetchInAppPurchases = mockFetchInAppPurchases;
@@ -117,6 +122,7 @@ describe("apply-service", () => {
     mockCreateNewInAppPurchase.mockResolvedValue(undefined);
     mockUpdateExistingInAppPurchase.mockResolvedValue(undefined);
     mockUpdateIAPAvailability.mockResolvedValue(undefined);
+    mockUpdateSubscriptionAvailability.mockResolvedValue(undefined);
     mockFetchInAppPurchases.mockResolvedValue({
       data: [],
       included: [],
@@ -531,7 +537,7 @@ describe("IAP Localization Actions", () => {
             description: "A test in-app purchase",
           },
           {
-            locale: "fr",
+            locale: "fr-FR",
             name: "Test IAP FR",
             description: "A test in-app purchase FR",
           },
@@ -837,5 +843,36 @@ describe("Subscription Group Actions", () => {
     await apply([action], testAppId, mockCurrentState, mockDesiredState);
 
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
+  });
+
+  it("should handle UPDATE_SUBSCRIPTION_AVAILABILITY action", async () => {
+    const action: AnyAction = {
+      type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+      payload: {
+        subscriptionProductId: "test-subscription",
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA", "GBR", "DEU"],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
+    expect(mockUpdateSubscriptionAvailability).toHaveBeenCalledWith(
+      "test-subscription",
+      {
+        availableInNewTerritories: true,
+        availableTerritories: ["USA", "GBR", "DEU"],
+      },
+      testAppId,
+      expect.objectContaining({
+        data: expect.any(Array),
+        included: expect.any(Array),
+        links: expect.any(Object),
+      }),
+      expect.any(Map) // newlyCreatedSubscriptions
+    );
   });
 });

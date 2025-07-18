@@ -117,22 +117,64 @@ The App Store Connect API has significant limitations regarding app-level availa
 ├── .env
 ├── .gitignore
 ├── package.json
-├── iaps.json
+├── example.json
+├── territories.json
+├── durations.json
+├── openapi.json
 ├── src/
-│   ├── cli.js
+│   ├── cli.ts
 │   ├── commands/
-│   │   ├── new.js
-│   │   ├── validate.js
-│   │   ├── fetch.js
-│   │   ├── plan.js
-│   │   └── apply.js
+│   │   ├── new.ts
+│   │   ├── validate.ts
+│   │   ├── fetch.ts
+│   │   ├── plan.ts
+│   │   └── apply.ts
 │   ├── services/
-│   │   ├── auth.js
-│   │   └── api.js
-│   └── utils/
-│       └── logger.js
+│   │   ├── auth.ts
+│   │   ├── api.ts
+│   │   ├── diff-service.ts
+│   │   ├── diff-service.test.ts
+│   │   ├── apply-service.ts
+│   │   ├── apply-service.test.ts
+│   │   ├── plan-service.ts
+│   │   ├── app-store-aggregator.ts
+│   │   ├── pricing-aggregator.ts
+│   │   └── apply/
+│   │       ├── app-availability-service.ts
+│   │       ├── app-pricing-service.ts
+│   │       ├── iap-availability-service.ts
+│   │       ├── iap-pricing-service.ts
+│   │       ├── in-app-purchase-service.ts
+│   │       └── subscription-service.ts
+│   ├── domains/
+│   │   ├── app-store/
+│   │   ├── availability/
+│   │   ├── in-app-purchases/
+│   │   ├── pricing/
+│   │   └── subscriptions/
+│   ├── models/
+│   │   ├── app-store.ts
+│   │   ├── app-store.test.ts
+│   │   ├── diff-plan.ts
+│   │   ├── locales.ts
+│   │   └── territories.ts
+│   ├── helpers/
+│   │   ├── constants.ts
+│   │   ├── error-handling-helpers.ts
+│   │   ├── id-encoding-helpers.ts
+│   │   ├── pagination-helpers.ts
+│   │   └── relationship-helpers.ts
+│   ├── utils/
+│   │   └── logger.ts
+│   └── generated/
+│       └── app-store-connect-api/
+├── scripts/
+├── dist/
+├── openapi/
 └── README.md
 ```
+
+# All API related functions should go under related domain's api-client.ts. No API calls inside `services/apply/`
 
 ## Command Workflow
 
