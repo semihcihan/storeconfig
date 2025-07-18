@@ -262,6 +262,42 @@ describe("RetryMiddleware", () => {
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
     });
+
+    it("should retry on undici connection timeout errors", async () => {
+      const undiciTimeoutError = {
+        code: "UND_ERR_CONNECT_TIMEOUT",
+        message: "Connect Timeout Error",
+      };
+      const successResponse = { data: "success" };
+
+      // First call fails with undici timeout error, second succeeds
+      mockApiClient.GET.mockRejectedValueOnce(
+        undiciTimeoutError
+      ).mockResolvedValueOnce(successResponse);
+
+      const result = await wrappedApi.GET("/test/endpoint");
+
+      expect(result).toBe(successResponse);
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
+    });
+
+    it("should retry on fetch failed errors", async () => {
+      const fetchFailedError = {
+        message: "fetch failed",
+        cause: { code: "UND_ERR_CONNECT_TIMEOUT" },
+      };
+      const successResponse = { data: "success" };
+
+      // First call fails with fetch failed error, second succeeds
+      mockApiClient.GET.mockRejectedValueOnce(
+        fetchFailedError
+      ).mockResolvedValueOnce(successResponse);
+
+      const result = await wrappedApi.GET("/test/endpoint");
+
+      expect(result).toBe(successResponse);
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe("Custom retry options", () => {

@@ -35,11 +35,20 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
       }
     }
 
-    if (error?.code === "ECONNRESET" || error?.code === "ETIMEDOUT")
+    // Handle various network error codes
+    if (
+      error?.code === "ECONNRESET" ||
+      error?.code === "ETIMEDOUT" ||
+      error?.code === "UND_ERR_CONNECT_TIMEOUT" ||
+      error?.code === "UND_ERR_SOCKET" ||
+      error?.code === "UND_ERR_ABORTED" ||
+      error?.code === "UND_ERR_DESTROYED"
+    )
       return true;
     if (
       error?.message?.includes("network") ||
-      error?.message?.includes("timeout")
+      error?.message?.includes("timeout") ||
+      error?.message?.includes("fetch failed")
     )
       return true;
     return false;
