@@ -19,6 +19,8 @@ type SubscriptionPricesResponse =
 type SubscriptionPromotionalOfferPricesResponse =
   components["schemas"]["SubscriptionPromotionalOfferPricesResponse"];
 type TerritoriesResponse = components["schemas"]["TerritoriesResponse"];
+type SubscriptionPricePointsResponse =
+  components["schemas"]["SubscriptionPricePointsResponse"];
 
 // Fetch subscription groups for an app
 export async function fetchSubscriptionGroups(
@@ -404,6 +406,83 @@ export async function createSubscriptionAvailability(
   request: components["schemas"]["SubscriptionAvailabilityCreateRequest"]
 ): Promise<components["schemas"]["SubscriptionAvailabilityResponse"]> {
   const response = await api.POST("/v1/subscriptionAvailabilities", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Fetch subscription price points with pagination support
+export async function fetchSubscriptionPricePoints(
+  subscriptionId: string,
+  territory?: string
+): Promise<SubscriptionPricePointsResponse> {
+  const queryParams: any = {
+    limit: 8000,
+    include: ["territory"],
+    "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
+    "fields[territories]": API_FIELD_CONFIGS.territories
+      .fieldsTerritories as any,
+  };
+
+  if (territory) {
+    queryParams["filter[territory]"] = [territory];
+  }
+
+  const response = await api.GET("/v1/subscriptions/{id}/pricePoints", {
+    params: {
+      path: { id: subscriptionId },
+      query: queryParams,
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data as SubscriptionPricePointsResponse;
+}
+
+// Fetch all subscription price points (no pagination needed)
+export async function fetchAllSubscriptionPricePoints(
+  subscriptionId: string,
+  territory?: string
+): Promise<SubscriptionPricePointsResponse> {
+  const queryParams: any = {
+    limit: 8000, // Maximum allowed limit
+    include: ["territory"],
+    "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
+    "fields[territories]": API_FIELD_CONFIGS.territories
+      .fieldsTerritories as any,
+  };
+
+  if (territory) {
+    queryParams["filter[territory]"] = [territory];
+  }
+
+  const response = await api.GET("/v1/subscriptions/{id}/pricePoints", {
+    params: {
+      path: { id: subscriptionId },
+      query: queryParams,
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data as SubscriptionPricePointsResponse;
+}
+
+// Create subscription price
+export async function createSubscriptionPrice(
+  request: components["schemas"]["SubscriptionPriceCreateRequest"]
+): Promise<components["schemas"]["SubscriptionPriceResponse"]> {
+  const response = await api.POST("/v1/subscriptionPrices", {
     body: request,
   });
 

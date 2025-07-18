@@ -13,6 +13,7 @@ import {
 import { updateIAPAvailability } from "./apply/iap-availability-service";
 import { updateIAPPricing } from "./apply/iap-pricing-service";
 import { updateSubscriptionAvailability } from "./apply/subscription-availability-service";
+import { createSubscriptionPrices } from "./apply/subscription-pricing-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,
@@ -357,7 +358,39 @@ async function executeAction(
           logger.info(`      ${price.territory}: ${price.price}`);
         });
       }
-      // TODO: Implement subscription pricing API calls
+
+      // Get subscription ID from newly created subscriptions or from current state
+      let targetSubscriptionId = newlyCreatedSubscriptions?.get(
+        action.payload.subscriptionProductId
+      );
+
+      if (!targetSubscriptionId) {
+        // Try to find it in the current subscription groups response
+        if (currentSubscriptionGroupsResponse?.included) {
+          const subscription = currentSubscriptionGroupsResponse.included.find(
+            (item: any) =>
+              item.type === "subscriptions" &&
+              item.attributes?.productId ===
+                action.payload.subscriptionProductId
+          );
+          targetSubscriptionId = subscription?.id;
+        }
+      }
+
+      if (!targetSubscriptionId) {
+        throw new Error(
+          `Could not find subscription ID for product ID: ${action.payload.subscriptionProductId}`
+        );
+      }
+
+      // Combine added and updated prices (for subscriptions, we treat updates the same as additions)
+      const allPrices = [
+        ...action.payload.changes.addedPrices,
+        ...action.payload.changes.updatedPrices,
+      ];
+
+      // Create subscription prices for all territories
+      await createSubscriptionPrices(targetSubscriptionId, allPrices);
       break;
 
     // Subscription Availability

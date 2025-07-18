@@ -27,6 +27,7 @@ const mockUpdateSubscriptionAvailability = jest.fn();
 const mockFetchInAppPurchases = jest.fn();
 const mockCreateNewSubscriptionGroup = jest.fn();
 const mockUpdateExistingSubscriptionGroup = jest.fn();
+const mockCreateSubscriptionPrices = jest.fn();
 
 const mockCreateSubscriptionGroupLocalization = jest.fn();
 const mockUpdateSubscriptionGroupLocalization = jest.fn();
@@ -81,6 +82,9 @@ jest.mocked(
 jest.mocked(
   require("../domains/subscriptions/api-client")
 ).fetchSubscriptionGroups = mockFetchSubscriptionGroups;
+jest.mocked(
+  require("./apply/subscription-pricing-service")
+).createSubscriptionPrices = mockCreateSubscriptionPrices;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -139,6 +143,7 @@ describe("apply-service", () => {
       included: [],
       links: { self: "" },
     });
+    mockCreateSubscriptionPrices.mockResolvedValue(undefined);
   });
 
   describe("apply", () => {
@@ -873,6 +878,124 @@ describe("Subscription Group Actions", () => {
         links: expect.any(Object),
       }),
       expect.any(Map) // newlyCreatedSubscriptions
+    );
+  });
+
+  it("should handle CREATE_SUBSCRIPTION_PRICE action", async () => {
+    // Mock subscription groups response with a subscription
+    mockFetchSubscriptionGroups.mockResolvedValue({
+      data: [],
+      included: [
+        {
+          type: "subscriptions",
+          id: "subscription-123",
+          attributes: {
+            productId: "test-subscription",
+          },
+        },
+      ],
+      links: { self: "" },
+    });
+
+    const action: AnyAction = {
+      type: "CREATE_SUBSCRIPTION_PRICE",
+      payload: {
+        subscriptionProductId: "test-subscription",
+        changes: {
+          addedPrices: [
+            { territory: "USA", price: "4.99" },
+            { territory: "GBR", price: "3.99" },
+          ],
+          updatedPrices: [{ territory: "DEU", price: "4.49" }],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    // Should fetch subscription groups
+    expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
+
+    // Should call createSubscriptionPrices with the subscription ID and all prices
+    expect(mockCreateSubscriptionPrices).toHaveBeenCalledWith(
+      "subscription-123",
+      [
+        { territory: "USA", price: "4.99" },
+        { territory: "GBR", price: "3.99" },
+        { territory: "DEU", price: "4.49" },
+      ]
+    );
+
+    // Should log the action details
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Executing action: CREATE_SUBSCRIPTION_PRICE"
+    );
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "  Subscription Product ID: test-subscription"
+    );
+    expect(mockLogger.info).toHaveBeenCalledWith("  Pricing changes:");
+    expect(mockLogger.info).toHaveBeenCalledWith("    Added Prices: 2");
+    expect(mockLogger.info).toHaveBeenCalledWith("      USA: 4.99");
+    expect(mockLogger.info).toHaveBeenCalledWith("      GBR: 3.99");
+    expect(mockLogger.info).toHaveBeenCalledWith("    Updated Prices: 1");
+    expect(mockLogger.info).toHaveBeenCalledWith("      DEU: 4.49");
+  });
+
+  it("should handle CREATE_SUBSCRIPTION_PRICE action with newly created subscription", async () => {
+    // Mock subscription groups response without the subscription (it will be in newlyCreatedSubscriptions)
+    mockFetchSubscriptionGroups.mockResolvedValue({
+      data: [],
+      included: [],
+      links: { self: "" },
+    });
+
+    const action: AnyAction = {
+      type: "CREATE_SUBSCRIPTION_PRICE",
+      payload: {
+        subscriptionProductId: "test-subscription",
+        changes: {
+          addedPrices: [{ territory: "USA", price: "4.99" }],
+          updatedPrices: [],
+        },
+      },
+    };
+
+    // Create a plan that first creates the subscription, then creates its pricing
+    const plan: AnyAction[] = [
+      {
+        type: "CREATE_SUBSCRIPTION",
+        payload: {
+          groupReferenceName: "test-group",
+          subscription: {
+            productId: "test-subscription",
+            referenceName: "test-subscription",
+            familySharable: false,
+            groupLevel: 1,
+            subscriptionPeriod: "ONE_MONTH",
+            localizations: [],
+            prices: [],
+          },
+        },
+      },
+      action,
+    ];
+
+    // Mock the createNewSubscription to return a subscription ID
+    mockCreateNewSubscriptionGroup.mockResolvedValue("subscription-123");
+
+    // Mock the createNewSubscription function from subscription service
+    const mockCreateNewSubscription = jest
+      .fn()
+      .mockResolvedValue("subscription-123");
+    jest.mocked(require("./apply/subscription-service")).createNewSubscription =
+      mockCreateNewSubscription;
+
+    await apply(plan, testAppId, mockCurrentState, mockDesiredState);
+
+    // Should call createSubscriptionPrices with the subscription ID from newlyCreatedSubscriptions
+    expect(mockCreateSubscriptionPrices).toHaveBeenCalledWith(
+      "subscription-123",
+      [{ territory: "USA", price: "4.99" }]
     );
   });
 });
