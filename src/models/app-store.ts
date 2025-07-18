@@ -115,45 +115,19 @@ export const SubscriptionPeriodSchema = z.enum([
   "ONE_YEAR",
 ]);
 
-export const SubscriptionSchema = z
-  .object({
-    productId: z.string(),
-    referenceName: z.string(),
-    groupLevel: z.number(),
-    subscriptionPeriod: SubscriptionPeriodSchema,
-    familySharable: z.boolean(),
-    prices: z.array(PriceSchema),
-    localizations: z.array(LocalizationSchema),
-    introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
-    promotionalOffers: z.array(PromotionalOfferSchema).optional(),
-    reviewNote: z.string().optional(),
-    availability: AvailabilitySchema.optional(),
-  })
-  .refine(
-    (data) => {
-      // Only validate territory coverage if there are prices
-      if (data.prices.length === 0) {
-        return true;
-      }
-
-      const allTerritoryCodes = new Set(territoryCodes);
-      const providedTerritoryCodes = new Set(
-        data.prices.map((price) => price.territory)
-      );
-
-      // Check if all territory codes are covered
-      for (const territoryCode of Array.from(allTerritoryCodes)) {
-        if (!providedTerritoryCodes.has(territoryCode)) {
-          return false;
-        }
-      }
-      return true;
-    },
-    {
-      message: "Subscription must include prices for all territories",
-      path: ["prices"],
-    }
-  );
+export const SubscriptionSchema = z.object({
+  productId: z.string(),
+  referenceName: z.string(),
+  groupLevel: z.number(),
+  subscriptionPeriod: SubscriptionPeriodSchema,
+  familySharable: z.boolean(),
+  prices: z.array(PriceSchema),
+  localizations: z.array(LocalizationSchema),
+  introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
+  promotionalOffers: z.array(PromotionalOfferSchema).optional(),
+  reviewNote: z.string().optional(),
+  availability: AvailabilitySchema.optional(),
+});
 
 export const SubscriptionGroupSchema = z.object({
   referenceName: z.string(),
