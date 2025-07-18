@@ -64,7 +64,11 @@ class RateLimitTracker {
     };
   }
 
-  trackRequest(endpoint: string, method: string, response: Response): void {
+  async trackRequest(
+    endpoint: string,
+    method: string,
+    response: Response
+  ): Promise<void> {
     this.stats.totalRequests++;
 
     const rateLimitInfo = this.parseRateLimitHeaders(
@@ -104,11 +108,30 @@ class RateLimitTracker {
     // Track rate limited responses
     if (response.status === 429) {
       this.stats.rateLimitedRequests++;
+
+      // Try to get response body as text if it hasn't been used
+      let responseBody = null;
+      if (!response.bodyUsed) {
+        try {
+          responseBody = await response.clone().text();
+        } catch (error) {
+          responseBody = `Error reading response body: ${error}`;
+        }
+      }
+
       logger.error(`Rate limit exceeded for ${method} ${endpoint}`, {
         status: response.status,
+        statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        response: response.body,
-        allOtherInfo: response,
+        url: response.url,
+        type: response.type,
+        redirected: response.redirected,
+        bodyUsed: response.bodyUsed,
+        body: responseBody,
+        // Additional response properties
+        ok: response.ok,
+        // Headers as both object and raw entries
+        headerEntries: Array.from(response.headers.entries()),
       });
     }
   }
@@ -173,7 +196,11 @@ export function createRateLimitMiddleware<T extends Record<string, any>>(
             typeof response === "object" &&
             "response" in response
           ) {
-            rateLimitTracker.trackRequest(endpoint, method, response.response);
+            await rateLimitTracker.trackRequest(
+              endpoint,
+              method,
+              response.response
+            );
           }
 
           const duration = Date.now() - startTime;

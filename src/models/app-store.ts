@@ -2,6 +2,13 @@ import { z } from "zod";
 import { TerritoryCodeSchema, territoryCodes } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 
+// Helper function to validate product ID format
+export const isValidProductId = (productId: string): boolean => {
+  // Product ID can only contain alphanumeric characters, underscores, and periods
+  const productIdRegex = /^[a-zA-Z0-9._]+$/;
+  return productIdRegex.test(productId);
+};
+
 export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_DAYS",
   "ONE_WEEK",
@@ -116,7 +123,10 @@ export const SubscriptionPeriodSchema = z.enum([
 ]);
 
 export const SubscriptionSchema = z.object({
-  productId: z.string(),
+  productId: z.string().refine(isValidProductId, {
+    message:
+      "Product ID can only contain alphanumeric characters, underscores, and periods",
+  }),
   referenceName: z.string(),
   groupLevel: z.number(),
   subscriptionPeriod: SubscriptionPeriodSchema,
@@ -136,7 +146,10 @@ export const SubscriptionGroupSchema = z.object({
 });
 
 export const InAppPurchaseSchema = z.object({
-  productId: z.string(),
+  productId: z.string().refine(isValidProductId, {
+    message:
+      "Product ID can only contain alphanumeric characters, underscores, and periods",
+  }),
   type: z.enum(["CONSUMABLE", "NON_CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"]),
   referenceName: z.string(),
   familySharable: z.boolean(),
