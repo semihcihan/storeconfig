@@ -10,18 +10,6 @@ jest.mock("../utils/logger", () => ({
   },
 }));
 
-// Mock the rate limit helpers
-jest.mock("../helpers/rate-limit-helpers", () => ({
-  hasActiveRateLimits: jest.fn(),
-  getRemainingRequests: jest.fn(),
-}));
-
-// Import the mocked functions
-import {
-  hasActiveRateLimits,
-  getRemainingRequests,
-} from "../helpers/rate-limit-helpers";
-
 describe("RetryMiddleware", () => {
   let mockApiClient: any;
   let wrappedApi: any;
@@ -29,10 +17,6 @@ describe("RetryMiddleware", () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-
-    // Default mock implementations
-    (hasActiveRateLimits as jest.Mock).mockReturnValue(false);
-    (getRemainingRequests as jest.Mock).mockReturnValue(null);
 
     // Create a mock API client
     mockApiClient = {
@@ -45,7 +29,6 @@ describe("RetryMiddleware", () => {
       delayMs: 10, // Very short delay for testing
       maxAttempts: 3,
       rateLimitWaitMs: 10, // Very short rate limit wait for testing
-      activeRateLimitWaitMs: 10, // Very short active rate limit wait for testing
     });
   });
 
@@ -85,9 +68,6 @@ describe("RetryMiddleware", () => {
       const rateLimitError = { status: 429, message: "Rate limit exceeded" };
       const successResponse = { data: "success" };
 
-      // Mock no rate limit information available
-      (getRemainingRequests as jest.Mock).mockReturnValue(null);
-
       // First call fails with rate limit, second succeeds
       mockApiClient.GET.mockRejectedValueOnce(
         rateLimitError
@@ -98,22 +78,27 @@ describe("RetryMiddleware", () => {
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "Rate limit exceeded for GET /test/endpoint (no rate limit info available)"
-        )
+        expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
 
-    it("should handle 429 errors when rate limit info is available", async () => {
-      const rateLimitError = { status: 429, message: "Rate limit exceeded" };
+    it("should handle Apple API error structure with errors array", async () => {
+      const appleApiError = {
+        errors: [
+          {
+            status: "429",
+            code: "RATE_LIMIT_EXCEEDED",
+            title: "The request rate limit has been reached.",
+            detail:
+              "We've received too many requests for this API. Please wait and try again or slow down your request rate.",
+          },
+        ],
+      };
       const successResponse = { data: "success" };
 
-      // Mock rate limit information available
-      (getRemainingRequests as jest.Mock).mockReturnValue(5);
-
-      // First call fails with rate limit, second succeeds
+      // First call fails with Apple API error structure, second succeeds
       mockApiClient.GET.mockRejectedValueOnce(
-        rateLimitError
+        appleApiError
       ).mockResolvedValueOnce(successResponse);
 
       const result = await wrappedApi.GET("/test/endpoint");
@@ -121,9 +106,36 @@ describe("RetryMiddleware", () => {
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "Rate limit exceeded for GET /test/endpoint (5 remaining)"
-        )
+        expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
+      );
+    });
+
+    it("should handle openapi-fetch response with error property", async () => {
+      const appleApiError = {
+        errors: [
+          {
+            status: "429",
+            code: "RATE_LIMIT_EXCEEDED",
+            title: "The request rate limit has been reached.",
+            detail:
+              "We've received too many requests for this API. Please wait and try again or slow down your request rate.",
+          },
+        ],
+      };
+      const errorResponse = { data: null, error: appleApiError };
+      const successResponse = { data: "success" };
+
+      // First call returns response with error property, second succeeds
+      mockApiClient.GET.mockResolvedValueOnce(
+        errorResponse
+      ).mockResolvedValueOnce(successResponse);
+
+      const result = await wrappedApi.GET("/test/endpoint");
+
+      expect(result).toBe(successResponse);
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
 
@@ -137,6 +149,29 @@ describe("RetryMiddleware", () => {
         rateLimitError
       );
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
+    });
+
+    it("should use progressive waiting for rate limit errors", async () => {
+      const rateLimitError = { status: 429, message: "Rate limit exceeded" };
+      const successResponse = { data: "success" };
+
+      // First two calls fail with rate limit, third succeeds
+      mockApiClient.GET.mockRejectedValueOnce(rateLimitError)
+        .mockRejectedValueOnce(rateLimitError)
+        .mockResolvedValueOnce(successResponse);
+
+      const result = await wrappedApi.GET("/test/endpoint");
+
+      expect(result).toBe(successResponse);
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(3);
+
+      // Verify the warning messages show the correct wait times
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("waiting 0.01s before retry (attempt 1)")
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("waiting 0.03s before retry (attempt 2)")
+      );
     });
   });
 
@@ -166,6 +201,48 @@ describe("RetryMiddleware", () => {
       await expect(wrappedApi.GET("/test/endpoint")).rejects.toEqual(
         clientError
       );
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(1); // No retry
+    });
+
+    it("should not retry on 404 errors (handled by isNotFoundError)", async () => {
+      const notFoundError = {
+        errors: [
+          {
+            status: "404",
+            code: "NOT_FOUND",
+            title: "The specified resource does not exist",
+            detail:
+              "There is no resource of type 'subscriptionAvailabilities' with id '123'",
+          },
+        ],
+      };
+
+      mockApiClient.GET.mockRejectedValue(notFoundError);
+
+      await expect(wrappedApi.GET("/test/endpoint")).rejects.toEqual(
+        notFoundError
+      );
+      expect(mockApiClient.GET).toHaveBeenCalledTimes(1); // No retry
+    });
+
+    it("should not retry on 404 errors in openapi-fetch response format", async () => {
+      const notFoundError = {
+        errors: [
+          {
+            status: "404",
+            code: "NOT_FOUND",
+            title: "The specified resource does not exist",
+            detail:
+              "There is no resource of type 'subscriptionAvailabilities' with id '123'",
+          },
+        ],
+      };
+      const errorResponse = { data: null, error: notFoundError };
+
+      mockApiClient.GET.mockResolvedValue(errorResponse);
+
+      const result = await wrappedApi.GET("/test/endpoint");
+      expect(result).toEqual(errorResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(1); // No retry
     });
   });
@@ -215,75 +292,6 @@ describe("RetryMiddleware", () => {
         error
       );
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
-    });
-  });
-
-  describe("Proactive rate limit checking", () => {
-    it("should wait when active rate limits are detected", async () => {
-      const successResponse = { data: "success" };
-      mockApiClient.GET.mockResolvedValue(successResponse);
-
-      // Mock active rate limits
-      (hasActiveRateLimits as jest.Mock).mockReturnValue(true);
-
-      const result = await wrappedApi.GET("/test/endpoint");
-
-      expect(result).toBe(successResponse);
-      expect(mockApiClient.GET).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "Active rate limits detected for GET /test/endpoint"
-        )
-      );
-    });
-
-    it("should wait when endpoint has 0 remaining requests", async () => {
-      const successResponse = { data: "success" };
-      mockApiClient.GET.mockResolvedValue(successResponse);
-
-      // Mock 0 remaining requests for this endpoint
-      (getRemainingRequests as jest.Mock).mockReturnValue(0);
-
-      const result = await wrappedApi.GET("/test/endpoint");
-
-      expect(result).toBe(successResponse);
-      expect(mockApiClient.GET).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("Rate limit reached for GET /test/endpoint")
-      );
-    });
-
-    it("should warn when endpoint has low remaining requests", async () => {
-      const successResponse = { data: "success" };
-      mockApiClient.GET.mockResolvedValue(successResponse);
-
-      // Mock low remaining requests for this endpoint
-      (getRemainingRequests as jest.Mock).mockReturnValue(2);
-
-      const result = await wrappedApi.GET("/test/endpoint");
-
-      expect(result).toBe(successResponse);
-      expect(mockApiClient.GET).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "Low rate limit remaining for GET /test/endpoint: 2 requests"
-        )
-      );
-    });
-
-    it("should proceed normally when no rate limit info is available", async () => {
-      const successResponse = { data: "success" };
-      mockApiClient.GET.mockResolvedValue(successResponse);
-
-      // Mock no rate limit information available (default behavior)
-      (hasActiveRateLimits as jest.Mock).mockReturnValue(false);
-      (getRemainingRequests as jest.Mock).mockReturnValue(null);
-
-      const result = await wrappedApi.GET("/test/endpoint");
-
-      expect(result).toBe(successResponse);
-      expect(mockApiClient.GET).toHaveBeenCalledTimes(1);
-      expect(logger.warn).not.toHaveBeenCalled();
     });
   });
 

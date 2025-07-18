@@ -1,17 +1,11 @@
 import { logger } from "../utils/logger";
-import {
-  hasActiveRateLimits,
-  getRemainingRequests,
-} from "../helpers/rate-limit-helpers";
 
 export interface RetryOptions {
   maxAttempts?: number;
   delayMs?: number;
   backoffMultiplier?: number;
   shouldRetry?: (error: any) => boolean;
-  waitForRateLimit?: boolean;
   rateLimitWaitMs?: number; // Time to wait when rate limited
-  activeRateLimitWaitMs?: number; // Time to wait when active rate limits detected
 }
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
@@ -19,9 +13,28 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   delayMs: 1000, // 1 second initial delay
   backoffMultiplier: 2, // Exponential backoff
   shouldRetry: (error: any) => {
+    // Don't retry 404 errors - these are handled by isNotFoundError logic
+    if (error?.status === 404) return false;
+
+    // Check for 404 in Apple API error structure
+    if (error?.errors && Array.isArray(error.errors)) {
+      for (const err of error.errors) {
+        if (err.status === 404 || err.status === "404") return false;
+      }
+    }
+
     // Retry on network errors, 5xx server errors, and rate limiting
     if (error?.status >= 500) return true;
     if (error?.status === 429) return true; // Rate limiting
+
+    // Handle Apple API error structure where status is in errors array
+    if (error?.errors && Array.isArray(error.errors)) {
+      for (const err of error.errors) {
+        if (err.status === 429 || err.status === "429") return true;
+        if (err.status >= 500) return true;
+      }
+    }
+
     if (error?.code === "ECONNRESET" || error?.code === "ETIMEDOUT")
       return true;
     if (
@@ -31,10 +44,176 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
       return true;
     return false;
   },
-  waitForRateLimit: true, // Wait for rate limit reset by default
-  rateLimitWaitMs: 10000, // 10 seconds when rate limited
-  activeRateLimitWaitMs: 5000, // 5 seconds when active rate limits detected
+  rateLimitWaitMs: 10000, // 10 seconds base wait time (will be 10s, 30s, 60s progressively)
 };
+
+/**
+ * Check if an error is a rate limit error
+ */
+function isRateLimitError(error: any): boolean {
+  return (
+    (error as any)?.status === 429 ||
+    ((error as any)?.errors &&
+      Array.isArray((error as any).errors) &&
+      (error as any).errors.some(
+        (err: any) => err.status === 429 || err.status === "429"
+      ))
+  );
+}
+
+/**
+ * Handle rate limit errors with progressive waiting
+ */
+async function handleRateLimitError(
+  error: any,
+  endpoint: string,
+  method: string,
+  attempt: number,
+  config: Required<RetryOptions>
+): Promise<void> {
+  // Progressive waiting: base time, 3x base time, 6x base time
+  const baseWaitTime = config.rateLimitWaitMs;
+  const waitTimes = [baseWaitTime, baseWaitTime * 3, baseWaitTime * 6];
+  const waitTime = waitTimes[Math.min(attempt - 1, waitTimes.length - 1)];
+
+  logger.warn(
+    `Rate limit exceeded for ${method} ${endpoint}, waiting ${
+      waitTime / 1000
+    }s before retry (attempt ${attempt})`
+  );
+
+  // Wait for rate limit reset
+  await new Promise((resolve) => setTimeout(resolve, waitTime));
+}
+
+/**
+ * Handle non-rate-limit errors with exponential backoff
+ */
+async function handleOtherErrors(
+  error: any,
+  endpoint: string,
+  method: string,
+  attempt: number,
+  config: Required<RetryOptions>
+): Promise<void> {
+  // Calculate delay with exponential backoff
+  const delay =
+    config.delayMs * Math.pow(config.backoffMultiplier, attempt - 1);
+
+  logger.warn(
+    `${method} ${endpoint} failed on attempt ${attempt}/${config.maxAttempts}. Retrying in ${delay}ms. Error:`,
+    error
+  );
+
+  // Wait before retrying
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+/**
+ * Create a retry wrapper for a single API method
+ */
+function createRetryWrapper<T extends Record<string, any>>(
+  method: string,
+  handler: Function,
+  config: Required<RetryOptions>
+): Function {
+  return async (...args: any[]) => {
+    const endpoint = args[0] as string;
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+      try {
+        // Make the actual API call
+        const response = await handler(...args);
+
+        // Check if the response contains an error (openapi-fetch pattern)
+        if (response && typeof response === "object" && response.error) {
+          // This is an error response from openapi-fetch
+          if (config.shouldRetry(response.error)) {
+            lastError = response.error;
+
+            // Don't retry if this is the last attempt
+            if (attempt === config.maxAttempts) {
+              logger.error(
+                `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
+                response.error
+              );
+              throw response.error;
+            }
+
+            // Handle rate limit errors
+            if (isRateLimitError(response.error)) {
+              await handleRateLimitError(
+                response.error,
+                endpoint,
+                method,
+                attempt,
+                config
+              );
+              continue;
+            }
+
+            // Handle other retryable errors
+            await handleOtherErrors(
+              response.error,
+              endpoint,
+              method,
+              attempt,
+              config
+            );
+            continue;
+          } else {
+            // Non-retryable error in response - return the response with error
+            logger.warn(
+              `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
+              response.error
+            );
+            return response; // Return the response with error property
+          }
+        }
+
+        // If we get here, the call succeeded
+        if (attempt > 1) {
+          logger.info(`${method} ${endpoint} succeeded on attempt ${attempt}`);
+        }
+
+        return response;
+      } catch (error) {
+        lastError = error;
+
+        // Don't retry if this is the last attempt
+        if (attempt === config.maxAttempts) {
+          logger.error(
+            `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
+            error
+          );
+          throw error;
+        }
+
+        // Check if we should retry this error
+        if (!config.shouldRetry(error)) {
+          logger.warn(
+            `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
+            error
+          );
+          throw error;
+        }
+
+        // Handle rate limit errors
+        if (isRateLimitError(error)) {
+          await handleRateLimitError(error, endpoint, method, attempt, config);
+          continue;
+        }
+
+        // Handle other retryable errors
+        await handleOtherErrors(error, endpoint, method, attempt, config);
+      }
+    }
+
+    // This should never be reached, but TypeScript requires it
+    throw lastError;
+  };
+}
 
 /**
  * Create retry middleware that wraps an API client with automatic retry logic
@@ -51,117 +230,11 @@ export function createRetryMiddleware<T extends Record<string, any>>(
 
   for (const [method, handler] of Object.entries(apiClient)) {
     if (typeof handler === "function") {
-      middleware[method as keyof T] = (async (...args: any[]) => {
-        const endpoint = args[0] as string;
-        let lastError: any;
-
-        for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
-          try {
-            // Check for active rate limits before making the request
-            // Only check if we have rate limit information available
-            if (config.waitForRateLimit) {
-              const hasActiveLimits = hasActiveRateLimits();
-              const remaining = getRemainingRequests(endpoint, method);
-
-              // If we have rate limit information and limits are active, wait
-              if (hasActiveLimits) {
-                logger.warn(
-                  `Active rate limits detected for ${method} ${endpoint}, waiting before attempt ${attempt}`
-                );
-                await new Promise((resolve) =>
-                  setTimeout(resolve, config.activeRateLimitWaitMs)
-                );
-              }
-
-              // If we have specific endpoint rate limit information
-              if (remaining !== null) {
-                if (remaining === 0) {
-                  logger.warn(
-                    `Rate limit reached for ${method} ${endpoint}, waiting before attempt ${attempt}`
-                  );
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, config.activeRateLimitWaitMs)
-                  );
-                } else if (remaining <= 2) {
-                  logger.warn(
-                    `Low rate limit remaining for ${method} ${endpoint}: ${remaining} requests`
-                  );
-                }
-              }
-              // If remaining is null, we don't have rate limit info for this endpoint
-              // This is normal for some Apple API endpoints
-            }
-
-            // Make the actual API call
-            const response = await handler(...args);
-
-            // If we get here, the call succeeded
-            if (attempt > 1) {
-              logger.info(
-                `${method} ${endpoint} succeeded on attempt ${attempt}`
-              );
-            }
-
-            return response;
-          } catch (error) {
-            lastError = error;
-
-            // Don't retry if this is the last attempt
-            if (attempt === config.maxAttempts) {
-              logger.error(
-                `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-                error
-              );
-              throw error;
-            }
-
-            // Check if we should retry this error
-            if (!config.shouldRetry(error)) {
-              logger.warn(
-                `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
-                error
-              );
-              throw error;
-            }
-
-            // Special handling for rate limit errors
-            if ((error as any)?.status === 429 && config.waitForRateLimit) {
-              const remaining = getRemainingRequests(endpoint, method);
-
-              if (remaining !== null) {
-                logger.warn(
-                  `Rate limit exceeded for ${method} ${endpoint} (${remaining} remaining), waiting before retry (attempt ${attempt})`
-                );
-              } else {
-                logger.warn(
-                  `Rate limit exceeded for ${method} ${endpoint} (no rate limit info available), waiting before retry (attempt ${attempt})`
-                );
-              }
-
-              // Wait for rate limit reset (simplified approach)
-              await new Promise((resolve) =>
-                setTimeout(resolve, config.rateLimitWaitMs)
-              );
-              continue;
-            }
-
-            // Calculate delay with exponential backoff
-            const delay =
-              config.delayMs * Math.pow(config.backoffMultiplier, attempt - 1);
-
-            logger.warn(
-              `${method} ${endpoint} failed on attempt ${attempt}/${config.maxAttempts}. Retrying in ${delay}ms. Error:`,
-              error
-            );
-
-            // Wait before retrying
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
-        }
-
-        // This should never be reached, but TypeScript requires it
-        throw lastError;
-      }) as any;
+      middleware[method as keyof T] = createRetryWrapper(
+        method,
+        handler,
+        config
+      ) as any;
     } else {
       middleware[method as keyof T] = handler;
     }

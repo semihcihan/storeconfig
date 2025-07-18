@@ -1,7 +1,6 @@
 import createClient from "openapi-fetch";
 import type { paths } from "../generated/app-store-connect-api";
 import { getAuthToken } from "./auth";
-import { createRateLimitMiddleware } from "./rate-limit-middleware";
 import { createRetryMiddleware } from "./retry-middleware";
 
 const baseApi = createClient<paths>({
@@ -22,7 +21,5 @@ const baseApi = createClient<paths>({
   },
 });
 
-// Wrap the API client with both retry and rate limit middleware
-// Order matters: retry middleware should be applied first, then rate limit middleware
-const apiWithRetry = createRetryMiddleware(baseApi);
-export const api = createRateLimitMiddleware(apiWithRetry);
+// Wrap the API client with retry middleware only
+export const api = createRetryMiddleware(baseApi);
