@@ -3,6 +3,7 @@ import { logger } from "../utils/logger";
 export interface RateLimitInfo {
   limit: number;
   remaining: number;
+  resetTime?: Date;
   endpoint: string;
   method: string;
 }
@@ -48,6 +49,7 @@ class RateLimitTracker {
     // Fallback to standard rate limit headers (for other APIs)
     const limit = headers.get("X-Rate-Limit-Limit");
     const remaining = headers.get("X-Rate-Limit-Remaining");
+    const reset = headers.get("X-Rate-Limit-Reset");
 
     if (!limit || !remaining) {
       return null;
@@ -56,6 +58,7 @@ class RateLimitTracker {
     return {
       limit: parseInt(limit),
       remaining: parseInt(remaining),
+      resetTime: reset ? new Date(parseInt(reset) * 1000) : undefined,
       endpoint,
       method,
     };
@@ -91,6 +94,11 @@ class RateLimitTracker {
           `Rate limit nearly exceeded for ${method} ${endpoint}: ${rateLimitInfo.remaining}/${rateLimitInfo.limit} remaining`
         );
       }
+    } else {
+      // Log when we don't get rate limit headers (but only for successful responses)
+      if (response.status >= 200 && response.status < 300) {
+        logger.debug(`No rate limit headers for ${method} ${endpoint}`);
+      }
     }
 
     // Track rate limited responses
@@ -99,6 +107,8 @@ class RateLimitTracker {
       logger.error(`Rate limit exceeded for ${method} ${endpoint}`, {
         status: response.status,
         headers: Object.fromEntries(response.headers.entries()),
+        response: response.body,
+        allOtherInfo: response,
       });
     }
   }

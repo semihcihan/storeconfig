@@ -974,6 +974,10 @@ describe("Subscription Group Actions", () => {
             subscriptionPeriod: "ONE_MONTH",
             localizations: [],
             prices: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: [],
+            },
           },
         },
       },

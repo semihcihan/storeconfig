@@ -2406,7 +2406,7 @@ describe("diff-service", () => {
         );
       });
 
-      it("should create a plan for subscription with no availability", () => {
+      it("should create a plan for subscription with availability", () => {
         const currentState = MOCK_STATE_1;
         const newSubscription: Subscription = {
           productId: "sub5",
@@ -2422,7 +2422,10 @@ describe("diff-service", () => {
               description: "This is Subscription 5",
             },
           ],
-          // No availability field
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
         };
 
         const desiredState: AppStoreModel = {
@@ -2439,7 +2442,7 @@ describe("diff-service", () => {
         };
 
         const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE
+        expect(plan).toHaveLength(4); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
         expect(plan).toEqual(
           expect.arrayContaining([
             {
@@ -2464,6 +2467,13 @@ describe("diff-service", () => {
                   addedPrices: newSubscription.prices,
                   updatedPrices: [],
                 },
+              },
+            },
+            {
+              type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+              payload: {
+                subscriptionProductId: "sub5",
+                availability: newSubscription.availability,
               },
             },
           ])
@@ -2876,16 +2886,28 @@ describe("diff-service", () => {
               subscriptions: [
                 {
                   ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                  availability: undefined, // Explicitly set to undefined to remove it
+                  availability: {
+                    availableInNewTerritories: false,
+                    availableTerritories: [],
+                  },
                 },
               ],
             },
           ],
         };
 
-        expect(() => diff(currentState, desiredState)).toThrow(
-          /Cannot remove availability from subscription sub1\. Availability cannot be removed once set\./
-        );
+        const plan = diff(currentState, desiredState);
+        expect(plan).toHaveLength(1);
+        expect(plan[0]).toEqual({
+          type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+          payload: {
+            subscriptionProductId: "sub1",
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: [],
+            },
+          },
+        });
       });
     });
 

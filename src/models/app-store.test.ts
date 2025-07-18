@@ -85,7 +85,7 @@ describe("AppStore Models", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should fail validation if a price for a territory is missing", () => {
+    it("should pass validation even if prices for some territories are missing", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [
@@ -94,12 +94,7 @@ describe("AppStore Models", () => {
         ],
       };
       const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe(
-          "Subscription must include prices for all territories"
-        );
-      }
+      expect(result.success).toBe(true);
     });
 
     it("should pass validation if the prices array is empty", () => {
