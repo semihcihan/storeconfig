@@ -464,6 +464,9 @@ ASC_PRIVATE_KEY_PATH=/path/to/your/AuthKey_YOUR_KEY_ID.p8
 ### Apple Developer Documentation
 
 - **Managing In-App Purchases:** [Managing In-App Purchases](https://developer.apple.com/documentation/appstoreconnectapi/managing-in-app-purchases) - Core documentation for using the App Store Connect API to manage IAPs.
+- **Managing Auto-Renewable Subscriptions:** [Managing Auto-Renewable Subscriptions](https://developer.apple.com/documentation/appstoreconnectapi/managing-auto-renewable-subscriptions) - Documentation for managing auto-renewable subscription lifecycle and configuration.
+- **Creating Auto-Renewable Subscription Groups:** [Creating Auto-Renewable Subscription Groups](https://developer.apple.com/documentation/appstoreconnectapi/creating-auto-renewable-subscription-groups) - Guide for creating and organizing subscription groups for auto-renewable subscriptions.
+
 - **API Keys and Tokens:**
   - [Creating API Keys for App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api)
   - [Generating Tokens for API Requests](https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests)
