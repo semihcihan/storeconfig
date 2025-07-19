@@ -73,7 +73,7 @@ const IntroOfferPayUpFrontSchema = z.object({
 });
 
 const IntroOfferFreeSchema = z.object({
-  type: z.literal("FREE"),
+  type: z.literal("FREE_TRIAL"),
   duration: SubscriptionOfferDurationSchema,
   availableTerritories: z.array(TerritoryCodeSchema),
 });
@@ -103,7 +103,7 @@ const PromoOfferPayUpFrontSchema = z.object({
 const PromoOfferFreeSchema = z.object({
   id: z.string(),
   referenceName: z.string(),
-  type: z.literal("FREE"),
+  type: z.literal("FREE_TRIAL"),
   duration: SubscriptionOfferDurationSchema,
 });
 

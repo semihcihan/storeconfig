@@ -232,10 +232,10 @@ export async function mapIntroductoryOffers(
       "duration" in durationInfo &&
       durationInfo.duration
     ) {
-      const key = `FREE:${durationInfo.duration}`;
+      const key = `FREE_TRIAL:${durationInfo.duration}`;
       if (!groupedOffers[key]) {
         groupedOffers[key] = {
-          type: "FREE",
+          type: "FREE_TRIAL",
           duration: durationInfo.duration,
           availableTerritories: [],
         };
@@ -305,7 +305,7 @@ export async function mapPromotionalOffers(
       ) {
         return {
           ...baseOffer,
-          type: "FREE" as const,
+          type: "FREE_TRIAL" as const,
           duration: durationInfo.duration,
         };
       }

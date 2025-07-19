@@ -87,7 +87,7 @@ const MOCK_STATE_1: AppStoreModel = {
           ],
           introductoryOffers: [
             {
-              type: "FREE",
+              type: "FREE_TRIAL",
               duration: "ONE_WEEK",
               availableTerritories: ["USA"],
             },
@@ -96,7 +96,7 @@ const MOCK_STATE_1: AppStoreModel = {
             {
               id: "promo1",
               referenceName: "Promo 1",
-              type: "FREE",
+              type: "FREE_TRIAL",
               duration: "THREE_DAYS",
             },
           ],
