@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 
-async function showAction(action: AnyAction) {
+export async function showAction(action: AnyAction) {
   logger.info(`Executing action: ${action.type}`);
   switch (action.type) {
     // In-App Purchases

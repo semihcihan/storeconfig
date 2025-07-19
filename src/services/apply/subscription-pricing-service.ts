@@ -11,11 +11,53 @@ type SubscriptionPriceCreateRequest =
   components["schemas"]["SubscriptionPriceCreateRequest"];
 type SubscriptionPricePointsResponse =
   components["schemas"]["SubscriptionPricePointsResponse"];
+type SubscriptionGroupsResponse =
+  components["schemas"]["SubscriptionGroupsResponse"];
 
 type Price = z.infer<typeof PriceSchema>;
 
 // Cache for subscription price points to avoid repeated API calls
 const pricePointsCache = new Map<string, Map<string, string>>();
+
+// Helper function to find subscription ID by product ID
+export function findSubscriptionId(
+  subscriptionProductId: string,
+  newlyCreatedSubscriptions?: Map<string, string>,
+  currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
+): string {
+  // First, check newly created subscriptions
+  let targetSubscriptionId = newlyCreatedSubscriptions?.get(
+    subscriptionProductId
+  );
+
+  if (!targetSubscriptionId) {
+    // Try to find it in the current subscription groups response
+    if (currentSubscriptionGroupsResponse?.included) {
+      const subscription = currentSubscriptionGroupsResponse.included.find(
+        (item: any) =>
+          item.type === "subscriptions" &&
+          item.attributes?.productId === subscriptionProductId
+      );
+      targetSubscriptionId = subscription?.id;
+    }
+  }
+
+  if (!targetSubscriptionId) {
+    throw new Error(
+      `Could not find subscription ID for product ID: ${subscriptionProductId}`
+    );
+  }
+
+  return targetSubscriptionId;
+}
+
+// Helper function to combine added and updated prices
+export function combineSubscriptionPrices(
+  addedPrices: Price[],
+  updatedPrices: Price[]
+): Price[] {
+  return [...addedPrices, ...updatedPrices];
+}
 
 // Helper function to find subscription price point ID for a given price and territory
 async function findSubscriptionPricePointId(

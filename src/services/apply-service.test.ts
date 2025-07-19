@@ -183,19 +183,7 @@ describe("apply-service", () => {
         "test-app-id"
       );
 
-      // Should log detailed pricing changes
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "Executing action: UPDATE_APP_PRICING"
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith("  Pricing changes:");
-      expect(mockLogger.info).toHaveBeenCalledWith("    Base Territory: GBR");
-      expect(mockLogger.info).toHaveBeenCalledWith("    Added Prices: 1");
-      expect(mockLogger.info).toHaveBeenCalledWith("      GBR: 3.99");
-      expect(mockLogger.info).toHaveBeenCalledWith("    Updated Prices: 1");
-      expect(mockLogger.info).toHaveBeenCalledWith("      USA: 3.99");
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "    Deleted Territories: CAN"
-      );
+      // Should not log detailed pricing changes - that's the responsibility of the pricing service
     });
 
     it("should execute UPDATE_APP_PRICING action with priceSchedule for creating from scratch", async () => {
