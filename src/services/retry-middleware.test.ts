@@ -28,7 +28,7 @@ describe("RetryMiddleware", () => {
     wrappedApi = createRetryMiddleware(mockApiClient, {
       delayMs: 10, // Very short delay for testing
       maxAttempts: 3,
-      rateLimitWaitMs: 10, // Very short rate limit wait for testing
+      rateLimitDelayMs: [10, 30, 60], // Progressive delays for testing
     });
   });
 

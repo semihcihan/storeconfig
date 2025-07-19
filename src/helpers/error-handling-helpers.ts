@@ -11,6 +11,18 @@ export function isNotFoundError(error: any): boolean {
   return error?.status === 404 || error?.response?.status === 404;
 }
 
+// Helper function to check if an error is a rate limit error
+export function isRateLimitError(error: any): boolean {
+  return (
+    (error as any)?.status === 429 ||
+    ((error as any)?.errors &&
+      Array.isArray((error as any).errors) &&
+      (error as any).errors.some(
+        (err: any) => err.status === 429 || err.status === "429"
+      ))
+  );
+}
+
 // Helper function to extract error message from Apple API error
 export function extractErrorMessage(error: any): string {
   if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {

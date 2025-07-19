@@ -1,36 +1,32 @@
 import { logger } from "../utils/logger";
+import {
+  isNotFoundError,
+  isRateLimitError,
+} from "../helpers/error-handling-helpers";
 
 export interface RetryOptions {
   maxAttempts?: number;
   delayMs?: number;
-  backoffMultiplier?: number;
   shouldRetry?: (error: any) => boolean;
-  rateLimitWaitMs?: number; // Time to wait when rate limited
+  rateLimitDelayMs?: number[]; // Array of wait times for rate limit retries
 }
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   maxAttempts: 3, // Retry twice (total 3 attempts)
   delayMs: 1000, // 1 second initial delay
-  backoffMultiplier: 2, // Exponential backoff
   shouldRetry: (error: any) => {
-    // Don't retry 404 errors - these are handled by isNotFoundError logic
-    if (error?.status === 404) return false;
+    // Don't retry 404 errors
+    if (isNotFoundError(error)) return false;
 
-    // Check for 404 in Apple API error structure
-    if (error?.errors && Array.isArray(error.errors)) {
-      for (const err of error.errors) {
-        if (err.status === 404 || err.status === "404") return false;
-      }
-    }
+    // Retry on rate limiting
+    if (isRateLimitError(error)) return true;
 
-    // Retry on network errors, 5xx server errors, and rate limiting
+    // Retry on 5xx server errors
     if (error?.status >= 500) return true;
-    if (error?.status === 429) return true; // Rate limiting
 
     // Handle Apple API error structure where status is in errors array
     if (error?.errors && Array.isArray(error.errors)) {
       for (const err of error.errors) {
-        if (err.status === 429 || err.status === "429") return true;
         if (err.status >= 500) return true;
       }
     }
@@ -53,42 +49,39 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
       return true;
     return false;
   },
-  rateLimitWaitMs: 10000, // 10 seconds base wait time (will be 10s, 30s, 60s progressively)
+  rateLimitDelayMs: [10000, 30000, 60000, 60000],
 };
 
 /**
- * Check if an error is a rate limit error
+ * Calculate delay with jitter (0-10% of base delay)
  */
-function isRateLimitError(error: any): boolean {
-  return (
-    (error as any)?.status === 429 ||
-    ((error as any)?.errors &&
-      Array.isArray((error as any).errors) &&
-      (error as any).errors.some(
-        (err: any) => err.status === 429 || err.status === "429"
-      ))
-  );
+function calculateJitteredDelay(baseDelay: number): number {
+  const jitter = Math.random() * 0.1 * baseDelay;
+  return baseDelay + jitter;
 }
 
 /**
  * Handle rate limit errors with progressive waiting
  */
-async function handleRateLimitError(
-  error: any,
+async function waitForRateLimit(
   endpoint: string,
   method: string,
   attempt: number,
   config: Required<RetryOptions>
 ): Promise<void> {
-  // Progressive waiting: base time, 3x base time, 6x base time
-  const baseWaitTime = config.rateLimitWaitMs;
-  const waitTimes = [baseWaitTime, baseWaitTime * 3, baseWaitTime * 6];
-  const waitTime = waitTimes[Math.min(attempt - 1, waitTimes.length - 1)];
+  // Use the delay from the array, fallback to last value if attempt exceeds array length
+  const baseWaitTime =
+    config.rateLimitDelayMs[
+      Math.min(attempt - 1, config.rateLimitDelayMs.length - 1)
+    ];
+
+  // Add jitter: random value between 0-10% of base delay
+  const waitTime = calculateJitteredDelay(baseWaitTime);
 
   logger.warn(
-    `Rate limit exceeded for ${method} ${endpoint}, waiting ${
+    `Rate limit exceeded for ${method} ${endpoint}, waiting ${(
       waitTime / 1000
-    }s before retry (attempt ${attempt})`
+    ).toFixed(2)}s before retry (attempt ${attempt})`
   );
 
   // Wait for rate limit reset
@@ -98,19 +91,23 @@ async function handleRateLimitError(
 /**
  * Handle non-rate-limit errors with exponential backoff
  */
-async function handleOtherErrors(
+async function waitForOtherErrors(
   error: any,
   endpoint: string,
   method: string,
   attempt: number,
   config: Required<RetryOptions>
 ): Promise<void> {
-  // Calculate delay with exponential backoff
-  const delay =
-    config.delayMs * Math.pow(config.backoffMultiplier, attempt - 1);
+  const backoffMultiplier = 2; // Exponential backoff
+  const baseDelay = config.delayMs * Math.pow(backoffMultiplier, attempt - 1);
+
+  // Add jitter: random value between 0-10% of base delay
+  const delay = calculateJitteredDelay(baseDelay);
 
   logger.warn(
-    `${method} ${endpoint} failed on attempt ${attempt}/${config.maxAttempts}. Retrying in ${delay}ms. Error:`,
+    `${method} ${endpoint} failed on attempt ${attempt}/${
+      config.maxAttempts
+    }. Retrying in ${Math.round(delay)}ms. Error:`,
     error
   );
 
@@ -152,18 +149,12 @@ function createRetryWrapper<T extends Record<string, any>>(
 
             // Handle rate limit errors
             if (isRateLimitError(response.error)) {
-              await handleRateLimitError(
-                response.error,
-                endpoint,
-                method,
-                attempt,
-                config
-              );
+              await waitForRateLimit(endpoint, method, attempt, config);
               continue;
             }
 
             // Handle other retryable errors
-            await handleOtherErrors(
+            await waitForOtherErrors(
               response.error,
               endpoint,
               method,
@@ -210,12 +201,12 @@ function createRetryWrapper<T extends Record<string, any>>(
 
         // Handle rate limit errors
         if (isRateLimitError(error)) {
-          await handleRateLimitError(error, endpoint, method, attempt, config);
+          await waitForRateLimit(endpoint, method, attempt, config);
           continue;
         }
 
         // Handle other retryable errors
-        await handleOtherErrors(error, endpoint, method, attempt, config);
+        await waitForOtherErrors(error, endpoint, method, attempt, config);
       }
     }
 

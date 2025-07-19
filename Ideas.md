@@ -11,3 +11,4 @@ or an in app purchase might exist but maybe it doesn't have any availability and
 
 - filtering is available on stuff with states, like in app purchases etc
 - The familySharable field is editable only for auto-renewable subscriptions and non-consumable in-app purchases.
+- add jitter for retry
