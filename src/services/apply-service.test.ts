@@ -10,6 +10,7 @@ jest.mock("./apply/in-app-purchase-service");
 jest.mock("./apply/iap-availability-service");
 jest.mock("./apply/subscription-availability-service");
 jest.mock("./apply/subscription-service");
+jest.mock("./apply/introductory-offer-service");
 jest.mock("../domains/in-app-purchases/api-client");
 jest.mock("../domains/subscriptions/api-client");
 jest.mock("../utils/logger");
@@ -33,6 +34,8 @@ const mockCreateSubscriptionGroupLocalization = jest.fn();
 const mockUpdateSubscriptionGroupLocalization = jest.fn();
 const mockDeleteSubscriptionGroupLocalization = jest.fn();
 const mockFetchSubscriptionGroups = jest.fn();
+const mockCreateIntroductoryOffer = jest.fn();
+const mockDeleteIntroductoryOffer = jest.fn();
 const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
@@ -85,6 +88,12 @@ jest.mocked(
 jest.mocked(
   require("./apply/subscription-pricing-service")
 ).createSubscriptionPrices = mockCreateSubscriptionPrices;
+jest.mocked(
+  require("./apply/introductory-offer-service")
+).createIntroductoryOffer = mockCreateIntroductoryOffer;
+jest.mocked(
+  require("./apply/introductory-offer-service")
+).deleteIntroductoryOffer = mockDeleteIntroductoryOffer;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -144,6 +153,8 @@ describe("apply-service", () => {
       links: { self: "" },
     });
     mockCreateSubscriptionPrices.mockResolvedValue(undefined);
+    mockCreateIntroductoryOffer.mockResolvedValue(undefined);
+    mockDeleteIntroductoryOffer.mockResolvedValue(undefined);
   });
 
   describe("apply", () => {
@@ -988,6 +999,108 @@ describe("Subscription Group Actions", () => {
     expect(mockCreateSubscriptionPrices).toHaveBeenCalledWith(
       "subscription-123",
       [{ territory: "USA", price: "4.99" }]
+    );
+  });
+
+  it("should handle CREATE_INTRODUCTORY_OFFER action", async () => {
+    // Mock subscription groups response with a subscription
+    mockFetchSubscriptionGroups.mockResolvedValue({
+      data: [],
+      included: [
+        {
+          type: "subscriptions",
+          id: "subscription-123",
+          attributes: {
+            productId: "test-subscription",
+          },
+        },
+      ],
+      links: { self: "" },
+    });
+
+    const action: AnyAction = {
+      type: "CREATE_INTRODUCTORY_OFFER",
+      payload: {
+        subscriptionProductId: "test-subscription",
+        offer: {
+          type: "FREE_TRIAL",
+          duration: "ONE_MONTH",
+          availableTerritories: ["USA", "GBR"],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
+    expect(mockCreateIntroductoryOffer).toHaveBeenCalledWith(
+      "test-subscription",
+      {
+        type: "FREE_TRIAL",
+        duration: "ONE_MONTH",
+        availableTerritories: ["USA", "GBR"],
+      },
+      expect.any(Map), // newlyCreatedSubscriptions
+      expect.objectContaining({
+        data: expect.any(Array),
+        included: expect.any(Array),
+        links: expect.any(Object),
+      }) // currentSubscriptionGroupsResponse
+    );
+  });
+
+  it("should handle DELETE_INTRODUCTORY_OFFER action", async () => {
+    // Mock subscription groups response with a subscription
+    mockFetchSubscriptionGroups.mockResolvedValue({
+      data: [],
+      included: [
+        {
+          type: "subscriptions",
+          id: "subscription-123",
+          attributes: {
+            productId: "test-subscription",
+          },
+        },
+      ],
+      links: { self: "" },
+    });
+
+    const action: AnyAction = {
+      type: "DELETE_INTRODUCTORY_OFFER",
+      payload: {
+        subscriptionProductId: "test-subscription",
+        offer: {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 3,
+          prices: [
+            { territory: "USA", price: "0.99" },
+            { territory: "GBR", price: "0.79" },
+          ],
+          availableTerritories: ["USA", "GBR"],
+        },
+      },
+    };
+
+    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+
+    expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
+    expect(mockDeleteIntroductoryOffer).toHaveBeenCalledWith(
+      "test-subscription",
+      {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [
+          { territory: "USA", price: "0.99" },
+          { territory: "GBR", price: "0.79" },
+        ],
+        availableTerritories: ["USA", "GBR"],
+      },
+      expect.any(Map), // newlyCreatedSubscriptions
+      expect.objectContaining({
+        data: expect.any(Array),
+        included: expect.any(Array),
+        links: expect.any(Object),
+      }) // currentSubscriptionGroupsResponse
     );
   });
 });

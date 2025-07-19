@@ -60,7 +60,7 @@ export function combineSubscriptionPrices(
 }
 
 // Helper function to find subscription price point ID for a given price and territory
-async function findSubscriptionPricePointId(
+export async function findSubscriptionPricePointId(
   price: string,
   territory: string,
   subscriptionId: string

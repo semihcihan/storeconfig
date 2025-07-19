@@ -21,7 +21,7 @@ Our introductory offer model in `src/models/app-store.ts` supports three types:
 
 1. **PAY_AS_YOU_GO** - Pay per period for a specific number of periods
 2. **PAY_UP_FRONT** - Pay once for a specific duration
-3. **FREE** - Free trial for a specific duration
+3. **FREE_TRIAL** - Free trial for a specific duration
 
 ## Apple API Analysis
 
@@ -181,6 +181,15 @@ Great news! All the major implementation challenges have already been solved in 
 - **Result**: No mapping needed - all types are now identical between our model and Apple's API
 - **Types**: `PAY_AS_YOU_GO`, `PAY_UP_FRONT`, and `FREE_TRIAL` are all identical
 
+#### 6. Introductory Offer Validation ⚠️ **CRITICAL RULE**
+
+- **Rule**: Only one introductory offer per territory per subscription
+- **Apple Limitation**: Apple only allows one introductory offer per territory per subscription
+- **Implementation**: Add validation in diff-service during plan generation.
+- **Error**: Throw descriptive error if multiple offers are defined for the same territory
+- **Scope**: Let's only check desiredState
+- **Example Error**: "Multiple introductory offers found for territory 'USA' in subscription 'com.example.monthly'. Only one offer per territory is allowed."
+
 ### Implementation Flow (Reusing Existing Solutions)
 
 #### Create Introductory Offer
@@ -216,12 +225,39 @@ Great news! All the major implementation challenges have already been solved in 
 3. **Subscription Not Found**: Invalid product ID
 4. **Duplicate Offers**: Attempting to create offers that already exist
 5. **API Rate Limits**: Apple's API has rate limiting
+6. **Multiple Offers Per Territory**: ⚠️ **CRITICAL** - Apple only allows one introductory offer per territory per subscription
 
 #### Error Recovery Strategies
 
 1. **Graceful Degradation**: Continue with other offers if one fails
 2. **Detailed Logging**: Log specific error details for debugging
 3. **User Feedback**: Provide clear error messages about what failed and why
+
+### Validation Requirements
+
+#### Critical Validation Rules
+
+1. **One Offer Per Territory**: ⚠️ **MUST IMPLEMENT**
+
+   - Validate that each subscription has at most one introductory offer per territory
+   - Check both current and desired state during diff generation
+   - Throw descriptive error if violation is found
+   - Example: "Subscription 'com.example.monthly' has multiple introductory offers for territory 'USA'"
+
+2. **Offer Type Consistency**:
+
+   - Validate that all offers for the same subscription have consistent types
+   - All offers should be of the same type (PAY_AS_YOU_GO, PAY_UP_FRONT, or FREE_TRIAL)
+
+3. **Duration/Period Consistency**:
+   - For PAY_UP_FRONT and FREE_TRIAL: All offers should have the same duration
+   - For PAY_AS_YOU_GO: All offers should have the same numberOfPeriods
+
+#### Implementation Location
+
+- **Primary**: `src/services/diff-service.ts` - during plan generation
+- **Secondary**: `src/models/app-store.ts` - schema validation (if possible)
+- **Tertiary**: `src/services/apply-service.ts` - as a safety check
 
 ### Testing Strategy
 
@@ -231,18 +267,17 @@ Great news! All the major implementation challenges have already been solved in 
 - Test price point resolution logic
 - Test offer type mapping
 - Test error handling scenarios
+- **Test validation rules**: Multiple offers per territory should throw errors
 
 #### Integration Tests
 
 - Test full create/delete flows with mock API responses
-- Test with real API calls in development environment
 - Test error scenarios with invalid data
 
 #### Test Data
 
 - Use existing test data from `src/services/diff-service.test.ts`
 - Create additional test cases for edge cases
-- Test with various territory and price combinations
 
 ## Dependencies and Imports
 

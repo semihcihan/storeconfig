@@ -18,6 +18,10 @@ import {
   findSubscriptionId,
   combineSubscriptionPrices,
 } from "./apply/subscription-pricing-service";
+import {
+  createIntroductoryOffer,
+  deleteIntroductoryOffer,
+} from "./apply/introductory-offer-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,
@@ -270,8 +274,20 @@ async function executeAction(
 
     // Subscription Offers
     case "CREATE_INTRODUCTORY_OFFER":
+      await createIntroductoryOffer(
+        action.payload.subscriptionProductId,
+        action.payload.offer,
+        newlyCreatedSubscriptions,
+        currentSubscriptionGroupsResponse
+      );
       break;
     case "DELETE_INTRODUCTORY_OFFER":
+      await deleteIntroductoryOffer(
+        action.payload.subscriptionProductId,
+        action.payload.offer,
+        newlyCreatedSubscriptions,
+        currentSubscriptionGroupsResponse
+      );
       break;
     case "CREATE_PROMOTIONAL_OFFER":
       break;
@@ -303,7 +319,9 @@ export async function apply(
   const hasSubscriptionActions = plan.some(
     (action) =>
       action.type.includes("SUBSCRIPTION_GROUP") ||
-      action.type.includes("SUBSCRIPTION")
+      action.type.includes("SUBSCRIPTION") ||
+      action.type.includes("INTRODUCTORY_OFFER") ||
+      action.type.includes("PROMOTIONAL_OFFER")
   );
 
   // Fetch raw IAP response once if needed

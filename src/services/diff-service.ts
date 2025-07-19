@@ -391,11 +391,46 @@ function diffSubscriptionPrices(
   return [];
 }
 
+function validateIntroductoryOffers(
+  subscriptionProductId: string,
+  offers: IntroductoryOffer[]
+): void {
+  const territoryOffers = new Map<string, IntroductoryOffer>();
+
+  for (const offer of offers) {
+    if (offer.type === "FREE_TRIAL") {
+      for (const territory of offer.availableTerritories) {
+        if (territoryOffers.has(territory)) {
+          throw new Error(
+            `Multiple introductory offers found for territory '${territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
+          );
+        }
+        territoryOffers.set(territory, offer);
+      }
+    } else if (
+      offer.type === "PAY_AS_YOU_GO" ||
+      offer.type === "PAY_UP_FRONT"
+    ) {
+      for (const price of offer.prices) {
+        if (territoryOffers.has(price.territory)) {
+          throw new Error(
+            `Multiple introductory offers found for territory '${price.territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
+          );
+        }
+        territoryOffers.set(price.territory, offer);
+      }
+    }
+  }
+}
+
 function diffIntroductoryOffers(
   subscriptionProductId: string,
   currentOffers: IntroductoryOffer[],
   desiredOffers: IntroductoryOffer[]
 ): AnyAction[] {
+  // Validate that there's only one offer per territory per subscription
+  validateIntroductoryOffers(subscriptionProductId, desiredOffers);
+
   if (!isEqual(currentOffers, desiredOffers)) {
     const deleteActions: AnyAction[] = currentOffers.map((o) => ({
       type: "DELETE_INTRODUCTORY_OFFER",

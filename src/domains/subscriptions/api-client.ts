@@ -461,3 +461,31 @@ export async function createSubscriptionPrice(
 
   return response.data;
 }
+
+// Create subscription introductory offer
+export async function createSubscriptionIntroductoryOffer(
+  request: components["schemas"]["SubscriptionIntroductoryOfferCreateRequest"]
+): Promise<components["schemas"]["SubscriptionIntroductoryOfferResponse"]> {
+  const response = await api.POST("/v1/subscriptionIntroductoryOffers", {
+    body: request,
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
+}
+
+// Delete subscription introductory offer
+export async function deleteSubscriptionIntroductoryOffer(
+  offerId: string
+): Promise<void> {
+  const response = await api.DELETE("/v1/subscriptionIntroductoryOffers/{id}", {
+    params: { path: { id: offerId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}

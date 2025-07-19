@@ -3301,6 +3301,84 @@ describe("diff-service", () => {
         ])
       );
     });
+
+    it("should throw an error when multiple introductory offers are defined for the same territory", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "ONE_MONTH",
+                    availableTerritories: ["USA", "GBR"],
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "USA", price: "0.99" },
+                      { territory: "DEU", price: "0.89" },
+                    ],
+                    availableTerritories: ["USA", "DEU"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Multiple introductory offers found for territory 'USA' in subscription 'sub1'. Only one offer per territory is allowed."
+      );
+    });
+
+    it("should throw an error when multiple introductory offers with prices are defined for the same territory", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "USA", price: "0.99" },
+                      { territory: "GBR", price: "0.79" },
+                    ],
+                    availableTerritories: ["USA", "GBR"],
+                  },
+                  {
+                    type: "PAY_UP_FRONT",
+                    duration: "ONE_MONTH",
+                    prices: [
+                      { territory: "USA", price: "1.99" },
+                      { territory: "DEU", price: "1.89" },
+                    ],
+                    availableTerritories: ["USA", "DEU"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => diff(currentState, desiredState)).toThrow(
+        "Multiple introductory offers found for territory 'USA' in subscription 'sub1'. Only one offer per territory is allowed."
+      );
+    });
   });
 });
 
