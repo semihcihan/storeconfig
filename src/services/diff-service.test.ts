@@ -1255,6 +1255,518 @@ describe("diff-service", () => {
       );
     });
 
+    it("should create a plan to handle individual introductory offer changes efficiently", () => {
+      // Create a state with multiple introductory offers
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [{ territory: "CAN", price: "2.99" }],
+                    availableTerritories: ["CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Modify only one offer (change the price of PAY_AS_YOU_GO offer)
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [{ territory: "CAN", price: "3.99" }], // Changed price
+                    availableTerritories: ["CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should only have 2 actions: delete the changed offer and create the new one
+      expect(plan).toHaveLength(2);
+
+      // Verify the actions are for the PAY_AS_YOU_GO offer only
+      const deleteAction = plan.find(
+        (a) => a.type === "DELETE_INTRODUCTORY_OFFER"
+      );
+      const createAction = plan.find(
+        (a) => a.type === "CREATE_INTRODUCTORY_OFFER"
+      );
+
+      expect(deleteAction).toBeDefined();
+      expect(createAction).toBeDefined();
+
+      // Verify the delete action is for the old PAY_AS_YOU_GO offer
+      expect(deleteAction!.payload.offer).toEqual({
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "CAN", price: "2.99" }],
+        availableTerritories: ["CAN"],
+      });
+
+      // Verify the create action is for the new PAY_AS_YOU_GO offer
+      expect(createAction!.payload.offer).toEqual({
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "CAN", price: "3.99" }],
+        availableTerritories: ["CAN"],
+      });
+    });
+
+    it("should create a plan to add a new introductory offer while keeping existing ones", () => {
+      // Create a state with one introductory offer
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Add a new offer while keeping the existing one
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                  {
+                    type: "PAY_UP_FRONT",
+                    duration: "ONE_MONTH",
+                    prices: [{ territory: "CAN", price: "4.99" }],
+                    availableTerritories: ["CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should only have 1 action: create the new offer
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          subscriptionPeriod: "ONE_MONTH",
+          offer: {
+            type: "PAY_UP_FRONT",
+            duration: "ONE_MONTH",
+            prices: [{ territory: "CAN", price: "4.99" }],
+            availableTerritories: ["CAN"],
+          },
+        },
+      });
+    });
+
+    it("should create a plan to remove a specific introductory offer while keeping others", () => {
+      // Create a state with multiple introductory offers
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [{ territory: "CAN", price: "2.99" }],
+                    availableTerritories: ["CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Remove only the PAY_AS_YOU_GO offer
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should only have 1 action: delete the PAY_AS_YOU_GO offer
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId: "sub1",
+          offer: {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 3,
+            prices: [{ territory: "CAN", price: "2.99" }],
+            availableTerritories: ["CAN"],
+          },
+        },
+      });
+    });
+
+    it("should not create actions when only array order changes in introductory offer availableTerritories", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["USA", "CAN", "GBR"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Same territories but different order
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "THREE_DAYS",
+                    availableTerritories: ["CAN", "GBR", "USA"], // Different order
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should not create any actions since the content is the same
+      expect(plan).toHaveLength(0);
+    });
+
+    it("should not create actions when only array order changes in introductory offer prices", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "USA", price: "1.99" },
+                      { territory: "CAN", price: "2.99" },
+                      { territory: "GBR", price: "3.99" },
+                    ],
+                    availableTerritories: ["USA", "CAN", "GBR"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Same prices but different order
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "CAN", price: "2.99" },
+                      { territory: "GBR", price: "3.99" },
+                      { territory: "USA", price: "1.99" },
+                    ], // Different order
+                    availableTerritories: ["CAN", "GBR", "USA"], // Also different order
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should not create any actions since the content is the same
+      expect(plan).toHaveLength(0);
+    });
+
+    it("should create actions when actual content changes in introductory offer", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "USA", price: "1.99" },
+                      { territory: "CAN", price: "2.99" },
+                    ],
+                    availableTerritories: ["USA", "CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // Different content (added GBR)
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [
+                      { territory: "USA", price: "1.99" },
+                      { territory: "CAN", price: "2.99" },
+                      { territory: "GBR", price: "3.99" }, // Added new territory
+                    ],
+                    availableTerritories: ["USA", "CAN", "GBR"], // Added new territory
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should create actions since content actually changed
+      expect(plan).toHaveLength(2); // 1 delete, 1 create
+      expect(plan).toEqual(
+        expect.arrayContaining([
+          {
+            type: "DELETE_INTRODUCTORY_OFFER",
+            payload: {
+              subscriptionProductId: "sub1",
+              offer: {
+                type: "PAY_AS_YOU_GO",
+                numberOfPeriods: 3,
+                prices: [
+                  { territory: "USA", price: "1.99" },
+                  { territory: "CAN", price: "2.99" },
+                ],
+                availableTerritories: ["USA", "CAN"],
+              },
+            },
+          },
+          {
+            type: "CREATE_INTRODUCTORY_OFFER",
+            payload: {
+              subscriptionProductId: "sub1",
+              subscriptionPeriod: "ONE_MONTH",
+              offer: {
+                type: "PAY_AS_YOU_GO",
+                numberOfPeriods: 3,
+                prices: [
+                  { territory: "USA", price: "1.99" },
+                  { territory: "CAN", price: "2.99" },
+                  { territory: "GBR", price: "3.99" },
+                ],
+                availableTerritories: ["USA", "CAN", "GBR"],
+              },
+            },
+          },
+        ])
+      );
+    });
+
+    it("should not create actions when only array order changes in IAP availability", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["USA", "CAN", "GBR"],
+            },
+          },
+        ],
+      };
+
+      // Same territories but different order
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["CAN", "GBR", "USA"], // Different order
+            },
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should not create any actions since the content is the same
+      expect(plan).toHaveLength(0);
+    });
+
+    it("should create actions when actual content changes in IAP availability", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["USA", "CAN"],
+            },
+          },
+        ],
+      };
+
+      // Different content (added GBR)
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["USA", "CAN", "GBR"], // Added new territory
+            },
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      // Should create actions since content actually changed
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: "iap1",
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA", "CAN", "GBR"],
+          },
+        },
+      });
+    });
+
     it("should create a plan to delete and recreate promotional offers when they change", () => {
       const currentState = MOCK_STATE_1;
       const newOffers: PromotionalOffer[] = [

@@ -1,6 +1,8 @@
 import {
   validateIntroductoryOffers,
   validateIntroductoryOffersGrouping,
+  getIntroductoryOfferGroupingKey,
+  getIntroductoryOfferGroupingDescription,
 } from "./introductory-offer-validation";
 import { z } from "zod";
 import { IntroductoryOfferSchema } from "../models/app-store";
@@ -392,6 +394,103 @@ describe("Introductory Offer Validation", () => {
       ];
 
       expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+  });
+
+  describe("getIntroductoryOfferGroupingKey", () => {
+    it("should generate correct key for PAY_AS_YOU_GO offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "USA", price: "1.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const key = getIntroductoryOfferGroupingKey(offer);
+      expect(key).toBe("PAY_AS_YOU_GO_3");
+    });
+
+    it("should generate correct key for PAY_UP_FRONT offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "PAY_UP_FRONT",
+        duration: "ONE_MONTH",
+        prices: [{ territory: "USA", price: "4.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const key = getIntroductoryOfferGroupingKey(offer);
+      expect(key).toBe("PAY_UP_FRONT_ONE_MONTH");
+    });
+
+    it("should generate correct key for FREE_TRIAL offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "FREE_TRIAL",
+        duration: "THREE_DAYS",
+        availableTerritories: ["USA"],
+      };
+
+      const key = getIntroductoryOfferGroupingKey(offer);
+      expect(key).toBe("FREE_TRIAL_THREE_DAYS");
+    });
+
+    it("should generate different keys for different offers", () => {
+      const offer1: IntroductoryOffer = {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "USA", price: "1.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const offer2: IntroductoryOffer = {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 5,
+        prices: [{ territory: "USA", price: "2.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const key1 = getIntroductoryOfferGroupingKey(offer1);
+      const key2 = getIntroductoryOfferGroupingKey(offer2);
+
+      expect(key1).toBe("PAY_AS_YOU_GO_3");
+      expect(key2).toBe("PAY_AS_YOU_GO_5");
+      expect(key1).not.toBe(key2);
+    });
+  });
+
+  describe("getIntroductoryOfferGroupingDescription", () => {
+    it("should generate correct description for PAY_AS_YOU_GO offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "PAY_AS_YOU_GO",
+        numberOfPeriods: 3,
+        prices: [{ territory: "USA", price: "1.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const description = getIntroductoryOfferGroupingDescription(offer);
+      expect(description).toBe("type 'PAY_AS_YOU_GO' with numberOfPeriods '3'");
+    });
+
+    it("should generate correct description for PAY_UP_FRONT offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "PAY_UP_FRONT",
+        duration: "ONE_MONTH",
+        prices: [{ territory: "USA", price: "4.99" }],
+        availableTerritories: ["USA"],
+      };
+
+      const description = getIntroductoryOfferGroupingDescription(offer);
+      expect(description).toBe("type 'PAY_UP_FRONT' with duration 'ONE_MONTH'");
+    });
+
+    it("should generate correct description for FREE_TRIAL offer", () => {
+      const offer: IntroductoryOffer = {
+        type: "FREE_TRIAL",
+        duration: "THREE_DAYS",
+        availableTerritories: ["USA"],
+      };
+
+      const description = getIntroductoryOfferGroupingDescription(offer);
+      expect(description).toBe("type 'FREE_TRIAL' with duration 'THREE_DAYS'");
     });
   });
 });

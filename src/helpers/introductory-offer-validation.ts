@@ -16,6 +16,38 @@ type SubscriptionOfferDuration = z.infer<
 >;
 
 /**
+ * Generate a grouping key for an introductory offer based on its type and duration/numberOfPeriods
+ * @param offer - The introductory offer to generate a key for
+ * @returns A string key that uniquely identifies the offer's grouping criteria
+ */
+export function getIntroductoryOfferGroupingKey(
+  offer: IntroductoryOffer
+): string {
+  if (offer.type === "PAY_AS_YOU_GO") {
+    return `${offer.type}_${offer.numberOfPeriods}`;
+  } else {
+    // For PAY_UP_FRONT and FREE_TRIAL
+    return `${offer.type}_${offer.duration}`;
+  }
+}
+
+/**
+ * Get a human-readable description of the grouping criteria for an introductory offer
+ * @param offer - The introductory offer to describe
+ * @returns A string describing the grouping criteria
+ */
+export function getIntroductoryOfferGroupingDescription(
+  offer: IntroductoryOffer
+): string {
+  if (offer.type === "PAY_AS_YOU_GO") {
+    return `type '${offer.type}' with numberOfPeriods '${offer.numberOfPeriods}'`;
+  } else {
+    // For PAY_UP_FRONT and FREE_TRIAL
+    return `type '${offer.type}' with duration '${offer.duration}'`;
+  }
+}
+
+/**
  * Validate introductory offers grouping to ensure unique type+duration or type+numberOfPeriods combinations
  * @param introductoryOffers - Array of introductory offers to validate
  * @param productId - The product ID of the subscription for error messages
@@ -29,17 +61,8 @@ export function validateIntroductoryOffersGrouping(
 
   for (let i = 0; i < introductoryOffers.length; i++) {
     const offer = introductoryOffers[i];
-    let key: string;
-    let groupingType: string;
-
-    if (offer.type === "PAY_AS_YOU_GO") {
-      key = `${offer.type}_${offer.numberOfPeriods}`;
-      groupingType = `type '${offer.type}' with numberOfPeriods '${offer.numberOfPeriods}'`;
-    } else {
-      // For PAY_UP_FRONT and FREE_TRIAL
-      key = `${offer.type}_${offer.duration}`;
-      groupingType = `type '${offer.type}' with duration '${offer.duration}'`;
-    }
+    const key = getIntroductoryOfferGroupingKey(offer);
+    const groupingType = getIntroductoryOfferGroupingDescription(offer);
 
     if (groups.has(key)) {
       const existing = groups.get(key)!;

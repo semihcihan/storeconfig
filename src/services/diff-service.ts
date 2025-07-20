@@ -15,7 +15,11 @@ import { TerritoryCodeSchema } from "../models/territories";
 import { logger } from "../utils/logger";
 import { AnyAction, Plan } from "../models/diff-plan";
 import { isEqual } from "lodash";
-import { validateIntroductoryOffers } from "../helpers/introductory-offer-validation";
+import {
+  validateIntroductoryOffers,
+  getIntroductoryOfferGroupingKey,
+} from "../helpers/introductory-offer-validation";
+import { deepEqualUnordered } from "../helpers/validation-helpers";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
@@ -274,7 +278,7 @@ function diffInAppPurchases(
 
       if (
         desiredIap.availability &&
-        !isEqual(currentIap.availability, desiredIap.availability)
+        !deepEqualUnordered(currentIap.availability, desiredIap.availability)
       ) {
         actions.push({
           type: "UPDATE_IAP_AVAILABILITY",
@@ -405,24 +409,57 @@ function diffIntroductoryOffers(
     desiredOffers
   );
 
-  if (!isEqual(currentOffers, desiredOffers)) {
-    const deleteActions: AnyAction[] = currentOffers.map((o) => ({
-      type: "DELETE_INTRODUCTORY_OFFER",
-      payload: { subscriptionProductId, offer: o },
-    }));
-    const createActions: AnyAction[] = desiredOffers.map((o) => ({
-      type: "CREATE_INTRODUCTORY_OFFER",
-      payload: {
-        subscriptionProductId,
-        subscriptionPeriod: subscriptionPeriod as z.infer<
-          typeof SubscriptionOfferDurationSchema
-        >,
-        offer: o,
-      },
-    }));
-    return [...deleteActions, ...createActions];
+  const actions: AnyAction[] = [];
+
+  // Create maps for efficient lookup by grouping key
+  const currentOffersByKey = new Map<string, IntroductoryOffer>();
+  const desiredOffersByKey = new Map<string, IntroductoryOffer>();
+
+  // Index current offers by their grouping key
+  for (const offer of currentOffers) {
+    const key = getIntroductoryOfferGroupingKey(offer);
+    currentOffersByKey.set(key, offer);
   }
-  return [];
+
+  // Index desired offers by their grouping key
+  for (const offer of desiredOffers) {
+    const key = getIntroductoryOfferGroupingKey(offer);
+    desiredOffersByKey.set(key, offer);
+  }
+
+  // Find offers to delete (in current but not in desired, or changed)
+  for (const [key, currentOffer] of currentOffersByKey.entries()) {
+    const desiredOffer = desiredOffersByKey.get(key);
+
+    if (!desiredOffer || !deepEqualUnordered(currentOffer, desiredOffer)) {
+      // Offer doesn't exist in desired state or has changed - delete it
+      actions.push({
+        type: "DELETE_INTRODUCTORY_OFFER",
+        payload: { subscriptionProductId, offer: currentOffer },
+      });
+    }
+  }
+
+  // Find offers to create (in desired but not in current, or changed)
+  for (const [key, desiredOffer] of desiredOffersByKey.entries()) {
+    const currentOffer = currentOffersByKey.get(key);
+
+    if (!currentOffer || !deepEqualUnordered(currentOffer, desiredOffer)) {
+      // Offer doesn't exist in current state or has changed - create it
+      actions.push({
+        type: "CREATE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId,
+          subscriptionPeriod: subscriptionPeriod as z.infer<
+            typeof SubscriptionOfferDurationSchema
+          >,
+          offer: desiredOffer,
+        },
+      });
+    }
+  }
+
+  return actions;
 }
 
 function diffPromotionalOffers(
@@ -583,7 +620,7 @@ function diffSubscriptions(
       // Handle availability changes
       if (
         desiredSub.availability &&
-        !isEqual(currentSub.availability, desiredSub.availability)
+        !deepEqualUnordered(currentSub.availability, desiredSub.availability)
       ) {
         // Availability is being added or updated
         actions.push({
@@ -726,7 +763,7 @@ function diffAppAvailability(
 ): AnyAction[] {
   const actions: AnyAction[] = [];
   if (
-    !isEqual(
+    !deepEqualUnordered(
       currentState.availableTerritories,
       desiredState.availableTerritories
     )
