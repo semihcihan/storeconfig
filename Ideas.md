@@ -9,4 +9,20 @@
 - organize improve logging
 - No start date and end date support, will be overridden
 - make root level all optional of AppStoreModelSchema
-- for each available territory we must have a subs price defined
+- add new fields to support
+  - name
+  - desc
+  - subtitle
+  - keywords
+  - age rating
+  - copyright
+  - support url
+  - privacy url
+  - marketing url
+  - User Privacy Choices url
+  - promo text
+  - what's new in this version
+  - version?
+  - category
+  - content rights
+  - age rating
