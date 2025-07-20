@@ -222,25 +222,36 @@ describe("AppStore Models", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should pass validation even if prices for some territories are missing", () => {
+    it("should fail validation if prices for some territories are missing", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [
           { territory: "USA", price: "9.99" },
           { territory: "CAN", price: "12.99" },
+          // Missing price for GBR
         ],
       };
       const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(
+          "Subscription 'prod.monthly' is available in territory 'GBR' but has no price defined for this territory"
+        );
+      }
     });
 
-    it("should pass validation if the prices array is empty", () => {
+    it("should fail validation if the prices array is empty", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [],
       };
       const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(
+          "Subscription 'prod.monthly' is available in territory 'USA' but has no price defined for this territory"
+        );
+      }
     });
   });
 

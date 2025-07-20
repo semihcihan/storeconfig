@@ -9,4 +9,4 @@
 - organize improve logging
 - No start date and end date support, will be overridden
 - make root level all optional of AppStoreModelSchema
-- we can end up having no prices for all the available territories for an intro offer; same for subscription itself
+- for each available territory we must have a subs price defined

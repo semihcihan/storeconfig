@@ -1,8 +1,341 @@
-import { validateSubscription } from "./subscription-validation";
+import {
+  validateSubscription,
+  validateSubscriptionTerritoryPricing,
+} from "./subscription-validation";
 import { z } from "zod";
 import { describe, it, expect } from "@jest/globals";
 
 describe("Subscription Validation", () => {
+  describe("validateSubscriptionTerritoryPricing", () => {
+    it("should pass validation when subscription has prices for all available territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA", "CAN"],
+        },
+        prices: [
+          { price: "4.99", territory: "USA" },
+          { price: "5.99", territory: "CAN" },
+        ],
+        introductoryOffers: [],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should fail validation when subscription is missing prices for available territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA", "CAN", "GBR"],
+        },
+        prices: [
+          { price: "4.99", territory: "USA" },
+          { price: "5.99", territory: "CAN" },
+        ],
+        introductoryOffers: [],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Subscription 'test_product' is available in territory 'GBR' but has no price defined for this territory",
+        path: ["prices"],
+      });
+    });
+
+    it("should pass validation for FREE_TRIAL offers (which don't need prices)", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["USA", "CAN"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should pass validation for PAY_AS_YOU_GO offers with prices for all territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 1,
+            prices: [
+              { price: "0.99", territory: "USA" },
+              { price: "1.99", territory: "CAN" },
+            ],
+            availableTerritories: ["USA", "CAN"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should fail validation for PAY_AS_YOU_GO offers missing prices for territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA", "CAN"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'test_product' is available in territory 'CAN' but has no price defined for this territory",
+        path: ["introductoryOffers"],
+      });
+    });
+
+    it("should pass validation for PAY_UP_FRONT offers with prices for all territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_UP_FRONT",
+            duration: "ONE_MONTH",
+            prices: [
+              { price: "9.99", territory: "USA" },
+              { price: "12.99", territory: "CAN" },
+            ],
+            availableTerritories: ["USA", "CAN"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should fail validation for PAY_UP_FRONT offers missing prices for territories", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_UP_FRONT",
+            duration: "ONE_MONTH",
+            prices: [{ price: "9.99", territory: "USA" }],
+            availableTerritories: ["USA", "CAN"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Introductory offer of type 'PAY_UP_FRONT' for subscription 'test_product' is available in territory 'CAN' but has no price defined for this territory",
+        path: ["introductoryOffers"],
+      });
+    });
+
+    it("should handle multiple introductory offers correctly", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["USA", "CAN"],
+          },
+          {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should handle missing availability gracefully", () => {
+      const subscription = {
+        productId: "test_product",
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should handle missing prices gracefully", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [],
+        introductoryOffers: [],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Subscription 'test_product' is available in territory 'USA' but has no price defined for this territory",
+        path: ["prices"],
+      });
+    });
+
+    it("should handle missing introductory offers gracefully", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: undefined,
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should handle missing prices in introductory offers gracefully", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 1,
+            prices: undefined,
+            availableTerritories: ["USA"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'test_product' is available in territory 'USA' but has no price defined for this territory",
+        path: ["introductoryOffers"],
+      });
+    });
+
+    it("should handle missing availableTerritories in introductory offers gracefully", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO",
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: undefined,
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+  });
+
   describe("validateSubscription", () => {
     it("should pass validation for subscription without introductory offers", () => {
       const subscription = {

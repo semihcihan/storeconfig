@@ -1825,6 +1825,11 @@ describe("diff-service", () => {
             subscriptions: [
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                prices: [
+                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices,
+                  { territory: "CAN", price: "12.99" },
+                ],
                 availability: {
                   availableInNewTerritories: false,
                   availableTerritories: ["USA", "CAN"],
@@ -1836,8 +1841,18 @@ describe("diff-service", () => {
       };
 
       const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
+      expect(plan).toHaveLength(2); // Should create both price and availability actions
+      expect(plan).toContainEqual({
+        type: "CREATE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId: "sub1",
+          changes: {
+            addedPrices: [{ territory: "CAN", price: "12.99" }],
+            updatedPrices: [],
+          },
+        },
+      });
+      expect(plan).toContainEqual({
         type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
         payload: {
           subscriptionProductId: "sub1",
@@ -2874,7 +2889,7 @@ describe("diff-service", () => {
           ],
           availability: {
             availableInNewTerritories: true,
-            availableTerritories: ["USA"],
+            availableTerritories: [], // No territories since no prices
           },
         };
 
@@ -3454,7 +3469,10 @@ describe("diff-service", () => {
           groupLevel: 2,
           subscriptionPeriod: "ONE_YEAR",
           familySharable: true,
-          prices: [{ territory: "USA", price: "49.99" }],
+          prices: [
+            { territory: "USA", price: "49.99" },
+            { territory: "CAN", price: "59.99" },
+          ],
           localizations: [
             {
               locale: "en-US",
@@ -3771,7 +3789,7 @@ describe("diff-service", () => {
         ],
         availability: {
           availableInNewTerritories: true,
-          availableTerritories: ["USA"],
+          availableTerritories: [], // No territories since no prices
         },
       };
 
@@ -4501,5 +4519,263 @@ describe("Introductory offer duration validation", () => {
     const plan = diff(currentState, desiredState);
     expect(plan.length).toBeGreaterThan(0);
     // Should not throw an error
+  });
+
+  describe("Territory pricing validation", () => {
+    it("should throw error when subscription is missing prices for available territories", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredStateData = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA", "CAN", "GBR"],
+                },
+                prices: [
+                  { territory: "USA", price: "9.99" },
+                  { territory: "CAN", price: "12.99" },
+                  // Missing price for GBR
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        const desiredState = AppStoreModelSchema.parse(desiredStateData);
+        diff(currentState, desiredState);
+      }).toThrow(
+        "Subscription 'sub1' is available in territory 'GBR' but has no price defined for this territory"
+      );
+    });
+
+    it("should throw error when PAY_AS_YOU_GO offer is missing prices for available territories", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredStateData = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 1,
+                    prices: [{ territory: "USA", price: "0.99" }],
+                    availableTerritories: ["USA", "CAN"], // Missing price for CAN
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        const desiredState = AppStoreModelSchema.parse(desiredStateData);
+        diff(currentState, desiredState);
+      }).toThrow(
+        "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'sub1' is available in territory 'CAN' but has no price defined for this territory"
+      );
+    });
+
+    it("should throw error when PAY_UP_FRONT offer is missing prices for available territories", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredStateData = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "PAY_UP_FRONT",
+                    duration: "ONE_MONTH",
+                    prices: [{ territory: "USA", price: "9.99" }],
+                    availableTerritories: ["USA", "GBR"], // Missing price for GBR
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        const desiredState = AppStoreModelSchema.parse(desiredStateData);
+        diff(currentState, desiredState);
+      }).toThrow(
+        "Introductory offer of type 'PAY_UP_FRONT' for subscription 'sub1' is available in territory 'GBR' but has no price defined for this territory"
+      );
+    });
+
+    it("should not throw error for FREE_TRIAL offers (which don't need prices)", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                    availableTerritories: ["USA", "CAN", "GBR"], // No prices needed for FREE_TRIAL
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan.length).toBeGreaterThan(0);
+      // Should not throw an error
+    });
+
+    it("should pass validation when all territories have proper pricing", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA", "CAN"],
+                },
+                prices: [
+                  { territory: "USA", price: "9.99" },
+                  { territory: "CAN", price: "12.99" },
+                ],
+                introductoryOffers: [
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 1,
+                    prices: [
+                      { territory: "USA", price: "0.99" },
+                      { territory: "CAN", price: "1.99" },
+                    ],
+                    availableTerritories: ["USA", "CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan.length).toBeGreaterThan(0);
+      // Should not throw an error
+    });
+
+    it("should handle multiple introductory offers with different types correctly", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA", "CAN"],
+                },
+                prices: [
+                  { territory: "USA", price: "9.99" },
+                  { territory: "CAN", price: "12.99" },
+                ],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                    availableTerritories: ["USA"], // Different territory to avoid conflict
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 1,
+                    prices: [{ territory: "CAN", price: "1.99" }],
+                    availableTerritories: ["CAN"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan.length).toBeGreaterThan(0);
+      // Should not throw an error
+    });
+
+    it("should validate new subscriptions during creation", () => {
+      const currentState = EMPTY_STATE;
+      const desiredStateData = {
+        ...EMPTY_STATE,
+        subscriptionGroups: [
+          {
+            referenceName: "group1",
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Group 1",
+                customName: "Custom Group 1",
+              },
+            ],
+            subscriptions: [
+              {
+                productId: "new_sub",
+                referenceName: "New Subscription",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA", "CAN"],
+                },
+                prices: [{ territory: "USA", price: "9.99" }], // Missing CAN
+                localizations: [
+                  {
+                    locale: "en-US",
+                    name: "New Subscription",
+                    description: "A new subscription",
+                  },
+                ],
+                introductoryOffers: [],
+                promotionalOffers: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        const desiredState = AppStoreModelSchema.parse(desiredStateData);
+        diff(currentState, desiredState);
+      }).toThrow(
+        "Subscription 'new_sub' is available in territory 'CAN' but has no price defined for this territory"
+      );
+    });
   });
 });
