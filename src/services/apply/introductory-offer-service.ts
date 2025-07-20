@@ -1,5 +1,8 @@
 import { logger } from "../../utils/logger";
-import { IntroductoryOfferSchema } from "../../models/app-store";
+import {
+  IntroductoryOfferSchema,
+  SubscriptionOfferDurationSchema,
+} from "../../models/app-store";
 import { z } from "zod";
 import {
   createSubscriptionIntroductoryOffer,
@@ -24,6 +27,7 @@ type SubscriptionIntroductoryOffersResponse =
 // Create introductory offer for a subscription
 export async function createIntroductoryOffer(
   subscriptionProductId: string,
+  subscriptionPeriod: z.infer<typeof SubscriptionOfferDurationSchema>,
   offer: IntroductoryOffer,
   newlyCreatedSubscriptions?: Map<string, string>,
   currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
@@ -52,7 +56,7 @@ export async function createIntroductoryOffer(
             endDate: undefined, // No end date
             offerMode: offer.type,
             duration: offer.duration,
-            numberOfPeriods: 1,
+            numberOfPeriods: 1, // FREE_TRIAL always has numberOfPeriods = 1
           },
           relationships: {
             subscription: {
@@ -95,8 +99,8 @@ export async function createIntroductoryOffer(
             startDate: undefined, // Immediate start
             endDate: undefined, // No end date
             offerMode: offer.type,
-            duration: "ONE_MONTH", // Required field but not used for PAY_AS_YOU_GO
-            numberOfPeriods: offer.numberOfPeriods,
+            duration: subscriptionPeriod, // Duration matches subscription period for PAY_AS_YOU_GO
+            numberOfPeriods: offer.numberOfPeriods, // Variable and inputted
           },
           relationships: {
             subscription: {
@@ -145,8 +149,8 @@ export async function createIntroductoryOffer(
             startDate: undefined, // Immediate start
             endDate: undefined, // No end date
             offerMode: offer.type,
-            duration: offer.duration,
-            numberOfPeriods: 1, // Required field but not used for PAY_UP_FRONT
+            duration: offer.duration, // Variable and inputted
+            numberOfPeriods: 1, // PAY_UP_FRONT always has numberOfPeriods = 1
           },
           relationships: {
             subscription: {

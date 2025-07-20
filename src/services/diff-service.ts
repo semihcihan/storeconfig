@@ -2,10 +2,10 @@ import { z } from "zod";
 import {
   AppStoreModelSchema,
   InAppPurchaseSchema,
-  PriceScheduleSchema,
   SubscriptionGroupLocalizationSchema,
   SubscriptionGroupSchema,
   SubscriptionSchema,
+  SubscriptionOfferDurationSchema,
   PriceSchema,
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
@@ -412,7 +412,13 @@ function diffIntroductoryOffers(
     }));
     const createActions: AnyAction[] = desiredOffers.map((o) => ({
       type: "CREATE_INTRODUCTORY_OFFER",
-      payload: { subscriptionProductId, offer: o },
+      payload: {
+        subscriptionProductId,
+        subscriptionPeriod: subscriptionPeriod as z.infer<
+          typeof SubscriptionOfferDurationSchema
+        >,
+        offer: o,
+      },
     }));
     return [...deleteActions, ...createActions];
   }

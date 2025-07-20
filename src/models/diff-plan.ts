@@ -10,6 +10,7 @@ import {
   LocalizationSchema,
   AvailabilitySchema,
   SubscriptionPeriodSchema,
+  SubscriptionOfferDurationSchema,
   PriceScheduleSchema,
 } from "./app-store";
 import { LocaleCodeSchema } from "./locales";
@@ -268,6 +269,7 @@ export type CreateIntroductoryOfferAction = Action<
   "CREATE_INTRODUCTORY_OFFER",
   {
     subscriptionProductId: string;
+    subscriptionPeriod: z.infer<typeof SubscriptionOfferDurationSchema>;
     offer: z.infer<typeof IntroductoryOfferSchema>;
   }
 >;

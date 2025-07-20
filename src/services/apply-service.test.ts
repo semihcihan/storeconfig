@@ -1022,6 +1022,7 @@ describe("Subscription Group Actions", () => {
       type: "CREATE_INTRODUCTORY_OFFER",
       payload: {
         subscriptionProductId: "test-subscription",
+        subscriptionPeriod: "ONE_MONTH",
         offer: {
           type: "FREE_TRIAL",
           duration: "ONE_MONTH",
@@ -1035,6 +1036,7 @@ describe("Subscription Group Actions", () => {
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
     expect(mockCreateIntroductoryOffer).toHaveBeenCalledWith(
       "test-subscription",
+      "ONE_MONTH", // subscription period
       {
         type: "FREE_TRIAL",
         duration: "ONE_MONTH",

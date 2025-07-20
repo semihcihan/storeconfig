@@ -1030,6 +1030,7 @@ describe("diff-service", () => {
             type: "CREATE_INTRODUCTORY_OFFER",
             payload: {
               subscriptionProductId: "sub2",
+              subscriptionPeriod: "ONE_MONTH",
               offer: newSubscription.introductoryOffers![0],
             },
           },
@@ -1246,6 +1247,7 @@ describe("diff-service", () => {
             type: "CREATE_INTRODUCTORY_OFFER",
             payload: {
               subscriptionProductId: "sub1",
+              subscriptionPeriod: "ONE_MONTH",
               offer: newOffer,
             },
           },
@@ -3069,6 +3071,7 @@ describe("diff-service", () => {
         type: "CREATE_INTRODUCTORY_OFFER",
         payload: {
           subscriptionProductId: "sub1",
+          subscriptionPeriod: "ONE_MONTH",
           offer:
             MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
               .introductoryOffers![0],

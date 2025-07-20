@@ -276,6 +276,7 @@ async function executeAction(
     case "CREATE_INTRODUCTORY_OFFER":
       await createIntroductoryOffer(
         action.payload.subscriptionProductId,
+        action.payload.subscriptionPeriod,
         action.payload.offer,
         newlyCreatedSubscriptions,
         currentSubscriptionGroupsResponse
