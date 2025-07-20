@@ -3837,3 +3837,154 @@ describe("Subscription and IAP validation constraints", () => {
     });
   });
 });
+
+describe("Introductory offer duration validation", () => {
+  it("should throw an error for invalid PAY_UP_FRONT duration", () => {
+    const currentState = MOCK_STATE_1;
+    const desiredState: AppStoreModel = {
+      ...MOCK_STATE_1,
+      subscriptionGroups: [
+        {
+          ...MOCK_STATE_1.subscriptionGroups![0],
+          subscriptions: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              subscriptionPeriod: "ONE_MONTH", // Keep same period
+              introductoryOffers: [
+                {
+                  type: "PAY_UP_FRONT",
+                  duration: "THREE_DAYS", // Invalid for ONE_MONTH PAY_UP_FRONT (not in valid list)
+                  prices: [{ territory: "USA", price: "4.99" }],
+                  availableTerritories: ["USA"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => diff(currentState, desiredState)).toThrow(
+      /Invalid duration 'THREE_DAYS' for PAY_UP_FRONT offer in subscription 'sub1' with period 'ONE_MONTH'/
+    );
+  });
+
+  it("should allow valid FREE_TRIAL duration", () => {
+    const currentState = MOCK_STATE_1;
+    const desiredState: AppStoreModel = {
+      ...MOCK_STATE_1,
+      subscriptionGroups: [
+        {
+          ...MOCK_STATE_1.subscriptionGroups![0],
+          subscriptions: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              subscriptionPeriod: "ONE_MONTH",
+              introductoryOffers: [
+                {
+                  type: "FREE_TRIAL",
+                  duration: "ONE_YEAR", // Valid for ONE_MONTH subscription (changed from ONE_WEEK)
+                  availableTerritories: ["USA"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const plan = diff(currentState, desiredState);
+    expect(plan.length).toBeGreaterThan(0);
+    // Should not throw an error
+  });
+
+  it("should throw an error for invalid PAY_AS_YOU_GO numberOfPeriods", () => {
+    const currentState = MOCK_STATE_1;
+    const desiredState: AppStoreModel = {
+      ...MOCK_STATE_1,
+      subscriptionGroups: [
+        {
+          ...MOCK_STATE_1.subscriptionGroups![0],
+          subscriptions: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              subscriptionPeriod: "ONE_MONTH", // Keep same period
+              introductoryOffers: [
+                {
+                  type: "PAY_AS_YOU_GO",
+                  numberOfPeriods: 13, // Invalid for ONE_MONTH subscription (only 1-12 are valid)
+                  prices: [{ territory: "USA", price: "4.99" }],
+                  availableTerritories: ["USA"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => diff(currentState, desiredState)).toThrow(
+      /Invalid numberOfPeriods '13' for PAY_AS_YOU_GO offer in subscription 'sub1' with period 'ONE_MONTH'/
+    );
+  });
+
+  it("should allow valid PAY_UP_FRONT duration", () => {
+    const currentState = MOCK_STATE_1;
+    const desiredState: AppStoreModel = {
+      ...MOCK_STATE_1,
+      subscriptionGroups: [
+        {
+          ...MOCK_STATE_1.subscriptionGroups![0],
+          subscriptions: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              subscriptionPeriod: "ONE_MONTH",
+              introductoryOffers: [
+                {
+                  type: "PAY_UP_FRONT",
+                  duration: "ONE_MONTH", // Valid for ONE_MONTH subscription
+                  prices: [{ territory: "USA", price: "4.99" }],
+                  availableTerritories: ["USA"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const plan = diff(currentState, desiredState);
+    expect(plan.length).toBeGreaterThan(0);
+    // Should not throw an error
+  });
+
+  it("should allow valid PAY_AS_YOU_GO numberOfPeriods", () => {
+    const currentState = MOCK_STATE_1;
+    const desiredState: AppStoreModel = {
+      ...MOCK_STATE_1,
+      subscriptionGroups: [
+        {
+          ...MOCK_STATE_1.subscriptionGroups![0],
+          subscriptions: [
+            {
+              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+              subscriptionPeriod: "ONE_MONTH",
+              introductoryOffers: [
+                {
+                  type: "PAY_AS_YOU_GO",
+                  numberOfPeriods: 6, // Valid for ONE_MONTH subscription
+                  prices: [{ territory: "USA", price: "4.99" }],
+                  availableTerritories: ["USA"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const plan = diff(currentState, desiredState);
+    expect(plan.length).toBeGreaterThan(0);
+    // Should not throw an error
+  });
+});

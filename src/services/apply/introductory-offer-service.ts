@@ -52,7 +52,7 @@ export async function createIntroductoryOffer(
             endDate: undefined, // No end date
             offerMode: offer.type,
             duration: offer.duration,
-            numberOfPeriods: 0, // Required field but not used for FREE_TRIAL
+            numberOfPeriods: 1,
           },
           relationships: {
             subscription: {
@@ -146,7 +146,7 @@ export async function createIntroductoryOffer(
             endDate: undefined, // No end date
             offerMode: offer.type,
             duration: offer.duration,
-            numberOfPeriods: 0, // Required field but not used for PAY_UP_FRONT
+            numberOfPeriods: 1, // Required field but not used for PAY_UP_FRONT
           },
           relationships: {
             subscription: {

@@ -15,6 +15,7 @@ import { TerritoryCodeSchema } from "../models/territories";
 import { logger } from "../utils/logger";
 import { AnyAction, Plan } from "../models/diff-plan";
 import { isEqual } from "lodash";
+import { validateIntroductoryOffers } from "../helpers/introductory-offer-validation";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
@@ -391,45 +392,18 @@ function diffSubscriptionPrices(
   return [];
 }
 
-function validateIntroductoryOffers(
-  subscriptionProductId: string,
-  offers: IntroductoryOffer[]
-): void {
-  const territoryOffers = new Map<string, IntroductoryOffer>();
-
-  for (const offer of offers) {
-    if (offer.type === "FREE_TRIAL") {
-      for (const territory of offer.availableTerritories) {
-        if (territoryOffers.has(territory)) {
-          throw new Error(
-            `Multiple introductory offers found for territory '${territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
-          );
-        }
-        territoryOffers.set(territory, offer);
-      }
-    } else if (
-      offer.type === "PAY_AS_YOU_GO" ||
-      offer.type === "PAY_UP_FRONT"
-    ) {
-      for (const price of offer.prices) {
-        if (territoryOffers.has(price.territory)) {
-          throw new Error(
-            `Multiple introductory offers found for territory '${price.territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
-          );
-        }
-        territoryOffers.set(price.territory, offer);
-      }
-    }
-  }
-}
-
 function diffIntroductoryOffers(
   subscriptionProductId: string,
+  subscriptionPeriod: string,
   currentOffers: IntroductoryOffer[],
   desiredOffers: IntroductoryOffer[]
 ): AnyAction[] {
-  // Validate that there's only one offer per territory per subscription
-  validateIntroductoryOffers(subscriptionProductId, desiredOffers);
+  // Validate that there's only one offer per territory per subscription and duration restrictions
+  validateIntroductoryOffers(
+    subscriptionProductId,
+    subscriptionPeriod,
+    desiredOffers
+  );
 
   if (!isEqual(currentOffers, desiredOffers)) {
     const deleteActions: AnyAction[] = currentOffers.map((o) => ({
@@ -523,6 +497,7 @@ function diffSubscriptions(
       actions.push(
         ...diffIntroductoryOffers(
           productId,
+          desiredSub.subscriptionPeriod,
           [],
           desiredSub.introductoryOffers || []
         )
@@ -586,6 +561,7 @@ function diffSubscriptions(
       actions.push(
         ...diffIntroductoryOffers(
           productId,
+          currentSub.subscriptionPeriod,
           currentSub.introductoryOffers || [],
           desiredSub.introductoryOffers || []
         )
