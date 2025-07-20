@@ -1,13 +1,8 @@
 import { z } from "zod";
 import { TerritoryCodeSchema, territoryCodes } from "./territories";
 import { LocaleCodeSchema } from "./locales";
-
-// Helper function to validate product ID format
-export const isValidProductId = (productId: string): boolean => {
-  // Product ID can only contain alphanumeric characters, underscores, and periods
-  const productIdRegex = /^[a-zA-Z0-9._]+$/;
-  return productIdRegex.test(productId);
-};
+import { isValidProductId } from "../helpers/validation-helpers";
+import { validateSubscription } from "../helpers/subscription-validation";
 
 export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_DAYS",
@@ -122,22 +117,24 @@ export const SubscriptionPeriodSchema = z.enum([
   "ONE_YEAR",
 ]);
 
-export const SubscriptionSchema = z.object({
-  productId: z.string().refine(isValidProductId, {
-    message:
-      "Product ID can only contain alphanumeric characters, underscores, and periods",
-  }),
-  referenceName: z.string(),
-  groupLevel: z.number(),
-  subscriptionPeriod: SubscriptionPeriodSchema,
-  familySharable: z.boolean(),
-  prices: z.array(PriceSchema),
-  localizations: z.array(LocalizationSchema),
-  introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
-  promotionalOffers: z.array(PromotionalOfferSchema).optional(),
-  reviewNote: z.string().optional(),
-  availability: AvailabilitySchema,
-});
+export const SubscriptionSchema = z
+  .object({
+    productId: z.string().refine(isValidProductId, {
+      message:
+        "Product ID can only contain alphanumeric characters, underscores, and periods",
+    }),
+    referenceName: z.string(),
+    groupLevel: z.number(),
+    subscriptionPeriod: SubscriptionPeriodSchema,
+    familySharable: z.boolean(),
+    prices: z.array(PriceSchema),
+    localizations: z.array(LocalizationSchema),
+    introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
+    promotionalOffers: z.array(PromotionalOfferSchema).optional(),
+    reviewNote: z.string().optional(),
+    availability: AvailabilitySchema,
+  })
+  .superRefine(validateSubscription);
 
 export const SubscriptionGroupSchema = z.object({
   referenceName: z.string(),

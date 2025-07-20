@@ -21,8 +21,6 @@ type SubscriptionGroupsResponse =
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 type SubscriptionIntroductoryOfferCreateRequest =
   components["schemas"]["SubscriptionIntroductoryOfferCreateRequest"];
-type SubscriptionIntroductoryOffersResponse =
-  components["schemas"]["SubscriptionIntroductoryOffersResponse"];
 
 // Create introductory offer for a subscription
 export async function createIntroductoryOffer(

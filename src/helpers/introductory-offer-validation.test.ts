@@ -1,4 +1,7 @@
-import { validateIntroductoryOffers } from "./introductory-offer-validation";
+import {
+  validateIntroductoryOffers,
+  validateIntroductoryOffersGrouping,
+} from "./introductory-offer-validation";
 import { z } from "zod";
 import { IntroductoryOfferSchema } from "../models/app-store";
 
@@ -200,6 +203,195 @@ describe("Introductory Offer Validation", () => {
       expect(() => {
         validateIntroductoryOffers("sub1", "ONE_YEAR", offers);
       }).toThrow(/period 'ONE_YEAR'/);
+    });
+  });
+
+  describe("validateIntroductoryOffersGrouping", () => {
+    it("should return true for valid offers with unique groupings", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 1,
+          prices: [{ territory: "USA", price: "0.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [{ territory: "GBR", price: "2.99" }],
+          availableTerritories: ["GBR"],
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["CAN"],
+        },
+      ];
+
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+
+    it("should return false for duplicate PAY_AS_YOU_GO with same numberOfPeriods", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 1,
+          prices: [{ territory: "USA", price: "0.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 1,
+          prices: [{ territory: "GBR", price: "1.99" }],
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      const result = validateIntroductoryOffersGrouping(offers, "test_product");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(
+        "type 'PAY_AS_YOU_GO' with numberOfPeriods '1'"
+      );
+      expect(result.error).toContain("in subscription 'test_product'");
+      expect(result.error).toContain("Items at indices 0 and 1");
+    });
+
+    it("should return false for duplicate PAY_UP_FRONT with same duration", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [{ territory: "USA", price: "2.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [{ territory: "GBR", price: "3.99" }],
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      const result = validateIntroductoryOffersGrouping(offers, "test_product");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(
+        "type 'PAY_UP_FRONT' with duration 'ONE_MONTH'"
+      );
+      expect(result.error).toContain("in subscription 'test_product'");
+      expect(result.error).toContain("Items at indices 0 and 1");
+    });
+
+    it("should return false for duplicate FREE_TRIAL with same duration", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      const result = validateIntroductoryOffersGrouping(offers, "test_product");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(
+        "type 'FREE_TRIAL' with duration 'ONE_WEEK'"
+      );
+      expect(result.error).toContain("in subscription 'test_product'");
+      expect(result.error).toContain("Items at indices 0 and 1");
+    });
+
+    it("should return true for different PAY_AS_YOU_GO with different numberOfPeriods", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 1,
+          prices: [{ territory: "USA", price: "0.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 2,
+          prices: [{ territory: "GBR", price: "1.99" }],
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+
+    it("should return true for different PAY_UP_FRONT with different durations", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [{ territory: "USA", price: "2.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT",
+          duration: "THREE_MONTHS",
+          prices: [{ territory: "GBR", price: "7.99" }],
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+
+    it("should return true for different FREE_TRIAL with different durations", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "TWO_WEEKS",
+          availableTerritories: ["GBR"],
+        },
+      ];
+
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+
+    it("should return true for empty array", () => {
+      const offers: IntroductoryOffer[] = [];
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
+    });
+
+    it("should return true for mixed types with unique groupings", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 1,
+          prices: [{ territory: "USA", price: "0.99" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO",
+          numberOfPeriods: 2,
+          prices: [{ territory: "GBR", price: "1.99" }],
+          availableTerritories: ["GBR"],
+        },
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [{ territory: "CAN", price: "2.99" }],
+          availableTerritories: ["CAN"],
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["AUS"],
+        },
+      ];
+
+      expect(validateIntroductoryOffersGrouping(offers).success).toBe(true);
     });
   });
 });

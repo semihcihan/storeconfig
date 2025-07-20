@@ -16,6 +16,55 @@ type SubscriptionOfferDuration = z.infer<
 >;
 
 /**
+ * Validate introductory offers grouping to ensure unique type+duration or type+numberOfPeriods combinations
+ * @param introductoryOffers - Array of introductory offers to validate
+ * @param productId - The product ID of the subscription for error messages
+ * @returns Object with success status and error details if validation fails
+ */
+export function validateIntroductoryOffersGrouping(
+  introductoryOffers: IntroductoryOffer[],
+  productId?: string
+): { success: boolean; error?: string } {
+  const groups = new Map<string, { count: number; indices: number[] }>();
+
+  for (let i = 0; i < introductoryOffers.length; i++) {
+    const offer = introductoryOffers[i];
+    let key: string;
+    let groupingType: string;
+
+    if (offer.type === "PAY_AS_YOU_GO") {
+      key = `${offer.type}_${offer.numberOfPeriods}`;
+      groupingType = `type '${offer.type}' with numberOfPeriods '${offer.numberOfPeriods}'`;
+    } else {
+      // For PAY_UP_FRONT and FREE_TRIAL
+      key = `${offer.type}_${offer.duration}`;
+      groupingType = `type '${offer.type}' with duration '${offer.duration}'`;
+    }
+
+    if (groups.has(key)) {
+      const existing = groups.get(key)!;
+      existing.count++;
+      existing.indices.push(i);
+
+      const duplicateIndices = existing.indices;
+      const firstIndex = duplicateIndices[0];
+      const secondIndex = duplicateIndices[1];
+
+      const productIdText = productId ? ` in subscription '${productId}'` : "";
+
+      return {
+        success: false,
+        error: `Duplicate introductory offers found with ${groupingType}${productIdText}. Items at indices ${firstIndex} and ${secondIndex} have the same grouping criteria.`,
+      };
+    } else {
+      groups.set(key, { count: 1, indices: [i] });
+    }
+  }
+
+  return { success: true };
+}
+
+/**
  * Validate introductory offers for a subscription
  * @param subscriptionProductId - The subscription product ID for error messages
  * @param subscriptionPeriod - The subscription period to validate against

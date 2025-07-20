@@ -2,9 +2,9 @@ import {
   PriceScheduleSchema,
   SubscriptionSchema,
   InAppPurchaseSchema,
-  isValidProductId,
 } from "./app-store";
-import { territoryCodes } from "./territories";
+import { isValidProductId } from "../helpers/validation-helpers";
+import { describe, it, expect } from "@jest/globals";
 
 jest.mock("./territories", () => ({
   ...jest.requireActual("./territories"),
@@ -303,5 +303,281 @@ describe("AppStore Models", () => {
         );
       }
     });
+  });
+});
+
+describe("Introductory Offers Grouping Validation", () => {
+  const baseSubscription = {
+    productId: "test_product",
+    referenceName: "Test Subscription",
+    groupLevel: 1,
+    subscriptionPeriod: "ONE_MONTH" as const,
+    familySharable: false,
+    prices: [{ price: "4.99", territory: "USA" }],
+    localizations: [
+      { locale: "en-US", name: "Test", description: "Test description" },
+    ],
+    availability: {
+      availableInNewTerritories: true,
+      availableTerritories: ["USA"],
+    },
+  };
+
+  it("should allow valid introductory offers with unique groupings", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 1,
+          prices: [{ price: "0.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "ONE_MONTH" as const,
+          prices: [{ price: "2.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "ONE_WEEK" as const,
+          availableTerritories: ["USA"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject duplicate PAY_AS_YOU_GO with same numberOfPeriods", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 1,
+          prices: [{ price: "0.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 1,
+          prices: [{ price: "1.99", territory: "GBR" }],
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "Duplicate introductory offers found"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "type 'PAY_AS_YOU_GO' with numberOfPeriods '1'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "in subscription 'test_product'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "Items at indices 0 and 1"
+      );
+    }
+  });
+
+  it("should reject duplicate PAY_UP_FRONT with same duration", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "ONE_MONTH" as const,
+          prices: [{ price: "2.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "ONE_MONTH" as const,
+          prices: [{ price: "3.99", territory: "GBR" }],
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "Duplicate introductory offers found"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "type 'PAY_UP_FRONT' with duration 'ONE_MONTH'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "in subscription 'test_product'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "Items at indices 0 and 1"
+      );
+    }
+  });
+
+  it("should reject duplicate FREE_TRIAL with same duration", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "ONE_WEEK" as const,
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "ONE_WEEK" as const,
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "Duplicate introductory offers found"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "type 'FREE_TRIAL' with duration 'ONE_WEEK'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "in subscription 'test_product'"
+      );
+      expect(result.error.issues[0].message).toContain(
+        "Items at indices 0 and 1"
+      );
+    }
+  });
+
+  it("should allow different PAY_AS_YOU_GO with different numberOfPeriods", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 1,
+          prices: [{ price: "0.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 2,
+          prices: [{ price: "1.99", territory: "GBR" }],
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow different PAY_UP_FRONT with different durations", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "ONE_MONTH" as const,
+          prices: [{ price: "2.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "THREE_MONTHS" as const,
+          prices: [{ price: "7.99", territory: "GBR" }],
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow different FREE_TRIAL with different durations", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "ONE_WEEK" as const,
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "TWO_WEEKS" as const,
+          availableTerritories: ["GBR"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow empty introductory offers array", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow undefined introductory offers", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: undefined,
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
+  });
+
+  it("should allow mixed types with unique groupings", () => {
+    const subscription = {
+      ...baseSubscription,
+      introductoryOffers: [
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 1,
+          prices: [{ price: "0.99", territory: "USA" }],
+          availableTerritories: ["USA"],
+        },
+        {
+          type: "PAY_AS_YOU_GO" as const,
+          numberOfPeriods: 2,
+          prices: [{ price: "1.99", territory: "GBR" }],
+          availableTerritories: ["GBR"],
+        },
+        {
+          type: "PAY_UP_FRONT" as const,
+          duration: "ONE_MONTH" as const,
+          prices: [{ price: "2.99", territory: "CAN" }],
+          availableTerritories: ["CAN"],
+        },
+        {
+          type: "FREE_TRIAL" as const,
+          duration: "ONE_WEEK" as const,
+          availableTerritories: ["AUS"],
+        },
+      ],
+    };
+
+    const result = SubscriptionSchema.safeParse(subscription);
+    expect(result.success).toBe(true);
   });
 });
