@@ -29,7 +29,6 @@ export const AppInfoLocalizationSchema = z.object({
   subtitle: z.string().optional(),
   privacyPolicyUrl: z.string().url().optional(),
   privacyChoicesUrl: z.string().url().optional(),
-  privacyPolicyText: z.string().optional(),
 });
 ```
 
@@ -247,7 +246,7 @@ Use Apple's exact field names:
 All requested fields are supported:
 
 - ✅ App store version localizations: description, keywords, marketingUrl, promotionalText, supportUrl, whatsNew
-- ✅ App info localizations: name, subtitle, privacyPolicyUrl, privacyChoicesUrl, privacyPolicyText
+- ✅ App info localizations: name, subtitle, privacyPolicyUrl, privacyChoicesUrl
 - ✅ App info relationships: primaryCategory, secondaryCategory, subcategories
 - ✅ App update: contentRightsDeclaration
 - ✅ App store version: versionString, copyright
