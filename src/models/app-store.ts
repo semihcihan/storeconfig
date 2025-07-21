@@ -56,18 +56,6 @@ export const AppStoreLocalizationSchema = z.object({
   whatsNew: z.string().optional(),
 });
 
-export const AppInfoMetadataSchema = z.object({
-  primaryCategory: z.string().optional(),
-  secondaryCategory: z.string().optional(),
-  primarySubcategoryOne: z.string().optional(),
-  primarySubcategoryTwo: z.string().optional(),
-  secondarySubcategoryOne: z.string().optional(),
-  secondarySubcategoryTwo: z.string().optional(),
-  contentRightsDeclaration: z
-    .enum(["DOES_NOT_USE_THIRD_PARTY_CONTENT", "USES_THIRD_PARTY_CONTENT"])
-    .optional(),
-});
-
 export const AvailabilitySchema = z.object({
   availableInNewTerritories: z.boolean(),
   availableTerritories: z.array(TerritoryCodeSchema),
@@ -191,5 +179,4 @@ export const AppStoreModelSchema = z.object({
   subscriptionGroups: z.array(SubscriptionGroupSchema),
   versionString: z.string().optional(),
   localizations: z.array(AppStoreLocalizationSchema).optional(),
-  appInfoMetadata: AppInfoMetadataSchema.optional(),
 });

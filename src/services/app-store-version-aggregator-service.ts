@@ -1,25 +1,18 @@
 import { AppStoreVersionService } from "./app-store-version-service";
 import { AppStoreVersionLocalizationService } from "./app-store-version-localization-service";
-import { AppInfoLocalizationService } from "./app-info-localization-service";
-import { AppInfoService } from "./app-info-service";
 import type {
   AppStoreModelSchema,
   AppStoreLocalizationSchema,
-  AppInfoMetadataSchema,
 } from "../models/app-store";
 import { z } from "zod";
 
 export class AppStoreVersionAggregatorService {
   private versionService: AppStoreVersionService;
   private versionLocalizationService: AppStoreVersionLocalizationService;
-  private appInfoLocalizationService: AppInfoLocalizationService;
-  private appInfoService: AppInfoService;
 
   constructor() {
     this.versionService = new AppStoreVersionService();
     this.versionLocalizationService = new AppStoreVersionLocalizationService();
-    this.appInfoLocalizationService = new AppInfoLocalizationService();
-    this.appInfoService = new AppInfoService();
   }
 
   async applyVersionMetadata(
@@ -37,11 +30,6 @@ export class AppStoreVersionAggregatorService {
       // Handle unified localizations
       if (data.localizations && data.localizations.length > 0) {
         await this.handleUnifiedLocalizations(appId, data.localizations);
-      }
-
-      // Handle app info metadata
-      if (data.appInfoMetadata) {
-        await this.handleAppInfoMetadata(appId, data.appInfoMetadata);
       }
     } catch (error) {
       errors.push(
@@ -94,19 +82,11 @@ export class AppStoreVersionAggregatorService {
       }
 
       const latestVersion = versions[0];
-      const appInfos = await this.appInfoService.getAppInfoForApp(appId);
-      if (appInfos.length === 0) {
-        throw new Error("No app info found. Cannot apply localizations.");
-      }
-
-      const appInfo = appInfos[0];
+      // For now, we'll skip app info localizations since we removed the AppInfoService
+      // App info localizations can be managed directly in App Store Connect
 
       for (const localization of localizations) {
-        await this.handleSingleLocalization(
-          latestVersion.id,
-          appInfo.id,
-          localization
-        );
+        await this.handleSingleLocalization(latestVersion.id, localization);
       }
     } catch (error) {
       throw new Error(
@@ -119,23 +99,9 @@ export class AppStoreVersionAggregatorService {
 
   private async handleSingleLocalization(
     versionId: string,
-    appInfoId: string,
     localization: z.infer<typeof AppStoreLocalizationSchema>
   ): Promise<void> {
     const locale = localization.locale;
-
-    // Handle app info localizations (app-level fields)
-    const appInfoFields = {
-      locale: localization.locale,
-      name: localization.name,
-      subtitle: localization.subtitle,
-      privacyPolicyUrl: localization.privacyPolicyUrl,
-      privacyChoicesUrl: localization.privacyChoicesUrl,
-    };
-
-    if (this.hasAppInfoFields(appInfoFields)) {
-      await this.handleAppInfoLocalization(appInfoId, locale, appInfoFields);
-    }
 
     // Handle version localizations (version-specific fields)
     const versionFields = {
@@ -150,39 +116,6 @@ export class AppStoreVersionAggregatorService {
 
     if (this.hasVersionFields(versionFields)) {
       await this.handleVersionLocalization(versionId, locale, versionFields);
-    }
-  }
-
-  private async handleAppInfoLocalization(
-    appInfoId: string,
-    locale: string,
-    localizationData: z.infer<typeof AppStoreLocalizationSchema>
-  ): Promise<void> {
-    try {
-      const existingLocalization =
-        await this.appInfoLocalizationService.findLocalizationByLocale(
-          appInfoId,
-          locale
-        );
-
-      if (existingLocalization) {
-        await this.appInfoLocalizationService.updateLocalization(
-          existingLocalization.id,
-          localizationData
-        );
-      } else {
-        await this.appInfoLocalizationService.createLocalization(
-          appInfoId,
-          locale,
-          localizationData
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `Failed to handle app info localization for ${locale}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
     }
   }
 
@@ -217,38 +150,6 @@ export class AppStoreVersionAggregatorService {
         }`
       );
     }
-  }
-
-  private async handleAppInfoMetadata(
-    appId: string,
-    metadata: z.infer<typeof AppInfoMetadataSchema>
-  ): Promise<void> {
-    try {
-      const appInfos = await this.appInfoService.getAppInfoForApp(appId);
-      if (appInfos.length === 0) {
-        throw new Error("No app info found. Cannot apply metadata.");
-      }
-
-      const appInfo = appInfos[0];
-      await this.appInfoService.updateAppInfo(appInfo.id, metadata);
-    } catch (error) {
-      throw new Error(
-        `Failed to handle app info metadata: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }
-
-  private hasAppInfoFields(
-    localization: z.infer<typeof AppStoreLocalizationSchema>
-  ): boolean {
-    return !!(
-      localization.name ||
-      localization.subtitle ||
-      localization.privacyPolicyUrl ||
-      localization.privacyChoicesUrl
-    );
   }
 
   private hasVersionFields(

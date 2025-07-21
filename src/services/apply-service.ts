@@ -328,9 +328,7 @@ export async function apply(
 
   // Check if we have version metadata to apply
   const hasVersionMetadata = !!(
-    desiredState.versionString ||
-    desiredState.localizations ||
-    desiredState.appInfoMetadata
+    desiredState.versionString || desiredState.localizations
   );
 
   // Fetch raw IAP response once if needed
