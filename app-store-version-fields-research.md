@@ -6,11 +6,17 @@ Implementation guide for adding new fields support to the App Store Connect API 
 
 ## Schema Definitions
 
-### AppStoreVersionLocalizationSchema
+### AppStoreLocalizationSchema
 
 ```typescript
-export const AppStoreVersionLocalizationSchema = z.object({
+export const AppStoreLocalizationSchema = z.object({
   locale: LocaleCodeSchema,
+  // App info fields (app-level)
+  name: z.string().optional(),
+  subtitle: z.string().optional(),
+  privacyPolicyUrl: z.string().url().optional(),
+  privacyChoicesUrl: z.string().url().optional(),
+  // Version fields (version-specific)
   description: z.string().optional(),
   keywords: z.string().optional(),
   marketingUrl: z.string().url().optional(),
@@ -20,36 +26,10 @@ export const AppStoreVersionLocalizationSchema = z.object({
 });
 ```
 
-### AppInfoLocalizationSchema
-
-```typescript
-export const AppInfoLocalizationSchema = z.object({
-  locale: LocaleCodeSchema,
-  name: z.string().optional(),
-  subtitle: z.string().optional(),
-  privacyPolicyUrl: z.string().url().optional(),
-  privacyChoicesUrl: z.string().url().optional(),
-});
-```
-
-### AppStoreVersionMetadataSchema
-
-```typescript
-export const AppStoreVersionMetadataSchema = z.object({
-  versionString: z.string(),
-  copyright: z.string().optional(),
-  localizations: z.array(AppStoreVersionLocalizationSchema),
-  reviewType: z.enum(["APP_STORE", "NOTARIZATION"]).optional(),
-  releaseType: z.enum(["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]).optional(),
-  earliestReleaseDate: z.string().datetime().optional(),
-});
-```
-
 ### AppInfoMetadataSchema
 
 ```typescript
 export const AppInfoMetadataSchema = z.object({
-  localizations: z.array(AppInfoLocalizationSchema),
   primaryCategory: z.string().optional(),
   secondaryCategory: z.string().optional(),
   primarySubcategoryOne: z.string().optional(),
@@ -72,9 +52,11 @@ export const AppStoreModelSchema = z.object({
   availableTerritories: z.array(TerritoryCodeSchema),
   inAppPurchases: z.array(InAppPurchaseSchema),
   subscriptionGroups: z.array(SubscriptionGroupSchema),
-  // NEW: Add version metadata
-  versionMetadata: AppStoreVersionMetadataSchema.optional(),
-  // NEW: Add app info metadata
+  // NEW: Version string at root level
+  versionString: z.string().optional(),
+  // NEW: Unified localizations at root level
+  localizations: z.array(AppStoreLocalizationSchema).optional(),
+  // NEW: App info metadata (categories, content rights)
   appInfoMetadata: AppInfoMetadataSchema.optional(),
 });
 ```
@@ -201,28 +183,31 @@ async function updateVersion(versionId: string, data: any) {
 
 ### Phase 1: Schema and Basic Services
 
-1. Update `AppStoreModelSchema` with version metadata
-2. Create `AppStoreVersionService`
-3. Create `AppStoreVersionLocalizationService`
-4. Add basic CRUD operations
+1. Update `AppStoreModelSchema` with unified localizations and versionString at root
+2. Create `AppStoreVersionService` for version-specific operations
+3. Create `AppInfoService` for app-level metadata operations
+4. Add unified localization handling that routes to appropriate APIs
 
 ### Phase 2: Error Handling
 
 1. Add error handling for immutable versions (409 responses)
 2. Create user-friendly error messages
 3. Handle API validation errors gracefully
+4. Handle partial failures (app info succeeds, version fails)
 
 ### Phase 3: Integration
 
 1. Integrate with existing `apply-service.ts`
-2. Update diff service to handle version changes
+2. Update diff service to handle unified localizations
 3. Add version metadata to fetch/apply workflow
+4. Optimize API calls to minimize requests
 
 ### Phase 4: Testing and Validation
 
 1. Test with various version states
 2. Validate error scenarios
-3. Test localization handling
+3. Test unified localization handling
+4. Verify API call optimization
 
 ## Implementation Notes
 
@@ -241,15 +226,36 @@ Use Apple's exact field names:
 - `privacyChoicesUrl` (not `User Privacy Choices url`)
 - `contentRightsDeclaration` (not `content rights`)
 
+### Schema Simplification
+
+**User-Friendly Design:**
+
+- Single `localizations` array at root level for easier JSON editing
+- `versionString` at root level for quick access
+- Removed complex version-specific fields (reviewType, releaseType, earliestReleaseDate) that are rarely used
+- Unified localization schema combines app info and version fields in one place
+
+**Internal Service Separation:**
+
+- Services will still handle AppInfo and AppStoreVersion APIs separately
+- Actions will be optimized to minimize API calls
+- Schema provides user simplicity while maintaining API compatibility
+
 ### Field Coverage
 
 All requested fields are supported:
 
-- ✅ App store version localizations: description, keywords, marketingUrl, promotionalText, supportUrl, whatsNew
-- ✅ App info localizations: name, subtitle, privacyPolicyUrl, privacyChoicesUrl
-- ✅ App info relationships: primaryCategory, secondaryCategory, subcategories
-- ✅ App update: contentRightsDeclaration
-- ✅ App store version: versionString, copyright
+- ✅ **Unified localizations** (at root level):
+  - App info fields: name, subtitle, privacyPolicyUrl, privacyChoicesUrl
+  - Version fields: description, keywords, marketingUrl, promotionalText, supportUrl, whatsNew
+- ✅ **App info metadata**: primaryCategory, secondaryCategory, subcategories, contentRightsDeclaration
+- ✅ **Version metadata**: versionString (at root level)
+
+**Simplified Schema Benefits:**
+
+- Single localizations array for easier editing
+- Version string at root level for quick access
+- Removed complex version-specific fields (reviewType, releaseType, earliestReleaseDate) for simplicity
 
 ### API Limitations
 
