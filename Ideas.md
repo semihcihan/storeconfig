@@ -14,14 +14,14 @@
   - desc
   - subtitle
   - keywords
+  - promo text
+  - what's new in this version
   - age rating
   - copyright
   - support url
   - privacy url
   - marketing url
   - User Privacy Choices url
-  - promo text
-  - what's new in this version
   - version?
   - category
   - content rights
