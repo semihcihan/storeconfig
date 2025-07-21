@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const localeCodes = [
-  "ar",
+  "ar-SA",
   "ca",
   "zh-Hans",
   "zh-Hant",
   "hr",
   "cs",
   "da",
-  "nl",
+  "nl-NL",
   "en-AU",
   "en-CA",
   "en-GB",
@@ -16,7 +16,7 @@ export const localeCodes = [
   "fi",
   "fr-FR",
   "fr-CA",
-  "de",
+  "de-DE",
   "el",
   "he",
   "hi",
