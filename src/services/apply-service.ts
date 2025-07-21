@@ -3,6 +3,7 @@ import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./apply/app-availability-service";
 import { createAppPriceSchedule } from "./apply/app-pricing-service";
+import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
 import {
   createNewInAppPurchase,
   updateExistingInAppPurchase,
@@ -325,6 +326,13 @@ export async function apply(
       action.type.includes("PROMOTIONAL_OFFER")
   );
 
+  // Check if we have version metadata to apply
+  const hasVersionMetadata = !!(
+    desiredState.versionString ||
+    desiredState.localizations ||
+    desiredState.appInfoMetadata
+  );
+
   // Fetch raw IAP response once if needed
   let currentIAPsResponse: InAppPurchasesV2Response | undefined;
   if (hasIAPActions) {
@@ -358,6 +366,13 @@ export async function apply(
       newlyCreatedIAPs,
       newlyCreatedSubscriptions
     );
+  }
+
+  // Apply version metadata if present
+  if (hasVersionMetadata) {
+    logger.info("Applying version metadata");
+    const versionAggregator = new AppStoreVersionAggregatorService();
+    await versionAggregator.applyVersionMetadata(appId, desiredState);
   }
 
   logger.info("Plan application completed");
