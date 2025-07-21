@@ -16,6 +16,9 @@ import { mapAppAvailability } from "../domains/availability/mapper";
 // Import pricing logic
 import { mapAppPricing } from "./pricing-aggregator";
 
+// Import version aggregator
+import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
+
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 // Fetch and map in-app purchases
@@ -75,17 +78,21 @@ export async function fetchAppStoreState(
 ): Promise<AppStoreModel> {
   logger.info(`Fetching app store state for app ID: ${appId}`);
 
+  const versionAggregator = new AppStoreVersionAggregatorService();
+
   // Fetch all data in parallel
   const [
     mappedIAPs,
     mappedSubscriptionGroups,
     mappedAvailableTerritories,
     mappedPricing,
+    versionMetadata,
   ] = await Promise.all([
     fetchAndMapInAppPurchases(appId),
     fetchAndMapSubscriptionGroups(appId),
     fetchAndMapAppAvailability(appId),
     mapAppPricing(appId),
+    versionAggregator.fetchVersionMetadata(appId),
   ]);
 
   const result: AppStoreModel = {
@@ -95,6 +102,8 @@ export async function fetchAppStoreState(
     availableTerritories: mappedAvailableTerritories,
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
+    versionString: versionMetadata.versionString,
+    localizations: versionMetadata.localizations,
   };
 
   const parsedData = AppStoreModelSchema.parse(result);
