@@ -21,8 +21,82 @@ import { mapAppPricing } from "./pricing-aggregator";
 import { AppStoreVersionService } from "../domains/versions/service";
 import { LocalizationAggregator } from "./localization-aggregator";
 import { LocaleCodeSchema } from "../models/locales";
+import { AppStoreLocalizationSchema } from "../models/app-store";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
+
+// Helper function to optimize localizations by removing duplicate fields with primary locale
+function optimizeLocalizationsByPrimaryLocale(
+  localizations: z.infer<typeof AppStoreLocalizationSchema>[],
+  primaryLocale: string | undefined
+): z.infer<typeof AppStoreLocalizationSchema>[] {
+  // If we don't have a primary locale, return the original localizations
+  if (!primaryLocale) {
+    return localizations;
+  }
+
+  const primaryLocalization = localizations.find(
+    (loc) => loc.locale === primaryLocale
+  );
+
+  // If we don't have a primary localization, return the original localizations
+  if (!primaryLocalization) {
+    return localizations;
+  }
+
+  const optimizedResult = localizations.map((localization) => {
+    if (localization.locale === primaryLocale) {
+      return localization;
+    }
+
+    const optimized: z.infer<typeof AppStoreLocalizationSchema> = {
+      locale: localization.locale,
+    };
+
+    // Only include fields that differ from the primary locale
+    if (localization.name !== primaryLocalization.name) {
+      optimized.name = localization.name;
+    }
+    if (localization.subtitle !== primaryLocalization.subtitle) {
+      optimized.subtitle = localization.subtitle;
+    }
+    if (localization.description !== primaryLocalization.description) {
+      optimized.description = localization.description;
+    }
+    if (localization.keywords !== primaryLocalization.keywords) {
+      optimized.keywords = localization.keywords;
+    }
+    if (localization.marketingUrl !== primaryLocalization.marketingUrl) {
+      optimized.marketingUrl = localization.marketingUrl;
+    }
+    if (localization.promotionalText !== primaryLocalization.promotionalText) {
+      optimized.promotionalText = localization.promotionalText;
+    }
+    if (localization.supportUrl !== primaryLocalization.supportUrl) {
+      optimized.supportUrl = localization.supportUrl;
+    }
+    if (localization.whatsNew !== primaryLocalization.whatsNew) {
+      optimized.whatsNew = localization.whatsNew;
+    }
+    if (
+      localization.privacyPolicyUrl !== primaryLocalization.privacyPolicyUrl
+    ) {
+      optimized.privacyPolicyUrl = localization.privacyPolicyUrl;
+    }
+    if (
+      localization.privacyChoicesUrl !== primaryLocalization.privacyChoicesUrl
+    ) {
+      optimized.privacyChoicesUrl = localization.privacyChoicesUrl;
+    }
+
+    return optimized;
+  });
+
+  logger.info(
+    `Optimized ${localizations.length} localizations to avoid duplicates with primary locale: ${primaryLocale}`
+  );
+  return optimizedResult;
+}
 
 // Fetch and map in-app purchases
 async function fetchAndMapInAppPurchases(appId: string) {
@@ -107,6 +181,11 @@ export async function fetchAppStoreState(
     | z.infer<typeof LocaleCodeSchema>
     | undefined;
 
+  const optimizedLocalizations = optimizeLocalizationsByPrimaryLocale(
+    localizations,
+    primaryLocale
+  );
+
   const result: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: appId,
@@ -116,7 +195,8 @@ export async function fetchAppStoreState(
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
     versionString: versionMetadata.versionString,
-    localizations: localizations.length > 0 ? localizations : undefined,
+    localizations:
+      optimizedLocalizations.length > 0 ? optimizedLocalizations : undefined,
   };
 
   const parsedData = AppStoreModelSchema.parse(result);
