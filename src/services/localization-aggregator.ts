@@ -22,6 +22,7 @@ export class LocalizationAggregator {
   private appInfoLocalizationService: AppInfoLocalizationService;
   private versionService: AppStoreVersionService;
   private cachedVersionId: string | null = null;
+  private cachedAppInfoId: string | null = null;
 
   constructor() {
     this.versionLocalizationService = new AppStoreVersionLocalizationService();
@@ -57,6 +58,10 @@ export class LocalizationAggregator {
   }
 
   private async getAppInfoId(appId: string): Promise<string> {
+    if (this.cachedAppInfoId) {
+      return this.cachedAppInfoId;
+    }
+
     try {
       const appInfosResponse = await getAppInfosForApp(appId);
       const appInfos = appInfosResponse.data;
@@ -67,6 +72,7 @@ export class LocalizationAggregator {
 
       // If there's only one app info, use it directly
       if (appInfos.length === 1) {
+        this.cachedAppInfoId = appInfos[0].id;
         return appInfos[0].id;
       }
 
@@ -91,6 +97,7 @@ export class LocalizationAggregator {
       }
 
       // Use the first active app info
+      this.cachedAppInfoId = activeAppInfos[0].id;
       return activeAppInfos[0].id;
     } catch (error) {
       logger.warn(
@@ -435,9 +442,5 @@ export class LocalizationAggregator {
       `Successfully fetched ${result.length} localizations for app ${appId}`
     );
     return result;
-  }
-
-  private clearVersionIdCache(): void {
-    this.cachedVersionId = null;
   }
 }
