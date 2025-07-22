@@ -29,9 +29,14 @@ export type AppVersionState =
 export class AppStoreVersionService {
   async createVersion(
     appId: string,
-    versionString: string
+    versionString: string,
+    copyright?: string
   ): Promise<AppStoreVersion> {
-    const response = await createAppStoreVersion(appId, versionString);
+    const response = await createAppStoreVersion(
+      appId,
+      versionString,
+      copyright
+    );
     return response.data;
   }
 
@@ -42,9 +47,14 @@ export class AppStoreVersionService {
 
   async updateVersion(
     versionId: string,
-    versionString: string
+    versionString: string,
+    copyright?: string
   ): Promise<AppStoreVersion> {
-    const response = await updateAppStoreVersion(versionId, versionString);
+    const response = await updateAppStoreVersion(
+      versionId,
+      versionString,
+      copyright
+    );
     return response.data;
   }
 

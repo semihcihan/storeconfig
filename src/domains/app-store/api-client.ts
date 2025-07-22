@@ -64,7 +64,8 @@ export async function fetchAppAvailability(
 // NEW: App Store Version API functions
 export async function createAppStoreVersion(
   appId: string,
-  versionString: string
+  versionString: string,
+  copyright?: string
 ): Promise<components["schemas"]["AppStoreVersionResponse"]> {
   const response = await api.POST("/v1/appStoreVersions", {
     body: {
@@ -73,6 +74,7 @@ export async function createAppStoreVersion(
         attributes: {
           platform: "IOS",
           versionString,
+          ...(copyright !== undefined && { copyright }),
         },
         relationships: {
           app: {
@@ -119,7 +121,8 @@ export async function getAppStoreVersion(
 
 export async function updateAppStoreVersion(
   versionId: string,
-  versionString: string
+  versionString: string,
+  copyright?: string
 ): Promise<components["schemas"]["AppStoreVersionResponse"]> {
   const response = await api.PATCH("/v1/appStoreVersions/{id}", {
     params: {
@@ -131,6 +134,7 @@ export async function updateAppStoreVersion(
         id: versionId,
         attributes: {
           versionString,
+          ...(copyright !== undefined && { copyright }),
         },
       },
     },

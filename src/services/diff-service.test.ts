@@ -24,6 +24,7 @@ type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
 const EMPTY_STATE: AppStoreModel = {
   schemaVersion: "1.0.0",
   appId: "com.example.app",
+  copyright: undefined,
   pricing: undefined,
   availableTerritories: [],
   inAppPurchases: [],
@@ -3919,6 +3920,7 @@ describe("diff-service", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA", "CAN"],
         inAppPurchases: [],
         subscriptionGroups: [],
@@ -3927,6 +3929,7 @@ describe("diff-service", () => {
       const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         inAppPurchases: [],
         subscriptionGroups: [],
       };
@@ -3942,6 +3945,7 @@ describe("diff-service", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA"],
         inAppPurchases: [
           {
@@ -3958,6 +3962,7 @@ describe("diff-service", () => {
       const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA"],
         subscriptionGroups: [],
       };
@@ -3974,6 +3979,7 @@ describe("diff-service", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA"],
         inAppPurchases: [],
         subscriptionGroups: [
@@ -3988,6 +3994,7 @@ describe("diff-service", () => {
       const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA"],
         inAppPurchases: [],
       };
@@ -4006,6 +4013,7 @@ describe("diff-service", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA"],
         inAppPurchases: [],
         subscriptionGroups: [],
@@ -4014,6 +4022,7 @@ describe("diff-service", () => {
       const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         availableTerritories: ["USA", "CAN"],
         inAppPurchases: [],
         subscriptionGroups: [],
@@ -4026,10 +4035,11 @@ describe("diff-service", () => {
       expect(availabilityActions).toHaveLength(1);
     });
 
-    it("should create no actions when only schemaVersion and appId are provided in desired state", () => {
+    it("should create UPDATE_VERSION_METADATA action when versionString is removed", () => {
       const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
         pricing: {
           baseTerritory: "USA",
           prices: [
@@ -4105,10 +4115,141 @@ describe("diff-service", () => {
       const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "test-app",
+        copyright: undefined,
+        versionString: undefined,
       };
 
       const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(0);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: undefined,
+          versionString: undefined,
+        },
+      });
+    });
+
+    it("should create UPDATE_VERSION_METADATA action when copyright changes", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2023 Old Company",
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2024 New Company",
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: "© 2024 New Company",
+          versionString: undefined,
+        },
+      });
+    });
+
+    it("should create UPDATE_VERSION_METADATA action when copyright is added", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: undefined,
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2024 New Company",
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: "© 2024 New Company",
+          versionString: undefined,
+        },
+      });
+    });
+
+    it("should create UPDATE_VERSION_METADATA action when copyright is removed", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2024 Old Company",
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: undefined,
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: undefined,
+          versionString: undefined,
+        },
+      });
+    });
+
+    it("should create UPDATE_VERSION_METADATA action when versionString changes", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        versionString: "1.0.0",
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        versionString: "2.0.0",
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: undefined,
+          versionString: "2.0.0",
+        },
+      });
+    });
+
+    it("should create UPDATE_VERSION_METADATA action when both copyright and versionString change", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2023 Old Company",
+        versionString: "1.0.0",
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        copyright: "© 2024 New Company",
+        versionString: "2.0.0",
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_VERSION_METADATA",
+        payload: {
+          copyright: "© 2024 New Company",
+          versionString: "2.0.0",
+        },
+      });
     });
   });
 

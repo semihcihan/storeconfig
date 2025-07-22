@@ -19,6 +19,7 @@ export class AppStoreVersionAggregatorService {
 
   async fetchVersionMetadata(appId: string): Promise<{
     versionString?: string;
+    copyright?: string;
     localizations?: z.infer<typeof AppStoreLocalizationSchema>[];
   }> {
     try {
@@ -30,6 +31,7 @@ export class AppStoreVersionAggregatorService {
 
       const latestVersion = versions[0];
       const versionString = latestVersion.attributes?.versionString;
+      const copyright = latestVersion.attributes?.copyright;
 
       const localizations = await this.fetchUnifiedLocalizations(
         latestVersion.id
@@ -37,6 +39,7 @@ export class AppStoreVersionAggregatorService {
 
       return {
         versionString,
+        copyright,
         localizations: localizations.length > 0 ? localizations : undefined,
       };
     } catch (error) {
@@ -86,9 +89,13 @@ export class AppStoreVersionAggregatorService {
     const errors: string[] = [];
 
     try {
-      // Handle version string
-      if (data.versionString) {
-        await this.handleVersionString(appId, data.versionString);
+      // Handle version string and copyright
+      if (data.versionString || data.copyright !== undefined) {
+        await this.handleVersionString(
+          appId,
+          data.versionString,
+          data.copyright
+        );
       }
 
       // Handle unified localizations
@@ -112,18 +119,29 @@ export class AppStoreVersionAggregatorService {
 
   private async handleVersionString(
     appId: string,
-    versionString: string
+    versionString?: string,
+    copyright?: string
   ): Promise<void> {
     try {
       const versions = await this.versionService.getVersionsForApp(appId);
 
       if (versions.length === 0) {
-        await this.versionService.createVersion(appId, versionString);
+        if (!versionString) {
+          throw new Error(
+            "Version string is required when creating a new version"
+          );
+        }
+        await this.versionService.createVersion(
+          appId,
+          versionString,
+          copyright
+        );
       } else {
         const latestVersion = versions[0];
         await this.versionService.updateVersion(
           latestVersion.id,
-          versionString
+          versionString || latestVersion.attributes?.versionString || "",
+          copyright
         );
       }
     } catch (error) {

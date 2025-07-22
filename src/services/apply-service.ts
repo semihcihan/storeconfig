@@ -117,6 +117,16 @@ async function executeAction(
       );
       break;
 
+    // Version Metadata
+    case "UPDATE_VERSION_METADATA":
+      const versionAggregator = new AppStoreVersionAggregatorService();
+      await versionAggregator.applyVersionMetadata(appId, {
+        ...desiredState,
+        copyright: action.payload.copyright,
+        versionString: action.payload.versionString,
+      });
+      break;
+
     // IAP Availability
     case "UPDATE_IAP_AVAILABILITY":
       await updateIAPAvailability(
@@ -326,11 +336,6 @@ export async function apply(
       action.type.includes("PROMOTIONAL_OFFER")
   );
 
-  // Check if we have version metadata to apply
-  const hasVersionMetadata = !!(
-    desiredState.versionString || desiredState.localizations
-  );
-
   // Fetch raw IAP response once if needed
   let currentIAPsResponse: InAppPurchasesV2Response | undefined;
   if (hasIAPActions) {
@@ -364,13 +369,6 @@ export async function apply(
       newlyCreatedIAPs,
       newlyCreatedSubscriptions
     );
-  }
-
-  // Apply version metadata if present
-  if (hasVersionMetadata) {
-    logger.info("Applying version metadata");
-    const versionAggregator = new AppStoreVersionAggregatorService();
-    await versionAggregator.applyVersionMetadata(appId, desiredState);
   }
 
   logger.info("Plan application completed");

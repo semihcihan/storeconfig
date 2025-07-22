@@ -101,6 +101,7 @@ type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 const MOCK_CURRENT_STATE: AppStoreModel = {
   schemaVersion: "1.0.0",
   appId: "test-app-id",
+  copyright: undefined,
   pricing: {
     baseTerritory: "USA",
     prices: [
@@ -116,6 +117,7 @@ const MOCK_CURRENT_STATE: AppStoreModel = {
 const MOCK_DESIRED_STATE: AppStoreModel = {
   schemaVersion: "1.0.0",
   appId: "test-app-id",
+  copyright: undefined,
   pricing: {
     baseTerritory: "GBR",
     prices: [
@@ -498,6 +500,7 @@ describe("IAP Localization Actions", () => {
   const mockCurrentState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: testAppId,
+    copyright: undefined,
     pricing: {
       baseTerritory: "USA",
       prices: [{ territory: "USA", price: "4.99" }],
@@ -523,6 +526,7 @@ describe("IAP Localization Actions", () => {
   const mockDesiredState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: testAppId,
+    copyright: undefined,
     pricing: {
       baseTerritory: "USA",
       prices: [{ territory: "USA", price: "4.99" }],
@@ -671,6 +675,7 @@ describe("Subscription Group Actions", () => {
   const mockCurrentState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: testAppId,
+    copyright: undefined,
     pricing: {
       baseTerritory: "USA",
       prices: [{ territory: "USA", price: "4.99" }],
@@ -682,6 +687,7 @@ describe("Subscription Group Actions", () => {
   const mockDesiredState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: testAppId,
+    copyright: undefined,
     pricing: {
       baseTerritory: "USA",
       prices: [{ territory: "USA", price: "4.99" }],

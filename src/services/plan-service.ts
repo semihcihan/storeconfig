@@ -216,6 +216,14 @@ export async function showAction(action: AnyAction) {
       );
       logger.info(`  Offer ID: ${action.payload.offerId}`);
       break;
+
+    // Version Metadata
+    case "UPDATE_VERSION_METADATA":
+      logger.info(`  Copyright: ${action.payload.copyright || "unchanged"}`);
+      logger.info(
+        `  Version String: ${action.payload.versionString || "unchanged"}`
+      );
+      break;
     default:
       const _exhaustiveCheck: never = action;
       throw new Error(

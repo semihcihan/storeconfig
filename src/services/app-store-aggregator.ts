@@ -98,6 +98,7 @@ export async function fetchAppStoreState(
   const result: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: appId,
+    copyright: versionMetadata.copyright,
     pricing: mappedPricing,
     availableTerritories: mappedAvailableTerritories,
     inAppPurchases: mappedIAPs,

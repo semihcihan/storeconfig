@@ -27,6 +27,7 @@ describe("AppStore Models", () => {
       const fullModel = {
         schemaVersion: "1.0.0",
         appId: "test-app-id",
+        copyright: "© 2024 Test Company",
         pricing: {
           baseTerritory: "USA",
           prices: [{ territory: "USA", price: "4.99" }],
@@ -52,6 +53,16 @@ describe("AppStore Models", () => {
         versionString: "1.0.0",
       };
       const result = AppStoreModelSchema.safeParse(partialModel);
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept app store model with copyright field", () => {
+      const modelWithCopyright = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        copyright: "© 2024 My Company, Inc.",
+      };
+      const result = AppStoreModelSchema.safeParse(modelWithCopyright);
       expect(result.success).toBe(true);
     });
   });

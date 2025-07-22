@@ -794,6 +794,34 @@ function diffAppAvailability(
   return actions;
 }
 
+function diffVersionMetadata(
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
+): AnyAction[] {
+  const actions: AnyAction[] = [];
+
+  const currentCopyright = currentState.copyright;
+  const desiredCopyright = desiredState.copyright;
+  const currentVersionString = currentState.versionString;
+  const desiredVersionString = desiredState.versionString;
+
+  // Check if any version metadata has changed
+  const copyrightChanged = currentCopyright !== desiredCopyright;
+  const versionStringChanged = currentVersionString !== desiredVersionString;
+
+  if (copyrightChanged || versionStringChanged) {
+    actions.push({
+      type: "UPDATE_VERSION_METADATA",
+      payload: {
+        copyright: desiredCopyright,
+        versionString: desiredVersionString,
+      },
+    });
+  }
+
+  return actions;
+}
+
 function diffAppPricing(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
@@ -924,12 +952,17 @@ export function diff(
     desiredState
   );
   const appPricingActions = diffAppPricing(currentState, desiredState);
+  const versionMetadataActions = diffVersionMetadata(
+    currentState,
+    desiredState
+  );
 
   const plan: Plan = [
     ...iapActions,
     ...subGroupActions,
     ...appAvailabilityActions,
     ...appPricingActions,
+    ...versionMetadataActions,
   ];
 
   logger.info("Diff completed.");

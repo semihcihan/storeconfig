@@ -173,6 +173,7 @@ export const InAppPurchaseSchema = z.object({
 export const AppStoreModelSchema = z.object({
   schemaVersion: z.string(),
   appId: z.string(),
+  copyright: z.string().optional(),
   pricing: PriceScheduleSchema.optional(),
   availableTerritories: z.array(TerritoryCodeSchema).optional(),
   inAppPurchases: z.array(InAppPurchaseSchema).optional(),

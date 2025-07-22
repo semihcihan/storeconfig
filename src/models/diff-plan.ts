@@ -299,6 +299,18 @@ export type DeletePromotionalOfferAction = Action<
 >;
 
 // #################################################################################
+// Version Metadata Action Types
+// #################################################################################
+
+export type UpdateVersionMetadataAction = Action<
+  "UPDATE_VERSION_METADATA",
+  {
+    copyright?: string;
+    versionString?: string;
+  }
+>;
+
+// #################################################################################
 // Union Types
 // #################################################################################
 
@@ -317,6 +329,8 @@ export type AnyAction =
   // App-level
   | UpdateAppAvailabilityAction
   | UpdateAppPricingAction
+  // Version Metadata
+  | UpdateVersionMetadataAction
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction

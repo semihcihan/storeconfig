@@ -64,7 +64,8 @@ describe("AppStoreVersionService", () => {
 
       expect(mockCreateAppStoreVersion).toHaveBeenCalledWith(
         "app-123",
-        "1.0.0"
+        "1.0.0",
+        undefined
       );
       expect(result).toEqual(mockResponse.data);
     });
@@ -129,7 +130,8 @@ describe("AppStoreVersionService", () => {
 
       expect(mockUpdateAppStoreVersion).toHaveBeenCalledWith(
         "version-123",
-        "1.0.1"
+        "1.0.1",
+        undefined
       );
       expect(result).toEqual(mockResponse.data);
     });
