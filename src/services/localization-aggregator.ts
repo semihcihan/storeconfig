@@ -111,44 +111,6 @@ export class LocalizationAggregator {
     }
   }
 
-  private async getLocalizationContext(
-    appId: string,
-    locale: z.infer<typeof LocaleCodeSchema>
-  ): Promise<{
-    version: components["schemas"]["AppStoreVersionResponse"]["data"];
-    appInfoId: string;
-    existingVersionLocalization: AppStoreVersionLocalization | null;
-    existingAppInfoLocalization: AppInfoLocalization | null;
-  }> {
-    // Get the current version for the app
-    const version = await this.getCurrentVersion(appId);
-    if (!version) {
-      throw new Error(`No version found for app ${appId}`);
-    }
-
-    const appInfoId = await this.getAppInfoId(appId);
-
-    // Check existing localizations separately
-    const existingVersionLocalization =
-      await this.versionLocalizationService.findLocalizationByLocale(
-        version.id,
-        locale
-      );
-
-    const existingAppInfoLocalization =
-      await this.appInfoLocalizationService.findLocalizationByLocale(
-        appInfoId,
-        locale
-      );
-
-    return {
-      version,
-      appInfoId,
-      existingVersionLocalization,
-      existingAppInfoLocalization,
-    };
-  }
-
   async createAppLocalization(
     appId: string,
     locale: z.infer<typeof LocaleCodeSchema>,
@@ -159,17 +121,10 @@ export class LocalizationAggregator {
   }> {
     logger.info(`Creating/updating app localization for locale: ${locale}`);
 
-    const {
-      version,
-      appInfoId,
-      existingVersionLocalization,
-      existingAppInfoLocalization,
-    } = await this.getLocalizationContext(appId, locale);
-
     let versionLocalization: AppStoreVersionLocalization | undefined;
     let appInfoLocalization: AppInfoLocalization | undefined;
 
-    // Handle version localization
+    // Handle version localization first
     const versionData = {
       description: localization.description,
       keywords: localization.keywords,
@@ -179,14 +134,26 @@ export class LocalizationAggregator {
       whatsNew: localization.whatsNew,
     };
 
-    // Only process if there are actual version fields to set
-    const hasVersionFields = Object.values(versionData).some(
-      (value) => value !== undefined
-    );
+    // Get version context for version localization
+    const version = await this.getCurrentVersion(appId);
+    if (!version) {
+      throw new Error(`No version found for app ${appId}`);
+    }
 
-    if (hasVersionFields) {
-      if (existingVersionLocalization) {
-        // Update existing version localization
+    // Check if version localization exists
+    const existingVersionLocalization =
+      await this.versionLocalizationService.findLocalizationByLocale(
+        version.id,
+        locale
+      );
+
+    if (existingVersionLocalization) {
+      // Only update if there are actual version fields to set
+      const hasVersionFields = Object.values(versionData).some(
+        (value) => value !== undefined
+      );
+
+      if (hasVersionFields) {
         logger.info(
           `Updating existing version localization for locale: ${locale}`
         );
@@ -195,19 +162,19 @@ export class LocalizationAggregator {
             existingVersionLocalization.id,
             versionData
           );
-      } else {
-        // Create new version localization
-        logger.info(`Creating new version localization for locale: ${locale}`);
-        versionLocalization =
-          await this.versionLocalizationService.createLocalization(
-            version.id,
-            locale,
-            versionData
-          );
       }
+    } else {
+      // Always create new version localization (only locale is required)
+      logger.info(`Creating new version localization for locale: ${locale}`);
+      versionLocalization =
+        await this.versionLocalizationService.createLocalization(
+          version.id,
+          locale,
+          versionData
+        );
     }
 
-    // Handle app info localization
+    // Handle app info localization second
     const appInfoData = {
       name: localization.name,
       subtitle: localization.subtitle,
@@ -215,12 +182,22 @@ export class LocalizationAggregator {
       privacyChoicesUrl: localization.privacyChoicesUrl,
     };
 
-    // Only process if there are actual app info fields to set
+    // Only process app info localization if there's at least a name field (required by API)
     const hasAppInfoFields = Object.values(appInfoData).some(
       (value) => value !== undefined
     );
 
     if (hasAppInfoFields) {
+      // Get app info context just for app info localization
+      const appInfoId = await this.getAppInfoId(appId);
+
+      // Check if app info localization exists
+      const existingAppInfoLocalization =
+        await this.appInfoLocalizationService.findLocalizationByLocale(
+          appInfoId,
+          locale
+        );
+
       if (existingAppInfoLocalization) {
         // Update existing app info localization
         logger.info(
@@ -233,13 +210,19 @@ export class LocalizationAggregator {
           );
       } else {
         // Create new app info localization
+        if (!localization.name) {
+          throw new Error(
+            `Name is required when creating a new app info localization for locale: ${locale}`
+          );
+        }
+
         logger.info(`Creating new app info localization for locale: ${locale}`);
         appInfoLocalization =
           await this.appInfoLocalizationService.createLocalization(
             appInfoId,
             locale,
             {
-              name: localization.name || "",
+              name: localization.name,
               subtitle: localization.subtitle,
               privacyPolicyUrl: localization.privacyPolicyUrl,
               privacyChoicesUrl: localization.privacyChoicesUrl,
@@ -265,18 +248,24 @@ export class LocalizationAggregator {
   }> {
     logger.info(`Updating/creating app localization for locale: ${locale}`);
 
-    const {
-      version,
-      appInfoId,
-      existingVersionLocalization,
-      existingAppInfoLocalization,
-    } = await this.getLocalizationContext(appId, locale);
-
     let versionLocalization: AppStoreVersionLocalization | undefined;
     let appInfoLocalization: AppInfoLocalization | undefined;
 
-    // Handle version localization changes
+    // Handle version localization changes first
     if (Object.keys(versionChanges).length > 0) {
+      // Get version context just for version localization
+      const version = await this.getCurrentVersion(appId);
+      if (!version) {
+        throw new Error(`No version found for app ${appId}`);
+      }
+
+      // Check if version localization exists
+      const existingVersionLocalization =
+        await this.versionLocalizationService.findLocalizationByLocale(
+          version.id,
+          locale
+        );
+
       if (existingVersionLocalization) {
         // Update existing version localization
         logger.info(
@@ -299,8 +288,18 @@ export class LocalizationAggregator {
       }
     }
 
-    // Handle app info localization changes
+    // Handle app info localization changes second
     if (Object.keys(appInfoChanges).length > 0) {
+      // Get app info context just for app info localization
+      const appInfoId = await this.getAppInfoId(appId);
+
+      // Check if app info localization exists
+      const existingAppInfoLocalization =
+        await this.appInfoLocalizationService.findLocalizationByLocale(
+          appInfoId,
+          locale
+        );
+
       if (existingAppInfoLocalization) {
         // Update existing app info localization
         logger.info(
@@ -340,30 +339,55 @@ export class LocalizationAggregator {
   ): Promise<void> {
     logger.info(`Deleting app localization for locale: ${locale}`);
 
-    const { existingVersionLocalization, existingAppInfoLocalization } =
-      await this.getLocalizationContext(appId, locale);
+    // Delete version localization first
+    const version = await this.getCurrentVersion(appId);
+    if (version) {
+      const existingVersionLocalization =
+        await this.versionLocalizationService.findLocalizationByLocale(
+          version.id,
+          locale
+        );
 
-    // Delete version localization if it exists
-    if (existingVersionLocalization) {
-      logger.info(`Deleting version localization for locale: ${locale}`);
-      await this.versionLocalizationService.deleteLocalization(
-        existingVersionLocalization.id
-      );
+      if (existingVersionLocalization) {
+        logger.info(`Deleting version localization for locale: ${locale}`);
+        await this.versionLocalizationService.deleteLocalization(
+          existingVersionLocalization.id
+        );
+      } else {
+        logger.info(
+          `No version localization found for locale: ${locale}, skipping deletion`
+        );
+      }
     } else {
-      logger.info(
-        `No version localization found for locale: ${locale}, skipping deletion`
+      logger.warn(
+        `No version found for app ${appId}, skipping version localization deletion`
       );
     }
 
-    // Delete app info localization if it exists
-    if (existingAppInfoLocalization) {
-      logger.info(`Deleting app info localization for locale: ${locale}`);
-      await this.appInfoLocalizationService.deleteLocalization(
-        existingAppInfoLocalization.id
-      );
-    } else {
-      logger.info(
-        `No app info localization found for locale: ${locale}, skipping deletion`
+    // Delete app info localization second
+    try {
+      const appInfoId = await this.getAppInfoId(appId);
+      const existingAppInfoLocalization =
+        await this.appInfoLocalizationService.findLocalizationByLocale(
+          appInfoId,
+          locale
+        );
+
+      if (existingAppInfoLocalization) {
+        logger.info(`Deleting app info localization for locale: ${locale}`);
+        await this.appInfoLocalizationService.deleteLocalization(
+          existingAppInfoLocalization.id
+        );
+      } else {
+        logger.info(
+          `No app info localization found for locale: ${locale}, skipping deletion`
+        );
+      }
+    } catch (error) {
+      logger.warn(
+        `Failed to delete app info localization for locale ${locale}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
 
