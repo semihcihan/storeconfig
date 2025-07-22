@@ -100,7 +100,7 @@ async function getIAPLocalizationId(
 // Create a new in-app purchase
 export async function createNewInAppPurchase(
   appId: string,
-  inAppPurchase: AppStoreModel["inAppPurchases"][0]
+  inAppPurchase: NonNullable<AppStoreModel["inAppPurchases"]>[0]
 ): Promise<string> {
   logger.info(`Creating new in-app purchase: ${inAppPurchase.productId}`);
 

@@ -42,8 +42,6 @@ function diffPriceSchedule(
   const actions: AnyAction[] = [];
 
   if (!desiredSchedule) {
-    // If the desired state has no price schedule, we don't do anything.
-    // Deleting all prices would have to be an explicit action.
     return actions;
   }
 
@@ -182,6 +180,11 @@ function diffInAppPurchases(
   desiredState: AppStoreModel
 ): AnyAction[] {
   const actions: AnyAction[] = [];
+
+  if (desiredState.inAppPurchases === undefined) {
+    return actions;
+  }
+
   const currentIaps = currentState.inAppPurchases || [];
   const desiredIaps = desiredState.inAppPurchases || [];
 
@@ -278,7 +281,10 @@ function diffInAppPurchases(
 
       if (
         desiredIap.availability &&
-        !deepEqualUnordered(currentIap.availability, desiredIap.availability)
+        !deepEqualUnordered(
+          currentIap.availability?.availableTerritories || [],
+          desiredIap.availability.availableTerritories
+        )
       ) {
         actions.push({
           type: "UPDATE_IAP_AVAILABILITY",
@@ -696,6 +702,11 @@ function diffSubscriptionGroups(
   desiredState: AppStoreModel
 ): AnyAction[] {
   const actions: AnyAction[] = [];
+
+  if (desiredState.subscriptionGroups === undefined) {
+    return actions;
+  }
+
   const currentGroups = currentState.subscriptionGroups || [];
   const desiredGroups = desiredState.subscriptionGroups || [];
 
@@ -762,6 +773,11 @@ function diffAppAvailability(
   desiredState: AppStoreModel
 ): AnyAction[] {
   const actions: AnyAction[] = [];
+
+  if (desiredState.availableTerritories === undefined) {
+    return actions;
+  }
+
   if (
     !deepEqualUnordered(
       currentState.availableTerritories,
@@ -786,6 +802,10 @@ function diffAppPricing(
 
   const currentSchedule = currentState.pricing;
   const desiredSchedule = desiredState.pricing;
+
+  if (desiredSchedule === undefined) {
+    return actions;
+  }
 
   // If neither current nor desired have pricing, no action needed
   if (!currentSchedule && !desiredSchedule) {

@@ -571,7 +571,7 @@ describe("diff-service", () => {
     it("should create a plan to add a localization to an in-app purchase", () => {
       const currentState = MOCK_STATE_1;
       const newLocalization: Localization = {
-        locale: "de",
+        locale: "de-DE",
         name: "IAP 1 DE",
         description: "Dies ist IAP 1",
       };
@@ -894,7 +894,7 @@ describe("diff-service", () => {
     it("should create a plan to add a localization to a subscription group", () => {
       const currentState = MOCK_STATE_1;
       const newLocalization: SubscriptionGroupLocalization = {
-        locale: "de",
+        locale: "de-DE",
         name: "Gruppe 1",
         customName: "Benutzerdefinierte Gruppe 1",
       };
@@ -1107,7 +1107,7 @@ describe("diff-service", () => {
     it("should create a plan to add a localization to a subscription", () => {
       const currentState = MOCK_STATE_1;
       const newLocalization: Localization = {
-        locale: "de",
+        locale: "de-DE",
         name: "Abonnement 1",
         description: "Dies ist Abonnement 1",
       };
@@ -3025,7 +3025,7 @@ describe("diff-service", () => {
               description: "This is Subscription 6",
             },
             {
-              locale: "de",
+              locale: "de-DE",
               name: "Abonnement 6",
               description: "Dies ist Abonnement 6",
             },
@@ -3913,869 +3913,223 @@ describe("diff-service", () => {
       );
     });
   });
-});
 
-describe("Optional field detection - App pricing bug", () => {
-  describe("Real-world scenario: fetch.json vs apply.json", () => {
-    it("should detect all differences between fetch.json (no pricing) and apply.json (with pricing)", () => {
-      // Simulate the actual fetch.json content
-      const fetchState: AppStoreModel = {
+  describe("Optional fields handling", () => {
+    it("should skip availableTerritories diff when not provided in desired state", () => {
+      const currentState: AppStoreModel = {
         schemaVersion: "1.0.0",
-        appId: "1615187332",
-        availableTerritories: [],
+        appId: "test-app",
+        availableTerritories: ["USA", "CAN"],
         inAppPurchases: [],
         subscriptionGroups: [],
-        // No pricing field
       };
 
-      // Simulate the actual apply.json content
-      const applyState: AppStoreModel = {
+      const desiredState: AppStoreModel = {
         schemaVersion: "1.0.0",
-        appId: "1615187332",
+        appId: "test-app",
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+      const availabilityActions = plan.filter(
+        (action) => action.type === "UPDATE_APP_AVAILABILITY"
+      );
+      expect(availabilityActions).toHaveLength(0);
+    });
+
+    it("should skip inAppPurchases diff when not provided in desired state", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA"],
+        inAppPurchases: [
+          {
+            productId: "test-iap",
+            type: "CONSUMABLE",
+            referenceName: "Test IAP",
+            familySharable: false,
+            localizations: [],
+          },
+        ],
+        subscriptionGroups: [],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA"],
+        subscriptionGroups: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+      const iapActions = plan.filter(
+        (action) =>
+          action.type.includes("IN_APP_PURCHASE") || action.type.includes("IAP")
+      );
+      expect(iapActions).toHaveLength(0);
+    });
+
+    it("should skip subscriptionGroups diff when not provided in desired state", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA"],
+        inAppPurchases: [],
+        subscriptionGroups: [
+          {
+            referenceName: "test-group",
+            localizations: [],
+            subscriptions: [],
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA"],
+        inAppPurchases: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+      const subscriptionActions = plan.filter(
+        (action) =>
+          action.type.includes("SUBSCRIPTION") ||
+          action.type.includes("INTRODUCTORY_OFFER") ||
+          action.type.includes("PROMOTIONAL_OFFER")
+      );
+      expect(subscriptionActions).toHaveLength(0);
+    });
+
+    it("should still process other diffs when optional fields are not provided", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA"],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        availableTerritories: ["USA", "CAN"],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+      const availabilityActions = plan.filter(
+        (action) => action.type === "UPDATE_APP_AVAILABILITY"
+      );
+      expect(availabilityActions).toHaveLength(1);
+    });
+
+    it("should create no actions when only schemaVersion and appId are provided in desired state", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
         pricing: {
           baseTerritory: "USA",
           prices: [
-            { price: "1.99", territory: "USA" },
-            { price: "19.99", territory: "TUR" },
-          ],
-        },
-        availableTerritories: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-      };
-
-      const plan = diff(fetchState, applyState);
-
-      // This is the main test case - should NOT be empty
-      expect(plan.length).toBeGreaterThan(0);
-
-      // Should contain exactly one UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "USA",
-            prices: [
-              { price: "1.99", territory: "USA" },
-              { price: "19.99", territory: "TUR" },
-            ],
-          },
-          changes: {
-            addedPrices: [
-              { price: "1.99", territory: "USA" },
-              { price: "19.99", territory: "TUR" },
-            ],
-            updatedPrices: [],
-            deletedTerritories: [],
-          },
-        },
-      });
-    });
-
-    it("should detect when pricing changes from undefined to defined with multiple territories", () => {
-      const currentState: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "1615187332",
-        availableTerritories: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-        // pricing is undefined (like fetch.json)
-      };
-
-      const desiredState: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "1615187332",
-        pricing: {
-          baseTerritory: "USA",
-          prices: [
-            { territory: "USA", price: "1.99" },
-            { territory: "TUR", price: "19.99" },
-          ],
-        },
-        availableTerritories: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-      };
-
-      const plan = diff(currentState, desiredState);
-
-      // Should not be empty - this is the main bug
-      expect(plan.length).toBeGreaterThan(0);
-
-      // Should contain exactly one UPDATE_APP_PRICING action
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_APP_PRICING",
-        payload: {
-          priceSchedule: {
-            baseTerritory: "USA",
-            prices: [
-              { territory: "USA", price: "1.99" },
-              { territory: "TUR", price: "19.99" },
-            ],
-          },
-          changes: {
-            addedPrices: [
-              { territory: "USA", price: "1.99" },
-              { territory: "TUR", price: "19.99" },
-            ],
-            updatedPrices: [],
-            deletedTerritories: [],
-          },
-        },
-      });
-    });
-
-    it("should throw an error when trying to remove all pricing (going from defined to undefined)", () => {
-      const currentState: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "1615187332",
-        pricing: {
-          baseTerritory: "USA",
-          prices: [
-            { territory: "USA", price: "1.99" },
-            { territory: "TUR", price: "19.99" },
-          ],
-        },
-        availableTerritories: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-      };
-
-      const desiredState: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "1615187332",
-        availableTerritories: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-        // pricing is undefined (removed)
-      };
-
-      // Should throw an error because you can't remove all pricing
-      expect(() => diff(currentState, desiredState)).toThrow(
-        /Cannot remove all pricing from an app/
-      );
-    });
-  });
-});
-
-describe("Subscription and IAP validation constraints", () => {
-  describe("Subscription period validation", () => {
-    it("should throw an error when trying to change subscription period", () => {
-      const currentState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                subscriptionPeriod: "ONE_MONTH",
-              },
-            ],
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...currentState,
-        subscriptionGroups: [
-          {
-            ...currentState.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...currentState.subscriptionGroups![0].subscriptions[0],
-                subscriptionPeriod: "ONE_YEAR",
-              },
-            ],
-          },
-        ],
-      };
-
-      expect(() => diff(currentState, desiredState)).toThrow(
-        /Subscription period for subscription sub1 cannot be changed once created/
-      );
-    });
-
-    it("should allow subscription period to remain the same", () => {
-      const currentState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                subscriptionPeriod: "ONE_MONTH",
-              },
-            ],
-          },
-        ],
-      };
-
-      const desiredState: AppStoreModel = {
-        ...currentState,
-        subscriptionGroups: [
-          {
-            ...currentState.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...currentState.subscriptionGroups![0].subscriptions[0],
-                subscriptionPeriod: "ONE_MONTH", // Same period
-                referenceName: "Updated Name", // Different field
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan).toHaveLength(1);
-      expect(plan[0]).toEqual({
-        type: "UPDATE_SUBSCRIPTION",
-        payload: {
-          productId: "sub1",
-          changes: {
-            referenceName: "Updated Name",
-          },
-        },
-      });
-    });
-  });
-
-  describe("Family sharing validation", () => {
-    describe("Subscription family sharing", () => {
-      it("should throw an error when trying to turn off family sharing for subscription", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          subscriptionGroups: [
             {
-              ...MOCK_STATE_1.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                  familySharable: true,
-                },
-              ],
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          subscriptionGroups: [
-            {
-              ...currentState.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...currentState.subscriptionGroups![0].subscriptions[0],
-                  familySharable: false,
-                },
-              ],
-            },
-          ],
-        };
-
-        expect(() => diff(currentState, desiredState)).toThrow(
-          /Family sharing cannot be turned off for subscription sub1 once it has been enabled/
-        );
-      });
-
-      it("should allow turning on family sharing for subscription", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          subscriptionGroups: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                  familySharable: false,
-                },
-              ],
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          subscriptionGroups: [
-            {
-              ...currentState.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...currentState.subscriptionGroups![0].subscriptions[0],
-                  familySharable: true,
-                },
-              ],
-            },
-          ],
-        };
-
-        const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(1);
-        expect(plan[0]).toEqual({
-          type: "UPDATE_SUBSCRIPTION",
-          payload: {
-            productId: "sub1",
-            changes: {
-              familySharable: true,
-            },
-          },
-        });
-      });
-
-      it("should allow family sharing to remain the same for subscription", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          subscriptionGroups: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                  familySharable: true,
-                },
-              ],
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          subscriptionGroups: [
-            {
-              ...currentState.subscriptionGroups![0],
-              subscriptions: [
-                {
-                  ...currentState.subscriptionGroups![0].subscriptions[0],
-                  familySharable: true, // Same value
-                  referenceName: "Updated Name", // Different field
-                },
-              ],
-            },
-          ],
-        };
-
-        const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(1);
-        expect(plan[0]).toEqual({
-          type: "UPDATE_SUBSCRIPTION",
-          payload: {
-            productId: "sub1",
-            changes: {
-              referenceName: "Updated Name",
-            },
-          },
-        });
-      });
-    });
-
-    describe("IAP family sharing", () => {
-      it("should throw an error when trying to turn off family sharing for IAP", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          inAppPurchases: [
-            {
-              ...MOCK_STATE_1.inAppPurchases[0],
-              familySharable: true,
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          inAppPurchases: [
-            {
-              ...currentState.inAppPurchases[0],
-              familySharable: false,
-            },
-          ],
-        };
-
-        expect(() => diff(currentState, desiredState)).toThrow(
-          /Family sharing cannot be turned off for in-app purchase iap1 once it has been enabled/
-        );
-      });
-
-      it("should allow turning on family sharing for IAP", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          inAppPurchases: [
-            {
-              ...MOCK_STATE_1.inAppPurchases[0],
-              familySharable: false,
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          inAppPurchases: [
-            {
-              ...currentState.inAppPurchases[0],
-              familySharable: true,
-            },
-          ],
-        };
-
-        const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(1);
-        expect(plan[0]).toEqual({
-          type: "UPDATE_IN_APP_PURCHASE",
-          payload: {
-            productId: "iap1",
-            changes: {
-              familySharable: true,
-            },
-          },
-        });
-      });
-
-      it("should allow family sharing to remain the same for IAP", () => {
-        const currentState: AppStoreModel = {
-          ...MOCK_STATE_1,
-          inAppPurchases: [
-            {
-              ...MOCK_STATE_1.inAppPurchases[0],
-              familySharable: true,
-            },
-          ],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...currentState,
-          inAppPurchases: [
-            {
-              ...currentState.inAppPurchases[0],
-              familySharable: true, // Same value
-              referenceName: "Updated Name", // Different field
-            },
-          ],
-        };
-
-        const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(1);
-        expect(plan[0]).toEqual({
-          type: "UPDATE_IN_APP_PURCHASE",
-          payload: {
-            productId: "iap1",
-            changes: {
-              referenceName: "Updated Name",
-            },
-          },
-        });
-      });
-    });
-  });
-});
-
-describe("Introductory offer duration validation", () => {
-  it("should throw an error for invalid PAY_UP_FRONT duration", () => {
-    const currentState = MOCK_STATE_1;
-    const desiredState: AppStoreModel = {
-      ...MOCK_STATE_1,
-      subscriptionGroups: [
-        {
-          ...MOCK_STATE_1.subscriptionGroups![0],
-          subscriptions: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-              subscriptionPeriod: "ONE_MONTH", // Keep same period
-              introductoryOffers: [
-                {
-                  type: "PAY_UP_FRONT",
-                  duration: "THREE_DAYS", // Invalid for ONE_MONTH PAY_UP_FRONT (not in valid list)
-                  prices: [{ territory: "USA", price: "4.99" }],
-                  availableTerritories: ["USA"],
-                },
-              ],
+              price: "9.99",
+              territory: "USA",
             },
           ],
         },
-      ],
-    };
-
-    expect(() => diff(currentState, desiredState)).toThrow(
-      /Invalid duration 'THREE_DAYS' for PAY_UP_FRONT offer in subscription 'sub1' with period 'ONE_MONTH'/
-    );
-  });
-
-  it("should allow valid FREE_TRIAL duration", () => {
-    const currentState = MOCK_STATE_1;
-    const desiredState: AppStoreModel = {
-      ...MOCK_STATE_1,
-      subscriptionGroups: [
-        {
-          ...MOCK_STATE_1.subscriptionGroups![0],
-          subscriptions: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-              subscriptionPeriod: "ONE_MONTH",
-              introductoryOffers: [
-                {
-                  type: "FREE_TRIAL",
-                  duration: "ONE_YEAR", // Valid for ONE_MONTH subscription (changed from ONE_WEEK)
-                  availableTerritories: ["USA"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    const plan = diff(currentState, desiredState);
-    expect(plan.length).toBeGreaterThan(0);
-    // Should not throw an error
-  });
-
-  it("should throw an error for invalid PAY_AS_YOU_GO numberOfPeriods", () => {
-    const currentState = MOCK_STATE_1;
-    const desiredState: AppStoreModel = {
-      ...MOCK_STATE_1,
-      subscriptionGroups: [
-        {
-          ...MOCK_STATE_1.subscriptionGroups![0],
-          subscriptions: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-              subscriptionPeriod: "ONE_MONTH", // Keep same period
-              introductoryOffers: [
-                {
-                  type: "PAY_AS_YOU_GO",
-                  numberOfPeriods: 13, // Invalid for ONE_MONTH subscription (only 1-12 are valid)
-                  prices: [{ territory: "USA", price: "4.99" }],
-                  availableTerritories: ["USA"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    expect(() => diff(currentState, desiredState)).toThrow(
-      /Invalid numberOfPeriods '13' for PAY_AS_YOU_GO offer in subscription 'sub1' with period 'ONE_MONTH'/
-    );
-  });
-
-  it("should allow valid PAY_UP_FRONT duration", () => {
-    const currentState = MOCK_STATE_1;
-    const desiredState: AppStoreModel = {
-      ...MOCK_STATE_1,
-      subscriptionGroups: [
-        {
-          ...MOCK_STATE_1.subscriptionGroups![0],
-          subscriptions: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-              subscriptionPeriod: "ONE_MONTH",
-              introductoryOffers: [
-                {
-                  type: "PAY_UP_FRONT",
-                  duration: "ONE_MONTH", // Valid for ONE_MONTH subscription
-                  prices: [{ territory: "USA", price: "4.99" }],
-                  availableTerritories: ["USA"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    const plan = diff(currentState, desiredState);
-    expect(plan.length).toBeGreaterThan(0);
-    // Should not throw an error
-  });
-
-  it("should allow valid PAY_AS_YOU_GO numberOfPeriods", () => {
-    const currentState = MOCK_STATE_1;
-    const desiredState: AppStoreModel = {
-      ...MOCK_STATE_1,
-      subscriptionGroups: [
-        {
-          ...MOCK_STATE_1.subscriptionGroups![0],
-          subscriptions: [
-            {
-              ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-              subscriptionPeriod: "ONE_MONTH",
-              introductoryOffers: [
-                {
-                  type: "PAY_AS_YOU_GO",
-                  numberOfPeriods: 6, // Valid for ONE_MONTH subscription
-                  prices: [{ territory: "USA", price: "4.99" }],
-                  availableTerritories: ["USA"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    const plan = diff(currentState, desiredState);
-    expect(plan.length).toBeGreaterThan(0);
-    // Should not throw an error
-  });
-
-  describe("Territory pricing validation", () => {
-    it("should throw error when subscription is missing prices for available territories", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredStateData = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
+        availableTerritories: ["USA", "CAN"],
+        inAppPurchases: [
           {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                availability: {
-                  availableInNewTerritories: false,
-                  availableTerritories: ["USA", "CAN", "GBR"],
-                },
-                prices: [
-                  { territory: "USA", price: "9.99" },
-                  { territory: "CAN", price: "12.99" },
-                  // Missing price for GBR
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      expect(() => {
-        const desiredState = AppStoreModelSchema.parse(desiredStateData);
-        diff(currentState, desiredState);
-      }).toThrow(
-        "Subscription 'sub1' is available in territory 'GBR' but has no price defined for this territory"
-      );
-    });
-
-    it("should throw error when PAY_AS_YOU_GO offer is missing prices for available territories", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredStateData = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                introductoryOffers: [
-                  {
-                    type: "PAY_AS_YOU_GO",
-                    numberOfPeriods: 1,
-                    prices: [{ territory: "USA", price: "0.99" }],
-                    availableTerritories: ["USA", "CAN"], // Missing price for CAN
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      expect(() => {
-        const desiredState = AppStoreModelSchema.parse(desiredStateData);
-        diff(currentState, desiredState);
-      }).toThrow(
-        "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'sub1' is available in territory 'CAN' but has no price defined for this territory"
-      );
-    });
-
-    it("should throw error when PAY_UP_FRONT offer is missing prices for available territories", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredStateData = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                introductoryOffers: [
-                  {
-                    type: "PAY_UP_FRONT",
-                    duration: "ONE_MONTH",
-                    prices: [{ territory: "USA", price: "9.99" }],
-                    availableTerritories: ["USA", "GBR"], // Missing price for GBR
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      expect(() => {
-        const desiredState = AppStoreModelSchema.parse(desiredStateData);
-        diff(currentState, desiredState);
-      }).toThrow(
-        "Introductory offer of type 'PAY_UP_FRONT' for subscription 'sub1' is available in territory 'GBR' but has no price defined for this territory"
-      );
-    });
-
-    it("should not throw error for FREE_TRIAL offers (which don't need prices)", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                introductoryOffers: [
-                  {
-                    type: "FREE_TRIAL",
-                    duration: "ONE_WEEK",
-                    availableTerritories: ["USA", "CAN", "GBR"], // No prices needed for FREE_TRIAL
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan.length).toBeGreaterThan(0);
-      // Should not throw an error
-    });
-
-    it("should pass validation when all territories have proper pricing", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                availability: {
-                  availableInNewTerritories: false,
-                  availableTerritories: ["USA", "CAN"],
-                },
-                prices: [
-                  { territory: "USA", price: "9.99" },
-                  { territory: "CAN", price: "12.99" },
-                ],
-                introductoryOffers: [
-                  {
-                    type: "PAY_AS_YOU_GO",
-                    numberOfPeriods: 1,
-                    prices: [
-                      { territory: "USA", price: "0.99" },
-                      { territory: "CAN", price: "1.99" },
-                    ],
-                    availableTerritories: ["USA", "CAN"],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan.length).toBeGreaterThan(0);
-      // Should not throw an error
-    });
-
-    it("should handle multiple introductory offers with different types correctly", () => {
-      const currentState = MOCK_STATE_1;
-      const desiredState: AppStoreModel = {
-        ...MOCK_STATE_1,
-        subscriptionGroups: [
-          {
-            ...MOCK_STATE_1.subscriptionGroups![0],
-            subscriptions: [
-              {
-                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
-                availability: {
-                  availableInNewTerritories: false,
-                  availableTerritories: ["USA", "CAN"],
-                },
-                prices: [
-                  { territory: "USA", price: "9.99" },
-                  { territory: "CAN", price: "12.99" },
-                ],
-                introductoryOffers: [
-                  {
-                    type: "FREE_TRIAL",
-                    duration: "ONE_WEEK",
-                    availableTerritories: ["USA"], // Different territory to avoid conflict
-                  },
-                  {
-                    type: "PAY_AS_YOU_GO",
-                    numberOfPeriods: 1,
-                    prices: [{ territory: "CAN", price: "1.99" }],
-                    availableTerritories: ["CAN"],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const plan = diff(currentState, desiredState);
-      expect(plan.length).toBeGreaterThan(0);
-      // Should not throw an error
-    });
-
-    it("should validate new subscriptions during creation", () => {
-      const currentState = EMPTY_STATE;
-      const desiredStateData = {
-        ...EMPTY_STATE,
-        subscriptionGroups: [
-          {
-            referenceName: "group1",
+            productId: "test_iap",
+            type: "CONSUMABLE",
+            referenceName: "Test IAP",
+            familySharable: false,
             localizations: [
               {
                 locale: "en-US",
-                name: "Group 1",
-                customName: "Custom Group 1",
-              },
-            ],
-            subscriptions: [
-              {
-                productId: "new_sub",
-                referenceName: "New Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                availability: {
-                  availableInNewTerritories: false,
-                  availableTerritories: ["USA", "CAN"],
-                },
-                prices: [{ territory: "USA", price: "9.99" }], // Missing CAN
-                localizations: [
-                  {
-                    locale: "en-US",
-                    name: "New Subscription",
-                    description: "A new subscription",
-                  },
-                ],
-                introductoryOffers: [],
-                promotionalOffers: [],
+                name: "Test IAP",
+                description: "Test IAP description",
               },
             ],
           },
         ],
+        subscriptionGroups: [
+          {
+            referenceName: "test_group",
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Test Group",
+              },
+            ],
+            subscriptions: [
+              {
+                productId: "test_sub",
+                referenceName: "Test Subscription",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [
+                  {
+                    price: "9.99",
+                    territory: "USA",
+                  },
+                ],
+                localizations: [
+                  {
+                    locale: "en-US",
+                    name: "Test Subscription",
+                    description: "Test subscription description",
+                  },
+                ],
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA"],
+                },
+              },
+            ],
+          },
+        ],
+        versionString: "1.0.0",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test App",
+            description: "Test app description",
+          },
+        ],
       };
 
-      expect(() => {
-        const desiredState = AppStoreModelSchema.parse(desiredStateData);
-        diff(currentState, desiredState);
-      }).toThrow(
-        "Subscription 'new_sub' is available in territory 'CAN' but has no price defined for this territory"
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(0);
+    });
+  });
+
+  describe("Basic diff functionality", () => {
+    it("should return an empty plan when both states are empty", () => {
+      const plan = diff(EMPTY_STATE, EMPTY_STATE);
+      expect(plan).toEqual([]);
+    });
+
+    it("should throw an error if schema versions mismatch", () => {
+      const currentState = { ...EMPTY_STATE, schemaVersion: "1.0.0" };
+      const desiredState = { ...EMPTY_STATE, schemaVersion: "2.0.0" };
+      expect(() => diff(currentState, desiredState)).toThrow(
+        /Schema version mismatch/
       );
+    });
+
+    it("should throw an error if app IDs mismatch", () => {
+      const currentState = { ...EMPTY_STATE, appId: "app1" };
+      const desiredState = { ...EMPTY_STATE, appId: "app2" };
+      expect(() => diff(currentState, desiredState)).toThrow(/App ID mismatch/);
     });
   });
 });

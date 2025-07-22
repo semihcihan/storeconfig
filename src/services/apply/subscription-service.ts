@@ -186,7 +186,7 @@ async function getSubscriptionLocalizationId(
 // Create a new subscription group
 export async function createNewSubscriptionGroup(
   appId: string,
-  group: AppStoreModel["subscriptionGroups"][0]
+  group: NonNullable<AppStoreModel["subscriptionGroups"]>[0]
 ): Promise<string> {
   logger.info(`Creating new subscription group: ${group.referenceName}`);
 

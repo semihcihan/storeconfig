@@ -174,9 +174,9 @@ export const AppStoreModelSchema = z.object({
   schemaVersion: z.string(),
   appId: z.string(),
   pricing: PriceScheduleSchema.optional(),
-  availableTerritories: z.array(TerritoryCodeSchema),
-  inAppPurchases: z.array(InAppPurchaseSchema),
-  subscriptionGroups: z.array(SubscriptionGroupSchema),
+  availableTerritories: z.array(TerritoryCodeSchema).optional(),
+  inAppPurchases: z.array(InAppPurchaseSchema).optional(),
+  subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
   versionString: z.string().optional(),
   localizations: z.array(AppStoreLocalizationSchema).optional(),
 });

@@ -2,6 +2,7 @@ import {
   PriceScheduleSchema,
   SubscriptionSchema,
   InAppPurchaseSchema,
+  AppStoreModelSchema,
 } from "./app-store";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { describe, it, expect } from "@jest/globals";
@@ -12,6 +13,49 @@ jest.mock("./territories", () => ({
 }));
 
 describe("AppStore Models", () => {
+  describe("AppStoreModelSchema", () => {
+    it("should accept minimal valid app store model", () => {
+      const minimalModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+      };
+      const result = AppStoreModelSchema.safeParse(minimalModel);
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept app store model with all optional fields", () => {
+      const fullModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [{ territory: "USA", price: "4.99" }],
+        },
+        availableTerritories: ["USA", "CAN"],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+        versionString: "1.0.0",
+        localizations: [],
+      };
+      const result = AppStoreModelSchema.safeParse(fullModel);
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept app store model with some optional fields missing", () => {
+      const partialModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [{ territory: "USA", price: "4.99" }],
+        },
+        versionString: "1.0.0",
+      };
+      const result = AppStoreModelSchema.safeParse(partialModel);
+      expect(result.success).toBe(true);
+    });
+  });
+
   describe("isValidProductId", () => {
     it("should return true for valid product IDs", () => {
       const validProductIds = [
