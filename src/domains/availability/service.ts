@@ -1,14 +1,14 @@
-import { logger } from "../utils/logger";
-import { AppStoreModelSchema } from "../models/app-store";
-import { TerritoryCodeSchema } from "../models/territories";
+import { logger } from "../../utils/logger";
+import { AppStoreModelSchema } from "../../models/app-store";
+import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 import {
   getAppAvailability,
   createAppAvailability,
   getTerritoryAvailabilities,
   updateTerritoryAvailability,
-} from "../domains/availability/api-client";
-import { decodeTerritoryAvailabilityId } from "../helpers/id-encoding-helpers";
+} from "../../domains/availability/api-client";
+import { decodeTerritoryAvailabilityId } from "../../helpers/id-encoding-helpers";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -39,7 +39,7 @@ async function createAppAvailabilityForApp(
   logger.info("Creating new app availability...");
 
   // Import territory codes
-  const { territoryCodes } = await import("../models/territories");
+  const { territoryCodes } = await import("../../models/territories");
 
   // Create territory availability objects for all territories
   const territoryAvailabilityData = [];

@@ -1,15 +1,18 @@
-import { logger } from "../utils/logger";
-import { AppStoreModelSchema, AvailabilitySchema } from "../models/app-store";
+import { logger } from "../../utils/logger";
+import {
+  AppStoreModelSchema,
+  AvailabilitySchema,
+} from "../../models/app-store";
 import { z } from "zod";
 import {
   getSubscriptionAvailability,
   createSubscriptionAvailability,
-} from "../domains/subscriptions/api-client";
+} from "./api-client";
 import {
   isNotFoundError,
   throwFormattedError,
-} from "../helpers/error-handling-helpers";
-import type { components } from "../generated/app-store-connect-api";
+} from "../../helpers/error-handling-helpers";
+import type { components } from "../../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type SubscriptionAvailabilityCreateRequest =

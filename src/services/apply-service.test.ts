@@ -4,16 +4,33 @@ import { AppStoreModelSchema } from "../models/app-store";
 import { z } from "zod";
 
 // Mock the services
-jest.mock("./app-availability-service");
-jest.mock("./app-pricing-service");
-jest.mock("./in-app-purchase-service");
-jest.mock("./iap-availability-service");
-jest.mock("./subscription-availability-service");
-jest.mock("./subscription-service");
-jest.mock("./introductory-offer-service");
-jest.mock("../domains/in-app-purchases/api-client");
+jest.mock("../domains/availability/service");
+jest.mock("../domains/pricing/service");
+jest.mock("../domains/in-app-purchases/service");
+jest.mock("../domains/in-app-purchases/availability-service");
+jest.mock("../domains/in-app-purchases/pricing-service");
+jest.mock("../domains/subscriptions/availability-service");
+jest.mock("../domains/subscriptions/pricing-service");
+jest.mock("../domains/subscriptions/service");
+jest.mock("../domains/subscriptions/introductory-offer-service");
 jest.mock("../domains/subscriptions/api-client");
 jest.mock("../utils/logger");
+
+// Mock the findSubscriptionId function
+const mockFindSubscriptionId = jest.fn().mockReturnValue("subscription-123");
+jest.mocked(
+  require("../domains/subscriptions/pricing-service")
+).findSubscriptionId = mockFindSubscriptionId;
+
+// Mock the combineSubscriptionPrices function
+const mockCombineSubscriptionPrices = jest
+  .fn()
+  .mockImplementation((addedPrices, updatedPrices) => {
+    return [...addedPrices, ...updatedPrices];
+  });
+jest.mocked(
+  require("../domains/subscriptions/pricing-service")
+).combineSubscriptionPrices = mockCombineSubscriptionPrices;
 
 // Mock implementations
 const mockUpdateAppAvailability = jest.fn();
@@ -43,52 +60,62 @@ const mockLogger = {
 };
 
 // Set up mocks
-jest.mocked(require("./app-availability-service")).updateAppAvailability =
+jest.mocked(require("../domains/availability/service")).updateAppAvailability =
   mockUpdateAppAvailability;
-jest.mocked(require("./app-pricing-service")).createAppPriceSchedule =
+jest.mocked(require("../domains/pricing/service")).createAppPriceSchedule =
   mockCreateAppPriceSchedule;
-jest.mocked(require("./in-app-purchase-service")).createNewInAppPurchase =
-  mockCreateNewInAppPurchase;
-jest.mocked(require("./in-app-purchase-service")).updateExistingInAppPurchase =
-  mockUpdateExistingInAppPurchase;
-jest.mocked(require("./in-app-purchase-service")).createIAPLocalization =
-  mockCreateIAPLocalization;
-jest.mocked(require("./in-app-purchase-service")).updateIAPLocalization =
-  mockUpdateIAPLocalization;
-jest.mocked(require("./in-app-purchase-service")).deleteIAPLocalization =
-  mockDeleteIAPLocalization;
-jest.mocked(require("./iap-availability-service")).updateIAPAvailability =
-  mockUpdateIAPAvailability;
 jest.mocked(
-  require("./subscription-availability-service")
+  require("../domains/in-app-purchases/service")
+).createNewInAppPurchase = mockCreateNewInAppPurchase;
+jest.mocked(
+  require("../domains/in-app-purchases/service")
+).updateExistingInAppPurchase = mockUpdateExistingInAppPurchase;
+jest.mocked(
+  require("../domains/in-app-purchases/service")
+).createIAPLocalization = mockCreateIAPLocalization;
+jest.mocked(
+  require("../domains/in-app-purchases/service")
+).updateIAPLocalization = mockUpdateIAPLocalization;
+jest.mocked(
+  require("../domains/in-app-purchases/service")
+).deleteIAPLocalization = mockDeleteIAPLocalization;
+jest.mocked(
+  require("../domains/in-app-purchases/availability-service")
+).updateIAPAvailability = mockUpdateIAPAvailability;
+jest.mocked(
+  require("../domains/subscriptions/availability-service")
 ).updateSubscriptionAvailability = mockUpdateSubscriptionAvailability;
 jest.mocked(
   require("../domains/in-app-purchases/api-client")
 ).fetchInAppPurchases = mockFetchInAppPurchases;
-jest.mocked(require("./subscription-service")).createNewSubscriptionGroup =
-  mockCreateNewSubscriptionGroup;
-jest.mocked(require("./subscription-service")).updateExistingSubscriptionGroup =
-  mockUpdateExistingSubscriptionGroup;
+jest.mocked(
+  require("../domains/subscriptions/service")
+).createNewSubscriptionGroup = mockCreateNewSubscriptionGroup;
+jest.mocked(
+  require("../domains/subscriptions/service")
+).updateExistingSubscriptionGroup = mockUpdateExistingSubscriptionGroup;
 
 jest.mocked(
-  require("./subscription-service")
+  require("../domains/subscriptions/service")
 ).createSubscriptionGroupLocalization = mockCreateSubscriptionGroupLocalization;
 jest.mocked(
-  require("./subscription-service")
+  require("../domains/subscriptions/service")
 ).updateSubscriptionGroupLocalization = mockUpdateSubscriptionGroupLocalization;
 jest.mocked(
-  require("./subscription-service")
+  require("../domains/subscriptions/service")
 ).deleteSubscriptionGroupLocalization = mockDeleteSubscriptionGroupLocalization;
 jest.mocked(
   require("../domains/subscriptions/api-client")
 ).fetchSubscriptionGroups = mockFetchSubscriptionGroups;
 jest.mocked(
-  require("./subscription-pricing-service")
+  require("../domains/subscriptions/pricing-service")
 ).createSubscriptionPrices = mockCreateSubscriptionPrices;
-jest.mocked(require("./introductory-offer-service")).createIntroductoryOffer =
-  mockCreateIntroductoryOffer;
-jest.mocked(require("./introductory-offer-service")).deleteIntroductoryOffer =
-  mockDeleteIntroductoryOffer;
+jest.mocked(
+  require("../domains/subscriptions/introductory-offer-service")
+).createIntroductoryOffer = mockCreateIntroductoryOffer;
+jest.mocked(
+  require("../domains/subscriptions/introductory-offer-service")
+).deleteIntroductoryOffer = mockDeleteIntroductoryOffer;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -991,8 +1018,9 @@ describe("Subscription Group Actions", () => {
     const mockCreateNewSubscription = jest
       .fn()
       .mockResolvedValue("subscription-123");
-    jest.mocked(require("./subscription-service")).createNewSubscription =
-      mockCreateNewSubscription;
+    jest.mocked(
+      require("../domains/subscriptions/service")
+    ).createNewSubscription = mockCreateNewSubscription;
 
     await apply(plan, testAppId, mockCurrentState, mockDesiredState);
 

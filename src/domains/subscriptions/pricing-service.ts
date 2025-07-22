@@ -1,11 +1,11 @@
-import { logger } from "../utils/logger";
-import { PriceSchema } from "../models/app-store";
+import { logger } from "../../utils/logger";
+import { PriceSchema } from "../../models/app-store";
 import { z } from "zod";
 import {
   fetchAllSubscriptionPricePoints,
   createSubscriptionPrice,
-} from "../domains/subscriptions/api-client";
-import type { components } from "../generated/app-store-connect-api";
+} from "./api-client";
+import type { components } from "../../generated/app-store-connect-api";
 
 type SubscriptionPriceCreateRequest =
   components["schemas"]["SubscriptionPriceCreateRequest"];

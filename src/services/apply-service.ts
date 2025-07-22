@@ -1,31 +1,23 @@
 import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
-import { updateAppAvailability } from "./app-availability-service";
-import { createAppPriceSchedule } from "./app-pricing-service";
-import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
+import { updateAppAvailability } from "../domains/availability/service";
+import { createAppPriceSchedule } from "../domains/pricing/service";
 import {
   createNewInAppPurchase,
   updateExistingInAppPurchase,
   createIAPLocalization,
   updateIAPLocalization,
   deleteIAPLocalization,
-} from "./in-app-purchase-service";
-import { updateIAPAvailability } from "./iap-availability-service";
-import { updateIAPPricing } from "./iap-pricing-service";
-import { updateSubscriptionAvailability } from "./subscription-availability-service";
+} from "../domains/in-app-purchases/service";
+import { updateIAPAvailability } from "../domains/in-app-purchases/availability-service";
+import { updateIAPPricing } from "../domains/in-app-purchases/pricing-service";
+import { updateSubscriptionAvailability } from "../domains/subscriptions/availability-service";
 import {
   createSubscriptionPrices,
   findSubscriptionId,
   combineSubscriptionPrices,
-} from "./subscription-pricing-service";
-import {
-  createIntroductoryOffer,
-  deleteIntroductoryOffer,
-} from "./introductory-offer-service";
-import { updateAppDetails } from "./app-service";
-import { AppStoreLocalizationService } from "./localization-service";
-import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
+} from "../domains/subscriptions/pricing-service";
 import {
   createNewSubscriptionGroup,
   updateExistingSubscriptionGroup,
@@ -37,10 +29,18 @@ import {
   createSubscriptionLocalization,
   updateSubscriptionLocalization,
   deleteSubscriptionLocalization,
-} from "./subscription-service";
+} from "../domains/subscriptions/service";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 import { showAction } from "./plan-service";
+import { LocalizationService as AppStoreLocalizationService } from "../domains/app-info/localization-service";
+import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
+import { updateAppDetails } from "./app-service";
+import {
+  createIntroductoryOffer,
+  deleteIntroductoryOffer,
+} from "../domains/subscriptions/introductory-offer-service";
+import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchasesV2Response =
@@ -163,26 +163,35 @@ async function executeAction(
 
     // App Store Localizations
     case "CREATE_APP_LOCALIZATION":
-      await localizationService.createAppLocalization(
+      await localizationService.createLocalization(
         appId,
         action.payload.localization.locale,
         action.payload.localization
       );
       break;
-    case "UPDATE_APP_LOCALIZATION":
-      await localizationService.updateAppLocalization(
-        appId,
-        action.payload.locale,
-        action.payload.versionChanges,
-        action.payload.appInfoChanges
-      );
-      break;
-    case "DELETE_APP_LOCALIZATION":
-      await localizationService.deleteAppLocalization(
+    case "UPDATE_APP_LOCALIZATION": {
+      const loc = await localizationService.findLocalizationByLocale(
         appId,
         action.payload.locale
       );
+      if (loc) {
+        await localizationService.updateLocalization(
+          loc.id,
+          action.payload.appInfoChanges
+        );
+      }
       break;
+    }
+    case "DELETE_APP_LOCALIZATION": {
+      const loc = await localizationService.findLocalizationByLocale(
+        appId,
+        action.payload.locale
+      );
+      if (loc) {
+        await localizationService.deleteLocalization(loc.id);
+      }
+      break;
+    }
 
     // Subscription Groups
     case "CREATE_SUBSCRIPTION_GROUP":

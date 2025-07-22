@@ -1,10 +1,10 @@
-import { logger } from "../utils/logger";
+import { logger } from "../../utils/logger";
 import {
   AppStoreModelSchema,
   PriceSchema,
   PriceScheduleSchema,
-} from "../models/app-store";
-import { TerritoryCodeSchema } from "../models/territories";
+} from "../../models/app-store";
+import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 import {
   getAppPriceSchedule,
@@ -12,8 +12,8 @@ import {
   fetchCurrentManualPrices,
   fetchBaseTerritory,
   createAppPriceSchedule as createAppPriceScheduleAPI,
-} from "../domains/pricing/api-client";
-import { throwFormattedError } from "../helpers/error-handling-helpers";
+} from "../../domains/pricing/api-client";
+import { throwFormattedError } from "../../helpers/error-handling-helpers";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type Price = z.infer<typeof PriceSchema>;

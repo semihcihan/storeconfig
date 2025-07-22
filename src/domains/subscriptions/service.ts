@@ -1,5 +1,5 @@
-import { logger } from "../utils/logger";
-import { AppStoreModelSchema } from "../models/app-store";
+import { logger } from "../../utils/logger";
+import { AppStoreModelSchema } from "../../models/app-store";
 import { z } from "zod";
 import {
   fetchSubscriptionGroups,
@@ -14,8 +14,8 @@ import {
   updateSubscriptionLocalization as updateSubscriptionLocalizationAPI,
   deleteSubscriptionLocalization as deleteSubscriptionLocalizationAPI,
   fetchSubscriptionLocalizations,
-} from "../domains/subscriptions/api-client";
-import type { components } from "../generated/app-store-connect-api";
+} from "./api-client";
+import type { components } from "../../generated/app-store-connect-api";
 
 type SubscriptionGroupCreateRequest =
   components["schemas"]["SubscriptionGroupCreateRequest"];

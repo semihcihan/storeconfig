@@ -1,5 +1,5 @@
-import { AppStoreVersionService } from "./version-service";
-import { AppStoreVersionLocalizationService } from "./version-localization-service";
+import { AppStoreVersionService } from "../domains/versions/service";
+import { LocalizationService as VersionLocalizationService } from "../domains/versions/localization-service";
 import {
   AppStoreModelSchema,
   AppStoreLocalizationSchema,
@@ -10,11 +10,11 @@ import { logger } from "../utils/logger";
 
 export class AppStoreVersionAggregatorService {
   private versionService: AppStoreVersionService;
-  private versionLocalizationService: AppStoreVersionLocalizationService;
+  private versionLocalizationService: VersionLocalizationService;
 
   constructor() {
     this.versionService = new AppStoreVersionService();
-    this.versionLocalizationService = new AppStoreVersionLocalizationService();
+    this.versionLocalizationService = new VersionLocalizationService();
   }
 
   async fetchVersionMetadata(appId: string): Promise<{

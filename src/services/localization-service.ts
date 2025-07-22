@@ -1,6 +1,6 @@
-import { AppStoreVersionLocalizationService } from "./version-localization-service";
-import { AppInfoLocalizationService } from "./app-info-localization-service";
-import { AppStoreVersionService } from "./version-service";
+import { LocalizationService as AppStoreVersionLocalizationService } from "../domains/versions/localization-service";
+import { LocalizationService as AppInfoLocalizationService } from "../domains/app-info/localization-service";
+import { AppStoreVersionService } from "../domains/versions/service";
 import { logger } from "../utils/logger";
 import type { components } from "../generated/app-store-connect-api";
 import { z } from "zod";
@@ -42,10 +42,12 @@ export class AppStoreLocalizationService {
     const versions = await this.versionService.getVersionsForApp(appId);
 
     // Find the most recent version that's not in a terminal state
-    const currentVersion = versions.find((version) => {
-      const state = version.attributes?.appVersionState;
-      return state && !["REPLACED_WITH_NEW_VERSION"].includes(state);
-    });
+    const currentVersion = versions.find(
+      (version: components["schemas"]["AppStoreVersionResponse"]["data"]) => {
+        const state = version.attributes?.appVersionState;
+        return state && !["REPLACED_WITH_NEW_VERSION"].includes(state);
+      }
+    );
 
     if (currentVersion) {
       this.cachedVersionId = currentVersion.id;

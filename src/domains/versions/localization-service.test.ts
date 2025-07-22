@@ -1,7 +1,7 @@
-import { AppStoreVersionLocalizationService } from "./version-localization-service";
+import { LocalizationService as AppStoreVersionLocalizationService } from "./localization-service";
 
 // Mock the api module
-jest.mock("./api", () => ({
+jest.mock("../../services/api", () => ({
   api: {
     POST: jest.fn(),
     GET: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock("./api", () => ({
   },
 }));
 
-import { api } from "./api";
+import * as api from "../../services/api";
 
 const mockApi = api as any;
 
@@ -37,7 +37,7 @@ describe("AppStoreVersionLocalizationService", () => {
         },
       };
 
-      mockApi.POST.mockResolvedValue(mockResponse);
+      mockApi.api.POST.mockResolvedValue(mockResponse);
 
       const localizationData = {
         locale: "en-US" as const,
@@ -50,7 +50,7 @@ describe("AppStoreVersionLocalizationService", () => {
         localizationData
       );
 
-      expect(mockApi.POST).toHaveBeenCalledWith(
+      expect(mockApi.api.POST).toHaveBeenCalledWith(
         "/v1/appStoreVersionLocalizations",
         {
           body: {
@@ -92,11 +92,11 @@ describe("AppStoreVersionLocalizationService", () => {
         },
       };
 
-      mockApi.GET.mockResolvedValue(mockResponse);
+      mockApi.api.GET.mockResolvedValue(mockResponse);
 
       const result = await service.getLocalization("localization-123");
 
-      expect(mockApi.GET).toHaveBeenCalledWith(
+      expect(mockApi.api.GET).toHaveBeenCalledWith(
         "/v1/appStoreVersionLocalizations/{id}",
         {
           params: {
@@ -124,7 +124,7 @@ describe("AppStoreVersionLocalizationService", () => {
         },
       };
 
-      mockApi.PATCH.mockResolvedValue(mockResponse);
+      mockApi.api.PATCH.mockResolvedValue(mockResponse);
 
       const localizationData = {
         locale: "en-US" as const,
@@ -136,7 +136,7 @@ describe("AppStoreVersionLocalizationService", () => {
         localizationData
       );
 
-      expect(mockApi.PATCH).toHaveBeenCalledWith(
+      expect(mockApi.api.PATCH).toHaveBeenCalledWith(
         "/v1/appStoreVersionLocalizations/{id}",
         {
           params: {
@@ -160,11 +160,11 @@ describe("AppStoreVersionLocalizationService", () => {
 
   describe("deleteLocalization", () => {
     it("should delete an app store version localization", async () => {
-      mockApi.DELETE.mockResolvedValue({});
+      mockApi.api.DELETE.mockResolvedValue({});
 
       await service.deleteLocalization("localization-123");
 
-      expect(mockApi.DELETE).toHaveBeenCalledWith(
+      expect(mockApi.api.DELETE).toHaveBeenCalledWith(
         "/v1/appStoreVersionLocalizations/{id}",
         {
           params: {
@@ -192,11 +192,11 @@ describe("AppStoreVersionLocalizationService", () => {
         },
       };
 
-      mockApi.GET.mockResolvedValue(mockResponse);
+      mockApi.api.GET.mockResolvedValue(mockResponse);
 
       const result = await service.getLocalizationsForVersion("version-123");
 
-      expect(mockApi.GET).toHaveBeenCalledWith(
+      expect(mockApi.api.GET).toHaveBeenCalledWith(
         "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
         {
           params: {

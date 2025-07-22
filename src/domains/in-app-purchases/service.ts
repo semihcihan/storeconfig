@@ -1,5 +1,5 @@
-import { logger } from "../utils/logger";
-import { AppStoreModelSchema } from "../models/app-store";
+import { logger } from "../../utils/logger";
+import { AppStoreModelSchema } from "../../models/app-store";
 import { z } from "zod";
 import {
   createInAppPurchase,
@@ -8,8 +8,8 @@ import {
   createInAppPurchaseLocalization,
   updateInAppPurchaseLocalization,
   deleteInAppPurchaseLocalization,
-} from "../domains/in-app-purchases/api-client";
-import type { components } from "../generated/app-store-connect-api";
+} from "./api-client";
+import type { components } from "../../generated/app-store-connect-api";
 
 type InAppPurchaseV2CreateRequest =
   components["schemas"]["InAppPurchaseV2CreateRequest"];

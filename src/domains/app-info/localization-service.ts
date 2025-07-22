@@ -4,15 +4,15 @@ import {
   updateAppInfoLocalization,
   deleteAppInfoLocalization,
   getAppInfoLocalizationsForAppInfo,
-} from "../domains/app-info/api-client";
-import type { components } from "../generated/app-store-connect-api";
+} from "./api-client";
+import type { components } from "../../generated/app-store-connect-api";
 import { z } from "zod";
-import { AppStoreAppInfoLocalizationSchema } from "../models/app-store";
+import { AppStoreAppInfoLocalizationSchema } from "../../models/app-store";
 
 type AppInfoLocalization =
   components["schemas"]["AppInfoLocalizationResponse"]["data"];
 
-export class AppInfoLocalizationService {
+export class LocalizationService {
   async createLocalization(
     appInfoId: string,
     locale: string,

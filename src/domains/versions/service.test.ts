@@ -1,7 +1,7 @@
-import { AppStoreVersionService, AppVersionState } from "./version-service";
+import { AppStoreVersionService, AppVersionState } from "./service";
 
 // Mock the domain API client
-jest.mock("../domains/versions/api-client", () => ({
+jest.mock("./api-client", () => ({
   createAppStoreVersion: jest.fn(),
   getAppStoreVersion: jest.fn(),
   updateAppStoreVersion: jest.fn(),
@@ -9,29 +9,27 @@ jest.mock("../domains/versions/api-client", () => ({
   getAppStoreVersionsForApp: jest.fn(),
 }));
 
-import {
-  createAppStoreVersion,
-  getAppStoreVersion,
-  updateAppStoreVersion,
-  deleteAppStoreVersion,
-  getAppStoreVersionsForApp,
-} from "../domains/versions/api-client";
+import * as apiClient from "./api-client";
 
-const mockCreateAppStoreVersion = createAppStoreVersion as jest.MockedFunction<
-  typeof createAppStoreVersion
->;
-const mockGetAppStoreVersion = getAppStoreVersion as jest.MockedFunction<
-  typeof getAppStoreVersion
->;
-const mockUpdateAppStoreVersion = updateAppStoreVersion as jest.MockedFunction<
-  typeof updateAppStoreVersion
->;
-const mockDeleteAppStoreVersion = deleteAppStoreVersion as jest.MockedFunction<
-  typeof deleteAppStoreVersion
->;
+const mockCreateAppStoreVersion =
+  apiClient.createAppStoreVersion as jest.MockedFunction<
+    typeof apiClient.createAppStoreVersion
+  >;
+const mockGetAppStoreVersion =
+  apiClient.getAppStoreVersion as jest.MockedFunction<
+    typeof apiClient.getAppStoreVersion
+  >;
+const mockUpdateAppStoreVersion =
+  apiClient.updateAppStoreVersion as jest.MockedFunction<
+    typeof apiClient.updateAppStoreVersion
+  >;
+const mockDeleteAppStoreVersion =
+  apiClient.deleteAppStoreVersion as jest.MockedFunction<
+    typeof apiClient.deleteAppStoreVersion
+  >;
 const mockGetAppStoreVersionsForApp =
-  getAppStoreVersionsForApp as jest.MockedFunction<
-    typeof getAppStoreVersionsForApp
+  apiClient.getAppStoreVersionsForApp as jest.MockedFunction<
+    typeof apiClient.getAppStoreVersionsForApp
   >;
 
 describe("AppStoreVersionService", () => {

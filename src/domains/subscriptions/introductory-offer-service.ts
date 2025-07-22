@@ -1,19 +1,19 @@
-import { logger } from "../utils/logger";
+import { logger } from "../../utils/logger";
 import {
   IntroductoryOfferSchema,
   SubscriptionOfferDurationSchema,
-} from "../models/app-store";
+} from "../../models/app-store";
 import { z } from "zod";
 import {
   createSubscriptionIntroductoryOffer,
   deleteSubscriptionIntroductoryOffer,
   fetchSubscriptionIntroductoryOffers,
-} from "../domains/subscriptions/api-client";
+} from "./api-client";
 import {
   findSubscriptionId,
   findSubscriptionPricePointId,
-} from "./subscription-pricing-service";
-import type { components } from "../generated/app-store-connect-api";
+} from "./pricing-service";
+import type { components } from "../../generated/app-store-connect-api";
 
 type SubscriptionGroupsResponse =
   components["schemas"]["SubscriptionGroupsResponse"];

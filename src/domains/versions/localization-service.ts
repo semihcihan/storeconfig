@@ -4,15 +4,15 @@ import {
   updateAppStoreVersionLocalization,
   deleteAppStoreVersionLocalization,
   getAppStoreVersionLocalizationsForVersion,
-} from "../domains/versions/api-client";
-import type { AppStoreVersionLocalizationSchema } from "../models/app-store";
-import type { components } from "../generated/app-store-connect-api";
+} from "./api-client";
+import type { AppStoreVersionLocalizationSchema } from "../../models/app-store";
+import type { components } from "../../generated/app-store-connect-api";
 import { z } from "zod";
 
 type AppStoreVersionLocalization =
   components["schemas"]["AppStoreVersionLocalizationResponse"]["data"];
 
-export class AppStoreVersionLocalizationService {
+export class LocalizationService {
   async createLocalization(
     versionId: string,
     locale: string,
