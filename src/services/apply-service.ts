@@ -3,7 +3,7 @@ import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
 import { updateAppAvailability } from "./app-availability-service";
 import { createAppPriceSchedule } from "./app-pricing-service";
-import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
+import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
 import {
   createNewInAppPurchase,
   updateExistingInAppPurchase,
@@ -24,7 +24,7 @@ import {
   deleteIntroductoryOffer,
 } from "./introductory-offer-service";
 import { updateAppDetails } from "./app-service";
-import { AppStoreLocalizationService } from "./app-store-localization-service";
+import { AppStoreLocalizationService } from "./localization-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,

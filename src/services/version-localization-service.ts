@@ -4,7 +4,7 @@ import {
   updateAppStoreVersionLocalization,
   deleteAppStoreVersionLocalization,
   getAppStoreVersionLocalizationsForVersion,
-} from "../domains/app-store/api-client";
+} from "../domains/versions/api-client";
 import type { AppStoreVersionLocalizationSchema } from "../models/app-store";
 import type { components } from "../generated/app-store-connect-api";
 import { z } from "zod";

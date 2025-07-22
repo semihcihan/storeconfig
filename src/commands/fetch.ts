@@ -2,7 +2,7 @@ import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
 import { z } from "zod";
-import { fetchAppStoreState } from "../services/app-store-aggregator";
+import { fetchAppStoreState } from "../services/fetch-service";
 
 const fetchCommand: CommandModule = {
   command: "fetch",

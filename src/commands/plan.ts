@@ -2,7 +2,7 @@ import { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
 import { AppStoreModelSchema } from "../models/app-store";
-import { fetchAppStoreState } from "../services/app-store-aggregator";
+import { fetchAppStoreState } from "../services/fetch-service";
 import { z } from "zod";
 import { diff } from "../services/diff-service";
 import { showPlan } from "../services/plan-service";

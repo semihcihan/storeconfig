@@ -1,5 +1,5 @@
-import { AppStoreVersionService } from "./app-store-version-service";
-import { AppStoreVersionLocalizationService } from "./app-store-version-localization-service";
+import { AppStoreVersionService } from "./version-service";
+import { AppStoreVersionLocalizationService } from "./version-localization-service";
 import {
   AppStoreModelSchema,
   AppStoreLocalizationSchema,

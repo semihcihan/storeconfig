@@ -1,6 +1,6 @@
-import { AppStoreVersionLocalizationService } from "./app-store-version-localization-service";
+import { AppStoreVersionLocalizationService } from "./version-localization-service";
 import { AppInfoLocalizationService } from "./app-info-localization-service";
-import { AppStoreVersionService } from "./app-store-version-service";
+import { AppStoreVersionService } from "./version-service";
 import { logger } from "../utils/logger";
 import type { components } from "../generated/app-store-connect-api";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import {
   AppStoreAppInfoLocalizationSchema,
 } from "../models/app-store";
 import { LocaleCodeSchema } from "../models/locales";
-import { getAppInfosForApp } from "../domains/app-store/api-client";
+import { getAppInfosForApp } from "../domains/app-info/api-client";
 
 type AppStoreVersionLocalization =
   components["schemas"]["AppStoreVersionLocalizationResponse"]["data"];

@@ -6,10 +6,8 @@ import { isNotFoundError } from "../helpers/error-handling-helpers";
 // Import API clients
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { fetchSubscriptionGroups } from "../domains/subscriptions/api-client";
-import {
-  fetchAppAvailability,
-  fetchApp,
-} from "../domains/app-store/api-client";
+import { fetchAppAvailability } from "../domains/availability/api-client";
+import { fetchApp } from "../domains/apps/api-client";
 
 // Import mappers
 import { mapInAppPurchases } from "../domains/in-app-purchases/mapper";
@@ -20,7 +18,7 @@ import { mapAppAvailability } from "../domains/availability/mapper";
 import { mapAppPricing } from "./pricing-aggregator";
 
 // Import version aggregator
-import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
+import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
 import { LocaleCodeSchema } from "../models/locales";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;

@@ -1,10 +1,7 @@
-import {
-  AppStoreVersionService,
-  AppVersionState,
-} from "./app-store-version-service";
+import { AppStoreVersionService, AppVersionState } from "./version-service";
 
 // Mock the domain API client
-jest.mock("../domains/app-store/api-client", () => ({
+jest.mock("../domains/versions/api-client", () => ({
   createAppStoreVersion: jest.fn(),
   getAppStoreVersion: jest.fn(),
   updateAppStoreVersion: jest.fn(),
@@ -18,7 +15,7 @@ import {
   updateAppStoreVersion,
   deleteAppStoreVersion,
   getAppStoreVersionsForApp,
-} from "../domains/app-store/api-client";
+} from "../domains/versions/api-client";
 
 const mockCreateAppStoreVersion = createAppStoreVersion as jest.MockedFunction<
   typeof createAppStoreVersion

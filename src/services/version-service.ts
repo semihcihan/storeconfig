@@ -4,7 +4,7 @@ import {
   updateAppStoreVersion,
   deleteAppStoreVersion,
   getAppStoreVersionsForApp,
-} from "../domains/app-store/api-client";
+} from "../domains/versions/api-client";
 import type { components } from "../generated/app-store-connect-api";
 
 type AppStoreVersion = components["schemas"]["AppStoreVersionResponse"]["data"];

@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import { updateApp } from "../domains/app-store/api-client";
+import { updateApp } from "../domains/apps/api-client";
 import { z } from "zod";
 import { AppStoreModelSchema } from "../models/app-store";
 import { LocaleCodeSchema } from "../models/locales";

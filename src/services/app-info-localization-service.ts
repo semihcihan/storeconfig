@@ -4,7 +4,7 @@ import {
   updateAppInfoLocalization,
   deleteAppInfoLocalization,
   getAppInfoLocalizationsForAppInfo,
-} from "../domains/app-store/api-client";
+} from "../domains/app-info/api-client";
 import type { components } from "../generated/app-store-connect-api";
 import { z } from "zod";
 import { AppStoreAppInfoLocalizationSchema } from "../models/app-store";

@@ -1,4 +1,4 @@
-import { AppStoreVersionLocalizationService } from "./app-store-version-localization-service";
+import { AppStoreVersionLocalizationService } from "./version-localization-service";
 
 // Mock the api module
 jest.mock("./api", () => ({
