@@ -31,7 +31,7 @@ export class AppStoreVersionAggregatorService {
 
       const latestVersion = versions[0];
       const versionString = latestVersion.attributes?.versionString;
-      const copyright = latestVersion.attributes?.copyright;
+      const copyright = latestVersion.attributes?.copyright ?? undefined;
 
       const localizations = await this.fetchUnifiedLocalizations(
         latestVersion.id

@@ -1,5 +1,7 @@
 ## IDEAS TODOs
 
+- no 1.0.0 hard coded
+- how to handle schema version change
 - Have system defined and user defined territory groups and let these to be used
 - Create easy pricing changes
 - billing grace period
