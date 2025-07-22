@@ -42,29 +42,6 @@ export const LocalizationSchema = z.object({
   description: z.string(),
 });
 
-export const AppStoreVersionLocalizationSchema = z.object({
-  description: z.string().optional(),
-  keywords: z.string().optional(),
-  marketingUrl: z.string().url().optional(),
-  promotionalText: z.string().optional(),
-  supportUrl: z.string().url().optional(),
-  whatsNew: z.string().optional(),
-});
-
-export const AppStoreAppInfoLocalizationSchema = z.object({
-  name: z.string().optional(),
-  subtitle: z.string().optional(),
-  privacyPolicyUrl: z.string().url().optional(),
-  privacyChoicesUrl: z.string().url().optional(),
-});
-
-export const AppStoreLocalizationSchema = z
-  .object({
-    locale: LocaleCodeSchema,
-  })
-  .merge(AppStoreVersionLocalizationSchema)
-  .merge(AppStoreAppInfoLocalizationSchema);
-
 export const AvailabilitySchema = z.object({
   availableInNewTerritories: z.boolean(),
   availableTerritories: z.array(TerritoryCodeSchema),
@@ -178,6 +155,29 @@ export const InAppPurchaseSchema = z.object({
   reviewNote: z.string().optional(),
   availability: AvailabilitySchema.optional(),
 });
+
+export const AppStoreVersionLocalizationSchema = z.object({
+  description: z.string().optional(),
+  keywords: z.string().optional(),
+  marketingUrl: z.string().url().optional(),
+  promotionalText: z.string().optional(),
+  supportUrl: z.string().url().optional(),
+  whatsNew: z.string().optional(),
+});
+
+export const AppStoreAppInfoLocalizationSchema = z.object({
+  name: z.string().optional(),
+  subtitle: z.string().optional(),
+  privacyPolicyUrl: z.string().url().optional(),
+  privacyChoicesUrl: z.string().url().optional(),
+});
+
+export const AppStoreLocalizationSchema = z
+  .object({
+    locale: LocaleCodeSchema,
+  })
+  .merge(AppStoreVersionLocalizationSchema)
+  .merge(AppStoreAppInfoLocalizationSchema);
 
 export const AppStoreModelSchema = z
   .object({
