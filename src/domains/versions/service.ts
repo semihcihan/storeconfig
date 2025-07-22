@@ -6,6 +6,9 @@ import {
   getAppStoreVersionsForApp,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
+import { logger } from "../../utils/logger";
+import { AppStoreModelSchema } from "../../models/app-store";
+import { z } from "zod";
 
 type AppStoreVersion = components["schemas"]["AppStoreVersionResponse"]["data"];
 
@@ -65,5 +68,88 @@ export class AppStoreVersionService {
   async getVersionsForApp(appId: string): Promise<AppStoreVersion[]> {
     const response = await getAppStoreVersionsForApp(appId);
     return response.data;
+  }
+
+  async fetchVersionMetadata(appId: string): Promise<{
+    versionString?: string;
+    copyright?: string;
+  }> {
+    try {
+      const versions = await this.getVersionsForApp(appId);
+      if (versions.length === 0) {
+        logger.info(`No app store versions found for app ${appId}`);
+        return {};
+      }
+
+      const latestVersion = versions[0];
+      const versionString = latestVersion.attributes?.versionString;
+      const copyright = latestVersion.attributes?.copyright ?? undefined;
+
+      return {
+        versionString,
+        copyright,
+      };
+    } catch (error) {
+      logger.warn(
+        `Failed to fetch version metadata for app ${appId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return {};
+    }
+  }
+
+  async applyVersionMetadata(
+    appId: string,
+    data: z.infer<typeof AppStoreModelSchema>
+  ): Promise<void> {
+    try {
+      // Handle version string and copyright
+      if (data.versionString || data.copyright !== undefined) {
+        await this.handleVersionString(
+          appId,
+          data.versionString,
+          data.copyright
+        );
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to apply version metadata: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  private async handleVersionString(
+    appId: string,
+    versionString?: string,
+    copyright?: string
+  ): Promise<void> {
+    try {
+      const versions = await this.getVersionsForApp(appId);
+
+      if (versions.length === 0) {
+        if (!versionString) {
+          throw new Error(
+            "Version string is required when creating a new version"
+          );
+        }
+        await this.createVersion(appId, versionString, copyright);
+      } else {
+        const latestVersion = versions[0];
+        await this.updateVersion(
+          latestVersion.id,
+          versionString || latestVersion.attributes?.versionString || "",
+          copyright
+        );
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to handle version string: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
   }
 }

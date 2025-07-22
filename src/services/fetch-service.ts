@@ -17,8 +17,9 @@ import { mapAppAvailability } from "../domains/availability/mapper";
 // Import pricing logic
 import { mapAppPricing } from "./pricing-aggregator";
 
-// Import version aggregator
-import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
+// Import services
+import { AppStoreVersionService } from "../domains/versions/service";
+import { LocalizationAggregator } from "./localization-aggregator";
 import { LocaleCodeSchema } from "../models/locales";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -80,7 +81,8 @@ export async function fetchAppStoreState(
 ): Promise<AppStoreModel> {
   logger.info(`Fetching app store state for app ID: ${appId}`);
 
-  const versionAggregator = new AppStoreVersionAggregatorService();
+  const versionService = new AppStoreVersionService();
+  const localizationAggregator = new LocalizationAggregator();
 
   // Fetch all data in parallel
   const [
@@ -89,13 +91,15 @@ export async function fetchAppStoreState(
     mappedAvailableTerritories,
     mappedPricing,
     versionMetadata,
+    localizations,
     appInfo,
   ] = await Promise.all([
     fetchAndMapInAppPurchases(appId),
     fetchAndMapSubscriptionGroups(appId),
     fetchAndMapAppAvailability(appId),
     mapAppPricing(appId),
-    versionAggregator.fetchVersionMetadata(appId),
+    versionService.fetchVersionMetadata(appId),
+    localizationAggregator.fetchAllLocalizations(appId),
     fetchApp(appId),
   ]);
 
@@ -112,7 +116,7 @@ export async function fetchAppStoreState(
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
     versionString: versionMetadata.versionString,
-    localizations: versionMetadata.localizations,
+    localizations: localizations.length > 0 ? localizations : undefined,
   };
 
   const parsedData = AppStoreModelSchema.parse(result);

@@ -34,7 +34,7 @@ import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 import { showAction } from "./plan-service";
 import { LocalizationAggregator } from "./localization-aggregator";
-import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
+import { AppStoreVersionService } from "../domains/versions/service";
 import { updateAppDetails } from "./app-service";
 import {
   createIntroductoryOffer,
@@ -122,8 +122,8 @@ async function executeAction(
 
     // Version Metadata
     case "UPDATE_VERSION_METADATA":
-      const versionAggregator = new AppStoreVersionAggregatorService();
-      await versionAggregator.applyVersionMetadata(appId, {
+      const versionService = new AppStoreVersionService();
+      await versionService.applyVersionMetadata(appId, {
         ...desiredState,
         copyright: action.payload.copyright,
         versionString: action.payload.versionString,

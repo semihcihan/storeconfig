@@ -325,6 +325,80 @@ export class LocalizationAggregator {
     logger.info(`Successfully deleted app localization for locale: ${locale}`);
   }
 
+  async fetchAllLocalizations(
+    appId: string
+  ): Promise<z.infer<typeof AppStoreLocalizationSchema>[]> {
+    logger.info(`Fetching all localizations for app: ${appId}`);
+
+    // Get the current version for the app
+    const version = await this.getCurrentVersion(appId);
+    if (!version) {
+      logger.warn(
+        `No version found for app ${appId}, returning empty localizations`
+      );
+      return [];
+    }
+
+    const appInfoId = await this.getAppInfoId(appId);
+
+    // Fetch version localizations
+    const versionLocalizations =
+      await this.versionLocalizationService.getLocalizationsForVersion(
+        version.id
+      );
+
+    // Fetch app info localizations
+    const appInfoLocalizations =
+      await this.appInfoLocalizationService.getLocalizationsForAppInfo(
+        appInfoId
+      );
+
+    // Create a map of localizations by locale
+    const localizationsByLocale = new Map<
+      string,
+      z.infer<typeof AppStoreLocalizationSchema>
+    >();
+
+    // Process version localizations
+    versionLocalizations
+      .filter((loc) => loc.attributes?.locale)
+      .forEach((loc) => {
+        const locale = loc.attributes!.locale as z.infer<
+          typeof LocaleCodeSchema
+        >;
+        localizationsByLocale.set(locale, {
+          locale,
+          description: loc.attributes?.description || undefined,
+          keywords: loc.attributes?.keywords || undefined,
+          marketingUrl: loc.attributes?.marketingUrl || undefined,
+          promotionalText: loc.attributes?.promotionalText || undefined,
+          supportUrl: loc.attributes?.supportUrl || undefined,
+          whatsNew: loc.attributes?.whatsNew || undefined,
+        });
+      });
+
+    // Merge app info localizations
+    appInfoLocalizations.forEach((loc) => {
+      const locale = loc.attributes?.locale as z.infer<typeof LocaleCodeSchema>;
+      if (locale) {
+        const existing = localizationsByLocale.get(locale) || { locale };
+        localizationsByLocale.set(locale, {
+          ...existing,
+          name: loc.attributes?.name || undefined,
+          subtitle: loc.attributes?.subtitle || undefined,
+          privacyPolicyUrl: loc.attributes?.privacyPolicyUrl || undefined,
+          privacyChoicesUrl: loc.attributes?.privacyChoicesUrl || undefined,
+        });
+      }
+    });
+
+    const result = Array.from(localizationsByLocale.values());
+    logger.info(
+      `Successfully fetched ${result.length} localizations for app ${appId}`
+    );
+    return result;
+  }
+
   private clearVersionIdCache(): void {
     this.cachedVersionId = null;
   }
