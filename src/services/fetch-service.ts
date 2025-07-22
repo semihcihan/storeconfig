@@ -26,7 +26,7 @@ import { AppStoreLocalizationSchema } from "../models/app-store";
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 // Helper function to optimize localizations by removing duplicate fields with primary locale
-function optimizeLocalizationsByPrimaryLocale(
+export function optimizeLocalizationsByPrimaryLocale(
   localizations: z.infer<typeof AppStoreLocalizationSchema>[],
   primaryLocale: string | undefined
 ): z.infer<typeof AppStoreLocalizationSchema>[] {
@@ -49,45 +49,25 @@ function optimizeLocalizationsByPrimaryLocale(
       return localization;
     }
 
+    // Start with just the locale
     const optimized: z.infer<typeof AppStoreLocalizationSchema> = {
       locale: localization.locale,
     };
 
+    // Get all keys from the localization object (excluding 'locale' which we already set)
+    const fieldsToCheck = Object.keys(localization).filter(
+      (key) => key !== "locale"
+    );
+
     // Only include fields that differ from the primary locale
-    if (localization.name !== primaryLocalization.name) {
-      optimized.name = localization.name;
-    }
-    if (localization.subtitle !== primaryLocalization.subtitle) {
-      optimized.subtitle = localization.subtitle;
-    }
-    if (localization.description !== primaryLocalization.description) {
-      optimized.description = localization.description;
-    }
-    if (localization.keywords !== primaryLocalization.keywords) {
-      optimized.keywords = localization.keywords;
-    }
-    if (localization.marketingUrl !== primaryLocalization.marketingUrl) {
-      optimized.marketingUrl = localization.marketingUrl;
-    }
-    if (localization.promotionalText !== primaryLocalization.promotionalText) {
-      optimized.promotionalText = localization.promotionalText;
-    }
-    if (localization.supportUrl !== primaryLocalization.supportUrl) {
-      optimized.supportUrl = localization.supportUrl;
-    }
-    if (localization.whatsNew !== primaryLocalization.whatsNew) {
-      optimized.whatsNew = localization.whatsNew;
-    }
-    if (
-      localization.privacyPolicyUrl !== primaryLocalization.privacyPolicyUrl
-    ) {
-      optimized.privacyPolicyUrl = localization.privacyPolicyUrl;
-    }
-    if (
-      localization.privacyChoicesUrl !== primaryLocalization.privacyChoicesUrl
-    ) {
-      optimized.privacyChoicesUrl = localization.privacyChoicesUrl;
-    }
+    fieldsToCheck.forEach((field) => {
+      const fieldKey = field as keyof z.infer<
+        typeof AppStoreLocalizationSchema
+      >;
+      if (localization[fieldKey] !== primaryLocalization[fieldKey]) {
+        (optimized as any)[fieldKey] = localization[fieldKey];
+      }
+    });
 
     return optimized;
   });

@@ -13,14 +13,19 @@ export function isNotFoundError(error: any): boolean {
 
 // Helper function to check if an error is a rate limit error
 export function isRateLimitError(error: any): boolean {
-  return (
-    (error as any)?.status === 429 ||
-    ((error as any)?.errors &&
-      Array.isArray((error as any).errors) &&
-      (error as any).errors.some(
-        (err: any) => err.status === 429 || err.status === "429"
-      ))
-  );
+  // Check for direct 429 status
+  if (error?.status === 429) {
+    return true;
+  }
+
+  // Check for 429 status in the errors array (Apple API format)
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.some(
+      (err: any) => err.status === 429 || err.status === "429"
+    );
+  }
+
+  return false;
 }
 
 // Helper function to extract error message from Apple API error
