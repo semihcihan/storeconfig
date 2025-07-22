@@ -26,22 +26,6 @@ export const AppStoreLocalizationSchema = z.object({
 });
 ```
 
-### AppInfoMetadataSchema
-
-```typescript
-export const AppInfoMetadataSchema = z.object({
-  primaryCategory: z.string().optional(),
-  secondaryCategory: z.string().optional(),
-  primarySubcategoryOne: z.string().optional(),
-  primarySubcategoryTwo: z.string().optional(),
-  secondarySubcategoryOne: z.string().optional(),
-  secondarySubcategoryTwo: z.string().optional(),
-  contentRightsDeclaration: z
-    .enum(["DOES_NOT_USE_THIRD_PARTY_CONTENT", "USES_THIRD_PARTY_CONTENT"])
-    .optional(),
-});
-```
-
 ### Updated AppStoreModelSchema
 
 ```typescript
@@ -56,8 +40,6 @@ export const AppStoreModelSchema = z.object({
   versionString: z.string().optional(),
   // NEW: Unified localizations at root level
   localizations: z.array(AppStoreLocalizationSchema).optional(),
-  // NEW: App info metadata (categories, content rights)
-  appInfoMetadata: AppInfoMetadataSchema.optional(),
 });
 ```
 
@@ -67,16 +49,12 @@ export const AppStoreModelSchema = z.object({
 
 1. **AppStoreVersionService** - Handle version CRUD operations
 2. **AppStoreVersionLocalizationService** - Handle localization CRUD operations
-3. **AppInfoLocalizationService** - Handle app info localization CRUD operations
-4. **AppInfoService** - Handle app info and category relationships
 
 ### Key Operations Required
 
 - Create new app store version
 - Update existing version (let API handle state validation)
 - Create/update app store version localizations
-- Create/update app info localizations
-- Handle app info and category relationships
 - Error handling for immutable versions (409 responses)
 
 ## API Endpoints
@@ -94,18 +72,6 @@ export const AppStoreModelSchema = z.object({
 - `GET /v1/appStoreVersionLocalizations/{id}` - Get localization
 - `PATCH /v1/appStoreVersionLocalizations/{id}` - Update localization
 - `DELETE /v1/appStoreVersionLocalizations/{id}` - Delete localization
-
-### App Info Localizations
-
-- `POST /v1/appInfoLocalizations` - Create app info localization
-- `GET /v1/appInfoLocalizations/{id}` - Get app info localization
-- `PATCH /v1/appInfoLocalizations/{id}` - Update app info localization
-- `DELETE /v1/appInfoLocalizations/{id}` - Delete app info localization
-
-### App Infos (for categories)
-
-- `GET /v1/appInfos/{id}` - Get app info with category relationships
-- `PATCH /v1/appInfos/{id}` - Update app info (including categories)
 
 ## Version State Management
 
@@ -185,8 +151,7 @@ async function updateVersion(versionId: string, data: any) {
 
 1. Update `AppStoreModelSchema` with unified localizations and versionString at root
 2. Create `AppStoreVersionService` for version-specific operations
-3. Create `AppInfoService` for app-level metadata operations
-4. Add unified localization handling that routes to appropriate APIs
+3. Add unified localization handling that routes to appropriate APIs
 
 ### Phase 2: Error Handling
 
@@ -246,9 +211,8 @@ Use Apple's exact field names:
 All requested fields are supported:
 
 - ✅ **Unified localizations** (at root level):
-  - App info fields: name, subtitle, privacyPolicyUrl, privacyChoicesUrl
+  - App info fields: name, subtitle, privacyPolicyUrl, privacyChoicesUrl (managed directly in App Store Connect)
   - Version fields: description, keywords, marketingUrl, promotionalText, supportUrl, whatsNew
-- ✅ **App info metadata**: primaryCategory, secondaryCategory, subcategories, contentRightsDeclaration
 - ✅ **Version metadata**: versionString (at root level)
 
 **Simplified Schema Benefits:**
@@ -256,9 +220,12 @@ All requested fields are supported:
 - Single localizations array for easier editing
 - Version string at root level for quick access
 - Removed complex version-specific fields (reviewType, releaseType, earliestReleaseDate) for simplicity
+- App info metadata (categories, content rights) managed directly in App Store Connect for simplicity
 
 ### API Limitations
 
 1. **State-based restrictions**: Cannot update versions in certain states
 2. **Multiple API endpoints**: Need to handle both AppStoreVersion and AppInfo endpoints
 3. **Version limits**: Apple typically allows only 2 versions (live + new)
+
+// TODO: we're missing copyright We should add it at the root @AppStoreModelSchema
