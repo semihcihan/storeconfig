@@ -12,6 +12,9 @@ import {
   SubscriptionPeriodSchema,
   SubscriptionOfferDurationSchema,
   PriceScheduleSchema,
+  AppStoreLocalizationSchema,
+  AppStoreVersionLocalizationSchema,
+  AppStoreAppInfoLocalizationSchema,
 } from "./app-store";
 import { LocaleCodeSchema } from "./locales";
 import { TerritoryCodeSchema } from "./territories";
@@ -321,6 +324,33 @@ export type UpdateVersionMetadataAction = Action<
 >;
 
 // #################################################################################
+// App Store Localization Action Types
+// #################################################################################
+
+export type CreateAppLocalizationAction = Action<
+  "CREATE_APP_LOCALIZATION",
+  {
+    localization: z.infer<typeof AppStoreLocalizationSchema>;
+  }
+>;
+
+export type UpdateAppLocalizationAction = Action<
+  "UPDATE_APP_LOCALIZATION",
+  {
+    locale: z.infer<typeof LocaleCodeSchema>;
+    versionChanges: Partial<z.infer<typeof AppStoreVersionLocalizationSchema>>;
+    appInfoChanges: Partial<z.infer<typeof AppStoreAppInfoLocalizationSchema>>;
+  }
+>;
+
+export type DeleteAppLocalizationAction = Action<
+  "DELETE_APP_LOCALIZATION",
+  {
+    locale: z.infer<typeof LocaleCodeSchema>;
+  }
+>;
+
+// #################################################################################
 // Union Types
 // #################################################################################
 
@@ -342,6 +372,10 @@ export type AnyAction =
   | UpdateAppDetailsAction
   // Version Metadata
   | UpdateVersionMetadataAction
+  // App Store Localizations
+  | CreateAppLocalizationAction
+  | UpdateAppLocalizationAction
+  | DeleteAppLocalizationAction
   // Subscription Groups
   | CreateSubscriptionGroupAction
   | UpdateSubscriptionGroupAction

@@ -1,18 +1,18 @@
-import { logger } from "../../utils/logger";
+import { logger } from "../utils/logger";
 import {
   AppStoreModelSchema,
   PriceSchema,
   PriceScheduleSchema,
-} from "../../models/app-store";
-import { TerritoryCodeSchema } from "../../models/territories";
+} from "../models/app-store";
+import { TerritoryCodeSchema } from "../models/territories";
 import { z } from "zod";
 import {
   getIAPPriceScheduleId,
   findIAPPricePointId,
   createIAPPriceSchedule,
-} from "../../domains/in-app-purchases/api-client";
-import { throwFormattedError } from "../../helpers/error-handling-helpers";
-import type { components } from "../../generated/app-store-connect-api";
+} from "../domains/in-app-purchases/api-client";
+import { throwFormattedError } from "../helpers/error-handling-helpers";
+import type { components } from "../generated/app-store-connect-api";
 
 type Price = z.infer<typeof PriceSchema>;
 type Territory = z.infer<typeof TerritoryCodeSchema>;

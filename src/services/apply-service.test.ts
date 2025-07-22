@@ -4,13 +4,13 @@ import { AppStoreModelSchema } from "../models/app-store";
 import { z } from "zod";
 
 // Mock the services
-jest.mock("./apply/app-availability-service");
-jest.mock("./apply/app-pricing-service");
-jest.mock("./apply/in-app-purchase-service");
-jest.mock("./apply/iap-availability-service");
-jest.mock("./apply/subscription-availability-service");
-jest.mock("./apply/subscription-service");
-jest.mock("./apply/introductory-offer-service");
+jest.mock("./app-availability-service");
+jest.mock("./app-pricing-service");
+jest.mock("./in-app-purchase-service");
+jest.mock("./iap-availability-service");
+jest.mock("./subscription-availability-service");
+jest.mock("./subscription-service");
+jest.mock("./introductory-offer-service");
 jest.mock("../domains/in-app-purchases/api-client");
 jest.mock("../domains/subscriptions/api-client");
 jest.mock("../utils/logger");
@@ -43,57 +43,52 @@ const mockLogger = {
 };
 
 // Set up mocks
-jest.mocked(require("./apply/app-availability-service")).updateAppAvailability =
+jest.mocked(require("./app-availability-service")).updateAppAvailability =
   mockUpdateAppAvailability;
-jest.mocked(require("./apply/app-pricing-service")).createAppPriceSchedule =
+jest.mocked(require("./app-pricing-service")).createAppPriceSchedule =
   mockCreateAppPriceSchedule;
-jest.mocked(require("./apply/in-app-purchase-service")).createNewInAppPurchase =
+jest.mocked(require("./in-app-purchase-service")).createNewInAppPurchase =
   mockCreateNewInAppPurchase;
-jest.mocked(
-  require("./apply/in-app-purchase-service")
-).updateExistingInAppPurchase = mockUpdateExistingInAppPurchase;
-jest.mocked(require("./apply/in-app-purchase-service")).createIAPLocalization =
+jest.mocked(require("./in-app-purchase-service")).updateExistingInAppPurchase =
+  mockUpdateExistingInAppPurchase;
+jest.mocked(require("./in-app-purchase-service")).createIAPLocalization =
   mockCreateIAPLocalization;
-jest.mocked(require("./apply/in-app-purchase-service")).updateIAPLocalization =
+jest.mocked(require("./in-app-purchase-service")).updateIAPLocalization =
   mockUpdateIAPLocalization;
-jest.mocked(require("./apply/in-app-purchase-service")).deleteIAPLocalization =
+jest.mocked(require("./in-app-purchase-service")).deleteIAPLocalization =
   mockDeleteIAPLocalization;
-jest.mocked(require("./apply/iap-availability-service")).updateIAPAvailability =
+jest.mocked(require("./iap-availability-service")).updateIAPAvailability =
   mockUpdateIAPAvailability;
 jest.mocked(
-  require("./apply/subscription-availability-service")
+  require("./subscription-availability-service")
 ).updateSubscriptionAvailability = mockUpdateSubscriptionAvailability;
 jest.mocked(
   require("../domains/in-app-purchases/api-client")
 ).fetchInAppPurchases = mockFetchInAppPurchases;
-jest.mocked(
-  require("./apply/subscription-service")
-).createNewSubscriptionGroup = mockCreateNewSubscriptionGroup;
-jest.mocked(
-  require("./apply/subscription-service")
-).updateExistingSubscriptionGroup = mockUpdateExistingSubscriptionGroup;
+jest.mocked(require("./subscription-service")).createNewSubscriptionGroup =
+  mockCreateNewSubscriptionGroup;
+jest.mocked(require("./subscription-service")).updateExistingSubscriptionGroup =
+  mockUpdateExistingSubscriptionGroup;
 
 jest.mocked(
-  require("./apply/subscription-service")
+  require("./subscription-service")
 ).createSubscriptionGroupLocalization = mockCreateSubscriptionGroupLocalization;
 jest.mocked(
-  require("./apply/subscription-service")
+  require("./subscription-service")
 ).updateSubscriptionGroupLocalization = mockUpdateSubscriptionGroupLocalization;
 jest.mocked(
-  require("./apply/subscription-service")
+  require("./subscription-service")
 ).deleteSubscriptionGroupLocalization = mockDeleteSubscriptionGroupLocalization;
 jest.mocked(
   require("../domains/subscriptions/api-client")
 ).fetchSubscriptionGroups = mockFetchSubscriptionGroups;
 jest.mocked(
-  require("./apply/subscription-pricing-service")
+  require("./subscription-pricing-service")
 ).createSubscriptionPrices = mockCreateSubscriptionPrices;
-jest.mocked(
-  require("./apply/introductory-offer-service")
-).createIntroductoryOffer = mockCreateIntroductoryOffer;
-jest.mocked(
-  require("./apply/introductory-offer-service")
-).deleteIntroductoryOffer = mockDeleteIntroductoryOffer;
+jest.mocked(require("./introductory-offer-service")).createIntroductoryOffer =
+  mockCreateIntroductoryOffer;
+jest.mocked(require("./introductory-offer-service")).deleteIntroductoryOffer =
+  mockDeleteIntroductoryOffer;
 jest.mocked(require("../utils/logger")).logger = mockLogger;
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -996,7 +991,7 @@ describe("Subscription Group Actions", () => {
     const mockCreateNewSubscription = jest
       .fn()
       .mockResolvedValue("subscription-123");
-    jest.mocked(require("./apply/subscription-service")).createNewSubscription =
+    jest.mocked(require("./subscription-service")).createNewSubscription =
       mockCreateNewSubscription;
 
     await apply(plan, testAppId, mockCurrentState, mockDesiredState);

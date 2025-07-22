@@ -1,5 +1,6 @@
 ## IDEAS TODOs
 
+- are we sure const latestVersion = versions[0]; this is the latest version?
 - no 1.0.0 hard coded
 - how to handle schema version change
 - Have system defined and user defined territory groups and let these to be used

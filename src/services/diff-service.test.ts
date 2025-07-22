@@ -4103,13 +4103,6 @@ describe("diff-service", () => {
           },
         ],
         versionString: "1.0.0",
-        localizations: [
-          {
-            locale: "en-US",
-            name: "Test App",
-            description: "Test app description",
-          },
-        ],
       };
 
       const desiredState: AppStoreModel = {
@@ -4248,6 +4241,116 @@ describe("diff-service", () => {
         payload: {
           copyright: "© 2024 New Company",
           versionString: "2.0.0",
+        },
+      });
+    });
+
+    it("should create CREATE_APP_LOCALIZATION action when localization is added", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test App",
+            description: "Test app description",
+            keywords: "test, app",
+            whatsNew: "New features added",
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "CREATE_APP_LOCALIZATION",
+        payload: {
+          localization: {
+            locale: "en-US",
+            name: "Test App",
+            description: "Test app description",
+            keywords: "test, app",
+            whatsNew: "New features added",
+          },
+        },
+      });
+    });
+
+    it("should create UPDATE_APP_LOCALIZATION action when localization is updated", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test App",
+            description: "Old description",
+            keywords: "old, keywords",
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test App",
+            description: "New description",
+            keywords: "new, keywords",
+            whatsNew: "Updated features",
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_APP_LOCALIZATION",
+        payload: {
+          locale: "en-US",
+          versionChanges: {
+            description: "New description",
+            keywords: "new, keywords",
+            whatsNew: "Updated features",
+          },
+          appInfoChanges: {},
+        },
+      });
+    });
+
+    it("should create DELETE_APP_LOCALIZATION action when localization is removed", () => {
+      const currentState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Test App",
+            description: "Test description",
+          },
+        ],
+      };
+
+      const desiredState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "test-app",
+        localizations: [],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "DELETE_APP_LOCALIZATION",
+        payload: {
+          locale: "en-US",
         },
       });
     });

@@ -1,8 +1,8 @@
-import { logger } from "../../utils/logger";
-import { updateApp } from "../../domains/app-store/api-client";
+import { logger } from "../utils/logger";
+import { updateApp } from "../domains/app-store/api-client";
 import { z } from "zod";
-import { AppStoreModelSchema } from "../../models/app-store";
-import { LocaleCodeSchema } from "../../models/locales";
+import { AppStoreModelSchema } from "../models/app-store";
+import { LocaleCodeSchema } from "../models/locales";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 

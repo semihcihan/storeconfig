@@ -241,6 +241,26 @@ export async function showAction(action: AnyAction) {
       }
       break;
 
+    // App Store Localizations
+    case "CREATE_APP_LOCALIZATION":
+      logger.info(`  Locale: ${action.payload.localization.locale}`);
+      logger.info(
+        `  Localization: ${JSON.stringify(action.payload.localization)}`
+      );
+      break;
+    case "UPDATE_APP_LOCALIZATION":
+      logger.info(`  Locale: ${action.payload.locale}`);
+      logger.info(
+        `  Version Changes: ${JSON.stringify(action.payload.versionChanges)}`
+      );
+      logger.info(
+        `  App Info Changes: ${JSON.stringify(action.payload.appInfoChanges)}`
+      );
+      break;
+    case "DELETE_APP_LOCALIZATION":
+      logger.info(`  Locale: ${action.payload.locale}`);
+      break;
+
     default:
       const _exhaustiveCheck: never = action;
       throw new Error(

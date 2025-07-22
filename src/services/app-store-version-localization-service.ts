@@ -5,7 +5,7 @@ import {
   deleteAppStoreVersionLocalization,
   getAppStoreVersionLocalizationsForVersion,
 } from "../domains/app-store/api-client";
-import type { AppStoreLocalizationSchema } from "../models/app-store";
+import type { AppStoreVersionLocalizationSchema } from "../models/app-store";
 import type { components } from "../generated/app-store-connect-api";
 import { z } from "zod";
 
@@ -16,7 +16,7 @@ export class AppStoreVersionLocalizationService {
   async createLocalization(
     versionId: string,
     locale: string,
-    localizationData: z.infer<typeof AppStoreLocalizationSchema>
+    localizationData: z.infer<typeof AppStoreVersionLocalizationSchema>
   ): Promise<AppStoreVersionLocalization> {
     const response = await createAppStoreVersionLocalization(
       versionId,
@@ -42,7 +42,7 @@ export class AppStoreVersionLocalizationService {
 
   async updateLocalization(
     localizationId: string,
-    localizationData: z.infer<typeof AppStoreLocalizationSchema>
+    localizationData: z.infer<typeof AppStoreVersionLocalizationSchema>
   ): Promise<AppStoreVersionLocalization> {
     const response = await updateAppStoreVersionLocalization(localizationId, {
       description: localizationData.description,

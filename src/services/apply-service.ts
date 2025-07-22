@@ -1,8 +1,8 @@
 import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModelSchema } from "../models/app-store";
-import { updateAppAvailability } from "./apply/app-availability-service";
-import { createAppPriceSchedule } from "./apply/app-pricing-service";
+import { updateAppAvailability } from "./app-availability-service";
+import { createAppPriceSchedule } from "./app-pricing-service";
 import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
 import {
   createNewInAppPurchase,
@@ -10,20 +10,21 @@ import {
   createIAPLocalization,
   updateIAPLocalization,
   deleteIAPLocalization,
-} from "./apply/in-app-purchase-service";
-import { updateIAPAvailability } from "./apply/iap-availability-service";
-import { updateIAPPricing } from "./apply/iap-pricing-service";
-import { updateSubscriptionAvailability } from "./apply/subscription-availability-service";
+} from "./in-app-purchase-service";
+import { updateIAPAvailability } from "./iap-availability-service";
+import { updateIAPPricing } from "./iap-pricing-service";
+import { updateSubscriptionAvailability } from "./subscription-availability-service";
 import {
   createSubscriptionPrices,
   findSubscriptionId,
   combineSubscriptionPrices,
-} from "./apply/subscription-pricing-service";
+} from "./subscription-pricing-service";
 import {
   createIntroductoryOffer,
   deleteIntroductoryOffer,
-} from "./apply/introductory-offer-service";
-import { updateAppDetails } from "./apply/app-service";
+} from "./introductory-offer-service";
+import { updateAppDetails } from "./app-service";
+import { AppStoreLocalizationService } from "./app-store-localization-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,
@@ -36,7 +37,7 @@ import {
   createSubscriptionLocalization,
   updateSubscriptionLocalization,
   deleteSubscriptionLocalization,
-} from "./apply/subscription-service";
+} from "./subscription-service";
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 import { showAction } from "./plan-service";
@@ -59,6 +60,7 @@ async function executeAction(
   newlyCreatedSubscriptions?: Map<string, string>
 ) {
   await showAction(action);
+  const localizationService = new AppStoreLocalizationService();
   switch (action.type) {
     // In-App Purchases
     case "CREATE_IN_APP_PURCHASE":
@@ -157,6 +159,29 @@ async function executeAction(
     // App-level details
     case "UPDATE_APP_DETAILS":
       await updateAppDetails(appId, action.payload);
+      break;
+
+    // App Store Localizations
+    case "CREATE_APP_LOCALIZATION":
+      await localizationService.createAppLocalization(
+        appId,
+        action.payload.localization.locale,
+        action.payload.localization
+      );
+      break;
+    case "UPDATE_APP_LOCALIZATION":
+      await localizationService.updateAppLocalization(
+        appId,
+        action.payload.locale,
+        action.payload.versionChanges,
+        action.payload.appInfoChanges
+      );
+      break;
+    case "DELETE_APP_LOCALIZATION":
+      await localizationService.deleteAppLocalization(
+        appId,
+        action.payload.locale
+      );
       break;
 
     // Subscription Groups

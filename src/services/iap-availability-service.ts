@@ -1,19 +1,16 @@
-import { logger } from "../../utils/logger";
-import {
-  AppStoreModelSchema,
-  AvailabilitySchema,
-} from "../../models/app-store";
-import { TerritoryCodeSchema } from "../../models/territories";
+import { logger } from "../utils/logger";
+import { AppStoreModelSchema, AvailabilitySchema } from "../models/app-store";
+import { TerritoryCodeSchema } from "../models/territories";
 import { z } from "zod";
 import {
   getIAPAvailability,
   createIAPAvailability,
-} from "../../domains/in-app-purchases/api-client";
+} from "../domains/in-app-purchases/api-client";
 import {
   isNotFoundError,
   throwFormattedError,
-} from "../../helpers/error-handling-helpers";
-import type { components } from "../../generated/app-store-connect-api";
+} from "../helpers/error-handling-helpers";
+import type { components } from "../generated/app-store-connect-api";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchasesV2Response =

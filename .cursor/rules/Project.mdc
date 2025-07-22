@@ -160,7 +160,7 @@ Subscriptions use a simple `prices` array directly (no `priceSchedule` object):
 ### API Architecture
 
 - **All API related functions should go under related domain's api-client.ts**
-- **No API calls inside `services/apply/`** - these should only orchestrate the operations
+- **No API calls inside `services/`** - these should only orchestrate the operations
 - **Use the generated API client** from `src/generated/app-store-connect-api/index.ts` for type-safe API calls
 - **For OpenAPI schema lookups**, use the `openapi/` directory and `openapi/openapi.json` file
 

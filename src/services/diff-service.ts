@@ -10,6 +10,9 @@ import {
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
   LocalizationSchema,
+  AppStoreLocalizationSchema,
+  AppStoreVersionLocalizationSchema,
+  AppStoreAppInfoLocalizationSchema,
 } from "../models/app-store";
 import { TerritoryCodeSchema } from "../models/territories";
 import { logger } from "../utils/logger";
@@ -817,6 +820,110 @@ function diffVersionMetadata(
         versionString: desiredVersionString,
       },
     });
+  }
+
+  // Diff app store localizations
+  actions.push(
+    ...diffAppLocalizations(
+      currentState.localizations || [],
+      desiredState.localizations || []
+    )
+  );
+
+  return actions;
+}
+
+function diffAppLocalizations(
+  currentLocalizations: z.infer<typeof AppStoreLocalizationSchema>[],
+  desiredLocalizations: z.infer<typeof AppStoreLocalizationSchema>[]
+): AnyAction[] {
+  const actions: AnyAction[] = [];
+  const currentLocsByLocale = new Map(
+    currentLocalizations.map((loc) => [loc.locale, loc])
+  );
+  const desiredLocsByLocale = new Map(
+    desiredLocalizations.map((loc) => [loc.locale, loc])
+  );
+
+  // Find created and updated localizations
+  for (const [locale, desiredLoc] of desiredLocsByLocale.entries()) {
+    const currentLoc = currentLocsByLocale.get(locale);
+
+    if (!currentLoc) {
+      actions.push({
+        type: "CREATE_APP_LOCALIZATION",
+        payload: { localization: desiredLoc },
+      });
+    } else {
+      // Extract version and app info fields for comparison
+      const currentVersionFields: z.infer<
+        typeof AppStoreVersionLocalizationSchema
+      > = {
+        description: currentLoc.description,
+        keywords: currentLoc.keywords,
+        marketingUrl: currentLoc.marketingUrl,
+        promotionalText: currentLoc.promotionalText,
+        supportUrl: currentLoc.supportUrl,
+        whatsNew: currentLoc.whatsNew,
+      };
+
+      const desiredVersionFields: z.infer<
+        typeof AppStoreVersionLocalizationSchema
+      > = {
+        description: desiredLoc.description,
+        keywords: desiredLoc.keywords,
+        marketingUrl: desiredLoc.marketingUrl,
+        promotionalText: desiredLoc.promotionalText,
+        supportUrl: desiredLoc.supportUrl,
+        whatsNew: desiredLoc.whatsNew,
+      };
+
+      const currentAppInfoFields: z.infer<
+        typeof AppStoreAppInfoLocalizationSchema
+      > = {
+        name: currentLoc.name,
+        subtitle: currentLoc.subtitle,
+        privacyPolicyUrl: currentLoc.privacyPolicyUrl,
+        privacyChoicesUrl: currentLoc.privacyChoicesUrl,
+      };
+
+      const desiredAppInfoFields: z.infer<
+        typeof AppStoreAppInfoLocalizationSchema
+      > = {
+        name: desiredLoc.name,
+        subtitle: desiredLoc.subtitle,
+        privacyPolicyUrl: desiredLoc.privacyPolicyUrl,
+        privacyChoicesUrl: desiredLoc.privacyChoicesUrl,
+      };
+
+      // Compare objects directly
+      const versionChanged =
+        JSON.stringify(currentVersionFields) !==
+        JSON.stringify(desiredVersionFields);
+      const appInfoChanged =
+        JSON.stringify(currentAppInfoFields) !==
+        JSON.stringify(desiredAppInfoFields);
+
+      if (versionChanged || appInfoChanged) {
+        const versionChanges = versionChanged ? desiredVersionFields : {};
+        const appInfoChanges = appInfoChanged ? desiredAppInfoFields : {};
+
+        actions.push({
+          type: "UPDATE_APP_LOCALIZATION",
+          payload: { locale, versionChanges, appInfoChanges },
+        });
+      }
+    }
+  }
+
+  // Find deleted localizations
+  for (const [locale] of currentLocsByLocale.entries()) {
+    if (!desiredLocsByLocale.has(locale)) {
+      actions.push({
+        type: "DELETE_APP_LOCALIZATION",
+        payload: { locale },
+      });
+    }
   }
 
   return actions;
