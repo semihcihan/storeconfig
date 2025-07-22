@@ -33,7 +33,7 @@ import {
 import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 import { showAction } from "./plan-service";
-import { LocalizationService as AppStoreLocalizationService } from "../domains/app-info/localization-service";
+import { LocalizationAggregator } from "./localization-aggregator";
 import { AppStoreVersionAggregatorService } from "./version-aggregator-service";
 import { updateAppDetails } from "./app-service";
 import {
@@ -60,7 +60,7 @@ async function executeAction(
   newlyCreatedSubscriptions?: Map<string, string>
 ) {
   await showAction(action);
-  const localizationService = new AppStoreLocalizationService();
+  const localizationService = new LocalizationAggregator();
   switch (action.type) {
     // In-App Purchases
     case "CREATE_IN_APP_PURCHASE":
@@ -163,33 +163,26 @@ async function executeAction(
 
     // App Store Localizations
     case "CREATE_APP_LOCALIZATION":
-      await localizationService.createLocalization(
+      await localizationService.createAppLocalization(
         appId,
         action.payload.localization.locale,
         action.payload.localization
       );
       break;
     case "UPDATE_APP_LOCALIZATION": {
-      const loc = await localizationService.findLocalizationByLocale(
+      await localizationService.updateAppLocalization(
         appId,
-        action.payload.locale
+        action.payload.locale,
+        action.payload.versionChanges,
+        action.payload.appInfoChanges
       );
-      if (loc) {
-        await localizationService.updateLocalization(
-          loc.id,
-          action.payload.appInfoChanges
-        );
-      }
       break;
     }
     case "DELETE_APP_LOCALIZATION": {
-      const loc = await localizationService.findLocalizationByLocale(
+      await localizationService.deleteAppLocalization(
         appId,
         action.payload.locale
       );
-      if (loc) {
-        await localizationService.deleteLocalization(loc.id);
-      }
       break;
     }
 

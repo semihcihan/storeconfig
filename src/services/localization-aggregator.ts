@@ -17,7 +17,7 @@ type AppStoreVersionLocalization =
 type AppInfoLocalization =
   components["schemas"]["AppInfoLocalizationResponse"]["data"];
 
-export class AppStoreLocalizationService {
+export class LocalizationAggregator {
   private versionLocalizationService: AppStoreVersionLocalizationService;
   private appInfoLocalizationService: AppInfoLocalizationService;
   private versionService: AppStoreVersionService;
