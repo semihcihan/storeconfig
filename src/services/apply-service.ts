@@ -23,6 +23,7 @@ import {
   createIntroductoryOffer,
   deleteIntroductoryOffer,
 } from "./apply/introductory-offer-service";
+import { updateAppDetails } from "./apply/app-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import {
   createNewSubscriptionGroup,
@@ -151,6 +152,11 @@ async function executeAction(
     case "UPDATE_APP_PRICING":
       // Execute the pricing update with the complete schedule provided by diff-service
       await createAppPriceSchedule(action.payload.priceSchedule, appId);
+      break;
+
+    // App-level details
+    case "UPDATE_APP_DETAILS":
+      await updateAppDetails(appId, action.payload);
       break;
 
     // Subscription Groups

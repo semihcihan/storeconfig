@@ -132,6 +132,16 @@ export type UpdateAppPricingAction = Action<
   }
 >;
 
+export type UpdateAppDetailsAction = Action<
+  "UPDATE_APP_DETAILS",
+  {
+    primaryLocale?: z.infer<typeof LocaleCodeSchema>;
+    name?: string;
+    bundleId?: string;
+    copyright?: string;
+  }
+>;
+
 // #################################################################################
 // Subscription Group Action Types
 // #################################################################################
@@ -329,6 +339,7 @@ export type AnyAction =
   // App-level
   | UpdateAppAvailabilityAction
   | UpdateAppPricingAction
+  | UpdateAppDetailsAction
   // Version Metadata
   | UpdateVersionMetadataAction
   // Subscription Groups

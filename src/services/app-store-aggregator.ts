@@ -6,7 +6,10 @@ import { isNotFoundError } from "../helpers/error-handling-helpers";
 // Import API clients
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { fetchSubscriptionGroups } from "../domains/subscriptions/api-client";
-import { fetchAppAvailability } from "../domains/app-store/api-client";
+import {
+  fetchAppAvailability,
+  fetchApp,
+} from "../domains/app-store/api-client";
 
 // Import mappers
 import { mapInAppPurchases } from "../domains/in-app-purchases/mapper";
@@ -18,6 +21,7 @@ import { mapAppPricing } from "./pricing-aggregator";
 
 // Import version aggregator
 import { AppStoreVersionAggregatorService } from "./app-store-version-aggregator-service";
+import { LocaleCodeSchema } from "../models/locales";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -87,18 +91,24 @@ export async function fetchAppStoreState(
     mappedAvailableTerritories,
     mappedPricing,
     versionMetadata,
+    appInfo,
   ] = await Promise.all([
     fetchAndMapInAppPurchases(appId),
     fetchAndMapSubscriptionGroups(appId),
     fetchAndMapAppAvailability(appId),
     mapAppPricing(appId),
     versionAggregator.fetchVersionMetadata(appId),
+    fetchApp(appId),
   ]);
+
+  const primaryLocale = appInfo.data?.attributes?.primaryLocale as
+    | z.infer<typeof LocaleCodeSchema>
+    | undefined;
 
   const result: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: appId,
-    copyright: versionMetadata.copyright,
+    primaryLocale,
     pricing: mappedPricing,
     availableTerritories: mappedAvailableTerritories,
     inAppPurchases: mappedIAPs,

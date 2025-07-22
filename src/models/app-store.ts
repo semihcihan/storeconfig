@@ -170,14 +170,34 @@ export const InAppPurchaseSchema = z.object({
   availability: AvailabilitySchema.optional(),
 });
 
-export const AppStoreModelSchema = z.object({
-  schemaVersion: z.string(),
-  appId: z.string(),
-  copyright: z.string().optional(),
-  pricing: PriceScheduleSchema.optional(),
-  availableTerritories: z.array(TerritoryCodeSchema).optional(),
-  inAppPurchases: z.array(InAppPurchaseSchema).optional(),
-  subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
-  versionString: z.string().optional(),
-  localizations: z.array(AppStoreLocalizationSchema).optional(),
-});
+export const AppStoreModelSchema = z
+  .object({
+    schemaVersion: z.string(),
+    appId: z.string(),
+    copyright: z.string().optional(),
+    primaryLocale: LocaleCodeSchema.optional(),
+    pricing: PriceScheduleSchema.optional(),
+    availableTerritories: z.array(TerritoryCodeSchema).optional(),
+    inAppPurchases: z.array(InAppPurchaseSchema).optional(),
+    subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
+    versionString: z.string().optional(),
+    localizations: z.array(AppStoreLocalizationSchema).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.primaryLocale &&
+      data.localizations &&
+      data.localizations.length > 0
+    ) {
+      const primaryLocaleExists = data.localizations.some(
+        (loc) => loc.locale === data.primaryLocale
+      );
+      if (!primaryLocaleExists) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Primary locale '${data.primaryLocale}' must exist in the localizations array`,
+          path: ["primaryLocale"],
+        });
+      }
+    }
+  });

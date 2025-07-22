@@ -224,6 +224,23 @@ export async function showAction(action: AnyAction) {
         `  Version String: ${action.payload.versionString || "unchanged"}`
       );
       break;
+
+    // App Details
+    case "UPDATE_APP_DETAILS":
+      if (action.payload.primaryLocale) {
+        logger.info(`  Primary Locale: ${action.payload.primaryLocale}`);
+      }
+      if (action.payload.name) {
+        logger.info(`  Name: ${action.payload.name}`);
+      }
+      if (action.payload.bundleId) {
+        logger.info(`  Bundle ID: ${action.payload.bundleId}`);
+      }
+      if (action.payload.copyright) {
+        logger.info(`  Copyright: ${action.payload.copyright}`);
+      }
+      break;
+
     default:
       const _exhaustiveCheck: never = action;
       throw new Error(

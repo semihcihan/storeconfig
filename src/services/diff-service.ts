@@ -828,35 +828,17 @@ function diffAppPricing(
 ): AnyAction[] {
   const actions: AnyAction[] = [];
 
-  const currentSchedule = currentState.pricing;
-  const desiredSchedule = desiredState.pricing;
-
-  if (desiredSchedule === undefined) {
+  if (!desiredState.pricing) {
     return actions;
   }
 
-  // If neither current nor desired have pricing, no action needed
-  if (!currentSchedule && !desiredSchedule) {
-    return actions;
-  }
-
-  // Handle case where pricing is being removed (current defined, desired undefined)
-  if (currentSchedule && !desiredSchedule) {
-    throw new Error(
-      "Cannot remove all pricing from an app. Apps must have at least one price configured. " +
-        "If you want to remove the app from sale, use app availability settings instead."
-    );
-  }
-
-  // Handle case where pricing is being added (current undefined, desired defined)
-  if (!currentSchedule && desiredSchedule) {
-    // Create the entire price schedule at once
+  if (!currentState.pricing) {
     actions.push({
       type: "UPDATE_APP_PRICING",
       payload: {
-        priceSchedule: desiredSchedule,
+        priceSchedule: desiredState.pricing,
         changes: {
-          addedPrices: desiredSchedule.prices,
+          addedPrices: desiredState.pricing.prices,
           updatedPrices: [],
           deletedTerritories: [],
         },
@@ -865,11 +847,8 @@ function diffAppPricing(
     return actions;
   }
 
-  // At this point, both currentSchedule and desiredSchedule are defined
-  if (!currentSchedule || !desiredSchedule) {
-    // This should never happen due to the checks above, but TypeScript needs this
-    return actions;
-  }
+  const currentSchedule = currentState.pricing;
+  const desiredSchedule = desiredState.pricing;
 
   const currentPricesByTerritory = new Map(
     currentSchedule.prices.map((p) => [p.territory, p])
@@ -927,6 +906,28 @@ function diffAppPricing(
   return actions;
 }
 
+function diffAppDetails(
+  currentState: AppStoreModel,
+  desiredState: AppStoreModel
+): AnyAction[] {
+  const actions: AnyAction[] = [];
+
+  // Check for primary locale changes
+  if (
+    desiredState.primaryLocale &&
+    currentState.primaryLocale !== desiredState.primaryLocale
+  ) {
+    actions.push({
+      type: "UPDATE_APP_DETAILS",
+      payload: {
+        primaryLocale: desiredState.primaryLocale,
+      },
+    });
+  }
+
+  return actions;
+}
+
 export function diff(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
@@ -956,6 +957,7 @@ export function diff(
     currentState,
     desiredState
   );
+  const appDetailsActions = diffAppDetails(currentState, desiredState);
 
   const plan: Plan = [
     ...iapActions,
@@ -963,6 +965,7 @@ export function diff(
     ...appAvailabilityActions,
     ...appPricingActions,
     ...versionMetadataActions,
+    ...appDetailsActions,
   ];
 
   logger.info("Diff completed.");
