@@ -126,6 +126,12 @@ export function parseOfferDuration(
     return { duration: DURATION_MAPPING[duration] };
   }
 
+  logger.warn(
+    `Unknown offer mode and duration: ${offerMode} ${duration} for subscription ${JSON.stringify(
+      attributes
+    )}`
+  );
+
   return {};
 }
 
@@ -309,6 +315,11 @@ export async function mapPromotionalOffers(
           duration: durationInfo.duration,
         };
       }
+      logger.warn(
+        `Unknown offer type and duration: ${offerType} ${durationInfo} for subscription ${JSON.stringify(
+          offerData.attributes
+        )} in response ${JSON.stringify(response)}`
+      );
       return null;
     })
   );
@@ -420,7 +431,7 @@ export async function mapSubscription(
   const sub: Subscription = {
     productId: subData.attributes?.productId || "",
     referenceName: subData.attributes?.name || "",
-    groupLevel: subData.attributes?.groupLevel || 0,
+    groupLevel: subData.attributes?.groupLevel || 1,
     familySharable: subData.attributes?.familySharable || false,
     subscriptionPeriod: mappedPeriod,
     localizations: localizations,

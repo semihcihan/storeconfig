@@ -26,6 +26,7 @@ type InAppPurchaseAvailability =
   components["schemas"]["InAppPurchaseAvailability"];
 type InAppPurchasePricesResponse =
   components["schemas"]["InAppPurchasePricesResponse"];
+type InAppPurchaseType = components["schemas"]["InAppPurchaseType"];
 
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 
@@ -286,10 +287,7 @@ export async function mapInAppPurchase(
   const reviewNote = iap.attributes?.reviewNote;
   const mappedIAP = {
     productId: iap.attributes?.productId || "",
-    type: iap.attributes?.inAppPurchaseType as
-      | "CONSUMABLE"
-      | "NON_CONSUMABLE"
-      | "NON_RENEWING_SUBSCRIPTION",
+    type: iap.attributes?.inAppPurchaseType as InAppPurchaseType,
     referenceName: iap.attributes?.name || "",
     familySharable: iap.attributes?.familySharable || false,
     reviewNote: reviewNote === null ? undefined : reviewNote,
