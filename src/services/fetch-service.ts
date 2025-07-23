@@ -1,5 +1,8 @@
 import { logger } from "../utils/logger";
-import { AppStoreModelSchema } from "../models/app-store";
+import {
+  AppStoreModelSchema,
+  APP_STORE_SCHEMA_VERSION,
+} from "../models/app-store";
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
 import { optimizeLocalizationsByPrimaryLocale } from "../helpers/localization-helpers";
@@ -115,7 +118,7 @@ export async function fetchAppStoreState(
   );
 
   const result: AppStoreModel = {
-    schemaVersion: "1.0.0",
+    schemaVersion: APP_STORE_SCHEMA_VERSION,
     appId: appId,
     primaryLocale,
     pricing: mappedPricing,

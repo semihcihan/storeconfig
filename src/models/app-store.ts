@@ -4,6 +4,8 @@ import { LocaleCodeSchema } from "./locales";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
 
+export const APP_STORE_SCHEMA_VERSION = "1.0.0";
+
 export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_DAYS",
   "ONE_WEEK",
