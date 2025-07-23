@@ -1,10 +1,27 @@
 import { z } from "zod";
-import { TerritoryCodeSchema, territoryCodes } from "./territories";
+import type { components } from "../generated/app-store-connect-api";
+import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
 
 export const APP_STORE_SCHEMA_VERSION = "1.0.0";
+
+type SubscriptionPeriodType = NonNullable<
+  components["schemas"]["Subscription"]["attributes"]
+>["subscriptionPeriod"];
+
+type SubscriptionOfferDurationType =
+  components["schemas"]["SubscriptionOfferDuration"];
+
+export const SubscriptionPeriodSchema = z.enum([
+  "ONE_WEEK",
+  "ONE_MONTH",
+  "TWO_MONTHS",
+  "THREE_MONTHS",
+  "SIX_MONTHS",
+  "ONE_YEAR",
+] as const) satisfies z.ZodType<SubscriptionPeriodType>;
 
 export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_DAYS",
@@ -15,7 +32,7 @@ export const SubscriptionOfferDurationSchema = z.enum([
   "THREE_MONTHS",
   "SIX_MONTHS",
   "ONE_YEAR",
-]);
+] as const) satisfies z.ZodType<SubscriptionOfferDurationType>;
 
 export const PriceSchema = z.object({
   price: z.string(),
@@ -110,15 +127,6 @@ export const PromotionalOfferSchema = z.discriminatedUnion("type", [
   PromoOfferFreeSchema,
 ]);
 
-export const SubscriptionPeriodSchema = z.enum([
-  "ONE_WEEK",
-  "ONE_MONTH",
-  "TWO_MONTHS",
-  "THREE_MONTHS",
-  "SIX_MONTHS",
-  "ONE_YEAR",
-]);
-
 export const SubscriptionSchema = z
   .object({
     productId: z.string().refine(isValidProductId, {
@@ -149,7 +157,11 @@ export const InAppPurchaseSchema = z.object({
     message:
       "Product ID can only contain alphanumeric characters, underscores, and periods",
   }),
-  type: z.enum(["CONSUMABLE", "NON_CONSUMABLE", "NON_RENEWING_SUBSCRIPTION"]),
+  type: z.enum([
+    "CONSUMABLE",
+    "NON_CONSUMABLE",
+    "NON_RENEWING_SUBSCRIPTION",
+  ] as const) satisfies z.ZodType<components["schemas"]["InAppPurchaseType"]>,
   referenceName: z.string(),
   familySharable: z.boolean(),
   priceSchedule: PriceScheduleSchema.optional(),

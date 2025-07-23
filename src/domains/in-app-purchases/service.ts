@@ -24,22 +24,6 @@ type InAppPurchasesV2Response =
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
-// Helper function to map IAP type from our model to API enum
-function mapIAPType(
-  type: string
-): "CONSUMABLE" | "NON_CONSUMABLE" | "NON_RENEWING_SUBSCRIPTION" {
-  switch (type) {
-    case "CONSUMABLE":
-      return "CONSUMABLE";
-    case "NON_CONSUMABLE":
-      return "NON_CONSUMABLE";
-    case "NON_RENEWING_SUBSCRIPTION":
-      return "NON_RENEWING_SUBSCRIPTION";
-    default:
-      throw new Error(`Unknown IAP type: ${type}`);
-  }
-}
-
 // Utility function to extract IAP ID from raw API response
 function extractIAPId(
   apiResponse: InAppPurchasesV2Response,
@@ -110,7 +94,7 @@ export async function createNewInAppPurchase(
       attributes: {
         productId: inAppPurchase.productId,
         name: inAppPurchase.referenceName,
-        inAppPurchaseType: mapIAPType(inAppPurchase.type),
+        inAppPurchaseType: inAppPurchase.type,
         familySharable: inAppPurchase.familySharable,
         ...(inAppPurchase.reviewNote && {
           reviewNote: inAppPurchase.reviewNote,

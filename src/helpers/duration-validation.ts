@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { components } from "../generated/app-store-connect-api";
 import {
   SubscriptionOfferDurationSchema,
   SubscriptionPeriodSchema,
@@ -10,7 +11,7 @@ type SubscriptionOfferDuration = z.infer<
   typeof SubscriptionOfferDurationSchema
 >;
 
-type OfferType = "PAY_AS_YOU_GO" | "PAY_UP_FRONT" | "FREE_TRIAL";
+type OfferType = components["schemas"]["SubscriptionOfferMode"];
 
 interface DurationConfig {
   duration: number;
@@ -33,18 +34,6 @@ const SUBSCRIPTION_PERIOD_TO_DURATION: Record<SubscriptionPeriod, number> = {
   THREE_MONTHS: 90,
   SIX_MONTHS: 180,
   ONE_YEAR: 365,
-};
-
-// Map durations.json typeUnit values to our schema values
-const TYPE_UNIT_MAPPING: Record<string, SubscriptionOfferDuration> = {
-  ONE_DAY: "THREE_DAYS", // Map ONE_DAY to THREE_DAYS as it's the closest
-  ONE_WEEK: "ONE_WEEK",
-  TWO_WEEKS: "TWO_WEEKS",
-  ONE_MONTH: "ONE_MONTH",
-  TWO_MONTHS: "TWO_MONTHS",
-  THREE_MONTHS: "THREE_MONTHS",
-  SIX_MONTHS: "SIX_MONTHS",
-  ONE_YEAR: "ONE_YEAR",
 };
 
 // Map offer types to durations.json modeType values
