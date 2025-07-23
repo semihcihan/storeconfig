@@ -9,6 +9,7 @@ import {
   isValidIntroductoryOfferDuration,
   isValidPayAsYouGoPeriods,
 } from "./duration-validation";
+import { logger } from "../utils/logger";
 
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 type SubscriptionOfferDuration = z.infer<
@@ -70,6 +71,17 @@ export function validateIntroductoryOffersGrouping(
       existing.indices.push(i);
 
       const duplicateIndices = existing.indices;
+
+      // We should always have at least 2 indices when we find a duplicate
+      if (duplicateIndices.length < 2) {
+        logger.error(
+          `Logic error: Expected at least 2 duplicate indices, but found ${
+            duplicateIndices.length
+          } for ${groupingType} in subscription '${productId || "unknown"}'`
+        );
+        continue;
+      }
+
       const firstIndex = duplicateIndices[0];
       const secondIndex = duplicateIndices[1];
 

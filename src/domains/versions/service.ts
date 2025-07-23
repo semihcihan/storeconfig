@@ -70,18 +70,38 @@ export class AppStoreVersionService {
     return response.data;
   }
 
+  private findLatestVersion(
+    versions: AppStoreVersion[]
+  ): AppStoreVersion | null {
+    if (versions.length === 0) {
+      return null;
+    }
+
+    return versions.reduce((latest, current) => {
+      const latestCreatedDate = latest.attributes?.createdDate;
+      const currentCreatedDate = current.attributes?.createdDate;
+
+      if (!latestCreatedDate) return current;
+      if (!currentCreatedDate) return latest;
+
+      return new Date(currentCreatedDate) > new Date(latestCreatedDate)
+        ? current
+        : latest;
+    });
+  }
+
   async fetchVersionMetadata(appId: string): Promise<{
     versionString?: string;
     copyright?: string;
   }> {
     try {
       const versions = await this.getVersionsForApp(appId);
-      if (versions.length === 0) {
-        logger.info(`No app store versions found for app ${appId}`);
+      const latestVersion = this.findLatestVersion(versions);
+      if (!latestVersion) {
+        logger.warn(`No valid version found for app ${appId}`);
         return {};
       }
 
-      const latestVersion = versions[0];
       const versionString = latestVersion.attributes?.versionString;
       const copyright = latestVersion.attributes?.copyright ?? undefined;
 
@@ -137,7 +157,10 @@ export class AppStoreVersionService {
         }
         await this.createVersion(appId, versionString, copyright);
       } else {
-        const latestVersion = versions[0];
+        const latestVersion = this.findLatestVersion(versions);
+        if (!latestVersion) {
+          throw new Error("No valid version found to update");
+        }
         await this.updateVersion(
           latestVersion.id,
           versionString || latestVersion.attributes?.versionString || "",

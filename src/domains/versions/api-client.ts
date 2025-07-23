@@ -112,6 +112,9 @@ export async function getAppStoreVersionsForApp(
   const response = await api.GET("/v1/apps/{id}/appStoreVersions", {
     params: {
       path: { id: appId },
+      query: {
+        "filter[platform]": ["IOS"],
+      },
     },
   });
 

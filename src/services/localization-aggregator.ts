@@ -88,11 +88,14 @@ export class LocalizationAggregator {
       }
 
       if (activeAppInfos.length > 1) {
-        logger.warn(
-          `Multiple active app infos found for app ${appId} (${activeAppInfos.length}). Using the first one.`
-        );
-        logger.warn(
-          `App info IDs: ${activeAppInfos.map((info) => info.id).join(", ")}`
+        logger.error(
+          `Multiple active app infos found for app ${appId} (${
+            activeAppInfos.length
+          }). Using the first one.
+          App info IDs and States: ${activeAppInfos
+            .map((info) => `${info.id} (${info.attributes?.state})`)
+            .join(", ")}
+          `
         );
       }
 

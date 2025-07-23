@@ -191,4 +191,144 @@ describe("AppStoreVersionService", () => {
       expect(result).toEqual(mockResponse.data);
     });
   });
+
+  describe("fetchVersionMetadata", () => {
+    it("should return empty object when no versions found", async () => {
+      mockGetAppStoreVersionsForApp.mockResolvedValue({
+        data: [],
+      } as any);
+
+      const result = await service.fetchVersionMetadata("app-123");
+
+      expect(result).toEqual({});
+      expect(mockGetAppStoreVersionsForApp).toHaveBeenCalledWith("app-123");
+    });
+
+    it("should return metadata from the most recently created version", async () => {
+      const mockVersions = [
+        {
+          id: "version-1",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "1.0.0",
+            copyright: "Copyright 2023",
+            createdDate: "2023-01-01T00:00:00Z",
+          },
+        },
+        {
+          id: "version-2",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "beta",
+            copyright: "Copyright 2024",
+            createdDate: "2024-01-01T00:00:00Z",
+          },
+        },
+        {
+          id: "version-3",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "alpha",
+            copyright: "Copyright 2023.5",
+            createdDate: "2023-06-01T00:00:00Z",
+          },
+        },
+      ] as any;
+
+      mockGetAppStoreVersionsForApp.mockResolvedValue({
+        data: mockVersions,
+      } as any);
+
+      const result = await service.fetchVersionMetadata("app-123");
+
+      expect(result).toEqual({
+        versionString: "beta",
+        copyright: "Copyright 2024",
+      });
+    });
+
+    it("should handle versions without createdDate", async () => {
+      const mockVersions = [
+        {
+          id: "version-1",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "1.0.0",
+            copyright: "Copyright 2023",
+            createdDate: "2023-01-01T00:00:00Z",
+          },
+        },
+        {
+          id: "version-2",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "beta",
+            copyright: "Copyright 2024",
+          },
+        },
+      ] as any;
+
+      mockGetAppStoreVersionsForApp.mockResolvedValue({
+        data: mockVersions,
+      } as any);
+
+      const result = await service.fetchVersionMetadata("app-123");
+
+      expect(result).toEqual({
+        versionString: "1.0.0",
+        copyright: "Copyright 2023",
+      });
+    });
+
+    it("should handle arbitrary version strings correctly", async () => {
+      const mockVersions = [
+        {
+          id: "version-1",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "v1.10.0",
+            copyright: "Copyright 2023",
+            createdDate: "2023-01-01T00:00:00Z",
+          },
+        },
+        {
+          id: "version-2",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "release-candidate",
+            copyright: "Copyright 2024",
+            createdDate: "2024-01-01T00:00:00Z",
+          },
+        },
+        {
+          id: "version-3",
+          type: "appStoreVersions",
+          attributes: {
+            versionString: "2.0.0",
+            copyright: "Copyright 2025",
+            createdDate: "2023-06-01T00:00:00Z",
+          },
+        },
+      ] as any;
+
+      mockGetAppStoreVersionsForApp.mockResolvedValue({
+        data: mockVersions,
+      } as any);
+
+      const result = await service.fetchVersionMetadata("app-123");
+
+      expect(result).toEqual({
+        versionString: "release-candidate",
+        copyright: "Copyright 2024",
+      });
+    });
+
+    it("should handle error gracefully", async () => {
+      mockGetAppStoreVersionsForApp.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.fetchVersionMetadata("app-123");
+
+      expect(result).toEqual({});
+    });
+  });
 });
