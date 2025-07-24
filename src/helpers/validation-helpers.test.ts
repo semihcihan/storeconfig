@@ -1,9 +1,4 @@
-import {
-  isValidProductId,
-  areStringArraysEqual,
-  arePriceArraysEqual,
-  deepEqualUnordered,
-} from "./validation-helpers";
+import { isValidProductId, deepEqualUnordered } from "./validation-helpers";
 import { describe, it, expect } from "@jest/globals";
 import { z } from "zod";
 import { TerritoryCodeSchema } from "../models/territories";
@@ -28,47 +23,43 @@ describe("Validation Helpers", () => {
     });
   });
 
-  describe("areStringArraysEqual", () => {
+  describe("deepEqualUnordered with string arrays", () => {
     it("should return true for identical arrays", () => {
-      expect(areStringArraysEqual(["a", "b", "c"], ["a", "b", "c"])).toBe(true);
+      expect(deepEqualUnordered(["a", "b", "c"], ["a", "b", "c"])).toBe(true);
     });
 
     it("should return true for arrays with same elements in different order", () => {
-      expect(areStringArraysEqual(["a", "b", "c"], ["c", "a", "b"])).toBe(true);
+      expect(deepEqualUnordered(["a", "b", "c"], ["c", "a", "b"])).toBe(true);
       expect(
-        areStringArraysEqual(["USA", "CAN", "GBR"], ["CAN", "GBR", "USA"])
+        deepEqualUnordered(["USA", "CAN", "GBR"], ["CAN", "GBR", "USA"])
       ).toBe(true);
     });
 
     it("should return false for arrays with different elements", () => {
-      expect(areStringArraysEqual(["a", "b", "c"], ["a", "b", "d"])).toBe(
-        false
-      );
-      expect(areStringArraysEqual(["USA", "CAN"], ["USA", "CAN", "GBR"])).toBe(
+      expect(deepEqualUnordered(["a", "b", "c"], ["a", "b", "d"])).toBe(false);
+      expect(deepEqualUnordered(["USA", "CAN"], ["USA", "CAN", "GBR"])).toBe(
         false
       );
     });
 
     it("should return false for arrays with different lengths", () => {
-      expect(areStringArraysEqual(["a", "b"], ["a", "b", "c"])).toBe(false);
-      expect(areStringArraysEqual(["a", "b", "c"], ["a", "b"])).toBe(false);
+      expect(deepEqualUnordered(["a", "b"], ["a", "b", "c"])).toBe(false);
+      expect(deepEqualUnordered(["a", "b", "c"], ["a", "b"])).toBe(false);
     });
 
     it("should handle empty arrays", () => {
-      expect(areStringArraysEqual([], [])).toBe(true);
-      expect(areStringArraysEqual([], ["a"])).toBe(false);
-      expect(areStringArraysEqual(["a"], [])).toBe(false);
+      expect(deepEqualUnordered([], [])).toBe(true);
+      expect(deepEqualUnordered([], ["a"])).toBe(false);
+      expect(deepEqualUnordered(["a"], [])).toBe(false);
     });
 
     it("should handle duplicate elements", () => {
-      expect(areStringArraysEqual(["a", "a", "b"], ["a", "b", "a"])).toBe(true);
-      expect(areStringArraysEqual(["a", "a", "b"], ["a", "b", "b"])).toBe(
-        false
-      );
+      expect(deepEqualUnordered(["a", "a", "b"], ["a", "b", "a"])).toBe(true);
+      expect(deepEqualUnordered(["a", "a", "b"], ["a", "b", "b"])).toBe(false);
     });
   });
 
-  describe("arePriceArraysEqual", () => {
+  describe("deepEqualUnordered with price arrays", () => {
     it("should return true for identical price arrays", () => {
       const prices1 = [
         { territory: "USA" as TerritoryCode, price: "1.99" },
@@ -78,7 +69,7 @@ describe("Validation Helpers", () => {
         { territory: "USA" as TerritoryCode, price: "1.99" },
         { territory: "CAN" as TerritoryCode, price: "2.99" },
       ];
-      expect(arePriceArraysEqual(prices1, prices2)).toBe(true);
+      expect(deepEqualUnordered(prices1, prices2)).toBe(true);
     });
 
     it("should return true for price arrays with same elements in different order", () => {
@@ -92,7 +83,7 @@ describe("Validation Helpers", () => {
         { territory: "GBR" as TerritoryCode, price: "3.99" },
         { territory: "USA" as TerritoryCode, price: "1.99" },
       ];
-      expect(arePriceArraysEqual(prices1, prices2)).toBe(true);
+      expect(deepEqualUnordered(prices1, prices2)).toBe(true);
     });
 
     it("should return false for price arrays with different prices", () => {
@@ -104,7 +95,7 @@ describe("Validation Helpers", () => {
         { territory: "USA" as TerritoryCode, price: "1.99" },
         { territory: "CAN" as TerritoryCode, price: "3.99" }, // Different price
       ];
-      expect(arePriceArraysEqual(prices1, prices2)).toBe(false);
+      expect(deepEqualUnordered(prices1, prices2)).toBe(false);
     });
 
     it("should return false for price arrays with different territories", () => {
@@ -116,7 +107,7 @@ describe("Validation Helpers", () => {
         { territory: "USA" as TerritoryCode, price: "1.99" },
         { territory: "GBR" as TerritoryCode, price: "2.99" }, // Different territory
       ];
-      expect(arePriceArraysEqual(prices1, prices2)).toBe(false);
+      expect(deepEqualUnordered(prices1, prices2)).toBe(false);
     });
 
     it("should return false for arrays with different lengths", () => {
@@ -125,13 +116,13 @@ describe("Validation Helpers", () => {
         { territory: "CAN" as TerritoryCode, price: "2.99" },
       ];
       const prices2 = [{ territory: "USA" as TerritoryCode, price: "1.99" }];
-      expect(arePriceArraysEqual(prices1, prices2)).toBe(false);
+      expect(deepEqualUnordered(prices1, prices2)).toBe(false);
     });
 
     it("should handle empty arrays", () => {
-      expect(arePriceArraysEqual([], [])).toBe(true);
+      expect(deepEqualUnordered([], [])).toBe(true);
       expect(
-        arePriceArraysEqual(
+        deepEqualUnordered(
           [],
           [{ territory: "USA" as TerritoryCode, price: "1.99" }]
         )
@@ -221,7 +212,7 @@ describe("Validation Helpers", () => {
     it("should handle regular arrays (not unordered)", () => {
       const obj1 = { items: ["a", "b", "c"] };
       const obj2 = { items: ["c", "a", "b"] };
-      expect(deepEqualUnordered(obj1, obj2)).toBe(false); // Regular arrays maintain order
+      expect(deepEqualUnordered(obj1, obj2)).toBe(true);
     });
 
     it("should handle null and undefined", () => {
