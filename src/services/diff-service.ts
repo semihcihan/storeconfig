@@ -17,7 +17,7 @@ import {
 import { TerritoryCodeSchema } from "../models/territories";
 import { logger } from "../utils/logger";
 import { AnyAction, Plan } from "../models/diff-plan";
-import { isEqual } from "lodash";
+
 import {
   validateIntroductoryOffers,
   getIntroductoryOfferGroupingKey,
@@ -27,7 +27,6 @@ import { deepEqualUnordered } from "../helpers/validation-helpers";
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 type InAppPurchaseLocalization = z.infer<typeof LocalizationSchema>;
-type SubscriptionGroup = z.infer<typeof SubscriptionGroupSchema>;
 type Subscription = z.infer<typeof SubscriptionSchema>;
 type SubscriptionLocalization = z.infer<typeof LocalizationSchema>;
 type SubscriptionGroupLocalization = z.infer<
@@ -477,7 +476,7 @@ function diffPromotionalOffers(
   desiredOffers: PromotionalOffer[]
 ): AnyAction[] {
   // Similar to intro offers, we'll do a simple delete-and-recreate.
-  if (!isEqual(currentOffers, desiredOffers)) {
+  if (!deepEqualUnordered(currentOffers, desiredOffers)) {
     const deleteActions: AnyAction[] = currentOffers.map((o) => ({
       type: "DELETE_PROMOTIONAL_OFFER",
       payload: { subscriptionProductId, offerId: o.id },
