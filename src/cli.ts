@@ -3,6 +3,7 @@
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { setLogLevel, LOG_LEVELS, DEFAULT_LOG_LEVEL } from "./utils/logger";
 
 import validateFormatCmd from "./commands/validate";
 import applyCmd from "./commands/apply";
@@ -11,6 +12,19 @@ import fetchCmd from "./commands/fetch";
 dotenv.config();
 
 yargs(hideBin(process.argv))
+  .option("log-level", {
+    alias: "l",
+    describe: "Set the log level (debug, info, warn, error)",
+    type: "string",
+    choices: LOG_LEVELS,
+    default: process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL,
+  })
+  .middleware((argv) => {
+    // Set the log level from command line argument
+    if (argv.logLevel) {
+      setLogLevel(argv.logLevel as any);
+    }
+  })
   .command(validateFormatCmd)
   .command(applyCmd)
   .command(fetchCmd)
