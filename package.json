@@ -12,6 +12,7 @@
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "prepublishOnly": "npm run build",
     "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
     "split-openapi": "npx redocly split openapi.json --outDir=openapi",

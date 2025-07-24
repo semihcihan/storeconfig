@@ -230,5 +230,26 @@ describe("Validation Helpers", () => {
       expect(deepEqualUnordered(null, undefined)).toBe(false);
       expect(deepEqualUnordered(null, {})).toBe(false);
     });
+
+    it("should fail when territory codes are not in hardcoded list", () => {
+      const obj1 = { territories: ["ITA", "ESP", "NLD"] };
+      const obj2 = { territories: ["NLD", "ITA", "ESP"] };
+
+      expect(deepEqualUnordered(obj1, obj2)).toBe(true);
+    });
+
+    it("should fail when territory codes are completely different from hardcoded list", () => {
+      const obj1 = { territories: ["BRA", "MEX", "ARG"] };
+      const obj2 = { territories: ["ARG", "BRA", "MEX"] };
+
+      expect(deepEqualUnordered(obj1, obj2)).toBe(true);
+    });
+
+    it("should fail when territory codes are mixed with hardcoded and non-hardcoded", () => {
+      const obj1 = { territories: ["USA", "ITA", "ESP"] };
+      const obj2 = { territories: ["ITA", "USA", "ESP"] };
+
+      expect(deepEqualUnordered(obj1, obj2)).toBe(true);
+    });
   });
 });
