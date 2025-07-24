@@ -13,22 +13,23 @@ const command: CommandModule = {
   command: "apply",
   describe: "Apply the changes to App Store Connect",
   builder: {
-    file: {
-      alias: "f",
+    desired: {
+      alias: ["d", "desired-state"],
       describe: "Path to the desired state JSON file.",
       demandOption: true,
       type: "string",
     },
-    "current-state-file": {
-      alias: "c",
-      describe:
-        "Path to the JSON file to use as the current state. If not provided, the current state will be fetched from App Store Connect.",
+    id: {
+      describe: "The App ID to apply changes to.",
+      demandOption: true,
       type: "string",
     },
-    id: {
+    current: {
+      alias: ["c", "current-state"],
       describe:
-        "The App ID to apply changes to. Required if not using --current-state-file.",
+        "Path to the JSON file to use as the current (live) state. If not provided, the current state will be fetched from App Store Connect.",
       type: "string",
+      hidden: process.env.NODE_ENV === "production",
     },
     preview: {
       alias: "p",
@@ -38,17 +39,10 @@ const command: CommandModule = {
     },
   },
   handler: async (argv) => {
-    const desiredStateFile = argv.file as string;
-    const currentStateFile = argv["current-state-file"] as string | undefined;
-    const appId = argv.id as string | undefined;
+    const desiredStateFile = argv.desired as string;
+    const currentStateFile = argv.current as string | undefined;
+    const appId = argv.id as string;
     const preview = argv.preview as boolean;
-
-    if (!currentStateFile && !appId) {
-      logger.error(
-        "You must provide either an App ID with --id or a file for the current state with --current-state-file."
-      );
-      process.exit(1);
-    }
 
     logger.info(`Processing desired state from ${desiredStateFile}...`);
 
@@ -56,16 +50,13 @@ const command: CommandModule = {
       const desiredState = validateJsonFile(desiredStateFile, false);
 
       let currentState: AppStoreModel;
-      let actualAppId: string;
 
       if (currentStateFile) {
         logger.info(`Using ${currentStateFile} as current state.`);
         currentState = validateJsonFile(currentStateFile, false);
-        actualAppId = currentState.appId;
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
-        currentState = await fetchAppStoreState(appId!);
-        actualAppId = appId!;
+        currentState = await fetchAppStoreState(appId);
       }
 
       const plan = diff(currentState, desiredState);
