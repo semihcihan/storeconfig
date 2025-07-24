@@ -203,7 +203,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should call createAppPriceSchedule once with the priceSchedule from action
       expect(mockCreateAppPriceSchedule).toHaveBeenCalledTimes(1);
@@ -245,7 +245,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should call createAppPriceSchedule with the schedule from the action
       expect(mockCreateAppPriceSchedule).toHaveBeenCalledTimes(1);
@@ -287,7 +287,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should call updateAppAvailability for the availability action
       expect(mockUpdateAppAvailability).toHaveBeenCalledTimes(1);
@@ -363,7 +363,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should call pricing service once for the pricing action
       expect(mockCreateAppPriceSchedule).toHaveBeenCalledTimes(1);
@@ -391,7 +391,7 @@ describe("apply-service", () => {
     it("should handle empty plan", async () => {
       const plan: AnyAction[] = [];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should not call any services
       expect(mockCreateAppPriceSchedule).not.toHaveBeenCalled();
@@ -434,7 +434,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should not call pricing service
       expect(mockCreateAppPriceSchedule).not.toHaveBeenCalled();
@@ -465,7 +465,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(plan, "test-app-id", MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
+      await apply(plan, MOCK_CURRENT_STATE, MOCK_DESIRED_STATE);
 
       // Should call pricing service once
       expect(mockCreateAppPriceSchedule).toHaveBeenCalledTimes(1);
@@ -497,12 +497,7 @@ describe("apply-service", () => {
         },
       ];
 
-      await apply(
-        plan,
-        "test-app-id",
-        MOCK_CURRENT_STATE,
-        desiredStateWithoutPricing
-      );
+      await apply(plan, MOCK_CURRENT_STATE, desiredStateWithoutPricing);
 
       // Should call pricing service with the priceSchedule from action
       expect(mockCreateAppPriceSchedule).toHaveBeenCalledTimes(1);
@@ -599,7 +594,7 @@ describe("IAP Localization Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockCreateIAPLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -627,7 +622,7 @@ describe("IAP Localization Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockUpdateIAPLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -650,7 +645,7 @@ describe("IAP Localization Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockDeleteIAPLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -672,7 +667,7 @@ describe("IAP Localization Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockFetchInAppPurchases).toHaveBeenCalledWith(testAppId);
     expect(mockUpdateIAPAvailability).toHaveBeenCalledWith(
@@ -752,7 +747,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockCreateNewSubscriptionGroup).toHaveBeenCalledWith(testAppId, {
       referenceName: "test-group",
@@ -772,7 +767,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockUpdateExistingSubscriptionGroup).toHaveBeenCalledWith(
       testAppId,
@@ -797,7 +792,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockCreateSubscriptionGroupLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -825,7 +820,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockUpdateSubscriptionGroupLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -849,7 +844,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockDeleteSubscriptionGroupLocalization).toHaveBeenCalledWith(
       testAppId,
@@ -872,7 +867,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
   });
@@ -889,7 +884,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
     expect(mockUpdateSubscriptionAvailability).toHaveBeenCalledWith(
@@ -938,7 +933,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     // Should fetch subscription groups
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
@@ -1022,7 +1017,7 @@ describe("Subscription Group Actions", () => {
       require("../domains/subscriptions/service")
     ).createNewSubscription = mockCreateNewSubscription;
 
-    await apply(plan, testAppId, mockCurrentState, mockDesiredState);
+    await apply(plan, mockCurrentState, mockDesiredState);
 
     // Should call createSubscriptionPrices with the subscription ID from newlyCreatedSubscriptions
     expect(mockCreateSubscriptionPrices).toHaveBeenCalledWith(
@@ -1060,7 +1055,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
     expect(mockCreateIntroductoryOffer).toHaveBeenCalledWith(
@@ -1112,7 +1107,7 @@ describe("Subscription Group Actions", () => {
       },
     };
 
-    await apply([action], testAppId, mockCurrentState, mockDesiredState);
+    await apply([action], mockCurrentState, mockDesiredState);
 
     expect(mockFetchSubscriptionGroups).toHaveBeenCalledWith(testAppId);
     expect(mockDeleteIntroductoryOffer).toHaveBeenCalledWith(
