@@ -1,12 +1,13 @@
 import { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
-import * as fs from "fs";
-import { AppStoreModelSchema } from "../models/app-store";
 import { fetchAppStoreState } from "../services/fetch-service";
-import { z } from "zod";
 import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
+import {
+  validateJsonFile,
+  type AppStoreModel,
+} from "../utils/validation-helpers";
 
 const command: CommandModule = {
   command: "apply",
@@ -29,11 +30,18 @@ const command: CommandModule = {
         "The App ID to apply changes to. Required if not using --current-state-file.",
       type: "string",
     },
+    preview: {
+      alias: "p",
+      describe: "Show what changes would be made without applying them",
+      type: "boolean",
+      default: false,
+    },
   },
   handler: async (argv) => {
     const desiredStateFile = argv.file as string;
     const currentStateFile = argv["current-state-file"] as string | undefined;
     const appId = argv.id as string | undefined;
+    const preview = argv.preview as boolean;
 
     if (!currentStateFile && !appId) {
       logger.error(
@@ -45,18 +53,14 @@ const command: CommandModule = {
     logger.info(`Processing desired state from ${desiredStateFile}...`);
 
     try {
-      const fileContents = fs.readFileSync(desiredStateFile, "utf-8");
-      const desiredState = AppStoreModelSchema.parse(JSON.parse(fileContents));
+      const desiredState = validateJsonFile(desiredStateFile, false);
 
-      let currentState: z.infer<typeof AppStoreModelSchema>;
+      let currentState: AppStoreModel;
       let actualAppId: string;
 
       if (currentStateFile) {
         logger.info(`Using ${currentStateFile} as current state.`);
-        const currentFileContents = fs.readFileSync(currentStateFile, "utf-8");
-        currentState = AppStoreModelSchema.parse(
-          JSON.parse(currentFileContents)
-        );
+        currentState = validateJsonFile(currentStateFile, false);
         actualAppId = currentState.appId;
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
@@ -67,11 +71,15 @@ const command: CommandModule = {
       const plan = diff(currentState, desiredState);
 
       await showPlan(plan);
+
+      if (preview) {
+        logger.info("Preview mode - no changes will be applied");
+        return;
+      }
+
       await apply(plan, actualAppId, currentState, desiredState);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logger.error("Data validation failed:", error.errors);
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         logger.error("An error occurred:", error.message);
       } else {
         logger.error("An unknown error occurred:", error);

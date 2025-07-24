@@ -15,6 +15,7 @@
 - intro offers
 - start end dates, scheduling
 - billing grace period
+- create new app
 - add new fields to support
   - age rating
   - app category
