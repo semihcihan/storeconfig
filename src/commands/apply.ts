@@ -8,6 +8,37 @@ import {
   validateJsonFile,
   type AppStoreModel,
 } from "../utils/validation-helpers";
+import * as readline from "readline";
+
+const confirmChanges = async (): Promise<boolean> => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    logger.warn(`
+⚠️  CRITICAL WARNING: You are about to apply changes to App Store Connect
+
+These changes will be applied immediately and may affect your live app configuration.
+Some operations are irreversible and cannot be undone through this tool.
+Please ensure you have reviewed the changes above and have a backup if needed.
+`);
+
+    rl.question(
+      logger.prompt(
+        "Do you want to proceed with applying these changes? (y/N): "
+      ),
+      (answer) => {
+        rl.close();
+        resolve(
+          answer.trim().toLowerCase() === "y" ||
+            answer.trim().toLowerCase() === "yes"
+        );
+      }
+    );
+  });
+};
 
 const command: CommandModule = {
   command: "apply",
@@ -65,6 +96,12 @@ const command: CommandModule = {
 
       if (preview) {
         logger.info("Preview mode - no changes will be applied");
+        return;
+      }
+
+      const confirmed = await confirmChanges();
+      if (!confirmed) {
+        logger.info("Operation cancelled by user");
         return;
       }
 

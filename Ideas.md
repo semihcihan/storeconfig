@@ -1,14 +1,16 @@
 ## IDEAS TODOs
 
+- get a confirmation on apply. --yes should skip
 - No start date and end date support, will be overridden (TELL THIS TO USER)
 - while fetching without apply, should we ask for a version???
-
-- get a confirmation on apply. --yes should skip
 - organize improve logging
+
 - Have system defined and user defined territory groups and let these to be used
 - Create easy pricing changes
 - fix the development commands package
-- Have a documentation
+- Have a documentation / README
+
+- website
 
 # V2
 

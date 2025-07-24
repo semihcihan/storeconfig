@@ -1,24 +1,30 @@
-// Logger interface
+import chalk from "chalk";
+
+// Logger interface with color support
 export interface Logger {
   debug: (...args: any[]) => void;
   info: (...args: any[]) => void;
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
+  prompt: (message: string) => string;
 }
 
 // Console logger implementation
 class ConsoleLogger implements Logger {
   debug(...args: any[]) {
-    console.debug(...args);
+    console.debug(chalk.gray(...args));
   }
   info(...args: any[]) {
-    console.info(...args);
+    console.info(chalk.blue(...args));
   }
   warn(...args: any[]) {
-    console.warn(...args);
+    console.warn(chalk.yellow(...args));
   }
   error(...args: any[]) {
-    console.error(...args);
+    console.error(chalk.red(...args));
+  }
+  prompt(message: string): string {
+    return chalk.cyan(message);
   }
 }
 
