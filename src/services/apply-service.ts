@@ -348,10 +348,10 @@ async function executeAction(
 
 export async function apply(
   plan: AnyAction[],
-  appId: string,
   currentState: AppStoreModel,
   desiredState: AppStoreModel
 ) {
+  const appId = currentState.appId;
   logger.info(`Applying plan with ${plan.length} actions for app ${appId}`);
 
   // Check if we have any IAP-related actions to avoid unnecessary API call

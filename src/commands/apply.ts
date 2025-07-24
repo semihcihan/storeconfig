@@ -77,7 +77,7 @@ const command: CommandModule = {
         return;
       }
 
-      await apply(plan, actualAppId, currentState, desiredState);
+      await apply(plan, currentState, desiredState);
     } catch (error) {
       if (error instanceof Error) {
         logger.error("An error occurred:", error.message);
