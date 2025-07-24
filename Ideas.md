@@ -5,6 +5,9 @@
 - Create easy pricing changes
 - No start date and end date support, will be overridden (TELL THIS TO USER)
 - while fetching without apply, should we ask for a version???
+- get a confirmation on apply. --yes should skip
+- fix the development commands package
+- Have a documentation
 
 # V2
 
