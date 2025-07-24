@@ -4,7 +4,7 @@ import {
   SubscriptionOfferDurationSchema,
   SubscriptionPeriodSchema,
 } from "../models/app-store";
-import durationsData from "../../durations.json";
+import durationsData from "../data/durations.json";
 
 type SubscriptionPeriod = z.infer<typeof SubscriptionPeriodSchema>;
 type SubscriptionOfferDuration = z.infer<
