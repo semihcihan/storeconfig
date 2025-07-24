@@ -1074,7 +1074,6 @@ export function diff(
     ...appDetailsActions,
   ];
 
-  logger.info("Diff completed.");
-  logger.info(`Plan contains ${plan.length} actions.`);
+  logger.info(`Diff completed. Plan contains ${plan.length} actions.`);
   return plan;
 }

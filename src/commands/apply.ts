@@ -18,11 +18,11 @@ const confirmChanges = async (): Promise<boolean> => {
 
   return new Promise((resolve) => {
     logger.warn(`
-⚠️  CRITICAL WARNING: You are about to apply changes to App Store Connect
+⚠️ CRITICAL WARNING
+You are about to apply changes directly to App Store Connect.
 
-These changes will be applied immediately and may affect your live app configuration.
-Some operations are irreversible and cannot be undone through this tool.
-Please ensure you have reviewed the changes above and have a backup if needed.
+These changes will take effect immediately and may impact your live app configuration.
+Some operations are inherently irreversible — even if performed manually through App Store Connect.
 `);
 
     rl.question(
@@ -91,6 +91,10 @@ const command: CommandModule = {
       }
 
       const plan = diff(currentState, desiredState);
+      if (plan.length === 0) {
+        logger.info("No changes to apply. Exiting...");
+        return;
+      }
 
       await showPlan(plan);
 
