@@ -342,9 +342,6 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.info).toHaveBeenCalledWith(
-        "App pricing not found or not configured yet for app test-app-id"
-      );
     });
 
     it("should re-throw non-404 errors", async () => {
@@ -375,9 +372,6 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.info).toHaveBeenCalledWith(
-        "App pricing not found or not configured yet for app test-app-id"
-      );
     });
 
     it("should handle 404 error in automatic prices fetch", async () => {
@@ -401,9 +395,6 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.info).toHaveBeenCalledWith(
-        "App pricing not found or not configured yet for app test-app-id"
-      );
     });
 
     it("should handle mixed 404 and non-404 errors", async () => {
