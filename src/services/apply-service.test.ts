@@ -57,6 +57,7 @@ const mockLogger = {
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
+  debug: jest.fn(),
 };
 
 // Set up mocks
@@ -957,10 +958,10 @@ describe("Subscription Group Actions", () => {
     );
     expect(mockLogger.info).toHaveBeenCalledWith("  Pricing changes:");
     expect(mockLogger.info).toHaveBeenCalledWith("    Added Prices: 2");
-    expect(mockLogger.info).toHaveBeenCalledWith("      USA: 4.99");
-    expect(mockLogger.info).toHaveBeenCalledWith("      GBR: 3.99");
+    expect(mockLogger.debug).toHaveBeenCalledWith("      USA: 4.99");
+    expect(mockLogger.debug).toHaveBeenCalledWith("      GBR: 3.99");
     expect(mockLogger.info).toHaveBeenCalledWith("    Updated Prices: 1");
-    expect(mockLogger.info).toHaveBeenCalledWith("      DEU: 4.49");
+    expect(mockLogger.debug).toHaveBeenCalledWith("      DEU: 4.49");
   });
 
   it("should handle CREATE_SUBSCRIPTION_PRICE action with newly created subscription", async () => {

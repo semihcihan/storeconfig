@@ -49,7 +49,7 @@ export function optimizeLocalizationsByPrimaryLocale(
     return optimized;
   });
 
-  logger.info(
+  logger.debug(
     `Optimized ${localizations.length} localizations to avoid duplicates with primary locale: ${primaryLocale}`
   );
   return optimizedResult;

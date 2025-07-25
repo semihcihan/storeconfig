@@ -36,7 +36,7 @@ async function createAppAvailabilityForApp(
   appId: string,
   availableTerritories: string[]
 ): Promise<string> {
-  logger.info("Creating new app availability...");
+  logger.debug("Creating new app availability...");
 
   // Import territory codes
   const { territoryCodes } = await import("../../models/territories");
@@ -99,7 +99,7 @@ async function createAppAvailabilityForApp(
     throw new Error("No app availability ID returned from creation");
   }
 
-  logger.info(`Successfully created app availability: ${response.data.id}`);
+  logger.debug(`Successfully created app availability: ${response.data.id}`);
   return response.data.id;
 }
 
@@ -111,13 +111,13 @@ async function ensureAppAvailability(
   const existingAvailability = await getAppAvailability(appId);
 
   if (existingAvailability?.data?.id) {
-    logger.info(
+    logger.debug(
       `Found existing app availability: ${existingAvailability.data.id}`
     );
     return existingAvailability.data.id;
   }
 
-  logger.info(
+  logger.debug(
     `No app availability found for app ${appId}. Creating new availability...`
   );
   return await createAppAvailabilityForApp(appId, availableTerritories);
@@ -139,7 +139,7 @@ async function updateTerritoryAvailabilityStatus(
   };
 
   await updateTerritoryAvailability(territoryAvailabilityId, updateRequest);
-  logger.info(`Territory availability updated successfully`);
+  logger.debug(`Territory availability updated successfully`);
 }
 
 // Main function to update app availability
@@ -148,7 +148,9 @@ export async function updateAppAvailability(
   appId: string,
   currentState: AppStoreModel
 ): Promise<void> {
-  logger.info(`Available Territories: ${JSON.stringify(availableTerritories)}`);
+  logger.debug(
+    `Available Territories: ${JSON.stringify(availableTerritories)}`
+  );
 
   // Ensure app availability resource exists (create if needed)
   const appAvailabilityId = await ensureAppAvailability(
@@ -157,9 +159,9 @@ export async function updateAppAvailability(
   );
 
   // Get territory availability mapping
-  logger.info("Getting territory availability mappings...");
+  logger.debug("Getting territory availability mappings...");
   const territoryMap = await getTerritoryAvailabilityMap(appAvailabilityId);
-  logger.info(`Found ${territoryMap.size} territories`);
+  logger.debug(`Found ${territoryMap.size} territories`);
 
   // Build sets of current and desired territories
   const currentTerritories = new Set(currentState.availableTerritories);
@@ -178,13 +180,13 @@ export async function updateAppAvailability(
   // Update territories
   const totalChanges = territoriesToEnable.length + territoriesToDisable.length;
   if (totalChanges > 0) {
-    logger.info(`Updating ${totalChanges} territory availabilities...`);
+    logger.debug(`Updating ${totalChanges} territory availabilities...`);
 
     // Enable territories
     for (const territory of territoriesToEnable) {
       const territoryAvailabilityId = territoryMap.get(territory as string);
       if (territoryAvailabilityId) {
-        logger.info(`Enabling territory: ${territory}`);
+        logger.debug(`Enabling territory: ${territory}`);
         await updateTerritoryAvailabilityStatus(territoryAvailabilityId, true);
       } else {
         logger.warn(`Territory availability ID not found for: ${territory}`);
@@ -195,17 +197,17 @@ export async function updateAppAvailability(
     for (const territory of territoriesToDisable) {
       const territoryAvailabilityId = territoryMap.get(territory as string);
       if (territoryAvailabilityId) {
-        logger.info(`Disabling territory: ${territory}`);
+        logger.debug(`Disabling territory: ${territory}`);
         await updateTerritoryAvailabilityStatus(territoryAvailabilityId, false);
       } else {
         logger.warn(`Territory availability ID not found for: ${territory}`);
       }
     }
 
-    logger.info("Territory availability updates completed successfully");
+    logger.debug("Territory availability updates completed successfully");
   } else {
-    logger.info("No territory availability changes needed");
+    logger.debug("No territory availability changes needed");
   }
 
-  logger.info("App availability update completed");
+  logger.debug("App availability update completed");
 }

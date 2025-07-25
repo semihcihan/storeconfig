@@ -48,7 +48,7 @@ async function createSubscriptionAvailabilityForSubscription(
   subscriptionId: string,
   availability: z.infer<typeof AvailabilitySchema>
 ): Promise<string> {
-  logger.info(
+  logger.debug(
     `Creating subscription availability for subscription ${subscriptionId}...`
   );
 
@@ -83,7 +83,7 @@ async function createSubscriptionAvailabilityForSubscription(
     throw new Error("No subscription availability ID returned from creation");
   }
 
-  logger.info(
+  logger.debug(
     `Successfully created subscription availability: ${response.data.id}`
   );
   return response.data.id;
@@ -97,13 +97,13 @@ export async function updateSubscriptionAvailability(
   currentSubscriptionGroupsResponse: SubscriptionGroupsResponse,
   newlyCreatedSubscriptions?: Map<string, string>
 ): Promise<void> {
-  logger.info(`Updating subscription availability for product ${productId}`);
-  logger.info(
+  logger.debug(`Updating subscription availability for product ${productId}`);
+  logger.debug(
     `Available territories: ${JSON.stringify(
       availability.availableTerritories
     )}`
   );
-  logger.info(
+  logger.debug(
     `Available in new territories: ${availability.availableInNewTerritories}`
   );
 
@@ -129,29 +129,29 @@ export async function updateSubscriptionAvailability(
   );
 
   if (existingAvailability?.data?.id) {
-    logger.info(
+    logger.debug(
       `Subscription ${productId} already has availability. Updating via POST-as-upsert pattern...`
     );
-    logger.info(`Existing availability ID: ${existingAvailability.data.id}`);
-    logger.info(
+    logger.debug(`Existing availability ID: ${existingAvailability.data.id}`);
+    logger.debug(
       `Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
     );
 
     // Apple's API uses POST-as-upsert pattern: creating availability for a subscription that already has it
     // will update the existing availability rather than creating a duplicate
-    logger.info(`Updating subscription availability for product ${productId}`);
+    logger.debug(`Updating subscription availability for product ${productId}`);
     await createSubscriptionAvailabilityForSubscription(
       subscriptionId,
       availability
     );
-    logger.info(
+    logger.debug(
       `Successfully updated subscription availability for product ${productId}`
     );
     return;
   }
 
   // Create new subscription availability
-  logger.info(
+  logger.debug(
     `Creating new subscription availability for product ${productId}`
   );
   await createSubscriptionAvailabilityForSubscription(
@@ -159,7 +159,7 @@ export async function updateSubscriptionAvailability(
     availability
   );
 
-  logger.info(
+  logger.debug(
     `Subscription availability update completed for product ${productId}`
   );
 }

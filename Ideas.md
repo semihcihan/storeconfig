@@ -1,6 +1,7 @@
 ## IDEAS TODOs
 
 - organize improve logging
+- "404"
 - No start date and end date support, will be overridden (TELL THIS TO USER)
 - while fetching without apply, should we ask for a version???
 

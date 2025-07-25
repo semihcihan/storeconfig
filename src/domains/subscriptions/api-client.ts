@@ -45,7 +45,7 @@ export async function fetchSubscriptionGroups(
   if (response.error) {
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `Subscription groups not found for app ${appId} (not created yet)`
       );
       return { data: [], included: [], links: { self: "" } };
@@ -128,7 +128,7 @@ export async function fetchSubscriptionAvailability(
   if (response.error) {
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `Subscription availability not found for subscription ${subscriptionId} (not created yet)`
       );
       return {
@@ -390,7 +390,7 @@ export async function getSubscriptionAvailability(
   if (response.error) {
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `No subscription availability found for subscription ${subscriptionId} (likely MISSING_METADATA state)`
       );
       return null;

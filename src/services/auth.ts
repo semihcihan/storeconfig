@@ -45,7 +45,7 @@ function generateNewAuthToken(): string {
   };
 
   const token = jwt.sign(payload, privateKey, options);
-  logger.info("Successfully generated new App Store Connect API token.");
+  logger.debug("Successfully generated new App Store Connect API token.");
   authToken = token;
   return token;
 }
@@ -62,7 +62,7 @@ export function getAuthToken(): string {
     tokenExpiration &&
     tokenExpiration - now > TOKEN_REFRESH_MARGIN_SECONDS
   ) {
-    logger.info("Using cached App Store Connect API token.");
+    logger.debug("Using cached App Store Connect API token.");
     return authToken;
   }
   return generateNewAuthToken();

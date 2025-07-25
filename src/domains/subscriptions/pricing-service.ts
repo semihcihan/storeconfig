@@ -159,7 +159,7 @@ async function createSubscriptionPriceForTerritory(
 
   await createSubscriptionPrice(createRequest);
 
-  logger.info(
+  logger.debug(
     `Created subscription price for territory ${price.territory} with price ${price.price}`
   );
 }
@@ -170,11 +170,11 @@ export async function createSubscriptionPrices(
   prices: Price[]
 ): Promise<void> {
   if (prices.length === 0) {
-    logger.info("No prices to create for subscription");
+    logger.debug("No prices to create for subscription");
     return;
   }
 
-  logger.info(
+  logger.debug(
     `Creating ${prices.length} subscription prices for subscription ${subscriptionId}`
   );
 
@@ -185,7 +185,7 @@ export async function createSubscriptionPrices(
     )
   );
 
-  logger.info(
+  logger.debug(
     `Successfully created ${prices.length} subscription prices for subscription ${subscriptionId}`
   );
 }

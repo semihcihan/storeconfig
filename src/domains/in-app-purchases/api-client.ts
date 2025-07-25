@@ -36,10 +36,10 @@ export async function fetchInAppPurchases(
       config.fieldsInAppPurchaseLocalizations as any,
   };
 
-  logger.info(
+  logger.debug(
     `Fetching IAPs for app ${appId} with URL: /v1/apps/${appId}/inAppPurchasesV2`
   );
-  logger.info(`Query parameters: ${JSON.stringify(queryParams, null, 2)}`);
+  logger.debug(`Query parameters: ${JSON.stringify(queryParams, null, 2)}`);
 
   const response = await api.GET("/v1/apps/{id}/inAppPurchasesV2", {
     params: {
@@ -55,7 +55,7 @@ export async function fetchInAppPurchases(
     );
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `In-app purchases not found for app ${appId} (not created yet)`
       );
       return { data: [], included: [], links: { self: "" } };
@@ -63,14 +63,14 @@ export async function fetchInAppPurchases(
     throw response.error;
   }
 
-  logger.info(
+  logger.debug(
     `Successfully fetched ${
       response.data.data?.length || 0
     } IAPs for app ${appId}`
   );
   if (response.data.data && response.data.data.length > 0) {
     response.data.data.forEach((iap) => {
-      logger.info(
+      logger.debug(
         `  IAP: ${iap.attributes?.productId} (${iap.attributes?.name}) - State: ${iap.attributes?.state}`
       );
     });
@@ -93,7 +93,7 @@ export async function fetchInAppPurchaseAvailability(
   if (response.error) {
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
       );
       throw response.error;
@@ -309,7 +309,7 @@ export async function getIAPAvailability(
   if (response.error) {
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `No IAP availability found for IAP ${iapId} (likely MISSING_METADATA state)`
       );
       return null;

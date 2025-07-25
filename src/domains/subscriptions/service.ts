@@ -188,7 +188,7 @@ export async function createNewSubscriptionGroup(
   appId: string,
   group: NonNullable<AppStoreModel["subscriptionGroups"]>[0]
 ): Promise<string> {
-  logger.info(`Creating new subscription group: ${group.referenceName}`);
+  logger.debug(`Creating new subscription group: ${group.referenceName}`);
 
   const createRequest: SubscriptionGroupCreateRequest = {
     data: {
@@ -213,7 +213,7 @@ export async function createNewSubscriptionGroup(
     throw new Error("No subscription group ID returned from creation");
   }
 
-  logger.info(`Successfully created subscription group: ${response.data.id}`);
+  logger.debug(`Successfully created subscription group: ${response.data.id}`);
 
   return response.data.id;
 }
@@ -227,7 +227,7 @@ export async function updateExistingSubscriptionGroup(
   },
   currentStateResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(`Updating subscription group: ${referenceName}`);
+  logger.debug(`Updating subscription group: ${referenceName}`);
 
   // Get the existing subscription group ID using utility function or fallback
   const groupId = currentStateResponse
@@ -256,7 +256,7 @@ export async function updateExistingSubscriptionGroup(
     throw new Error("No subscription group ID returned from update");
   }
 
-  logger.info(`Successfully updated subscription group: ${response.data.id}`);
+  logger.debug(`Successfully updated subscription group: ${response.data.id}`);
 }
 
 // Create a new subscription group localization
@@ -267,7 +267,7 @@ export async function createSubscriptionGroupLocalization(
   currentStateResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating subscription group localization: ${groupReferenceName} - ${localization.locale}`
   );
 
@@ -323,7 +323,7 @@ export async function createSubscriptionGroupLocalization(
     );
   }
 
-  logger.info(
+  logger.debug(
     `Successfully created subscription group localization: ${response.data.id}`
   );
 }
@@ -337,7 +337,7 @@ export async function updateSubscriptionGroupLocalization(
   currentStateResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Updating subscription group localization: ${groupReferenceName} - ${locale}`
   );
 
@@ -382,7 +382,7 @@ export async function updateSubscriptionGroupLocalization(
     );
   }
 
-  logger.info(
+  logger.debug(
     `Successfully updated subscription group localization: ${response.data.id}`
   );
 }
@@ -395,7 +395,7 @@ export async function deleteSubscriptionGroupLocalization(
   currentStateResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Deleting subscription group localization: ${groupReferenceName} - ${locale}`
   );
 
@@ -420,7 +420,7 @@ export async function deleteSubscriptionGroupLocalization(
 
   await deleteSubscriptionGroupLocalizationAPI(localizationId);
 
-  logger.info(
+  logger.debug(
     `Successfully deleted subscription group localization: ${localizationId}`
   );
 }
@@ -440,7 +440,7 @@ export async function createNewSubscription(
   currentStateResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptionGroups?: Map<string, string>
 ): Promise<string> {
-  logger.info(`Creating new subscription: ${subscription.productId}`);
+  logger.debug(`Creating new subscription: ${subscription.productId}`);
 
   // Get the subscription group ID, checking newly created subscription groups first
   let groupId: string | null = null;
@@ -493,7 +493,7 @@ export async function createNewSubscription(
     throw new Error("No subscription ID returned from creation");
   }
 
-  logger.info(`Successfully created subscription: ${response.data.id}`);
+  logger.debug(`Successfully created subscription: ${response.data.id}`);
 
   return response.data.id;
 }
@@ -511,7 +511,7 @@ export async function updateExistingSubscription(
   },
   currentStateResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(`Updating subscription: ${productId}`);
+  logger.debug(`Updating subscription: ${productId}`);
 
   // Get the subscription ID using utility function or fallback
   const subscriptionId = currentStateResponse
@@ -552,7 +552,7 @@ export async function updateExistingSubscription(
     throw new Error("No subscription ID returned from update");
   }
 
-  logger.info(`Successfully updated subscription: ${response.data.id}`);
+  logger.debug(`Successfully updated subscription: ${response.data.id}`);
 }
 
 // Create a new subscription localization
@@ -563,7 +563,7 @@ export async function createSubscriptionLocalization(
   currentStateResponse?: SubscriptionGroupsResponse,
   newlyCreatedSubscriptions?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating subscription localization: ${productId} - ${localization.locale}`
   );
 
@@ -611,7 +611,7 @@ export async function createSubscriptionLocalization(
     throw new Error("No subscription localization ID returned from creation");
   }
 
-  logger.info(
+  logger.debug(
     `Successfully created subscription localization: ${response.data.id}`
   );
 }
@@ -624,7 +624,7 @@ export async function updateSubscriptionLocalization(
   changes: { name?: string; description?: string },
   currentStateResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(`Updating subscription localization: ${productId} - ${locale}`);
+  logger.debug(`Updating subscription localization: ${productId} - ${locale}`);
 
   // Try to get the localization ID from included resources first
   let localizationId: string | null = null;
@@ -672,7 +672,7 @@ export async function updateSubscriptionLocalization(
     throw new Error("No subscription localization ID returned from update");
   }
 
-  logger.info(
+  logger.debug(
     `Successfully updated subscription localization: ${response.data.id}`
   );
 }
@@ -684,7 +684,7 @@ export async function deleteSubscriptionLocalization(
   locale: string,
   currentStateResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(`Deleting subscription localization: ${productId} - ${locale}`);
+  logger.debug(`Deleting subscription localization: ${productId} - ${locale}`);
 
   // Try to get the localization ID from included resources first
   let localizationId: string | null = null;
@@ -714,7 +714,7 @@ export async function deleteSubscriptionLocalization(
 
   await deleteSubscriptionLocalizationAPI(localizationId);
 
-  logger.info(
+  logger.debug(
     `Successfully deleted subscription localization: ${localizationId}`
   );
 }

@@ -109,16 +109,16 @@ export async function fetchAndMapIAPPrices(
 ): Promise<InAppPurchase["priceSchedule"]> {
   if (!priceScheduleRel) {
     // Return undefined when there's no price schedule (e.g., MISSING_METADATA state)
-    logger.info(`  No price schedule relationship found`);
+    logger.debug(`  No price schedule relationship found`);
     return undefined;
   }
 
-  logger.info(`  Fetching price schedule for ID: ${priceScheduleRel.id}`);
+  logger.debug(`  Fetching price schedule for ID: ${priceScheduleRel.id}`);
 
   const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
   if (!baseTerritoryResponse.data) {
     // No base territory means no valid price schedule
-    logger.info(
+    logger.warn(
       `  No base territory found for price schedule ${priceScheduleRel.id}`
     );
     return undefined;
@@ -134,7 +134,7 @@ export async function fetchAndMapIAPPrices(
   }
 
   const baseTerritory = territoryParseResult.data;
-  logger.info(`  Base territory: ${baseTerritory}`);
+  logger.debug(`  Base territory: ${baseTerritory}`);
   let prices: z.infer<typeof PriceSchema>[] = [];
 
   const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
@@ -147,12 +147,12 @@ export async function fetchAndMapIAPPrices(
 
   prices = [...manualPrices, ...automaticPrices];
 
-  logger.info(`  Found ${prices.length} prices: ${JSON.stringify(prices)}`);
+  logger.debug(`  Found ${prices.length} prices: ${JSON.stringify(prices)}`);
 
   // If we have a base territory but no prices, this is an incomplete price schedule
   // This commonly happens with IAPs in MISSING_METADATA state
   if (prices.length === 0) {
-    logger.info(
+    logger.debug(
       `  Incomplete price schedule (no prices found) - returning undefined`
     );
     return undefined;
@@ -176,7 +176,7 @@ export async function fetchAndMapIAPPrices(
 export async function mapInAppPurchaseAvailability(
   iapId: string
 ): Promise<InAppPurchase["availability"]> {
-  logger.info(`  Fetching availability for IAP ID: ${iapId}`);
+  logger.debug(`  Fetching availability for IAP ID: ${iapId}`);
 
   try {
     const {
@@ -188,11 +188,11 @@ export async function mapInAppPurchaseAvailability(
     const availabilityResponse = await fetchInAppPurchaseAvailability(iapId);
 
     if (!availabilityResponse.data) {
-      logger.info(`  No availability data found for IAP ${iapId}`);
+      logger.debug(`  No availability data found for IAP ${iapId}`);
       return undefined;
     }
 
-    logger.info(
+    logger.debug(
       `  Availability attributes: ${JSON.stringify(
         availabilityResponse.data.attributes
       )}`
@@ -225,7 +225,7 @@ export async function mapInAppPurchaseAvailability(
           .filter((t): t is NonNullable<typeof t> => t !== null);
       }
 
-      logger.info(
+      logger.debug(
         `  Found ${
           availableTerritories.length
         } available territories: ${JSON.stringify(availableTerritories)}`
@@ -233,7 +233,7 @@ export async function mapInAppPurchaseAvailability(
     } catch (territoryError) {
       const is404Error = isNotFoundError(territoryError);
       if (is404Error) {
-        logger.info(
+        logger.debug(
           `  No territories found for availability ${availabilityResponse.data.id}`
         );
         availableTerritories = [];
@@ -252,12 +252,12 @@ export async function mapInAppPurchaseAvailability(
   } catch (error) {
     const is404Error = isNotFoundError(error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `  No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
       );
       return undefined;
     } else {
-      logger.warn(`  Failed to fetch availability for IAP ${iapId}: ${error}`);
+      logger.error(`Failed to fetch availability for IAP ${iapId}: ${error}`);
       throw error;
     }
   }
@@ -268,7 +268,7 @@ export async function mapInAppPurchase(
   iap: InAppPurchaseV2,
   includedById: IncludedByIdMap
 ): Promise<InAppPurchase | null> {
-  logger.info(
+  logger.debug(
     `Mapping IAP: ${iap.attributes?.productId} (${iap.attributes?.name}) - State: ${iap.attributes?.state}`
   );
 
@@ -296,7 +296,7 @@ export async function mapInAppPurchase(
     availability: availability,
   };
 
-  logger.info(
+  logger.debug(
     `  Final IAP mapping: ${JSON.stringify({
       productId: mappedIAP.productId,
       hasLocalizations: mappedIAP.localizations.length > 0,

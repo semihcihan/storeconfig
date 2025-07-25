@@ -36,7 +36,7 @@ async function createIAPAvailabilityForIAP(
   iapId: string,
   availability: z.infer<typeof AvailabilitySchema>
 ): Promise<string> {
-  logger.info(`Creating IAP availability for IAP ${iapId}...`);
+  logger.debug(`Creating IAP availability for IAP ${iapId}...`);
 
   const territoryData = availability.availableTerritories.map((territory) => ({
     type: "territories" as const,
@@ -69,7 +69,7 @@ async function createIAPAvailabilityForIAP(
     throw new Error("No IAP availability ID returned from creation");
   }
 
-  logger.info(`Successfully created IAP availability: ${response.data.id}`);
+  logger.debug(`Successfully created IAP availability: ${response.data.id}`);
   return response.data.id;
 }
 
@@ -81,13 +81,13 @@ export async function updateIAPAvailability(
   currentIAPsResponse: InAppPurchasesV2Response,
   newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
-  logger.info(`Updating IAP availability for product ${productId}`);
-  logger.info(
+  logger.debug(`Updating IAP availability for product ${productId}`);
+  logger.debug(
     `Available territories: ${JSON.stringify(
       availability.availableTerritories
     )}`
   );
-  logger.info(
+  logger.debug(
     `Available in new territories: ${availability.availableInNewTerritories}`
   );
 
@@ -108,27 +108,27 @@ export async function updateIAPAvailability(
   const existingAvailability = await getIAPAvailability(iapId);
 
   if (existingAvailability?.data?.id) {
-    logger.info(
+    logger.debug(
       `IAP ${productId} already has availability. Updating via POST-as-upsert pattern...`
     );
-    logger.info(`Existing availability ID: ${existingAvailability.data.id}`);
-    logger.info(
+    logger.debug(`Existing availability ID: ${existingAvailability.data.id}`);
+    logger.debug(
       `Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
     );
 
     // Apple's API uses POST-as-upsert pattern: creating availability for an IAP that already has it
     // will update the existing availability rather than creating a duplicate
-    logger.info(`Updating IAP availability for product ${productId}`);
+    logger.debug(`Updating IAP availability for product ${productId}`);
     await createIAPAvailabilityForIAP(iapId, availability);
-    logger.info(
+    logger.debug(
       `Successfully updated IAP availability for product ${productId}`
     );
     return;
   }
 
   // Create new IAP availability
-  logger.info(`Creating new IAP availability for product ${productId}`);
+  logger.debug(`Creating new IAP availability for product ${productId}`);
   await createIAPAvailabilityForIAP(iapId, availability);
 
-  logger.info(`IAP availability update completed for product ${productId}`);
+  logger.debug(`IAP availability update completed for product ${productId}`);
 }

@@ -144,7 +144,7 @@ export async function createAppPriceSchedule(
   priceSchedule: z.infer<typeof PriceScheduleSchema>,
   appId: string
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating app price schedule with base territory ${priceSchedule.baseTerritory} for app ${appId}`
   );
 
@@ -169,7 +169,7 @@ export async function createAppPriceSchedule(
     }
 
     await createAppPriceScheduleAPI(createRequest);
-    logger.info(
+    logger.debug(
       `Successfully created app price schedule with base territory ${priceSchedule.baseTerritory}`
     );
   } catch (error) {

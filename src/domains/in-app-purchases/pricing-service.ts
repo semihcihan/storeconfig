@@ -106,7 +106,7 @@ async function createIAPPriceScheduleForIAP(
   priceSchedule: z.infer<typeof PriceScheduleSchema>,
   iapId: string
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating IAP price schedule with base territory ${priceSchedule.baseTerritory} for IAP ${iapId}`
   );
 
@@ -133,7 +133,7 @@ async function createIAPPriceScheduleForIAP(
 
     await createIAPPriceSchedule(createRequest);
 
-    logger.info(
+    logger.debug(
       `Successfully created IAP price schedule with base territory ${priceSchedule.baseTerritory}`
     );
   } catch (error) {
@@ -149,7 +149,7 @@ export async function updateIAPPricing(
   currentIAPsResponse: InAppPurchasesV2Response,
   newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Updating IAP pricing for ${productId} with comprehensive schedule`
   );
 
@@ -170,16 +170,16 @@ export async function updateIAPPricing(
   const existingPriceScheduleId = await getIAPPriceScheduleId(iapId);
 
   if (existingPriceScheduleId) {
-    logger.info(
+    logger.debug(
       `IAP ${productId} already has a price schedule. Apple's API uses POST-as-upsert pattern.`
     );
-    logger.info(`Creating new price schedule will update the existing one.`);
+    logger.debug(`Creating new price schedule will update the existing one.`);
   } else {
-    logger.info(`Creating new price schedule for IAP ${productId}`);
+    logger.debug(`Creating new price schedule for IAP ${productId}`);
   }
 
   // Create the price schedule (this will update if one exists)
   await createIAPPriceScheduleForIAP(priceSchedule, iapId);
 
-  logger.info(`Successfully updated IAP pricing for ${productId}`);
+  logger.debug(`Successfully updated IAP pricing for ${productId}`);
 }

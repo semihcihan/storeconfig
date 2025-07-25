@@ -37,7 +37,7 @@ async function fetchAndMapInAppPurchases(appId: string) {
   } catch (error) {
     const is404Error = isNotFoundError(error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `In-app purchases not found for app ${appId} (not created yet)`
       );
       return [];
@@ -54,7 +54,7 @@ async function fetchAndMapSubscriptionGroups(appId: string) {
   } catch (error) {
     const is404Error = isNotFoundError(error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `Subscription groups not found for app ${appId} (not created yet)`
       );
       return [];
@@ -71,7 +71,7 @@ async function fetchAndMapAppAvailability(appId: string) {
   } catch (error) {
     const is404Error = isNotFoundError(error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `App availability not found for app ${appId} (not created yet)`
       );
       return [];
@@ -84,7 +84,7 @@ async function fetchAndMapAppAvailability(appId: string) {
 export async function fetchAppStoreState(
   appId: string
 ): Promise<AppStoreModel> {
-  logger.info(`Fetching app store state for app ID: ${appId}`);
+  logger.debug(`Fetching app store state for app ID: ${appId}`);
 
   const versionService = new AppStoreVersionService();
   const localizationAggregator = new LocalizationAggregator();

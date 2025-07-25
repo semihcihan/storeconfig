@@ -70,7 +70,7 @@ export async function mapAppPricing(
     const is404Error = isNotFoundError(error);
 
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `App pricing not found or not configured yet for app ${appId}`
       );
       return undefined;

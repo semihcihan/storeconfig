@@ -174,7 +174,7 @@ function createRetryWrapper<T extends Record<string, any>>(
 
         // If we get here, the call succeeded
         if (attempt > 1) {
-          logger.info(`${method} ${endpoint} succeeded on attempt ${attempt}`);
+          logger.debug(`${method} ${endpoint} succeeded on attempt ${attempt}`);
         }
 
         return response;

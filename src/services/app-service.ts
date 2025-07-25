@@ -15,7 +15,7 @@ export async function updateAppDetails(
     copyright?: string;
   }
 ): Promise<void> {
-  logger.info(`Updating app details for app ID: ${appId}`);
+  logger.debug(`Updating app details for app ID: ${appId}`);
 
   // Filter out undefined values
   const attributes = Object.fromEntries(
@@ -23,15 +23,15 @@ export async function updateAppDetails(
   );
 
   if (Object.keys(attributes).length === 0) {
-    logger.info("No app details to update");
+    logger.debug("No app details to update");
     return;
   }
 
-  logger.info(`Updating app attributes: ${JSON.stringify(attributes)}`);
+  logger.debug(`Updating app attributes: ${JSON.stringify(attributes)}`);
 
   try {
     const response = await updateApp(appId, attributes);
-    logger.info(`Successfully updated app details: ${response.data.id}`);
+    logger.debug(`Successfully updated app details: ${response.data.id}`);
   } catch (error) {
     // Pass through Apple's error messages as requested
     if (error instanceof Error) {

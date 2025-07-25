@@ -53,7 +53,7 @@ export async function fetchAppAvailability(
   if (appAvailabilityResponse.error) {
     const is404Error = isNotFoundError(appAvailabilityResponse.error);
     if (is404Error) {
-      logger.info(
+      logger.debug(
         `App availability not found for app ${appId} (not created yet)`
       );
       return null;

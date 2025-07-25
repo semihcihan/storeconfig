@@ -122,7 +122,7 @@ export class LocalizationAggregator {
     versionLocalization?: AppStoreVersionLocalization;
     appInfoLocalization?: AppInfoLocalization;
   }> {
-    logger.info(`Creating/updating app localization for locale: ${locale}`);
+    logger.debug(`Creating/updating app localization for locale: ${locale}`);
 
     let versionLocalization: AppStoreVersionLocalization | undefined;
     let appInfoLocalization: AppInfoLocalization | undefined;
@@ -157,7 +157,7 @@ export class LocalizationAggregator {
       );
 
       if (hasVersionFields) {
-        logger.info(
+        logger.debug(
           `Updating existing version localization for locale: ${locale}`
         );
         versionLocalization =
@@ -168,7 +168,7 @@ export class LocalizationAggregator {
       }
     } else {
       // Always create new version localization (only locale is required)
-      logger.info(`Creating new version localization for locale: ${locale}`);
+      logger.debug(`Creating new version localization for locale: ${locale}`);
       versionLocalization =
         await this.versionLocalizationService.createLocalization(
           version.id,
@@ -203,7 +203,7 @@ export class LocalizationAggregator {
 
       if (existingAppInfoLocalization) {
         // Update existing app info localization
-        logger.info(
+        logger.debug(
           `Updating existing app info localization for locale: ${locale}`
         );
         appInfoLocalization =
@@ -219,7 +219,9 @@ export class LocalizationAggregator {
           );
         }
 
-        logger.info(`Creating new app info localization for locale: ${locale}`);
+        logger.debug(
+          `Creating new app info localization for locale: ${locale}`
+        );
         appInfoLocalization =
           await this.appInfoLocalizationService.createLocalization(
             appInfoId,
@@ -234,7 +236,7 @@ export class LocalizationAggregator {
       }
     }
 
-    logger.info(
+    logger.debug(
       `Successfully processed app localization for locale: ${locale}`
     );
     return { versionLocalization, appInfoLocalization };
@@ -249,7 +251,7 @@ export class LocalizationAggregator {
     versionLocalization?: AppStoreVersionLocalization;
     appInfoLocalization?: AppInfoLocalization;
   }> {
-    logger.info(`Updating/creating app localization for locale: ${locale}`);
+    logger.debug(`Updating/creating app localization for locale: ${locale}`);
 
     let versionLocalization: AppStoreVersionLocalization | undefined;
     let appInfoLocalization: AppInfoLocalization | undefined;
@@ -271,7 +273,7 @@ export class LocalizationAggregator {
 
       if (existingVersionLocalization) {
         // Update existing version localization
-        logger.info(
+        logger.debug(
           `Updating existing version localization for locale: ${locale}`
         );
         versionLocalization =
@@ -281,7 +283,7 @@ export class LocalizationAggregator {
           );
       } else {
         // Create new version localization
-        logger.info(`Creating new version localization for locale: ${locale}`);
+        logger.debug(`Creating new version localization for locale: ${locale}`);
         versionLocalization =
           await this.versionLocalizationService.createLocalization(
             version.id,
@@ -305,7 +307,7 @@ export class LocalizationAggregator {
 
       if (existingAppInfoLocalization) {
         // Update existing app info localization
-        logger.info(
+        logger.debug(
           `Updating existing app info localization for locale: ${locale}`
         );
         appInfoLocalization =
@@ -315,7 +317,9 @@ export class LocalizationAggregator {
           );
       } else {
         // Create new app info localization
-        logger.info(`Creating new app info localization for locale: ${locale}`);
+        logger.debug(
+          `Creating new app info localization for locale: ${locale}`
+        );
         appInfoLocalization =
           await this.appInfoLocalizationService.createLocalization(
             appInfoId,
@@ -330,7 +334,7 @@ export class LocalizationAggregator {
       }
     }
 
-    logger.info(
+    logger.debug(
       `Successfully processed app localization for locale: ${locale}`
     );
     return { versionLocalization, appInfoLocalization };
@@ -340,7 +344,7 @@ export class LocalizationAggregator {
     appId: string,
     locale: z.infer<typeof LocaleCodeSchema>
   ): Promise<void> {
-    logger.info(`Deleting app localization for locale: ${locale}`);
+    logger.debug(`Deleting app localization for locale: ${locale}`);
 
     // Delete version localization first
     const version = await this.getCurrentVersion(appId);
@@ -352,12 +356,12 @@ export class LocalizationAggregator {
         );
 
       if (existingVersionLocalization) {
-        logger.info(`Deleting version localization for locale: ${locale}`);
+        logger.debug(`Deleting version localization for locale: ${locale}`);
         await this.versionLocalizationService.deleteLocalization(
           existingVersionLocalization.id
         );
       } else {
-        logger.info(
+        logger.debug(
           `No version localization found for locale: ${locale}, skipping deletion`
         );
       }
@@ -377,12 +381,12 @@ export class LocalizationAggregator {
         );
 
       if (existingAppInfoLocalization) {
-        logger.info(`Deleting app info localization for locale: ${locale}`);
+        logger.debug(`Deleting app info localization for locale: ${locale}`);
         await this.appInfoLocalizationService.deleteLocalization(
           existingAppInfoLocalization.id
         );
       } else {
-        logger.info(
+        logger.debug(
           `No app info localization found for locale: ${locale}, skipping deletion`
         );
       }
@@ -394,13 +398,13 @@ export class LocalizationAggregator {
       );
     }
 
-    logger.info(`Successfully processed deletion for locale: ${locale}`);
+    logger.debug(`Successfully processed deletion for locale: ${locale}`);
   }
 
   async fetchAllLocalizations(
     appId: string
   ): Promise<z.infer<typeof AppStoreLocalizationSchema>[]> {
-    logger.info(`Fetching all localizations for app: ${appId}`);
+    logger.debug(`Fetching all localizations for app: ${appId}`);
 
     // Get the current version for the app
     const version = await this.getCurrentVersion(appId);
@@ -465,7 +469,7 @@ export class LocalizationAggregator {
     });
 
     const result = Array.from(localizationsByLocale.values());
-    logger.info(
+    logger.debug(
       `Successfully fetched ${result.length} localizations for app ${appId}`
     );
     return result;

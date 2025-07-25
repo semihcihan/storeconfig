@@ -1038,7 +1038,7 @@ export function diff(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
 ): Plan {
-  logger.info("Starting diff...");
+  logger.debug("Starting diff...");
 
   if (currentState.schemaVersion !== desiredState.schemaVersion) {
     throw new Error(
@@ -1074,6 +1074,6 @@ export function diff(
     ...appDetailsActions,
   ];
 
-  logger.info(`Diff completed. Plan contains ${plan.length} actions.`);
+  logger.debug(`Diff completed. Plan contains ${plan.length} actions.`);
   return plan;
 }

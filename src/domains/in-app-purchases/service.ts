@@ -86,7 +86,7 @@ export async function createNewInAppPurchase(
   appId: string,
   inAppPurchase: NonNullable<AppStoreModel["inAppPurchases"]>[0]
 ): Promise<string> {
-  logger.info(`Creating new in-app purchase: ${inAppPurchase.productId}`);
+  logger.debug(`Creating new in-app purchase: ${inAppPurchase.productId}`);
 
   const createRequest: InAppPurchaseV2CreateRequest = {
     data: {
@@ -117,7 +117,7 @@ export async function createNewInAppPurchase(
     throw new Error("No IAP ID returned from creation");
   }
 
-  logger.info(`Successfully created in-app purchase: ${response.data.id}`);
+  logger.debug(`Successfully created in-app purchase: ${response.data.id}`);
 
   return response.data.id;
 }
@@ -133,7 +133,7 @@ export async function updateExistingInAppPurchase(
   },
   currentStateResponse?: InAppPurchasesV2Response
 ): Promise<void> {
-  logger.info(`Updating in-app purchase: ${productId}`);
+  logger.debug(`Updating in-app purchase: ${productId}`);
 
   // Get the existing IAP ID using utility function or fallback
   const iapId = currentStateResponse
@@ -166,7 +166,7 @@ export async function updateExistingInAppPurchase(
     throw new Error("No IAP ID returned from update");
   }
 
-  logger.info(`Successfully updated in-app purchase: ${response.data.id}`);
+  logger.debug(`Successfully updated in-app purchase: ${response.data.id}`);
 }
 
 // Create a new IAP localization
@@ -177,7 +177,7 @@ export async function createIAPLocalization(
   currentStateResponse?: InAppPurchasesV2Response,
   newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating IAP localization: ${productId} - ${localization.locale}`
   );
 
@@ -221,7 +221,7 @@ export async function createIAPLocalization(
     throw new Error("No localization ID returned from creation");
   }
 
-  logger.info(`Successfully created IAP localization: ${response.data.id}`);
+  logger.debug(`Successfully created IAP localization: ${response.data.id}`);
 }
 
 // Update an existing IAP localization
@@ -232,7 +232,7 @@ export async function updateIAPLocalization(
   changes: { name?: string; description?: string },
   currentStateResponse?: InAppPurchasesV2Response
 ): Promise<void> {
-  logger.info(`Updating IAP localization: ${productId} - ${locale}`);
+  logger.debug(`Updating IAP localization: ${productId} - ${locale}`);
 
   // Get the existing localization ID using utility function or fallback
   const localizationId = currentStateResponse
@@ -265,7 +265,7 @@ export async function updateIAPLocalization(
     throw new Error("No localization ID returned from update");
   }
 
-  logger.info(`Successfully updated IAP localization: ${response.data.id}`);
+  logger.debug(`Successfully updated IAP localization: ${response.data.id}`);
 }
 
 // Delete an IAP localization
@@ -275,7 +275,7 @@ export async function deleteIAPLocalization(
   locale: string,
   currentStateResponse?: InAppPurchasesV2Response
 ): Promise<void> {
-  logger.info(`Deleting IAP localization: ${productId} - ${locale}`);
+  logger.debug(`Deleting IAP localization: ${productId} - ${locale}`);
 
   // Get the existing localization ID using utility function or fallback
   const localizationId = currentStateResponse
@@ -290,5 +290,5 @@ export async function deleteIAPLocalization(
 
   await deleteInAppPurchaseLocalization(localizationId);
 
-  logger.info(`Successfully deleted IAP localization: ${localizationId}`);
+  logger.debug(`Successfully deleted IAP localization: ${localizationId}`);
 }

@@ -75,7 +75,7 @@ const command: CommandModule = {
     const appId = argv.id as string;
     const preview = argv.preview as boolean;
 
-    logger.info(`Processing desired state from ${desiredStateFile}...`);
+    logger.debug(`Processing desired state from ${desiredStateFile}...`);
 
     try {
       const desiredState = validateJsonFile(desiredStateFile, false);
@@ -83,7 +83,7 @@ const command: CommandModule = {
       let currentState: AppStoreModel;
 
       if (currentStateFile) {
-        logger.info(`Using ${currentStateFile} as current state.`);
+        logger.debug(`Using ${currentStateFile} as current state.`);
         currentState = validateJsonFile(currentStateFile, false);
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
@@ -105,7 +105,7 @@ const command: CommandModule = {
 
       const confirmed = await confirmChanges();
       if (!confirmed) {
-        logger.info("Operation cancelled by user");
+        logger.warn("Operation cancelled by user");
         return;
       }
 

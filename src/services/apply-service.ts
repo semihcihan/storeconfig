@@ -352,7 +352,7 @@ export async function apply(
   desiredState: AppStoreModel
 ) {
   const appId = currentState.appId;
-  logger.info(`Applying plan with ${plan.length} actions for app ${appId}`);
+  logger.debug(`Applying plan with ${plan.length} actions for app ${appId}`);
 
   // Check if we have any IAP-related actions to avoid unnecessary API call
   const hasIAPActions = plan.some(
@@ -404,5 +404,5 @@ export async function apply(
     );
   }
 
-  logger.info("Plan application completed");
+  logger.debug("Plan application completed");
 }

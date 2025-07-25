@@ -30,7 +30,7 @@ export async function createIntroductoryOffer(
   newlyCreatedSubscriptions?: Map<string, string>,
   currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Creating introductory offer for subscription ${subscriptionProductId}`
   );
 
@@ -75,7 +75,7 @@ export async function createIntroductoryOffer(
 
       await createSubscriptionIntroductoryOffer(createRequest);
 
-      logger.info(
+      logger.debug(
         `Created FREE_TRIAL introductory offer for territory ${territory}`
       );
     }
@@ -125,7 +125,7 @@ export async function createIntroductoryOffer(
 
       await createSubscriptionIntroductoryOffer(createRequest);
 
-      logger.info(
+      logger.debug(
         `Created PAY_AS_YOU_GO introductory offer for territory ${price.territory} with price ${price.price}`
       );
     }
@@ -175,13 +175,13 @@ export async function createIntroductoryOffer(
 
       await createSubscriptionIntroductoryOffer(createRequest);
 
-      logger.info(
+      logger.debug(
         `Created PAY_UP_FRONT introductory offer for territory ${price.territory} with price ${price.price}`
       );
     }
   }
 
-  logger.info(
+  logger.debug(
     `Successfully created introductory offer for subscription ${subscriptionProductId}`
   );
 }
@@ -193,7 +193,7 @@ export async function deleteIntroductoryOffer(
   newlyCreatedSubscriptions?: Map<string, string>,
   currentSubscriptionGroupsResponse?: SubscriptionGroupsResponse
 ): Promise<void> {
-  logger.info(
+  logger.debug(
     `Deleting introductory offer for subscription ${subscriptionProductId}`
   );
 
@@ -254,17 +254,17 @@ export async function deleteIntroductoryOffer(
   // Delete matching offers
   for (const offerToDelete of offersToDelete) {
     await deleteSubscriptionIntroductoryOffer(offerToDelete.id);
-    logger.info(
+    logger.debug(
       `Deleted introductory offer ${offerToDelete.id} for subscription ${subscriptionProductId}`
     );
   }
 
   if (offersToDelete.length === 0) {
-    logger.info(
+    logger.debug(
       `No matching introductory offers found to delete for subscription ${subscriptionProductId}`
     );
   } else {
-    logger.info(
+    logger.debug(
       `Successfully deleted ${offersToDelete.length} introductory offers for subscription ${subscriptionProductId}`
     );
   }
