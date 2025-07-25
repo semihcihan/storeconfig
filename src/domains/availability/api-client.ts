@@ -63,7 +63,7 @@ export async function fetchAppAvailability(
 
   const appAvailabilityId = appAvailabilityResponse.data?.data?.id;
   if (!appAvailabilityId) {
-    logger.warn(`No app availability found for app ${appId}`);
+    logger.debug(`No app availability found for app ${appId}`);
     return null;
   }
 

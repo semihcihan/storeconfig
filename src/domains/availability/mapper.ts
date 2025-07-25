@@ -42,8 +42,8 @@ export async function mapAppAvailability(
           return validatedTerritoryCode;
         }
       } catch (e) {
-        logger.warn(
-          `Could not decode territory availability ID: ${territoryAvail.id}`
+        throw new Error(
+          `Could not decode territory availability ID: ${territoryAvail.id} ${e}`
         );
       }
 

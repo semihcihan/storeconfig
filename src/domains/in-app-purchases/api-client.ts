@@ -115,16 +115,11 @@ export async function fetchInAppPurchaseAvailabilityTerritories(
     }
   );
 
-  if (response.error) {
-    const is404Error = isNotFoundError(response.error);
-    if (is404Error) {
-      logger.warn(`No territories found for availability ${availabilityId}`);
-      throw response.error;
-    }
+  if (response.error && !isNotFoundError(response.error)) {
     throw response.error;
   }
 
-  return response.data;
+  return response.data || { data: [], links: { self: "" } };
 }
 
 // Fetch base territory for a price schedule

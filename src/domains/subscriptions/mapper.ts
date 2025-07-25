@@ -126,7 +126,7 @@ export function parseOfferDuration(
     return { duration: DURATION_MAPPING[duration] };
   }
 
-  logger.warn(
+  logger.error(
     `Unknown offer mode and duration: ${offerMode} ${duration} for subscription ${JSON.stringify(
       attributes
     )}`

@@ -88,7 +88,7 @@ export class LocalizationAggregator {
       }
 
       if (activeAppInfos.length > 1) {
-        logger.error(
+        logger.warn(
           `Multiple active app infos found for app ${appId} (${
             activeAppInfos.length
           }). Using the first one.
@@ -366,7 +366,7 @@ export class LocalizationAggregator {
         );
       }
     } else {
-      logger.warn(
+      logger.debug(
         `No version found for app ${appId}, skipping version localization deletion`
       );
     }

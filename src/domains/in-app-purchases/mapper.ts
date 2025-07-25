@@ -80,7 +80,7 @@ export function mapLocalizations(
         );
         if (!locData) {
           logger.warn(
-            `  Could not find included data for localization ${rel.id}`
+            `Could not find included data for localization ${rel.id}`
           );
           return null;
         }
@@ -119,7 +119,7 @@ export async function fetchAndMapIAPPrices(
   if (!baseTerritoryResponse.data) {
     // No base territory means no valid price schedule
     logger.warn(
-      `  No base territory found for price schedule ${priceScheduleRel.id}`
+      `No base territory found for price schedule ${priceScheduleRel.id}`
     );
     return undefined;
   }
@@ -129,7 +129,7 @@ export async function fetchAndMapIAPPrices(
   );
   if (!territoryParseResult.success) {
     // Invalid base territory means no valid price schedule
-    logger.warn(`  Invalid base territory: ${baseTerritoryResponse.data.id}`);
+    logger.warn(`Invalid base territory: ${baseTerritoryResponse.data.id}`);
     return undefined;
   }
 
@@ -152,7 +152,7 @@ export async function fetchAndMapIAPPrices(
   // If we have a base territory but no prices, this is an incomplete price schedule
   // This commonly happens with IAPs in MISSING_METADATA state
   if (prices.length === 0) {
-    logger.debug(
+    logger.warn(
       `  Incomplete price schedule (no prices found) - returning undefined`
     );
     return undefined;

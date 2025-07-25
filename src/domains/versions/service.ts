@@ -98,8 +98,7 @@ export class AppStoreVersionService {
       const versions = await this.getVersionsForApp(appId);
       const latestVersion = this.findLatestVersion(versions);
       if (!latestVersion) {
-        logger.warn(`No valid version found for app ${appId}`);
-        return {};
+        throw new Error(`No valid version found for app ${appId}`);
       }
 
       const versionString = latestVersion.attributes?.versionString;
@@ -110,12 +109,12 @@ export class AppStoreVersionService {
         copyright,
       };
     } catch (error) {
-      logger.warn(
+      logger.error(
         `Failed to fetch version metadata for app ${appId}: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
-      return {};
+      throw error;
     }
   }
 
