@@ -27,10 +27,8 @@ export async function paginateV2<T>(
     });
 
     if (response.error) {
-      logger.error(
-        `Failed to paginate ${endpoint}: ${JSON.stringify(response.error)}`
-      );
-      throwFormattedError(`Failed to paginate ${endpoint}`, response.error);
+      logger.error(`Failed to paginate ${endpoint}`);
+      throw new Error(response.error);
     }
 
     const data = response.data?.data || [];
@@ -68,9 +66,7 @@ export async function paginateV1<T>(
     });
 
     if (response.error) {
-      logger.error(
-        `Failed to paginate ${endpoint}: ${JSON.stringify(response.error)}`
-      );
+      logger.error(`Failed to paginate ${endpoint}:`, response.error);
       throwFormattedError(`Failed to paginate ${endpoint}`, response.error);
     }
 

@@ -127,9 +127,8 @@ export function parseOfferDuration(
   }
 
   logger.error(
-    `Unknown offer mode and duration: ${offerMode} ${duration} for subscription ${JSON.stringify(
-      attributes
-    )}`
+    `Unknown offer mode and duration: ${offerMode} ${duration} for subscription`,
+    attributes
   );
 
   return {};
@@ -152,13 +151,16 @@ export async function mapIntroductoryOffers(
 
     const territoryId = offerData.relationships.territory?.data?.id;
     if (!territoryId) {
-      logger.warn("No territory ID found for introductory offer");
+      logger.warn(
+        `No territory ID found for introductory offer, skipping.`,
+        offerData
+      );
       continue;
     }
     const territoryCode = validateTerritoryCode(territoryId);
     if (!territoryCode) {
       logger.warn(
-        `Invalid territory code for introductory offer: ${territoryId}`
+        `Invalid territory code for introductory offer: ${territoryId}, skipping.`
       );
       continue;
     }
@@ -316,9 +318,10 @@ export async function mapPromotionalOffers(
         };
       }
       logger.warn(
-        `Unknown offer type and duration: ${offerType} ${durationInfo} for subscription ${JSON.stringify(
-          offerData.attributes
-        )} in response ${JSON.stringify(response)}`
+        `Unknown offer type and duration: ${offerType} ${durationInfo} for subscription`,
+        offerData.attributes,
+        "in response:",
+        response
       );
       return null;
     })
@@ -390,7 +393,8 @@ export async function mapSubscription(
   const subscriptionPeriod = subData.attributes?.subscriptionPeriod;
   if (!subscriptionPeriod) {
     logger.warn(
-      `Subscription ${subData.id} has no subscription period. Skipping.`
+      `Subscription ${subData.id} has no subscription period. Skipping.`,
+      subData
     );
     return null;
   }

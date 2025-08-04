@@ -50,7 +50,7 @@ export async function mapAppPricing(
 
     const baseTerritory = baseTerritoryResponse.data.id;
     if (!baseTerritory) {
-      logger.warn(`Invalid base territory: ${baseTerritoryResponse.data.id}`);
+      logger.warn(`Invalid base territory:`, baseTerritoryResponse);
       return undefined;
     }
 

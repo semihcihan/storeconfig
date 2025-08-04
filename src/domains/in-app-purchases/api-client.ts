@@ -36,10 +36,7 @@ export async function fetchInAppPurchases(
       config.fieldsInAppPurchaseLocalizations as any,
   };
 
-  logger.debug(
-    `Fetching IAPs for app ${appId} with URL: /v1/apps/${appId}/inAppPurchasesV2`
-  );
-  logger.debug(`Query parameters: ${JSON.stringify(queryParams, null, 2)}`);
+  logger.debug(`Fetching IAPs for app ${appId}`);
 
   const response = await api.GET("/v1/apps/{id}/inAppPurchasesV2", {
     params: {
@@ -49,18 +46,15 @@ export async function fetchInAppPurchases(
   });
 
   if (response.error) {
-    logger.error(
-      "Error fetching IAPs:",
-      JSON.stringify(response.error, null, 2)
-    );
     const is404Error = isNotFoundError(response.error);
     if (is404Error) {
       logger.debug(
         `In-app purchases not found for app ${appId} (not created yet)`
       );
       return { data: [], included: [], links: { self: "" } };
+    } else {
+      throw response.error;
     }
-    throw response.error;
   }
 
   logger.debug(

@@ -137,7 +137,6 @@ async function createIAPPriceScheduleForIAP(
       `Successfully created IAP price schedule with base territory ${priceSchedule.baseTerritory}`
     );
   } catch (error) {
-    logger.error(`Error creating IAP price schedule: ${error}`);
     throw error;
   }
 }
@@ -171,9 +170,10 @@ export async function updateIAPPricing(
 
   if (existingPriceScheduleId) {
     logger.debug(
-      `IAP ${productId} already has a price schedule. Apple's API uses POST-as-upsert pattern.`
+      `IAP ${productId} already has a price schedule. Apple's API uses POST-as-upsert pattern.
+      Creating new price schedule will update the existing one.
+      `
     );
-    logger.debug(`Creating new price schedule will update the existing one.`);
   } else {
     logger.debug(`Creating new price schedule for IAP ${productId}`);
   }

@@ -93,13 +93,10 @@ export async function updateSubscriptionAvailability(
   currentSubscriptionGroupsResponse: SubscriptionGroupsResponse,
   newlyCreatedSubscriptions?: Map<string, string>
 ): Promise<void> {
-  logger.debug(`Updating subscription availability for product ${productId}`);
   logger.debug(
-    `Available territories: ${JSON.stringify(
-      availability.availableTerritories
-    )}`
-  );
-  logger.debug(
+    `Updating subscription availability for product ${productId}.
+    Available territories:`,
+    availability.availableTerritories,
     `Available in new territories: ${availability.availableInNewTerritories}`
   );
 
@@ -126,16 +123,13 @@ export async function updateSubscriptionAvailability(
 
   if (existingAvailability?.data?.id) {
     logger.debug(
-      `Subscription ${productId} already has availability. Updating via POST-as-upsert pattern...`
-    );
-    logger.debug(`Existing availability ID: ${existingAvailability.data.id}`);
-    logger.debug(
-      `Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
+      `Subscription ${productId} already has availability. Updating via POST-as-upsert pattern...
+      Existing availability ID: ${existingAvailability.data.id}
+      Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
     );
 
     // Apple's API uses POST-as-upsert pattern: creating availability for a subscription that already has it
     // will update the existing availability rather than creating a duplicate
-    logger.debug(`Updating subscription availability for product ${productId}`);
     await createSubscriptionAvailabilityForSubscription(
       subscriptionId,
       availability

@@ -94,49 +94,32 @@ export class AppStoreVersionService {
     versionString?: string;
     copyright?: string;
   }> {
-    try {
-      const versions = await this.getVersionsForApp(appId);
-      const latestVersion = this.findLatestVersion(versions);
-      if (!latestVersion) {
-        throw new Error(`No valid version found for app ${appId}`);
-      }
-
-      const versionString = latestVersion.attributes?.versionString;
-      const copyright = latestVersion.attributes?.copyright ?? undefined;
-
-      return {
-        versionString,
-        copyright,
-      };
-    } catch (error) {
-      logger.error(
-        `Failed to fetch version metadata for app ${appId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      throw error;
+    logger.debug(`Fetching version metadata for app ${appId}`);
+    const versions = await this.getVersionsForApp(appId);
+    const latestVersion = this.findLatestVersion(versions);
+    if (!latestVersion) {
+      throw new Error(`No valid version found for app ${appId}`);
     }
+
+    const versionString = latestVersion.attributes?.versionString;
+    const copyright = latestVersion.attributes?.copyright ?? undefined;
+
+    return {
+      versionString,
+      copyright,
+    };
   }
 
   async applyVersionMetadata(
     appId: string,
     data: z.infer<typeof AppStoreModelSchema>
   ): Promise<void> {
-    try {
-      // Handle version string and copyright
-      if (data.versionString || data.copyright !== undefined) {
-        await this.handleVersionString(
-          appId,
-          data.versionString,
-          data.copyright
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `Failed to apply version metadata: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+    logger.debug(
+      `Applying version metadata for app ${appId}: versionString = ${data.versionString}, copyright = ${data.copyright}`
+    );
+
+    if (data.versionString || data.copyright !== undefined) {
+      await this.handleVersionString(appId, data.versionString, data.copyright);
     }
   }
 
@@ -145,32 +128,30 @@ export class AppStoreVersionService {
     versionString?: string,
     copyright?: string
   ): Promise<void> {
-    try {
-      const versions = await this.getVersionsForApp(appId);
+    const versions = await this.getVersionsForApp(appId);
 
-      if (versions.length === 0) {
-        if (!versionString) {
-          throw new Error(
-            "Version string is required when creating a new version"
-          );
-        }
-        await this.createVersion(appId, versionString, copyright);
-      } else {
-        const latestVersion = this.findLatestVersion(versions);
-        if (!latestVersion) {
-          throw new Error("No valid version found to update");
-        }
-        await this.updateVersion(
-          latestVersion.id,
-          versionString || latestVersion.attributes?.versionString || "",
-          copyright
+    if (versions.length === 0) {
+      if (!versionString) {
+        throw new Error(
+          "Version string is required when creating a new version"
         );
       }
-    } catch (error) {
-      throw new Error(
-        `Failed to handle version string: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+      logger.debug(
+        `Creating new version for app ${appId}: versionString = ${versionString}`
+      );
+      await this.createVersion(appId, versionString, copyright);
+    } else {
+      const latestVersion = this.findLatestVersion(versions);
+      if (!latestVersion) {
+        throw new Error("No valid version found to update");
+      }
+      logger.debug(
+        `Updating version for app ${appId}: versionString = ${versionString}`
+      );
+      await this.updateVersion(
+        latestVersion.id,
+        versionString || latestVersion.attributes?.versionString || "",
+        copyright
       );
     }
   }

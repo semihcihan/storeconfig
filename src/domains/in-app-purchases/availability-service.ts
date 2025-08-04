@@ -76,14 +76,11 @@ export async function updateIAPAvailability(
   currentIAPsResponse: InAppPurchasesV2Response,
   newlyCreatedIAPs?: Map<string, string>
 ): Promise<void> {
-  logger.debug(`Updating IAP availability for product ${productId}`);
   logger.debug(
-    `Available territories: ${JSON.stringify(
-      availability.availableTerritories
-    )}`
-  );
-  logger.debug(
-    `Available in new territories: ${availability.availableInNewTerritories}`
+    `Updating IAP availability for product ${productId}:
+    available territories:`,
+    availability.availableTerritories,
+    `available in new territories: ${availability.availableInNewTerritories}`
   );
 
   // Get the IAP ID, checking newly created IAPs first
@@ -104,11 +101,9 @@ export async function updateIAPAvailability(
 
   if (existingAvailability?.data?.id) {
     logger.debug(
-      `IAP ${productId} already has availability. Updating via POST-as-upsert pattern...`
-    );
-    logger.debug(`Existing availability ID: ${existingAvailability.data.id}`);
-    logger.debug(
-      `Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
+      `IAP ${productId} already has availability. Updating via POST-as-upsert pattern...
+      Existing availability ID: ${existingAvailability.data.id}
+      Current availableInNewTerritories: ${existingAvailability.data.attributes?.availableInNewTerritories}`
     );
 
     // Apple's API uses POST-as-upsert pattern: creating availability for an IAP that already has it

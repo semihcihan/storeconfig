@@ -14,6 +14,10 @@ type SubscriptionPricePointsResponse =
 type SubscriptionGroupsResponse =
   components["schemas"]["SubscriptionGroupsResponse"];
 
+type SubscriptionGroupsIncludedResource =
+  | components["schemas"]["Subscription"]
+  | components["schemas"]["SubscriptionGroupLocalization"];
+
 type Price = z.infer<typeof PriceSchema>;
 
 // Cache for subscription price points to avoid repeated API calls
@@ -34,7 +38,7 @@ export function findSubscriptionId(
     // Try to find it in the current subscription groups response
     if (currentSubscriptionGroupsResponse?.included) {
       const subscription = currentSubscriptionGroupsResponse.included.find(
-        (item: any) =>
+        (item: SubscriptionGroupsIncludedResource) =>
           item.type === "subscriptions" &&
           item.attributes?.productId === subscriptionProductId
       );

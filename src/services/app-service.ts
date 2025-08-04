@@ -27,16 +27,8 @@ export async function updateAppDetails(
     return;
   }
 
-  logger.debug(`Updating app attributes: ${JSON.stringify(attributes)}`);
+  logger.debug(`Updating app attributes:`, attributes);
 
-  try {
-    const response = await updateApp(appId, attributes);
-    logger.debug(`Successfully updated app details: ${response.data.id}`);
-  } catch (error) {
-    // Pass through Apple's error messages as requested
-    if (error instanceof Error) {
-      throw new Error(`Failed to update app details: ${error.message}`);
-    }
-    throw error;
-  }
+  const response = await updateApp(appId, attributes);
+  logger.debug(`Successfully updated app details: ${response.data.id}`);
 }

@@ -45,9 +45,9 @@ async function findAppPricePointId(
 
   if (!pricePoint) {
     logger.error(
-      `No price point found for price ${price} in territory ${territory}. ` +
-        `Found ${pricePoints.length} price points for territory ${territory}. ` +
-        `Available prices: ${pricePoints
+      `No price point found for price ${price} in territory ${territory}.
+        Found ${pricePoints.length} price points for territory ${territory}.
+        Available prices: ${pricePoints
           .map((p: any) => p.attributes?.customerPrice)
           .join(", ")}`
     );
@@ -148,32 +148,27 @@ export async function createAppPriceSchedule(
     `Creating app price schedule with base territory ${priceSchedule.baseTerritory} for app ${appId}`
   );
 
-  try {
-    const createRequest = buildPriceScheduleRequest(
-      appId,
-      priceSchedule.baseTerritory,
-      priceSchedule.prices
+  const createRequest = buildPriceScheduleRequest(
+    appId,
+    priceSchedule.baseTerritory,
+    priceSchedule.prices
+  );
+
+  // Resolve actual price point IDs
+  for (let i = 0; i < priceSchedule.prices.length; i++) {
+    const priceEntry = priceSchedule.prices[i];
+    const pricePointId = await findAppPricePointId(
+      priceEntry.price,
+      priceEntry.territory,
+      appId
     );
 
-    // Resolve actual price point IDs
-    for (let i = 0; i < priceSchedule.prices.length; i++) {
-      const priceEntry = priceSchedule.prices[i];
-      const pricePointId = await findAppPricePointId(
-        priceEntry.price,
-        priceEntry.territory,
-        appId
-      );
-
-      createRequest.included[i].relationships.appPricePoint.data.id =
-        pricePointId;
-    }
-
-    await createAppPriceScheduleAPI(createRequest);
-    logger.debug(
-      `Successfully created app price schedule with base territory ${priceSchedule.baseTerritory}`
-    );
-  } catch (error) {
-    logger.error(`Error creating app price schedule: ${error}`);
-    throw error;
+    createRequest.included[i].relationships.appPricePoint.data.id =
+      pricePointId;
   }
+
+  await createAppPriceScheduleAPI(createRequest);
+  logger.debug(
+    `Successfully created app price schedule with base territory ${priceSchedule.baseTerritory}`
+  );
 }

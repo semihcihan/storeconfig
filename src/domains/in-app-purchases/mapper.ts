@@ -14,6 +14,8 @@ import {
   fetchBaseTerritory,
   fetchManualPrices,
   fetchAutomaticPrices,
+  fetchInAppPurchaseAvailability,
+  fetchInAppPurchaseAvailabilityTerritories,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
 
@@ -109,19 +111,18 @@ export async function fetchAndMapIAPPrices(
 ): Promise<InAppPurchase["priceSchedule"]> {
   if (!priceScheduleRel) {
     // Return undefined when there's no price schedule (e.g., MISSING_METADATA state)
-    logger.debug(`  No price schedule relationship found`);
+    logger.debug("No price schedule relationship found");
     return undefined;
   }
 
-  logger.debug(`  Fetching price schedule for ID: ${priceScheduleRel.id}`);
+  logger.debug(`Fetching price schedule for ID: ${priceScheduleRel.id}`);
 
   const baseTerritoryResponse = await fetchBaseTerritory(priceScheduleRel.id);
   if (!baseTerritoryResponse.data) {
     // No base territory means no valid price schedule
-    logger.warn(
+    throw new Error(
       `No base territory found for price schedule ${priceScheduleRel.id}`
     );
-    return undefined;
   }
 
   const territoryParseResult = TerritoryCodeSchema.safeParse(
@@ -129,12 +130,12 @@ export async function fetchAndMapIAPPrices(
   );
   if (!territoryParseResult.success) {
     // Invalid base territory means no valid price schedule
-    logger.warn(`Invalid base territory: ${baseTerritoryResponse.data.id}`);
+    logger.warn(`Invalid territory JSON:`, baseTerritoryResponse.data);
     return undefined;
   }
 
   const baseTerritory = territoryParseResult.data;
-  logger.debug(`  Base territory: ${baseTerritory}`);
+  logger.debug(`Base territory: ${baseTerritory}`);
   let prices: z.infer<typeof PriceSchema>[] = [];
 
   const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
@@ -147,13 +148,13 @@ export async function fetchAndMapIAPPrices(
 
   prices = [...manualPrices, ...automaticPrices];
 
-  logger.debug(`  Found ${prices.length} prices: ${JSON.stringify(prices)}`);
+  logger.debug(`Found ${prices.length} prices:`, prices);
 
   // If we have a base territory but no prices, this is an incomplete price schedule
   // This commonly happens with IAPs in MISSING_METADATA state
   if (prices.length === 0) {
     logger.warn(
-      `  Incomplete price schedule (no prices found) - returning undefined`
+      `Incomplete price schedule (no prices found) - returning undefined`
     );
     return undefined;
   }
@@ -164,7 +165,8 @@ export async function fetchAndMapIAPPrices(
   );
   if (!hasBaseTerritoryPrice) {
     logger.warn(
-      `  Base territory ${baseTerritory} not found in prices - returning undefined`
+      `Base territory price ${baseTerritory} not found in prices`,
+      prices
     );
     return undefined;
   }
@@ -176,26 +178,20 @@ export async function fetchAndMapIAPPrices(
 export async function mapInAppPurchaseAvailability(
   iapId: string
 ): Promise<InAppPurchase["availability"]> {
-  logger.debug(`  Fetching availability for IAP ID: ${iapId}`);
+  logger.debug(`Fetching availability for IAP ID: ${iapId}`);
 
   try {
-    const {
-      fetchInAppPurchaseAvailability,
-      fetchInAppPurchaseAvailabilityTerritories,
-    } = await import("./api-client");
-
     // First, fetch the availability data for the IAP
     const availabilityResponse = await fetchInAppPurchaseAvailability(iapId);
 
     if (!availabilityResponse.data) {
-      logger.debug(`  No availability data found for IAP ${iapId}`);
+      logger.debug(`No availability data found for IAP ${iapId}`);
       return undefined;
     }
 
     logger.debug(
-      `  Availability attributes: ${JSON.stringify(
-        availabilityResponse.data.attributes
-      )}`
+      `Availability attributes:`,
+      availabilityResponse.data.attributes
     );
 
     const availableInNewTerritories =
@@ -217,7 +213,10 @@ export async function mapInAppPurchaseAvailability(
               territory.id
             );
             if (!territoryParseResult.success) {
-              logger.warn(`Invalid territory code: ${territory.id}. Skipping.`);
+              logger.warn(
+                `Invalid territory code: ${territory.id}. Skipping.`,
+                territoriesResponse.data
+              );
               return null;
             }
             return territoryParseResult.data;
@@ -226,21 +225,17 @@ export async function mapInAppPurchaseAvailability(
       }
 
       logger.debug(
-        `  Found ${
-          availableTerritories.length
-        } available territories: ${JSON.stringify(availableTerritories)}`
+        `Found ${availableTerritories.length} available territories:`,
+        availableTerritories
       );
     } catch (territoryError) {
       const is404Error = isNotFoundError(territoryError);
       if (is404Error) {
         logger.debug(
-          `  No territories found for availability ${availabilityResponse.data.id}`
+          `No territories found for availability ${availabilityResponse.data.id}`
         );
         availableTerritories = [];
       } else {
-        logger.warn(
-          `  Failed to fetch territories for availability ${availabilityResponse.data.id}: ${territoryError}`
-        );
         throw territoryError;
       }
     }
@@ -253,11 +248,10 @@ export async function mapInAppPurchaseAvailability(
     const is404Error = isNotFoundError(error);
     if (is404Error) {
       logger.debug(
-        `  No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
+        `No availability found for IAP ${iapId} (likely MISSING_METADATA state)`
       );
       return undefined;
     } else {
-      logger.error(`Failed to fetch availability for IAP ${iapId}: ${error}`);
       throw error;
     }
   }
@@ -297,7 +291,7 @@ export async function mapInAppPurchase(
   };
 
   logger.debug(
-    `  Final IAP mapping: ${JSON.stringify({
+    `Final IAP mapping:`, {
       productId: mappedIAP.productId,
       hasLocalizations: mappedIAP.localizations.length > 0,
       hasPriceSchedule: !!mappedIAP.priceSchedule,

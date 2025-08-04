@@ -148,9 +148,7 @@ export async function updateAppAvailability(
   appId: string,
   currentState: AppStoreModel
 ): Promise<void> {
-  logger.debug(
-    `Available Territories: ${JSON.stringify(availableTerritories)}`
-  );
+  logger.debug(`Available Territories:`, availableTerritories);
 
   // Ensure app availability resource exists (create if needed)
   const appAvailabilityId = await ensureAppAvailability(

@@ -62,56 +62,43 @@ export class LocalizationAggregator {
       return this.cachedAppInfoId;
     }
 
-    try {
-      const appInfosResponse = await getAppInfosForApp(appId);
-      const appInfos = appInfosResponse.data;
+    const appInfosResponse = await getAppInfosForApp(appId);
+    const appInfos = appInfosResponse.data;
 
-      if (!appInfos || appInfos.length === 0) {
-        throw new Error(`No app info found for app ${appId}`);
-      }
+    if (!appInfos || appInfos.length === 0) {
+      throw new Error(`No app info found for app ${appId}`);
+    }
 
-      // If there's only one app info, use it directly
-      if (appInfos.length === 1) {
-        this.cachedAppInfoId = appInfos[0].id;
-        return appInfos[0].id;
-      }
+    // If there's only one app info, use it directly
+    if (appInfos.length === 1) {
+      this.cachedAppInfoId = appInfos[0].id;
+      return appInfos[0].id;
+    }
 
-      // If there are multiple app infos, filter out replaced ones
-      const activeAppInfos = appInfos.filter(
-        (appInfo) => appInfo.attributes?.state !== "REPLACED_WITH_NEW_INFO"
-      );
+    // If there are multiple app infos, filter out replaced ones
+    const activeAppInfos = appInfos.filter(
+      (appInfo) => appInfo.attributes?.state !== "REPLACED_WITH_NEW_INFO"
+    );
 
-      if (activeAppInfos.length === 0) {
-        throw new Error(
-          `No active app info found for app ${appId} (all app infos have been replaced)`
-        );
-      }
+    if (activeAppInfos.length === 0) {
+      throw new Error(`No app info found for app ${appId}`);
+    }
 
-      if (activeAppInfos.length > 1) {
-        logger.warn(
-          `Multiple active app infos found for app ${appId} (${
-            activeAppInfos.length
-          }). Using the first one.
+    if (activeAppInfos.length > 1) {
+      logger.warn(
+        `Multiple active app infos found for app ${appId} (${
+          activeAppInfos.length
+        }). Using the first one.
           App info IDs and States: ${activeAppInfos
             .map((info) => `${info.id} (${info.attributes?.state})`)
             .join(", ")}
           `
-        );
-      }
-
-      // Use the first active app info
-      this.cachedAppInfoId = activeAppInfos[0].id;
-      return activeAppInfos[0].id;
-    } catch (error) {
-      logger.warn(
-        `Failed to fetch app info for app ${appId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      throw new Error(
-        `Failed to get app info ID for app ${appId}. App info localizations cannot be managed without a valid app info.`
       );
     }
+
+    // Use the first active app info
+    this.cachedAppInfoId = activeAppInfos[0].id;
+    return activeAppInfos[0].id;
   }
 
   async createAppLocalization(
@@ -392,9 +379,8 @@ export class LocalizationAggregator {
       }
     } catch (error) {
       logger.warn(
-        `Failed to delete app info localization for locale ${locale}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to delete app info localization for locale ${locale}`,
+        error
       );
     }
 

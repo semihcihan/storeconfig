@@ -404,5 +404,5 @@ export async function apply(
     );
   }
 
-  logger.debug("Plan application completed");
+  logger.debug("Plan applied successfully");
 }

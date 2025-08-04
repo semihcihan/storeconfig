@@ -1,5 +1,6 @@
 import { CommandModule } from "yargs";
 import { validateJsonFile } from "../utils/validation-helpers";
+import { logger } from "../utils/logger";
 
 const command: CommandModule = {
   command: "validate-format",
@@ -14,7 +15,12 @@ const command: CommandModule = {
   },
   handler: (argv) => {
     const filePath = argv.file as string;
-    validateJsonFile(filePath, true);
+    try {
+      validateJsonFile(filePath, true);
+    } catch (error) {
+      logger.error(error);
+      process.exit(1);
+    }
   },
 };
 

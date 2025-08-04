@@ -83,7 +83,7 @@ const command: CommandModule = {
       let currentState: AppStoreModel;
 
       if (currentStateFile) {
-        logger.debug(`Using ${currentStateFile} as current state.`);
+        logger.info(`Using ${currentStateFile} as current state.`);
         currentState = validateJsonFile(currentStateFile, false);
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
@@ -111,11 +111,7 @@ const command: CommandModule = {
 
       await apply(plan, currentState, desiredState);
     } catch (error) {
-      if (error instanceof Error) {
-        logger.error("An error occurred:", error.message);
-      } else {
-        logger.error("An unknown error occurred:", error);
-      }
+      logger.error(`Apply failed`, error);
       process.exit(1);
     }
   },

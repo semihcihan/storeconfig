@@ -35,24 +35,7 @@ const fetchCommand: CommandModule = {
         `Successfully fetched app details and wrote to ${outputFile}`
       );
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logger.error("Data validation failed:", error.errors);
-      } else if (
-        error &&
-        typeof error === "object" &&
-        "data" in error &&
-        (error as any).data?.errors
-      ) {
-        logger.error("Failed to fetch app details:");
-        logger.error(
-          "API Error:",
-          JSON.stringify((error as any).data, null, 2)
-        );
-      } else if (error instanceof Error) {
-        logger.error("An error occurred:", error.message);
-      } else {
-        logger.error("An unknown error occurred:", error);
-      }
+      logger.error(`Fetch failed`, error);
       process.exit(1);
     }
   },
