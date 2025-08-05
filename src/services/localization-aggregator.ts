@@ -12,6 +12,10 @@ import {
 import { LocaleCodeSchema } from "../models/locales";
 import { getAppInfosForApp } from "../domains/app-info/api-client";
 
+type AppInfoState = NonNullable<
+  components["schemas"]["AppInfo"]["attributes"]
+>["state"];
+
 type AppStoreVersionLocalization =
   components["schemas"]["AppStoreVersionLocalizationResponse"]["data"];
 type AppInfoLocalization =
@@ -81,24 +85,72 @@ export class LocalizationAggregator {
     );
 
     if (activeAppInfos.length === 0) {
-      throw new Error(`No app info found for app ${appId}`);
+      throw new Error(`No active app info found for app ${appId}`);
     }
 
-    if (activeAppInfos.length > 1) {
-      logger.warn(
-        `Multiple active app infos found for app ${appId} (${
-          activeAppInfos.length
-        }). Using the first one.
-          App info IDs and States: ${activeAppInfos
-            .map((info) => `${info.id} (${info.attributes?.state})`)
-            .join(", ")}
-          `
-      );
+    // If only one active app info, use it
+    if (activeAppInfos.length === 1) {
+      this.cachedAppInfoId = activeAppInfos[0].id;
+      return activeAppInfos[0].id;
     }
 
-    // Use the first active app info
-    this.cachedAppInfoId = activeAppInfos[0].id;
-    return activeAppInfos[0].id;
+    const selectedAppInfo = this.selectAppInfoByPriority(activeAppInfos);
+
+    logger.warn(
+      `Multiple active app infos found for app ${appId} (${activeAppInfos.length}). Selected: ${selectedAppInfo.id} (${selectedAppInfo.attributes?.state})
+      `,
+      activeAppInfos.map((info) => ({
+        id: info.id,
+        state: info.attributes?.state,
+      }))
+    );
+
+    this.cachedAppInfoId = selectedAppInfo.id;
+    return selectedAppInfo.id;
+  }
+
+  private selectAppInfoByPriority(
+    appInfos: components["schemas"]["AppInfoResponse"]["data"][]
+  ): components["schemas"]["AppInfoResponse"]["data"] {
+    // Lower index = higher priority (0 is highest priority)
+    const statePriority: AppInfoState[] = [
+      "PREPARE_FOR_SUBMISSION",
+      "DEVELOPER_REJECTED",
+      "REJECTED",
+      "READY_FOR_REVIEW",
+      "WAITING_FOR_REVIEW",
+      "IN_REVIEW",
+      "ACCEPTED",
+      "PENDING_RELEASE",
+      "READY_FOR_DISTRIBUTION",
+      "REPLACED_WITH_NEW_INFO",
+    ];
+
+    const sortedAppInfos = appInfos.sort((a, b) => {
+      const stateA = a.attributes?.state;
+      const stateB = b.attributes?.state;
+      const priorityA = stateA ? statePriority.indexOf(stateA) : 999;
+      const priorityB = stateB ? statePriority.indexOf(stateB) : 999;
+      return priorityA - priorityB;
+    });
+
+    return sortedAppInfos[0];
+  }
+
+  private getAppInfoPriority(state?: AppInfoState): string | number {
+    const statePriority: AppInfoState[] = [
+      "PREPARE_FOR_SUBMISSION", // Highest priority - most likely editable
+      "WAITING_FOR_REVIEW", // Waiting for review - likely editable
+      "READY_FOR_REVIEW", // Ready but not yet submitted - likely editable
+      "IN_REVIEW", // In review - probably not editable
+      "ACCEPTED", // Accepted - probably not editable
+      "READY_FOR_DISTRIBUTION", // Ready for distribution - probably not editable
+      "PENDING_RELEASE", // Pending release - probably not editable
+      "DEVELOPER_REJECTED", // Rejected by developer - might be editable
+      "REJECTED", // Rejected by Apple - might be editable
+    ];
+
+    return state ? statePriority.indexOf(state) : "unknown";
   }
 
   async createAppLocalization(
