@@ -106,7 +106,7 @@ export async function createAppAvailability(
 // Get territory availabilities for an app availability
 export async function getTerritoryAvailabilities(
   appAvailabilityId: string
-): Promise<any[]> {
+): Promise<components["schemas"]["TerritoryAvailability"][]> {
   const config = API_FIELD_CONFIGS.territoryAvailabilities;
 
   return await paginateV2(

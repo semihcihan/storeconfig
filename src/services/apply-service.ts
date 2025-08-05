@@ -41,6 +41,7 @@ import {
   deleteIntroductoryOffer,
 } from "../domains/subscriptions/introductory-offer-service";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
+import { fetchSubscriptionGroups } from "../domains/subscriptions/api-client";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchasesV2Response =
@@ -378,9 +379,6 @@ export async function apply(
   // Fetch raw subscription groups response once if needed
   let currentSubscriptionGroupsResponse: SubscriptionGroupsResponse | undefined;
   if (hasSubscriptionActions) {
-    const { fetchSubscriptionGroups } = await import(
-      "../domains/subscriptions/api-client"
-    );
     currentSubscriptionGroupsResponse = await fetchSubscriptionGroups(appId);
   }
 

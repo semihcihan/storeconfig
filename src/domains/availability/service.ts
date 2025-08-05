@@ -9,6 +9,7 @@ import {
   updateTerritoryAvailability,
 } from "../../domains/availability/api-client";
 import { decodeTerritoryAvailabilityId } from "../../helpers/id-encoding-helpers";
+import { territoryCodes } from "../../models/territories";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -37,9 +38,6 @@ async function createAppAvailabilityForApp(
   availableTerritories: string[]
 ): Promise<string> {
   logger.debug("Creating new app availability...");
-
-  // Import territory codes
-  const { territoryCodes } = await import("../../models/territories");
 
   // Create territory availability objects for all territories
   const territoryAvailabilityData = [];

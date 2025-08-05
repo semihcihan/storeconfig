@@ -3,6 +3,7 @@ import { PriceScheduleSchema } from "../models/app-store";
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
 import { decodeTerritoryFromId } from "../helpers/id-encoding-helpers";
+import type { components } from "../generated/app-store-connect-api";
 import {
   fetchAppManualPrices,
   fetchAppAutomaticPrices,
@@ -11,15 +12,16 @@ import {
 
 // Process app price response
 function processAppPriceResponse(
-  response: any // Using any for now to avoid complex type issues
+  response: components["schemas"]["AppPricesV2Response"]
 ): z.infer<typeof PriceScheduleSchema>["prices"] {
   if (!response || !response.included) {
     return [];
   }
 
-  return (response.included as any[])
+  return (response.included as components["schemas"]["AppPricePointV3"][])
     .filter(
-      (item): item is any => item.type === "appPricePoints" // Using any for now
+      (item): item is components["schemas"]["AppPricePointV3"] =>
+        item.type === "appPricePoints"
     )
     .map((pricePoint) => {
       const territoryId = decodeTerritoryFromId(pricePoint.id);

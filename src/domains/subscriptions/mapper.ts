@@ -58,7 +58,7 @@ export function processSubscriptionPriceResponse(
     return [];
   }
 
-  const includedById = createIncludedByIdMap(response.included as any);
+  const includedById = createIncludedByIdMap(response.included);
 
   const prices: z.infer<typeof PriceSchema>[] = [];
   for (const priceData of response.data) {
@@ -142,7 +142,7 @@ export function parseOfferDuration(
 export async function mapIntroductoryOffers(
   response: components["schemas"]["SubscriptionIntroductoryOffersResponse"]
 ): Promise<Subscription["introductoryOffers"]> {
-  const includedById = createIncludedByIdMap(response.included as any);
+  const includedById = createIncludedByIdMap(response.included);
 
   const groupedOffers: {
     [key: string]: z.infer<typeof IntroductoryOfferSchema>;
@@ -435,7 +435,7 @@ export async function mapSubscription(
   const pricesResponse = await fetchSubscriptionPrices(subData.id);
   const prices = processSubscriptionPriceResponse(pricesResponse);
 
-  const reviewNote = (subData.attributes as any)?.reviewNote;
+  const reviewNote = subData.attributes?.reviewNote;
   const sub: Subscription = {
     productId: subData.attributes?.productId || "",
     referenceName: subData.attributes?.name || "",
@@ -499,7 +499,7 @@ export async function mapSubscriptionGroup(
 export async function mapSubscriptionGroups(
   data: SubscriptionGroupsResponse
 ): Promise<SubscriptionGroupType[]> {
-  const includedById = createIncludedByIdMap(data.included as any);
+  const includedById = createIncludedByIdMap(data.included);
 
   const groups = await Promise.all(
     (data.data || []).map((group) => mapSubscriptionGroup(group, includedById))
