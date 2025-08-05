@@ -247,6 +247,26 @@ describe("shortcut-converter", () => {
       expect(result.availableTerritories).toEqual([...territoryCodes]);
     });
 
+    it("should convert WorldWide case-insensitively", () => {
+      const input = {
+        availableTerritories: ["Worldwide"],
+      };
+
+      const result = removeShortcuts(input);
+
+      expect(result.availableTerritories).toEqual([...territoryCodes]);
+    });
+
+    it("should convert WORLDWIDE case-insensitively", () => {
+      const input = {
+        availableTerritories: ["WORLDWIDE"],
+      };
+
+      const result = removeShortcuts(input);
+
+      expect(result.availableTerritories).toEqual([...territoryCodes]);
+    });
+
     it("should not convert non-WorldWide territories", () => {
       const input = {
         availableTerritories: ["US", "CA", "GB"],
@@ -277,6 +297,24 @@ describe("shortcut-converter", () => {
             type: "FREE_TRIAL",
             duration: "ONE_WEEK",
             availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+          },
+        ],
+      };
+
+      const result = removeShortcuts(input);
+
+      expect(result.introductoryOffers[0].availableTerritories).toEqual([
+        ...territoryCodes,
+      ]);
+    });
+
+    it("should handle introductoryOffers with WorldWide case-insensitively", () => {
+      const input = {
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["Worldwide"],
           },
         ],
       };
@@ -331,6 +369,30 @@ describe("shortcut-converter", () => {
       ).toEqual([...territoryCodes]);
     });
 
+    it("should handle inAppPurchases with WorldWide case-insensitively", () => {
+      const input = {
+        inAppPurchases: [
+          {
+            productId: "test_product",
+            type: "CONSUMABLE",
+            referenceName: "Test Product",
+            familySharable: false,
+            localizations: [],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: ["Worldwide"],
+            },
+          },
+        ],
+      };
+
+      const result = removeShortcuts(input);
+
+      expect(
+        result.inAppPurchases[0].availability.availableTerritories
+      ).toEqual([...territoryCodes]);
+    });
+
     it("should handle subscriptionGroups with WorldWide", () => {
       const input = {
         subscriptionGroups: [
@@ -349,6 +411,39 @@ describe("shortcut-converter", () => {
                 availability: {
                   availableInNewTerritories: true,
                   availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = removeShortcuts(input);
+
+      expect(
+        result.subscriptionGroups[0].subscriptions[0].availability
+          .availableTerritories
+      ).toEqual([...territoryCodes]);
+    });
+
+    it("should handle subscriptionGroups with WorldWide case-insensitively", () => {
+      const input = {
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "test_sub",
+                referenceName: "Test Subscription",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: ["Worldwide"],
                 },
               },
             ],

@@ -1,7 +1,11 @@
 import { territoryCodes } from "../models/territories";
 import { deepEqualUnordered } from "../helpers/validation-helpers";
 
-export const WORLDWIDE_TERRITORY_CODE = "Worldwide";
+export const WORLDWIDE_TERRITORY_CODE = "worldwide";
+
+function isWorldwideTerritory(territory: string): boolean {
+  return territory.toLowerCase() === WORLDWIDE_TERRITORY_CODE.toLowerCase();
+}
 
 export function useShortcuts(data: any): any {
   if (!data || typeof data !== "object") {
@@ -95,7 +99,7 @@ export function removeShortcuts(data: any): any {
   if (Array.isArray(converted.availableTerritories)) {
     if (
       converted.availableTerritories.length === 1 &&
-      converted.availableTerritories[0] === WORLDWIDE_TERRITORY_CODE
+      isWorldwideTerritory(converted.availableTerritories[0])
     ) {
       // Convert WW back to all territories for display
       converted.availableTerritories = [...territoryCodes];
@@ -107,8 +111,7 @@ export function removeShortcuts(data: any): any {
     if (Array.isArray(converted.availability.availableTerritories)) {
       if (
         converted.availability.availableTerritories.length === 1 &&
-        converted.availability.availableTerritories[0] ===
-          WORLDWIDE_TERRITORY_CODE
+        isWorldwideTerritory(converted.availability.availableTerritories[0])
       ) {
         converted.availability.availableTerritories = [...territoryCodes];
       }
@@ -124,7 +127,7 @@ export function removeShortcuts(data: any): any {
         if (Array.isArray(convertedOffer.availableTerritories)) {
           if (
             convertedOffer.availableTerritories.length === 1 &&
-            convertedOffer.availableTerritories[0] === WORLDWIDE_TERRITORY_CODE
+            isWorldwideTerritory(convertedOffer.availableTerritories[0])
           ) {
             convertedOffer.availableTerritories = [...territoryCodes];
           }
