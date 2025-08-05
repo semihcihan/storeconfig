@@ -52,9 +52,10 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.warn).toHaveBeenCalledWith(
-        "Invalid base territory: null"
-      );
+      expect(MockLogger.warn).toHaveBeenCalledWith("Invalid base territory:", {
+        data: { id: null },
+        error: null,
+      });
     });
 
     it("should return undefined when base territory has empty ID", async () => {
@@ -66,7 +67,10 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.warn).toHaveBeenCalledWith("Invalid base territory: ");
+      expect(MockLogger.warn).toHaveBeenCalledWith("Invalid base territory:", {
+        data: { id: "" },
+        error: null,
+      });
     });
 
     it("should map pricing successfully with manual and automatic prices", async () => {

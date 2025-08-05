@@ -2,12 +2,10 @@ import { jest } from "@jest/globals";
 import { paginateV2, paginateV1 } from "./pagination-helpers";
 import { api } from "../services/api";
 import { logger } from "../utils/logger";
-import { ContextualError } from "./error-handling-helpers";
 
 // Mock dependencies
 jest.mock("../services/api");
 jest.mock("../utils/logger");
-jest.mock("./error-handling-helpers");
 
 const MockApi = api as any;
 const MockLogger = logger as any;
@@ -188,7 +186,7 @@ describe("pagination-helpers", () => {
       expect(MockApi.GET).toHaveBeenCalledTimes(1);
     });
 
-    it.skip("should throw error when API returns error", async () => {
+    it("should throw error when API returns error", async () => {
       const mockResponse = {
         data: null,
         error: { message: "API Error" },
@@ -196,9 +194,7 @@ describe("pagination-helpers", () => {
 
       MockApi.GET.mockResolvedValueOnce(mockResponse);
 
-      await expect(paginateV2("test-endpoint", "test-id")).rejects.toThrow();
-
-      expect(MockLogger.error).toHaveBeenCalledWith(
+      await expect(paginateV2("test-endpoint", "test-id")).rejects.toThrow(
         "Failed to paginate test-endpoint"
       );
     });
@@ -407,7 +403,7 @@ describe("pagination-helpers", () => {
       expect(MockApi.GET).toHaveBeenCalledTimes(1);
     });
 
-    it.skip("should throw error when API returns error", async () => {
+    it("should throw error when API returns error", async () => {
       const mockResponse = {
         data: null,
         error: { message: "API Error" },
@@ -415,10 +411,8 @@ describe("pagination-helpers", () => {
 
       MockApi.GET.mockResolvedValueOnce(mockResponse);
 
-      await expect(paginateV1("test-endpoint", "test-id")).rejects.toThrow();
-
-      expect(MockLogger.error).toHaveBeenCalledWith(
-        'Failed to paginate test-endpoint: {"message":"API Error"}'
+      await expect(paginateV1("test-endpoint", "test-id")).rejects.toThrow(
+        "Failed to paginate test-endpoint"
       );
     });
 

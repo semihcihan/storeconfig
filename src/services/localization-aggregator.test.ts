@@ -192,7 +192,7 @@ describe("LocalizationAggregator", () => {
       MockGetAppInfosForApp.mockResolvedValue({ data: [] } as any);
 
       await expect((aggregator as any).getAppInfoId(testAppId)).rejects.toThrow(
-        "Failed to get app info ID for app test-app-id. App info localizations cannot be managed without a valid app info."
+        "No app info found for app test-app-id"
       );
     });
 
@@ -205,7 +205,7 @@ describe("LocalizationAggregator", () => {
       MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
 
       await expect((aggregator as any).getAppInfoId(testAppId)).rejects.toThrow(
-        "Failed to get app info ID for app test-app-id. App info localizations cannot be managed without a valid app info."
+        "No app info found for app test-app-id"
       );
     });
 
@@ -213,7 +213,7 @@ describe("LocalizationAggregator", () => {
       MockGetAppInfosForApp.mockRejectedValue(new Error("API Error"));
 
       await expect((aggregator as any).getAppInfoId(testAppId)).rejects.toThrow(
-        "Failed to get app info ID for app test-app-id. App info localizations cannot be managed without a valid app info."
+        "API Error"
       );
     });
   });

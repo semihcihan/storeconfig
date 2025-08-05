@@ -146,8 +146,8 @@ describe("RetryMiddleware", () => {
       // All calls fail with rate limit
       mockApiClient.GET.mockRejectedValue(rateLimitError);
 
-      await expect(wrappedApi.GET("/test/endpoint")).rejects.toEqual(
-        rateLimitError
+      await expect(wrappedApi.GET("/test/endpoint")).rejects.toThrow(
+        "GET /test/endpoint failed after 3 attempts. Last error:"
       );
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
     });
@@ -304,29 +304,33 @@ describe("RetryMiddleware", () => {
   describe("Custom retry options", () => {
     it("should respect custom maxAttempts", async () => {
       const error = { status: 500, message: "Server error" };
+
+      // All calls fail
       mockApiClient.GET.mockRejectedValue(error);
 
       const customWrappedApi = createRetryMiddleware(mockApiClient, {
         maxAttempts: 2,
       });
 
-      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toEqual(
-        error
+      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toThrow(
+        "GET /test/endpoint failed after 2 attempts. Last error:"
       );
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2); // Custom maxAttempts
     });
 
     it("should respect custom shouldRetry function", async () => {
       const error = { status: 400, message: "Bad request" };
-      mockApiClient.GET.mockRejectedValue(error);
 
       const customWrappedApi = createRetryMiddleware(mockApiClient, {
         shouldRetry: () => true, // Retry everything
       });
 
+      // All calls fail
+      mockApiClient.GET.mockRejectedValue(error);
+
       // Should retry even 4xx errors with custom shouldRetry
-      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toEqual(
-        error
+      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toThrow(
+        "GET /test/endpoint failed after 3 attempts. Last error:"
       );
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
     });

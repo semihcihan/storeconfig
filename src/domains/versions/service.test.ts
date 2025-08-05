@@ -198,9 +198,9 @@ describe("AppStoreVersionService", () => {
         data: [],
       } as any);
 
-      const result = await service.fetchVersionMetadata("app-123");
-
-      expect(result).toEqual({});
+      await expect(service.fetchVersionMetadata("app-123")).rejects.toThrow(
+        "No valid version found for app app-123"
+      );
       expect(mockGetAppStoreVersionsForApp).toHaveBeenCalledWith("app-123");
     });
 
@@ -326,9 +326,9 @@ describe("AppStoreVersionService", () => {
     it("should handle error gracefully", async () => {
       mockGetAppStoreVersionsForApp.mockRejectedValue(new Error("API Error"));
 
-      const result = await service.fetchVersionMetadata("app-123");
-
-      expect(result).toEqual({});
+      await expect(service.fetchVersionMetadata("app-123")).rejects.toThrow(
+        "API Error"
+      );
     });
   });
 });
