@@ -4,6 +4,7 @@ import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
+import { WORLDWIDE_TERRITORY_CODE } from "../utils/shortcut-converter";
 
 export const APP_STORE_SCHEMA_VERSION = "1.0.0";
 
@@ -34,6 +35,11 @@ export const SubscriptionOfferDurationSchema = z.enum([
   "ONE_YEAR",
 ] as const) satisfies z.ZodType<SubscriptionOfferDurationType>;
 
+export const AvailableTerritoriesSchema = z.union([
+  z.array(TerritoryCodeSchema),
+  z.literal(WORLDWIDE_TERRITORY_CODE),
+]);
+
 export const PriceSchema = z.object({
   price: z.string(),
   territory: TerritoryCodeSchema,
@@ -63,7 +69,7 @@ export const LocalizationSchema = z.object({
 
 export const AvailabilitySchema = z.object({
   availableInNewTerritories: z.boolean(),
-  availableTerritories: z.array(TerritoryCodeSchema),
+  availableTerritories: AvailableTerritoriesSchema,
 });
 
 export const SubscriptionGroupLocalizationSchema = z.object({
@@ -76,20 +82,20 @@ const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
   prices: z.array(PriceSchema),
-  availableTerritories: z.array(TerritoryCodeSchema),
+  availableTerritories: AvailableTerritoriesSchema,
 });
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
   duration: SubscriptionOfferDurationSchema,
   prices: z.array(PriceSchema),
-  availableTerritories: z.array(TerritoryCodeSchema),
+  availableTerritories: AvailableTerritoriesSchema,
 });
 
 const IntroOfferFreeSchema = z.object({
   type: z.literal("FREE_TRIAL"),
   duration: SubscriptionOfferDurationSchema,
-  availableTerritories: z.array(TerritoryCodeSchema),
+  availableTerritories: AvailableTerritoriesSchema,
 });
 
 export const IntroductoryOfferSchema = z.discriminatedUnion("type", [
@@ -200,7 +206,7 @@ export const AppStoreModelSchema = z
     copyright: z.string().optional(),
     primaryLocale: LocaleCodeSchema.optional(),
     pricing: PriceScheduleSchema.optional(),
-    availableTerritories: z.array(TerritoryCodeSchema).optional(),
+    availableTerritories: AvailableTerritoriesSchema.optional(),
     inAppPurchases: z.array(InAppPurchaseSchema).optional(),
     subscriptionGroups: z.array(SubscriptionGroupSchema).optional(),
     versionString: z.string().optional(),
