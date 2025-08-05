@@ -1,8 +1,8 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
-import { z } from "zod";
 import { fetchAppStoreState } from "../services/fetch-service";
+import { useShortcuts } from "../utils/shortcut-converter";
 
 const fetchCommand: CommandModule = {
   command: "fetch",
@@ -29,11 +29,9 @@ const fetchCommand: CommandModule = {
     );
 
     try {
-      const appStoreState = await fetchAppStoreState(appId);
+      const appStoreState = useShortcuts(await fetchAppStoreState(appId));
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
-      logger.info(
-        `Successfully fetched app details and wrote to ${outputFile}`
-      );
+      logger.info(`Successfully fetched app and wrote to ${outputFile}`);
     } catch (error) {
       logger.error(`Fetch failed`, error);
       process.exit(1);

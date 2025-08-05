@@ -5,9 +5,11 @@ import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
 import {
-  validateJsonFile,
+  readJsonFile,
+  validateAppStoreModel,
   type AppStoreModel,
 } from "../utils/validation-helpers";
+import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
 
 const confirmChanges = async (): Promise<boolean> => {
@@ -78,16 +80,22 @@ const command: CommandModule = {
     logger.debug(`Processing desired state from ${desiredStateFile}...`);
 
     try {
-      const desiredState = validateJsonFile(desiredStateFile, false);
+      const desiredState = validateAppStoreModel(
+        removeShortcuts(readJsonFile(desiredStateFile)),
+        false
+      );
 
       let currentState: AppStoreModel;
 
       if (currentStateFile) {
         logger.info(`Using ${currentStateFile} as current state.`);
-        currentState = validateJsonFile(currentStateFile, false);
+        currentState = validateAppStoreModel(
+          removeShortcuts(readJsonFile(currentStateFile)),
+          false
+        );
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);
-        currentState = await fetchAppStoreState(appId);
+        currentState = removeShortcuts(await fetchAppStoreState(appId));
       }
 
       const plan = diff(currentState, desiredState);
@@ -110,6 +118,7 @@ const command: CommandModule = {
       }
 
       await apply(plan, currentState, desiredState);
+      logger.info("Changes applied successfully");
     } catch (error) {
       logger.error(`Apply failed`, error);
       process.exit(1);

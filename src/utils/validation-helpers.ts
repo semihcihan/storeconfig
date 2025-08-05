@@ -5,12 +5,15 @@ import { z } from "zod";
 import { ContextualError } from "../helpers/error-handling-helpers";
 
 export function validateJsonFile(filePath: string, showSuccessMessage = false) {
+  const jsonData = readJsonFile(filePath);
+  return validateAppStoreModel(jsonData, showSuccessMessage);
+}
+
+export function readJsonFile(filePath: string): any {
   const fileContent = readFileSync(filePath, "utf-8");
 
-  // First check if it's valid JSON
-  let jsonData;
   try {
-    jsonData = JSON.parse(fileContent);
+    return JSON.parse(fileContent);
   } catch (jsonError) {
     throw new ContextualError(
       `❌ Invalid JSON format! ${filePath}`,
@@ -21,9 +24,10 @@ export function validateJsonFile(filePath: string, showSuccessMessage = false) {
       }
     );
   }
+}
 
-  // Then validate against AppStoreModelSchema
-  const result = AppStoreModelSchema.safeParse(jsonData);
+export function validateAppStoreModel(data: any, showSuccessMessage = false) {
+  const result = AppStoreModelSchema.safeParse(data);
 
   if (result.success) {
     if (showSuccessMessage) {
@@ -33,14 +37,9 @@ export function validateJsonFile(filePath: string, showSuccessMessage = false) {
     }
     return result.data;
   } else {
-    throw new ContextualError(
-      `❌ Validation failed! ${filePath}`,
-      result.error,
-      {
-        filePath,
-        result,
-      }
-    );
+    throw new ContextualError(`❌ Validation failed!`, result.error, {
+      result,
+    });
   }
 }
 
