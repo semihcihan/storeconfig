@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { TerritoryCodeSchema } from "../../models/territories";
 import { validateTerritoryCode } from "../../helpers/id-encoding-helpers";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 // Map app availability response to territory codes
 export async function mapAppAvailability(
@@ -41,9 +42,13 @@ export async function mapAppAvailability(
         if (validatedTerritoryCode) {
           return validatedTerritoryCode;
         }
-      } catch (e) {
-        throw new Error(
-          `Could not decode territory availability ID: ${territoryAvail.id} ${e}`
+      } catch (err) {
+        throw new ContextualError(
+          `Could not decode territory availability ID: ${territoryAvail.id}`,
+          err,
+          {
+            territoryAvail,
+          }
         );
       }
 

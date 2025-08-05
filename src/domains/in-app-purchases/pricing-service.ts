@@ -11,7 +11,7 @@ import {
   findIAPPricePointId,
   createIAPPriceSchedule,
 } from "./api-client";
-import { throwFormattedError } from "../../helpers/error-handling-helpers";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
 type Price = z.infer<typeof PriceSchema>;

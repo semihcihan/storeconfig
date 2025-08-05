@@ -1,5 +1,6 @@
 import { api } from "../../services/api";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 export async function createAppInfoLocalization(
   appInfoId: string,
@@ -41,10 +42,11 @@ export async function createAppInfoLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to create app info localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -61,10 +63,11 @@ export async function getAppInfoLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app info localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -94,10 +97,11 @@ export async function updateAppInfoLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to update app info localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -114,10 +118,11 @@ export async function deleteAppInfoLocalization(
   });
 
   if (response.error) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to delete app info localization: ${
         response.error.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 }
@@ -132,10 +137,11 @@ export async function getAppInfoLocalizationsForAppInfo(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app info localizations: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -152,10 +158,11 @@ export async function getAppInfosForApp(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app infos: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 

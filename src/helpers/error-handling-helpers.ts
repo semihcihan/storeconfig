@@ -1,3 +1,50 @@
+// Custom error class that preserves original error data and adds context
+export class ContextualError extends Error {
+  public readonly originalError?: Error;
+  public readonly context?: Record<string, any>;
+  public readonly status?: number;
+  public readonly response?: any;
+  public readonly errors?: any[];
+
+  constructor(
+    message: string,
+    originalError?: Error | any,
+    context?: Record<string, any>
+  ) {
+    super(message);
+    this.name = "ContextualError";
+
+    // Preserve original error if it exists
+    if (originalError) {
+      this.originalError =
+        originalError instanceof Error
+          ? originalError
+          : new Error(String(originalError));
+
+      // Preserve Apple API specific properties
+      if (originalError?.status) {
+        this.status = originalError.status;
+      }
+      if (originalError?.response?.status) {
+        this.response = { status: originalError.response.status };
+      }
+      if (originalError?.errors) {
+        this.errors = originalError.errors;
+      }
+    }
+
+    this.stack = originalError?.stack ?? new Error(message).stack;
+
+    // Add context
+    if (context) {
+      this.context = context;
+    }
+
+    // Ensure proper prototype chain
+    Object.setPrototypeOf(this, ContextualError.prototype);
+  }
+}
+
 // Helper function to check if an error is a 404 from the Apple API
 export function isNotFoundError(error: any): boolean {
   // Check for 404 status in the errors array (Apple API format)
@@ -34,23 +81,4 @@ export function extractErrorMessage(error: any): string {
     return error.errors[0].detail || "Unknown error";
   }
   return "Unknown error";
-}
-
-// Helper function to throw formatted error
-export function throwFormattedError(prefix: string, error: any): never {
-  const message = extractErrorMessage(error);
-  const formattedError = new Error(`${prefix}: ${message}`);
-
-  // Preserve original error properties for status checking
-  if (error?.status) {
-    (formattedError as any).status = error.status;
-  }
-  if (error?.response?.status) {
-    (formattedError as any).response = { status: error.response.status };
-  }
-  if (error?.errors) {
-    (formattedError as any).errors = error.errors;
-  }
-
-  throw formattedError;
 }

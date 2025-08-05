@@ -1,6 +1,9 @@
 import { api } from "../../services/api";
 import { API_FIELD_CONFIGS } from "../../helpers/constants";
-import { isNotFoundError } from "../../helpers/error-handling-helpers";
+import {
+  isNotFoundError,
+  ContextualError,
+} from "../../helpers/error-handling-helpers";
 import { logger } from "../../utils/logger";
 import type { components } from "../../generated/app-store-connect-api";
 
@@ -383,16 +386,19 @@ export async function findIAPPricePointId(
   });
 
   if (!pricePoint) {
-    logger.error(
-      `No price point found for price ${price} in territory ${territory}. ` +
-        `Found ${pricePoints.length} price points for territory ${territory}. ` +
-        `Available prices: ${pricePoints
-          .map((p: any) => p.attributes?.customerPrice)
-          .join(", ")}`
-    );
+    const availablePrices = pricePoints
+      .map((p: any) => p.attributes?.customerPrice)
+      .join(", ");
 
-    throw new Error(
-      `No price point found for price ${price} in territory ${territory}`
+    throw new ContextualError(
+      `No price point found for price ${price} in territory ${territory}`,
+      undefined,
+      {
+        price,
+        territory,
+        iapId,
+        availablePrices,
+      }
     );
   }
 

@@ -13,7 +13,7 @@ import {
   fetchBaseTerritory,
   createAppPriceSchedule as createAppPriceScheduleAPI,
 } from "../../domains/pricing/api-client";
-import { throwFormattedError } from "../../helpers/error-handling-helpers";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type Price = z.infer<typeof PriceSchema>;
@@ -44,16 +44,15 @@ async function findAppPricePointId(
   });
 
   if (!pricePoint) {
-    logger.error(
-      `No price point found for price ${price} in territory ${territory}.
-        Found ${pricePoints.length} price points for territory ${territory}.
-        Available prices: ${pricePoints
-          .map((p: any) => p.attributes?.customerPrice)
-          .join(", ")}`
-    );
-
-    throw new Error(
-      `No price point found for price ${price} in territory ${territory}`
+    throw new ContextualError(
+      `No price point found for price ${price} in territory ${territory}`,
+      undefined,
+      {
+        price,
+        territory,
+        appId,
+        pricePoints: pricePoints.map((p: any) => p.attributes?.customerPrice),
+      }
     );
   }
 

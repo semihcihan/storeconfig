@@ -1,5 +1,6 @@
 import { api } from "../../services/api";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 export async function createAppStoreVersion(
   appId: string,
@@ -28,10 +29,11 @@ export async function createAppStoreVersion(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to create app store version: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -48,10 +50,11 @@ export async function getAppStoreVersion(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app store version: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -80,10 +83,11 @@ export async function updateAppStoreVersion(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to update app store version: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -98,10 +102,11 @@ export async function deleteAppStoreVersion(versionId: string): Promise<void> {
   });
 
   if (response.error) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to delete app store version: ${
         response.error.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 }
@@ -119,10 +124,11 @@ export async function getAppStoreVersionsForApp(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app store versions: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -167,10 +173,11 @@ export async function createAppStoreVersionLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to create app store version localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -187,10 +194,11 @@ export async function getAppStoreVersionLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app store version localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -229,10 +237,11 @@ export async function updateAppStoreVersionLocalization(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to update app store version localization: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -249,10 +258,11 @@ export async function deleteAppStoreVersionLocalization(
   });
 
   if (response.error) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to delete app store version localization: ${
         response.error.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 }
@@ -270,10 +280,11 @@ export async function getAppStoreVersionLocalizationsForVersion(
   );
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to get app store version localizations: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 

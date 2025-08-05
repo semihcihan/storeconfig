@@ -1,6 +1,7 @@
 import { logger } from "../utils/logger";
 import { TerritoryCodeSchema } from "../models/territories";
 import { z } from "zod";
+import { ContextualError } from "./error-handling-helpers";
 
 // Helper function to decode territory ID from base64 encoded ID
 export function decodeTerritoryFromId(
@@ -12,12 +13,13 @@ export function decodeTerritoryFromId(
 
   const territoryParseResult = TerritoryCodeSchema.safeParse(territoryId);
   if (!territoryParseResult.success) {
-    logger.error(
+    throw new ContextualError(
       `Invalid territory code from ID: ${territoryId}.`,
-      "idParts",
-      idParts
+      undefined,
+      {
+        idParts,
+      }
     );
-    throw new Error(`Invalid territory code from ID: ${territoryId}.`);
   }
 
   return territoryParseResult.data;

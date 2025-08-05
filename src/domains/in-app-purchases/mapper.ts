@@ -290,14 +290,12 @@ export async function mapInAppPurchase(
     availability: availability,
   };
 
-  logger.debug(
-    `Final IAP mapping:`, {
-      productId: mappedIAP.productId,
-      hasLocalizations: mappedIAP.localizations.length > 0,
-      hasPriceSchedule: !!mappedIAP.priceSchedule,
-      hasAvailability: !!mappedIAP.availability,
-    })}`
-  );
+  logger.debug("Final IAP mapping:", {
+    productId: mappedIAP.productId,
+    hasLocalizations: mappedIAP.localizations.length > 0,
+    hasPriceSchedule: !!mappedIAP.priceSchedule,
+    hasAvailability: !!mappedIAP.availability,
+  });
 
   return mappedIAP;
 }

@@ -1,7 +1,7 @@
 import { api } from "../services/api";
 import { logger } from "../utils/logger";
 import { API_LIMITS } from "./constants";
-import { throwFormattedError } from "./error-handling-helpers";
+import { ContextualError } from "./error-handling-helpers";
 
 // Generic pagination helper for v2 endpoints with cursor-based pagination
 export async function paginateV2<T>(
@@ -27,8 +27,10 @@ export async function paginateV2<T>(
     });
 
     if (response.error) {
-      logger.error(`Failed to paginate ${endpoint}`);
-      throw new Error(response.error);
+      throw new ContextualError(
+        `Failed to paginate ${endpoint}`,
+        response.error
+      );
     }
 
     const data = response.data?.data || [];
@@ -66,8 +68,10 @@ export async function paginateV1<T>(
     });
 
     if (response.error) {
-      logger.error(`Failed to paginate ${endpoint}:`, response.error);
-      throwFormattedError(`Failed to paginate ${endpoint}`, response.error);
+      throw new ContextualError(
+        `Failed to paginate ${endpoint}`,
+        response.error
+      );
     }
 
     const data = response.data?.data || [];

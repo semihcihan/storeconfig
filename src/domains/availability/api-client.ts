@@ -1,7 +1,7 @@
 import { api } from "../../services/api";
 import { API_FIELD_CONFIGS } from "../../helpers/constants";
 import {
-  throwFormattedError,
+  ContextualError,
   isNotFoundError,
 } from "../../helpers/error-handling-helpers";
 import { paginateV2 } from "../../helpers/pagination-helpers";
@@ -94,7 +94,10 @@ export async function createAppAvailability(
   });
 
   if (response.error) {
-    throwFormattedError("Failed to create app availability", response.error);
+    throw new ContextualError(
+      "Failed to create app availability",
+      response.error
+    );
   }
 
   return response.data;
@@ -130,7 +133,7 @@ export async function updateTerritoryAvailability(
   });
 
   if (response.error) {
-    throwFormattedError(
+    throw new ContextualError(
       "Failed to update territory availability",
       response.error
     );

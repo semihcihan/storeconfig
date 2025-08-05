@@ -2,6 +2,7 @@ import * as jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import { logger } from "../utils/logger";
+import { ContextualError } from "../helpers/error-handling-helpers";
 
 dotenv.config();
 
@@ -10,10 +11,15 @@ const keyId = process.env.ASC_KEY_ID;
 const issuerId = process.env.ASC_ISSUER_ID;
 
 if (!privateKeyPath || !keyId || !issuerId) {
-  logger.error(
-    "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY_PATH, ASC_KEY_ID, and ASC_ISSUER_ID."
+  throw new ContextualError(
+    "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY_PATH, ASC_KEY_ID, and ASC_ISSUER_ID.",
+    undefined,
+    {
+      ASC_PRIVATE_KEY_PATH: privateKeyPath,
+      ASC_KEY_ID: keyId,
+      ASC_ISSUER_ID: issuerId,
+    }
   );
-  process.exit(1);
 }
 
 const privateKey = fs.readFileSync(privateKeyPath, "utf8");

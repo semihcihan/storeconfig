@@ -6,6 +6,7 @@ import {
   createSubscriptionPrice,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 type SubscriptionPriceCreateRequest =
   components["schemas"]["SubscriptionPriceCreateRequest"];
@@ -105,16 +106,15 @@ export async function findSubscriptionPricePointId(
   const pricePointId = territoryPricePoints.get(price);
 
   if (!pricePointId) {
-    logger.error(
-      `No price point found for price ${price} in territory ${territory} for subscription ${subscriptionId}. ` +
-        `Found ${pricePoints.length} price points for territory ${territory}. ` +
-        `Available prices: ${Array.from(territoryPricePoints.keys()).join(
-          ", "
-        )}`
-    );
-
-    throw new Error(
-      `No price point found for price ${price} in territory ${territory}`
+    throw new ContextualError(
+      `No price point found for price ${price} in territory ${territory}`,
+      undefined,
+      {
+        price,
+        territory,
+        subscriptionId,
+        prices: Array.from(territoryPricePoints.keys()),
+      }
     );
   }
 

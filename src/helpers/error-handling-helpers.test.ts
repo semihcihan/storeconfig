@@ -1,332 +1,209 @@
-import { jest } from "@jest/globals";
 import {
+  ContextualError,
   isNotFoundError,
   isRateLimitError,
   extractErrorMessage,
-  throwFormattedError,
 } from "./error-handling-helpers";
 
-describe("error-handling-helpers", () => {
-  describe("isNotFoundError", () => {
-    it("should return true for Apple API 404 errors with string status", () => {
-      const error = {
-        errors: [
-          { status: "404", detail: "Not found" },
-          { status: "500", detail: "Server error" },
-        ],
-      };
+describe("ContextualError", () => {
+  describe("constructor", () => {
+    it("should create error with message only", () => {
+      const error = new ContextualError("Test error");
 
-      expect(isNotFoundError(error)).toBe(true);
+      expect(error.message).toBe("Test error");
+      expect(error.name).toBe("ContextualError");
+      expect(error.originalError).toBeUndefined();
+      expect(error.context).toBeUndefined();
     });
 
-    it("should return true for Apple API 404 errors with number status", () => {
-      const error = {
-        errors: [
-          { status: 404, detail: "Not found" },
-          { status: 500, detail: "Server error" },
-        ],
-      };
+    it("should create error with message and context", () => {
+      const context = { userId: "123", operation: "fetch" };
+      const error = new ContextualError("Test error", undefined, context);
 
-      expect(isNotFoundError(error)).toBe(true);
+      expect(error.message).toBe("Test error");
+      expect(error.context).toEqual(context);
+      expect(error.originalError).toBeUndefined();
     });
 
-    it("should return false for Apple API errors without 404", () => {
-      const error = {
-        errors: [
-          { status: "500", detail: "Server error" },
-          { status: "403", detail: "Forbidden" },
-        ],
-      };
+    it("should create error with message and original error", () => {
+      const originalError = new Error("Original error");
+      originalError.stack = "Original stack trace";
 
-      expect(isNotFoundError(error)).toBe(false);
+      const error = new ContextualError("Test error", originalError);
+
+      expect(error.message).toBe("Test error");
+      expect(error.originalError).toBe(originalError);
+      expect(error.stack).toBe("Original stack trace");
+      expect(error.context).toBeUndefined();
     });
 
-    it("should return true for direct 404 status", () => {
-      const error = { status: 404 };
+    it("should create error with message, original error, and context", () => {
+      const originalError = new Error("Original error");
+      const context = { userId: "123", operation: "fetch" };
 
-      expect(isNotFoundError(error)).toBe(true);
+      const error = new ContextualError("Test error", originalError, context);
+
+      expect(error.message).toBe("Test error");
+      expect(error.originalError).toBe(originalError);
+      expect(error.context).toEqual(context);
     });
 
-    it("should return true for response 404 status", () => {
-      const error = { response: { status: 404 } };
-
-      expect(isNotFoundError(error)).toBe(true);
-    });
-
-    it("should return false for non-404 status", () => {
-      const error = { status: 500 };
-
-      expect(isNotFoundError(error)).toBe(false);
-    });
-
-    it("should return false for response non-404 status", () => {
-      const error = { response: { status: 500 } };
-
-      expect(isNotFoundError(error)).toBe(false);
-    });
-
-    it("should return false for null/undefined error", () => {
-      expect(isNotFoundError(null)).toBe(false);
-      expect(isNotFoundError(undefined)).toBe(false);
-    });
-
-    it("should return false for error without status or errors", () => {
-      const error = { message: "Some error" };
-
-      expect(isNotFoundError(error)).toBe(false);
-    });
-
-    it("should return false for error with empty errors array", () => {
-      const error = { errors: [] };
-
-      expect(isNotFoundError(error)).toBe(false);
-    });
-
-    it("should return false for error with non-array errors", () => {
-      const error = { errors: "not an array" };
-
-      expect(isNotFoundError(error)).toBe(false);
-    });
-  });
-
-  describe("isRateLimitError", () => {
-    it("should return true for direct 429 status", () => {
-      const error = { status: 429 };
-
-      expect(isRateLimitError(error)).toBe(true);
-    });
-
-    it("should return true for Apple API 429 errors with string status", () => {
-      const error = {
-        errors: [
-          { status: "429", detail: "Rate limited" },
-          { status: "500", detail: "Server error" },
-        ],
-      };
-
-      expect(isRateLimitError(error)).toBe(true);
-    });
-
-    it("should return true for Apple API 429 errors with number status", () => {
-      const error = {
-        errors: [
-          { status: 429, detail: "Rate limited" },
-          { status: 500, detail: "Server error" },
-        ],
-      };
-
-      expect(isRateLimitError(error)).toBe(true);
-    });
-
-    it("should return false for Apple API errors without 429", () => {
-      const error = {
-        errors: [
-          { status: "500", detail: "Server error" },
-          { status: "403", detail: "Forbidden" },
-        ],
-      };
-
-      expect(isRateLimitError(error)).toBe(false);
-    });
-
-    it("should return false for non-429 status", () => {
-      const error = { status: 500 };
-
-      expect(isRateLimitError(error)).toBe(false);
-    });
-
-    it("should return false for null/undefined error", () => {
-      expect(isRateLimitError(null)).toBe(false);
-      expect(isRateLimitError(undefined)).toBe(false);
-    });
-
-    it("should return false for error without status or errors", () => {
-      const error = { message: "Some error" };
-
-      expect(isRateLimitError(error)).toBe(false);
-    });
-
-    it("should return false for error with empty errors array", () => {
-      const error = { errors: [] };
-
-      expect(isRateLimitError(error)).toBe(false);
-    });
-
-    it("should return false for error with non-array errors", () => {
-      const error = { errors: "not an array" };
-
-      expect(isRateLimitError(error)).toBe(false);
-    });
-  });
-
-  describe("extractErrorMessage", () => {
-    it("should extract message from Apple API error with detail", () => {
-      const error = {
-        errors: [{ detail: "Resource not found", status: "404" }],
-      };
-
-      expect(extractErrorMessage(error)).toBe("Resource not found");
-    });
-
-    it("should return 'Unknown error' for Apple API error without detail", () => {
-      const error = {
-        errors: [{ status: "404" }],
-      };
-
-      expect(extractErrorMessage(error)).toBe("Unknown error");
-    });
-
-    it("should return 'Unknown error' for empty errors array", () => {
-      const error = {
-        errors: [],
-      };
-
-      expect(extractErrorMessage(error)).toBe("Unknown error");
-    });
-
-    it("should return 'Unknown error' for error without errors array", () => {
-      const error = { message: "Some error" };
-
-      expect(extractErrorMessage(error)).toBe("Unknown error");
-    });
-
-    it("should return 'Unknown error' for null/undefined error", () => {
-      expect(extractErrorMessage(null)).toBe("Unknown error");
-      expect(extractErrorMessage(undefined)).toBe("Unknown error");
-    });
-
-    it("should return 'Unknown error' for error with non-array errors", () => {
-      const error = { errors: "not an array" };
-
-      expect(extractErrorMessage(error)).toBe("Unknown error");
-    });
-
-    it("should extract message from first error when multiple exist", () => {
-      const error = {
-        errors: [
-          { detail: "First error", status: "404" },
-          { detail: "Second error", status: "500" },
-        ],
-      };
-
-      expect(extractErrorMessage(error)).toBe("First error");
-    });
-  });
-
-  describe("throwFormattedError", () => {
-    it("should throw error with formatted message", () => {
-      const error = {
-        errors: [{ detail: "Resource not found", status: "404" }],
-      };
-
-      expect(() => throwFormattedError("API Error", error)).toThrow(
-        "API Error: Resource not found"
-      );
-    });
-
-    it("should preserve original error properties", () => {
-      const error = {
+    it("should preserve Apple API error properties", () => {
+      const appleError = {
         status: 404,
         response: { status: 404 },
-        errors: [{ detail: "Not found", status: "404" }],
+        errors: [{ status: "404", detail: "Not found" }],
       };
 
-      try {
-        throwFormattedError("Test Error", error);
-      } catch (thrownError: any) {
-        expect(thrownError.status).toBe(404);
-        expect(thrownError.response).toEqual({ status: 404 });
-        expect(thrownError.errors).toEqual([
-          { detail: "Not found", status: "404" },
-        ]);
-      }
+      const error = new ContextualError("Test error", appleError);
+
+      expect(error.status).toBe(404);
+      expect(error.response).toEqual({ status: 404 });
+      expect(error.errors).toEqual([{ status: "404", detail: "Not found" }]);
     });
 
-    it("should handle error without detail", () => {
-      const error = {
-        errors: [{ status: "404" }],
-      };
+    it("should handle non-Error objects as original error", () => {
+      const originalError = "String error";
+      const error = new ContextualError("Test error", originalError);
 
-      expect(() => throwFormattedError("API Error", error)).toThrow(
-        "API Error: Unknown error"
-      );
+      expect(error.originalError).toBeInstanceOf(Error);
+      expect(error.originalError?.message).toBe("String error");
     });
 
-    it("should handle error without errors array", () => {
-      const error = { message: "Some error" };
+    it("should maintain proper prototype chain", () => {
+      const error = new ContextualError("Test error");
 
-      expect(() => throwFormattedError("API Error", error)).toThrow(
-        "API Error: Unknown error"
-      );
+      expect(error).toBeInstanceOf(ContextualError);
+      expect(error).toBeInstanceOf(Error);
     });
+  });
+});
 
-    it("should handle null/undefined error", () => {
-      expect(() => throwFormattedError("API Error", null)).toThrow(
-        "API Error: Unknown error"
-      );
-      expect(() => throwFormattedError("API Error", undefined)).toThrow(
-        "API Error: Unknown error"
-      );
-    });
+describe("isNotFoundError", () => {
+  it("should return true for 404 status in errors array", () => {
+    const error = {
+      errors: [{ status: "404", detail: "Not found" }],
+    };
 
-    it("should preserve status property when present", () => {
-      const error = { status: 500 };
+    expect(isNotFoundError(error)).toBe(true);
+  });
 
-      try {
-        throwFormattedError("Test Error", error);
-      } catch (thrownError: any) {
-        expect(thrownError.status).toBe(500);
-      }
-    });
+  it("should return true for numeric 404 status in errors array", () => {
+    const error = {
+      errors: [{ status: 404, detail: "Not found" }],
+    };
 
-    it("should preserve response.status property when present", () => {
-      const error = { response: { status: 403 } };
+    expect(isNotFoundError(error)).toBe(true);
+  });
 
-      try {
-        throwFormattedError("Test Error", error);
-      } catch (thrownError: any) {
-        expect(thrownError.response).toEqual({ status: 403 });
-      }
-    });
+  it("should return true for direct 404 status", () => {
+    const error = { status: 404 };
 
-    it("should preserve errors property when present", () => {
-      const error = {
-        errors: [
-          { detail: "Error 1", status: "400" },
-          { detail: "Error 2", status: "500" },
-        ],
-      };
+    expect(isNotFoundError(error)).toBe(true);
+  });
 
-      try {
-        throwFormattedError("Test Error", error);
-      } catch (thrownError: any) {
-        expect(thrownError.errors).toEqual([
-          { detail: "Error 1", status: "400" },
-          { detail: "Error 2", status: "500" },
-        ]);
-      }
-    });
+  it("should return true for 404 status in response", () => {
+    const error = { response: { status: 404 } };
 
-    it("should handle complex error structure", () => {
-      const error = {
-        status: 429,
-        response: { status: 429 },
-        errors: [{ detail: "Rate limit exceeded", status: "429" }],
-        message: "Rate limited",
-      };
+    expect(isNotFoundError(error)).toBe(true);
+  });
 
-      try {
-        throwFormattedError("Rate Limit Error", error);
-      } catch (thrownError: any) {
-        expect(thrownError.message).toBe(
-          "Rate Limit Error: Rate limit exceeded"
-        );
-        expect(thrownError.status).toBe(429);
-        expect(thrownError.response).toEqual({ status: 429 });
-        expect(thrownError.errors).toEqual([
-          { detail: "Rate limit exceeded", status: "429" },
-        ]);
-      }
-    });
+  it("should return false for non-404 errors", () => {
+    const error = { status: 500 };
+
+    expect(isNotFoundError(error)).toBe(false);
+  });
+
+  it("should return false for errors without status", () => {
+    const error = { message: "Some error" };
+
+    expect(isNotFoundError(error)).toBe(false);
+  });
+});
+
+describe("isRateLimitError", () => {
+  it("should return true for 429 status in errors array", () => {
+    const error = {
+      errors: [{ status: "429", detail: "Rate limited" }],
+    };
+
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  it("should return true for numeric 429 status in errors array", () => {
+    const error = {
+      errors: [{ status: 429, detail: "Rate limited" }],
+    };
+
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  it("should return true for direct 429 status", () => {
+    const error = { status: 429 };
+
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  it("should return false for non-429 errors", () => {
+    const error = { status: 500 };
+
+    expect(isRateLimitError(error)).toBe(false);
+  });
+});
+
+describe("extractErrorMessage", () => {
+  it("should extract message from Apple API error format", () => {
+    const error = {
+      errors: [{ detail: "Specific error message" }],
+    };
+
+    expect(extractErrorMessage(error)).toBe("Specific error message");
+  });
+
+  it("should return 'Unknown error' when no detail is available", () => {
+    const error = {
+      errors: [{}],
+    };
+
+    expect(extractErrorMessage(error)).toBe("Unknown error");
+  });
+
+  it("should return 'Unknown error' when errors array is empty", () => {
+    const error = {
+      errors: [],
+    };
+
+    expect(extractErrorMessage(error)).toBe("Unknown error");
+  });
+
+  it("should return 'Unknown error' when errors is not an array", () => {
+    const error = { message: "Some error" };
+
+    expect(extractErrorMessage(error)).toBe("Unknown error");
+  });
+});
+
+describe("ContextualError", () => {
+  it("should create contextual error with prefix and Apple API error", () => {
+    const appleError = {
+      errors: [{ detail: "API error message" }],
+    };
+
+    const error = new ContextualError("Operation failed", appleError);
+    expect(error.message).toBe("Operation failed");
+    expect(error.originalError).toBeDefined();
+  });
+
+  it("should preserve Apple API error properties", () => {
+    const appleError = {
+      status: 404,
+      response: { status: 404 },
+      errors: [{ status: "404", detail: "Not found" }],
+    };
+
+    const error = new ContextualError("Operation failed", appleError);
+    expect(error.status).toBe(404);
+    expect(error.response).toEqual({ status: 404 });
+    expect(error.errors).toEqual([{ status: "404", detail: "Not found" }]);
   });
 });

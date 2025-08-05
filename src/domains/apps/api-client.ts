@@ -1,5 +1,6 @@
 import { api } from "../../services/api";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 export async function fetchApp(
   appId: string
@@ -14,10 +15,11 @@ export async function fetchApp(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to fetch app: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 
@@ -45,10 +47,11 @@ export async function updateApp(
   });
 
   if (!response.data) {
-    throw new Error(
+    throw new ContextualError(
       `Failed to update app: ${
         response.error?.errors?.[0]?.detail || "Unknown error"
-      }`
+      }`,
+      response.error
     );
   }
 

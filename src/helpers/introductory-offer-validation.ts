@@ -10,6 +10,7 @@ import {
   isValidPayAsYouGoPeriods,
 } from "./duration-validation";
 import { logger } from "../utils/logger";
+import { ContextualError } from "./error-handling-helpers";
 
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 type SubscriptionOfferDuration = z.infer<
@@ -127,12 +128,15 @@ export function validateIntroductoryOffers(
           subscriptionPeriod as any,
           offer.type
         );
-        throw new Error(
-          `Invalid duration '${offer.duration}' for ${
-            offer.type
-          } offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'. Valid durations are: ${validDurations.join(
-            ", "
-          )}`
+        throw new ContextualError(
+          `Invalid duration '${offer.duration}' for ${offer.type} offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'.`,
+          undefined,
+          {
+            subscriptionProductId,
+            subscriptionPeriod,
+            offer,
+            validDurations,
+          }
         );
       }
     } else if (offer.type === "PAY_AS_YOU_GO") {
@@ -145,12 +149,15 @@ export function validateIntroductoryOffers(
         const validPeriods = getValidPayAsYouGoPeriods(
           subscriptionPeriod as any
         );
-        throw new Error(
-          `Invalid numberOfPeriods '${
-            offer.numberOfPeriods
-          }' for PAY_AS_YOU_GO offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'. Valid periods are: ${validPeriods.join(
-            ", "
-          )}`
+        throw new ContextualError(
+          `Invalid numberOfPeriods '${offer.numberOfPeriods}' for PAY_AS_YOU_GO offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'.`,
+          undefined,
+          {
+            subscriptionProductId,
+            subscriptionPeriod,
+            offer,
+            validPeriods,
+          }
         );
       }
     }

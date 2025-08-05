@@ -29,6 +29,7 @@ import {
   fetchPromotionalOfferPrices,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 type SubscriptionGroupsResponse =
   components["schemas"]["SubscriptionGroupsResponse"];
@@ -126,12 +127,15 @@ export function parseOfferDuration(
     return { duration: DURATION_MAPPING[duration] };
   }
 
-  logger.error(
+  throw new ContextualError(
     `Unknown offer mode and duration: ${offerMode} ${duration} for subscription`,
-    attributes
+    undefined,
+    {
+      offerMode,
+      duration,
+      attributes,
+    }
   );
-
-  return {};
 }
 
 // Map introductory offers

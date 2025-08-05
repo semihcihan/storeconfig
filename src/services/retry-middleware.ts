@@ -2,6 +2,7 @@ import { logger } from "../utils/logger";
 import {
   isNotFoundError,
   isRateLimitError,
+  ContextualError,
 } from "../helpers/error-handling-helpers";
 
 export interface RetryOptions {
@@ -140,11 +141,16 @@ function createRetryWrapper<T extends Record<string, any>>(
 
             // Don't retry if this is the last attempt
             if (attempt === config.maxAttempts) {
-              logger.error(
+              throw new ContextualError(
                 `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-                response.error
+                response.error,
+                {
+                  method,
+                  endpoint,
+                  attempt,
+                  config,
+                }
               );
-              throw response.error;
             }
 
             // Handle rate limit errors
@@ -183,11 +189,16 @@ function createRetryWrapper<T extends Record<string, any>>(
 
         // Don't retry if this is the last attempt
         if (attempt === config.maxAttempts) {
-          logger.error(
+          throw new ContextualError(
             `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-            error
+            error,
+            {
+              method,
+              endpoint,
+              attempt,
+              config,
+            }
           );
-          throw error;
         }
 
         // Check if we should retry this error

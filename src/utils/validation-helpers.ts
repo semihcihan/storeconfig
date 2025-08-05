@@ -2,6 +2,7 @@ import { logger } from "./logger";
 import { AppStoreModelSchema } from "../models/app-store";
 import { readFileSync } from "fs";
 import { z } from "zod";
+import { ContextualError } from "../helpers/error-handling-helpers";
 
 export function validateJsonFile(filePath: string, showSuccessMessage = false) {
   const fileContent = readFileSync(filePath, "utf-8");
@@ -11,9 +12,13 @@ export function validateJsonFile(filePath: string, showSuccessMessage = false) {
   try {
     jsonData = JSON.parse(fileContent);
   } catch (jsonError) {
-    throw new Error(
-      `❌ Invalid JSON format! ${filePath}
-        ${jsonError}`
+    throw new ContextualError(
+      `❌ Invalid JSON format! ${filePath}`,
+      jsonError,
+      {
+        filePath,
+        jsonError,
+      }
     );
   }
 
@@ -28,8 +33,14 @@ export function validateJsonFile(filePath: string, showSuccessMessage = false) {
     }
     return result.data;
   } else {
-    logger.error(`❌ Validation failed! ${filePath}`);
-    throw result.error;
+    throw new ContextualError(
+      `❌ Validation failed! ${filePath}`,
+      result.error,
+      {
+        filePath,
+        result,
+      }
+    );
   }
 }
 
