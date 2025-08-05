@@ -112,7 +112,19 @@ export class LocalizationAggregator {
   private selectAppInfoByPriority(
     appInfos: components["schemas"]["AppInfoResponse"]["data"][]
   ): components["schemas"]["AppInfoResponse"]["data"] {
-    // Lower index = higher priority (0 is highest priority)
+    const sortedAppInfos = appInfos.sort((a, b) => {
+      const stateA = a.attributes?.state;
+      const stateB = b.attributes?.state;
+      const priorityA = this.getAppInfoPriority(stateA);
+      const priorityB = this.getAppInfoPriority(stateB);
+
+      return priorityA - priorityB;
+    });
+
+    return sortedAppInfos[0];
+  }
+
+  private getAppInfoPriority(state?: AppInfoState): number {
     const statePriority: AppInfoState[] = [
       "PREPARE_FOR_SUBMISSION",
       "DEVELOPER_REJECTED",
@@ -126,31 +138,27 @@ export class LocalizationAggregator {
       "REPLACED_WITH_NEW_INFO",
     ];
 
-    const sortedAppInfos = appInfos.sort((a, b) => {
-      const stateA = a.attributes?.state;
-      const stateB = b.attributes?.state;
-      const priorityA = stateA ? statePriority.indexOf(stateA) : 999;
-      const priorityB = stateB ? statePriority.indexOf(stateB) : 999;
-      return priorityA - priorityB;
-    });
+    // Handle undefined/null states
+    if (state === undefined || state === null) {
+      logger.warn(
+        `App info state is undefined or null. Using lowest priority.`
+      );
+      return 999;
+    }
 
-    return sortedAppInfos[0];
-  }
+    // Handle empty strings and whitespace-only strings as unknown states
+    if (state.trim() === "") {
+      logger.warn(`Empty app info state. Using lowest priority.`);
+      return 999;
+    }
 
-  private getAppInfoPriority(state?: AppInfoState): string | number {
-    const statePriority: AppInfoState[] = [
-      "PREPARE_FOR_SUBMISSION", // Highest priority - most likely editable
-      "WAITING_FOR_REVIEW", // Waiting for review - likely editable
-      "READY_FOR_REVIEW", // Ready but not yet submitted - likely editable
-      "IN_REVIEW", // In review - probably not editable
-      "ACCEPTED", // Accepted - probably not editable
-      "READY_FOR_DISTRIBUTION", // Ready for distribution - probably not editable
-      "PENDING_RELEASE", // Pending release - probably not editable
-      "DEVELOPER_REJECTED", // Rejected by developer - might be editable
-      "REJECTED", // Rejected by Apple - might be editable
-    ];
+    const priority = statePriority.indexOf(state);
+    if (priority === -1) {
+      logger.warn(`Unknown app info state: ${state}. Using lowest priority.`);
+      return 999;
+    }
 
-    return state ? statePriority.indexOf(state) : "unknown";
+    return priority;
   }
 
   async createAppLocalization(

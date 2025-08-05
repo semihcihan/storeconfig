@@ -11,6 +11,7 @@ import {
   AppStoreAppInfoLocalizationSchema,
 } from "../models/app-store";
 import { LocaleCodeSchema } from "../models/locales";
+import { logger } from "../utils/logger";
 
 // Mock dependencies
 jest.mock("../domains/versions/localization-service");
@@ -33,6 +34,7 @@ const MockAppStoreVersionService = AppStoreVersionService as jest.MockedClass<
 const MockGetAppInfosForApp = getAppInfosForApp as jest.MockedFunction<
   typeof getAppInfosForApp
 >;
+const MockLogger = logger as jest.Mocked<typeof logger>;
 
 describe("LocalizationAggregator", () => {
   let aggregator: LocalizationAggregator;
@@ -171,13 +173,14 @@ describe("LocalizationAggregator", () => {
       expect(MockGetAppInfosForApp).toHaveBeenCalledWith(testAppId);
     });
 
-    it("should handle multiple app infos and use first active one", async () => {
+    it("should handle multiple app infos and select by priority", async () => {
       const mockAppInfos = [
         { id: "replaced", attributes: { state: "REPLACED_WITH_NEW_INFO" } },
-        { id: testAppInfoId, attributes: { state: "READY_FOR_SALE" } },
+        { id: "low-priority", attributes: { state: "ACCEPTED" } },
+        { id: testAppInfoId, attributes: { state: "PREPARE_FOR_SUBMISSION" } }, // Highest priority
         {
-          id: "another-active",
-          attributes: { state: "PENDING_DEVELOPER_RELEASE" },
+          id: "medium-priority",
+          attributes: { state: "READY_FOR_REVIEW" },
         },
       ];
 
@@ -185,6 +188,7 @@ describe("LocalizationAggregator", () => {
 
       const result = await (aggregator as any).getAppInfoId(testAppId);
 
+      // Should select the one with highest priority (PREPARE_FOR_SUBMISSION)
       expect(result).toBe(testAppInfoId);
     });
 
@@ -205,7 +209,7 @@ describe("LocalizationAggregator", () => {
       MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
 
       await expect((aggregator as any).getAppInfoId(testAppId)).rejects.toThrow(
-        "No app info found for app test-app-id"
+        "No active app info found for app test-app-id"
       );
     });
 
@@ -214,6 +218,280 @@ describe("LocalizationAggregator", () => {
 
       await expect((aggregator as any).getAppInfoId(testAppId)).rejects.toThrow(
         "API Error"
+      );
+    });
+
+    it("should select app info with highest priority when multiple active ones exist", async () => {
+      const mockAppInfos = [
+        { id: "lowest", attributes: { state: "REJECTED" } }, // Priority 8
+        { id: "low", attributes: { state: "ACCEPTED" } }, // Priority 4
+        { id: "medium", attributes: { state: "READY_FOR_REVIEW" } }, // Priority 2
+        { id: "highest", attributes: { state: "PREPARE_FOR_SUBMISSION" } }, // Priority 0
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the one with highest priority (PREPARE_FOR_SUBMISSION)
+      expect(result).toBe("highest");
+    });
+
+    it("should handle unknown states by giving them lowest priority", async () => {
+      const mockAppInfos = [
+        { id: testAppInfoId, attributes: { state: "PREPARE_FOR_SUBMISSION" } }, // Highest priority
+        { id: "unknown", attributes: { state: "UNKNOWN_STATE" } }, // Unknown state (should get priority 999)
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the known state with highest priority
+      expect(result).toBe(testAppInfoId);
+    });
+
+    it("should handle multiple unknown states and select the first one", async () => {
+      const mockAppInfos = [
+        { id: "unknown1", attributes: { state: "UNKNOWN_STATE_1" } },
+        { id: "unknown2", attributes: { state: "UNKNOWN_STATE_2" } },
+        { id: "unknown3", attributes: { state: "UNKNOWN_STATE_3" } },
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the first unknown state when all are unknown
+      expect(result).toBe("unknown1");
+    });
+
+    it("should handle mixed known and unknown states correctly", async () => {
+      const mockAppInfos = [
+        { id: "unknown1", attributes: { state: "UNKNOWN_STATE_1" } },
+        { id: "low-priority", attributes: { state: "ACCEPTED" } }, // Priority 6
+        { id: "unknown2", attributes: { state: "UNKNOWN_STATE_2" } },
+        {
+          id: "high-priority",
+          attributes: { state: "PREPARE_FOR_SUBMISSION" },
+        }, // Priority 0
+        { id: "medium-priority", attributes: { state: "READY_FOR_REVIEW" } }, // Priority 3
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the highest priority known state
+      expect(result).toBe("high-priority");
+    });
+
+    it("should handle states without state attribute", async () => {
+      const mockAppInfos = [
+        { id: "no-state", attributes: {} },
+        {
+          id: "high-priority",
+          attributes: { state: "PREPARE_FOR_SUBMISSION" },
+        },
+        { id: "another-no-state", attributes: { someOtherField: "value" } },
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the highest priority known state
+      expect(result).toBe("high-priority");
+    });
+
+    it("should handle all priority levels correctly", async () => {
+      const mockAppInfos = [
+        { id: "rejected", attributes: { state: "REJECTED" } }, // Priority 2
+        { id: "accepted", attributes: { state: "ACCEPTED" } }, // Priority 6
+        { id: "prepare", attributes: { state: "PREPARE_FOR_SUBMISSION" } }, // Priority 0
+        { id: "in-review", attributes: { state: "IN_REVIEW" } }, // Priority 5
+        {
+          id: "ready-distribution",
+          attributes: { state: "READY_FOR_DISTRIBUTION" },
+        }, // Priority 8
+        {
+          id: "developer-rejected",
+          attributes: { state: "DEVELOPER_REJECTED" },
+        }, // Priority 1
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select PREPARE_FOR_SUBMISSION (priority 0)
+      expect(result).toBe("prepare");
+    });
+
+    it("should handle states without priority by giving them lowest priority", async () => {
+      const mockAppInfos = [
+        { id: "no-state", attributes: {} }, // No state attribute
+        { id: testAppInfoId, attributes: { state: "PREPARE_FOR_SUBMISSION" } }, // Highest priority
+      ];
+
+      MockGetAppInfosForApp.mockResolvedValue({ data: mockAppInfos } as any);
+
+      const result = await (aggregator as any).getAppInfoId(testAppId);
+
+      // Should select the one with highest priority
+      expect(result).toBe(testAppInfoId);
+    });
+  });
+
+  describe("selectAppInfoByPriority", () => {
+    it("should select app info with highest priority", () => {
+      const mockAppInfos = [
+        { id: "low", attributes: { state: "ACCEPTED" } },
+        { id: "high", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+        { id: "medium", attributes: { state: "READY_FOR_REVIEW" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      expect(result.id).toBe("high");
+    });
+
+    it("should handle empty array", () => {
+      const result = (aggregator as any).selectAppInfoByPriority([]);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle single app info", () => {
+      const mockAppInfos = [
+        { id: "single", attributes: { state: "ACCEPTED" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      expect(result.id).toBe("single");
+    });
+
+    it("should handle unknown states correctly", () => {
+      const mockAppInfos = [
+        { id: "unknown", attributes: { state: "UNKNOWN_STATE" } },
+        { id: "known", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      expect(result.id).toBe("known");
+    });
+
+    it("should handle multiple unknown states", () => {
+      const mockAppInfos = [
+        { id: "unknown1", attributes: { state: "UNKNOWN_STATE_1" } },
+        { id: "unknown2", attributes: { state: "UNKNOWN_STATE_2" } },
+        { id: "unknown3", attributes: { state: "UNKNOWN_STATE_3" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      // Should return the first one when all are unknown
+      expect(result.id).toBe("unknown1");
+    });
+
+    it("should handle mixed known and unknown states", () => {
+      const mockAppInfos = [
+        { id: "unknown1", attributes: { state: "UNKNOWN_STATE_1" } },
+        { id: "low", attributes: { state: "ACCEPTED" } },
+        { id: "unknown2", attributes: { state: "UNKNOWN_STATE_2" } },
+        { id: "high", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+        { id: "medium", attributes: { state: "READY_FOR_REVIEW" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      expect(result.id).toBe("high");
+    });
+
+    it("should handle states without state attribute", () => {
+      const mockAppInfos = [
+        { id: "no-state", attributes: {} },
+        { id: "high", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+        { id: "another-no-state", attributes: { someOtherField: "value" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      expect(result.id).toBe("high");
+    });
+
+    it("should handle all app infos without state attribute", () => {
+      const mockAppInfos = [
+        { id: "no-state1", attributes: {} },
+        { id: "no-state2", attributes: { someOtherField: "value" } },
+        { id: "no-state3", attributes: { anotherField: "value" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      // Should return the first one when all have no state
+      expect(result.id).toBe("no-state1");
+    });
+
+    it("should maintain stable sorting for equal priorities", () => {
+      const mockAppInfos = [
+        { id: "first", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+        { id: "second", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+        { id: "third", attributes: { state: "PREPARE_FOR_SUBMISSION" } },
+      ];
+
+      const result = (aggregator as any).selectAppInfoByPriority(
+        mockAppInfos as any
+      );
+
+      // Should return the first one when all have same priority
+      expect(result.id).toBe("first");
+    });
+  });
+
+  describe("getAppInfoPriority", () => {
+    it("should return correct priority for known states", () => {
+      expect(
+        (aggregator as any).getAppInfoPriority("PREPARE_FOR_SUBMISSION")
+      ).toBe(0);
+      expect((aggregator as any).getAppInfoPriority("ACCEPTED")).toBe(6);
+      expect(
+        (aggregator as any).getAppInfoPriority("READY_FOR_DISTRIBUTION")
+      ).toBe(8);
+    });
+
+    it("should return 999 for edge cases", () => {
+      expect((aggregator as any).getAppInfoPriority(undefined)).toBe(999);
+      expect((aggregator as any).getAppInfoPriority(null as any)).toBe(999);
+      expect((aggregator as any).getAppInfoPriority("")).toBe(999);
+      expect((aggregator as any).getAppInfoPriority("UNKNOWN_STATE")).toBe(999);
+    });
+
+    it("should log warnings for edge cases", () => {
+      (aggregator as any).getAppInfoPriority(undefined);
+      expect(MockLogger.warn).toHaveBeenCalledWith(
+        "App info state is undefined or null. Using lowest priority."
+      );
+
+      (aggregator as any).getAppInfoPriority("UNKNOWN_STATE");
+      expect(MockLogger.warn).toHaveBeenCalledWith(
+        "Unknown app info state: UNKNOWN_STATE. Using lowest priority."
       );
     });
   });
