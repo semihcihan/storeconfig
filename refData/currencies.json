@@ -2,872 +2,1226 @@
   {
     "id": "AFG",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "AFN",
+    "usdRate": 68.875605
   },
   {
     "id": "AGO",
     "currency": "USD",
-    "value": 256.498886900301
+    "value": 256.498886900301,
+    "localCurrency": "AOA",
+    "usdRate": 918.454841
   },
   {
     "id": "AIA",
-    "currency": "USD"
+    "currency": "USD",
+    "value": 1.5,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "ALB",
     "currency": "USD",
-    "value": 39.680165668
+    "value": 39.680165668,
+    "localCurrency": "ALL",
+    "usdRate": 83.967264
   },
   {
     "id": "ARE",
     "currency": "AED",
-    "value": 2.32608612629563
+    "value": 2.32608612629563,
+    "localCurrency": "AED",
+    "usdRate": 3.6725
   },
   {
     "id": "ARG",
     "currency": "USD",
-    "value": 420.076325493645
+    "value": 420.076325493645,
+    "localCurrency": "ARS",
+    "usdRate": 1333.67
   },
   {
     "id": "ARM",
     "currency": "USD",
-    "value": 146.274215922544
+    "value": 146.274215922544,
+    "localCurrency": "AMD",
+    "usdRate": 383.564921
   },
   {
     "id": "ATG",
     "currency": "USD",
-    "value": 1.90640316490645
+    "value": 1.90640316490645,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "AUS",
     "currency": "AUD",
-    "value": 1.379937
+    "value": 1.379937,
+    "localCurrency": "AUD",
+    "usdRate": 1.538298
   },
   {
     "id": "AUT",
     "currency": "EUR",
-    "value": 0.733163
+    "value": 0.733163,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "AZE",
     "currency": "USD",
-    "value": 0.493544786967812
+    "value": 0.493544786967812,
+    "localCurrency": "AZN",
+    "usdRate": 1.69933
   },
   {
     "id": "BEL",
     "currency": "EUR",
-    "value": 0.716744
+    "value": 0.716744,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "BEN",
     "currency": "USD",
-    "value": 203.098489252852
+    "value": 203.098489252852,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "BFA",
     "currency": "USD",
-    "value": 206.705433338539
+    "value": 206.705433338539,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "BGR",
     "currency": "BGN",
-    "value": 0.7661684602
+    "value": 0.7661684602,
+    "localCurrency": "BGN",
+    "usdRate": 1.680848
   },
   {
     "id": "BHR",
     "currency": "USD",
-    "value": 0.168099443772525
+    "value": 0.168099443772525,
+    "localCurrency": "BHD",
+    "usdRate": 0.376
   },
   {
     "id": "BHS",
     "currency": "USD",
-    "value": 0.957704859941285
+    "value": 0.957704859941285,
+    "localCurrency": "BSD",
+    "usdRate": 1
   },
   {
     "id": "BIH",
     "currency": "EUR",
-    "value": 0.7369253892
+    "value": 0.7369253892,
+    "localCurrency": "BAM",
+    "usdRate": 1.680286
   },
   {
     "id": "BLR",
     "currency": "USD",
-    "value": 0.817945059184378
+    "value": 0.817945059184378,
+    "localCurrency": "BYN",
+    "usdRate": 3.211476
   },
   {
     "id": "BLZ",
     "currency": "USD",
-    "value": 1.11704790233767
+    "value": 1.11704790233767,
+    "localCurrency": "BZD",
+    "usdRate": 2
   },
   {
     "id": "BMU",
     "currency": "USD",
-    "value": 1.16051287468875
+    "value": 1.16051287468875,
+    "localCurrency": "BMD",
+    "usdRate": 1
   },
   {
     "id": "BOL",
     "currency": "USD",
-    "value": 2.47085352241269
+    "value": 2.47085352241269,
+    "localCurrency": "BOB",
+    "usdRate": 6.876905
   },
   {
     "id": "BRA",
     "currency": "BRL",
-    "value": 2.48058601193917
+    "value": 2.48058601193917,
+    "localCurrency": "BRL",
+    "usdRate": 5.493563
   },
   {
     "id": "BRB",
     "currency": "USD",
-    "value": 2.23763713750194
+    "value": 2.23763713750194,
+    "localCurrency": "BBD",
+    "usdRate": 2
   },
   {
     "id": "BRN",
     "currency": "USD",
-    "value": 0.496042451660227
+    "value": 0.496042451660227,
+    "localCurrency": "BND",
+    "usdRate": 1.28567
   },
   {
     "id": "BTN",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "BTN",
+    "usdRate": 87.753822
   },
   {
     "id": "BWA",
     "currency": "USD",
-    "value": 5.08184454491831
+    "value": 5.08184454491831,
+    "localCurrency": "BWP",
+    "usdRate": 14.279974
   },
   {
     "id": "CAN",
     "currency": "CAD",
-    "value": 1.135486
+    "value": 1.135486,
+    "localCurrency": "CAD",
+    "usdRate": 1.374645
   },
   {
     "id": "CHE",
     "currency": "CHF",
-    "value": 0.972889
+    "value": 0.972889,
+    "localCurrency": "CHF",
+    "usdRate": 0.80645
   },
   {
     "id": "CHL",
     "currency": "CLP",
-    "value": 455.204936
+    "value": 455.204936,
+    "localCurrency": "CLP",
+    "usdRate": 964.612451
   },
   {
     "id": "CHN",
     "currency": "CNY",
-    "value": 3.5325492491585
+    "value": 3.5325492491585,
+    "localCurrency": "CNY",
+    "usdRate": 7.185909
   },
   {
     "id": "CIV",
     "currency": "USD",
-    "value": 214.691686543874
+    "value": 214.691686543874,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "CMR",
     "currency": "USD",
-    "value": 191.11230450422
+    "value": 191.11230450422,
+    "localCurrency": "XAF",
+    "usdRate": 563.543621
   },
   {
     "id": "COD",
     "currency": "USD",
-    "value": 1068.96015797139
+    "value": 1068.96015797139,
+    "localCurrency": "CDF",
+    "usdRate": 2898.854873
   },
   {
     "id": "COG",
     "currency": "USD",
-    "value": 214.207575920898
+    "value": 214.207575920898,
+    "localCurrency": "XAF",
+    "usdRate": 563.543621
   },
   {
     "id": "COL",
     "currency": "COP",
-    "value": 1500.145281
+    "value": 1500.145281,
+    "localCurrency": "COP",
+    "usdRate": 4084.967231
   },
   {
     "id": "CPV",
     "currency": "USD",
-    "value": 47.7207137618934
+    "value": 47.7207137618934,
+    "localCurrency": "CVE",
+    "usdRate": 94.730504
   },
   {
     "id": "CRI",
     "currency": "USD",
-    "value": 318.480268
+    "value": 318.480268,
+    "localCurrency": "CRC",
+    "usdRate": 505.458199
   },
   {
     "id": "CYM",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "KYD",
+    "usdRate": 0.833333
   },
   {
     "id": "CYP",
     "currency": "EUR",
-    "value": 0.583154722865
+    "value": 0.583154722865,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "CZE",
     "currency": "CZK",
-    "value": 12.958701
+    "value": 12.958701,
+    "localCurrency": "CZK",
+    "usdRate": 21.135431
   },
   {
     "id": "DEU",
     "currency": "EUR",
-    "value": 0.713045
+    "value": 0.713045,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "DMA",
     "currency": "USD",
-    "value": 1.31893659155379
+    "value": 1.31893659155379,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "DNK",
     "currency": "DKK",
-    "value": 6.230083
+    "value": 6.230083,
+    "localCurrency": "DKK",
+    "usdRate": 6.405776
   },
   {
     "id": "DOM",
     "currency": "USD",
-    "value": 23.521510706274
+    "value": 23.521510706274,
+    "localCurrency": "DOP",
+    "usdRate": 60.746627
   },
   {
     "id": "DZA",
     "currency": "USD",
-    "value": 43.0061894174414
+    "value": 43.0061894174414,
+    "localCurrency": "DZD",
+    "usdRate": 130.260633
   },
   {
     "id": "ECU",
     "currency": "USD",
-    "value": 0.434001889105821
+    "value": 0.434001889105821,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "EGY",
     "currency": "EGP",
-    "value": 6.24782044764882
+    "value": 6.24782044764882,
+    "localCurrency": "EGP",
+    "usdRate": 48.448999
   },
   {
     "id": "ESP",
     "currency": "EUR",
-    "value": 0.572856
+    "value": 0.572856,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "EST",
     "currency": "EUR",
-    "value": 0.583732
+    "value": 0.583732,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "FIN",
     "currency": "EUR",
-    "value": 0.766726
+    "value": 0.766726,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "FJI",
     "currency": "USD",
-    "value": 0.8897046963262
+    "value": 0.8897046963262,
+    "localCurrency": "FJD",
+    "usdRate": 2.258887
   },
   {
     "id": "FRA",
     "currency": "EUR",
-    "value": 0.695316
+    "value": 0.695316,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "FSM",
     "currency": "USD",
-    "value": 0.958535327301982
+    "value": 0.958535327301982,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "GAB",
     "currency": "USD",
-    "value": 231.683817083262
+    "value": 231.683817083262,
+    "localCurrency": "XAF",
+    "usdRate": 563.543621
   },
   {
     "id": "GBR",
     "currency": "GBP",
-    "value": 0.679372
+    "value": 0.679372,
+    "localCurrency": "GBP",
+    "usdRate": 0.749521
   },
   {
     "id": "GEO",
     "currency": "USD",
-    "value": 0.880167854386657
+    "value": 0.880167854386657,
+    "localCurrency": "GEL",
+    "usdRate": 2.698382
   },
   {
     "id": "GHA",
     "currency": "USD",
-    "value": 4.25619723861007
+    "value": 4.25619723861007,
+    "localCurrency": "GHS",
+    "usdRate": 10.830075
   },
   {
     "id": "GMB",
     "currency": "USD",
-    "value": 17.6792566912748
+    "value": 17.6792566912748,
+    "localCurrency": "GMD",
+    "usdRate": 72.806744
   },
   {
     "id": "GNB",
     "currency": "USD",
-    "value": 191.274049136647
+    "value": 191.274049136647,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "GRC",
     "currency": "EUR",
-    "value": 0.518856
+    "value": 0.518856,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "GRD",
     "currency": "USD",
-    "value": 1.58938040899464
+    "value": 1.58938040899464,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "GTM",
     "currency": "USD",
-    "value": 3.32078355507073
+    "value": 3.32078355507073,
+    "localCurrency": "GTQ",
+    "usdRate": 7.656238
   },
   {
     "id": "GUY",
     "currency": "USD",
-    "value": 77.9760925992236
+    "value": 77.9760925992236,
+    "localCurrency": "GYD",
+    "usdRate": 209.225886
   },
   {
     "id": "HKG",
     "currency": "HKD",
-    "value": 5.61374821665673
+    "value": 5.61374821665673,
+    "localCurrency": "HKD",
+    "usdRate": 7.849722
   },
   {
     "id": "HND",
     "currency": "USD",
-    "value": 11.3509098940535
+    "value": 11.3509098940535,
+    "localCurrency": "HNL",
+    "usdRate": 26.255453
   },
   {
     "id": "HRV",
     "currency": "EUR",
-    "value": 0.45516265366
+    "value": 0.45516265366,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "HUN",
     "currency": "HUF",
-    "value": 178.951775
+    "value": 178.951775,
+    "localCurrency": "HUF",
+    "usdRate": 342.255245
   },
   {
     "id": "IDN",
     "currency": "IDR",
-    "value": 4747.90857563225
+    "value": 4747.90857563225,
+    "localCurrency": "IDR",
+    "usdRate": 16359.005089
   },
   {
     "id": "IND",
     "currency": "INR",
-    "value": 20.4456693184455
+    "value": 20.4456693184455,
+    "localCurrency": "INR",
+    "usdRate": 87.75386
   },
   {
     "id": "IRL",
     "currency": "EUR",
-    "value": 0.755848
+    "value": 0.755848,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "IRQ",
     "currency": "USD",
-    "value": 545.873856082559
+    "value": 545.873856082559,
+    "localCurrency": "IQD",
+    "usdRate": 1310.892622
   },
   {
     "id": "ISL",
     "currency": "USD",
-    "value": 145.794044
+    "value": 145.794044,
+    "localCurrency": "ISK",
+    "usdRate": 123.133363
   },
   {
     "id": "ISR",
     "currency": "ILS",
-    "value": 3.599136
+    "value": 3.599136,
+    "localCurrency": "ILS",
+    "usdRate": 3.437474
   },
   {
     "id": "ITA",
     "currency": "EUR",
-    "value": 0.610785
+    "value": 0.610785,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "JAM",
     "currency": "USD",
-    "value": 94.163383968612
+    "value": 94.163383968612,
+    "localCurrency": "JMD",
+    "usdRate": 159.310575
   },
   {
     "id": "JOR",
     "currency": "USD",
-    "value": 0.302994117340261
+    "value": 0.302994117340261,
+    "localCurrency": "JOD",
+    "usdRate": 0.709
   },
   {
     "id": "JPN",
     "currency": "JPY",
-    "value": 95.109833
+    "value": 95.109833,
+    "localCurrency": "JPY",
+    "usdRate": 147.325214
   },
   {
     "id": "KAZ",
     "currency": "KZT",
-    "value": 160.928533328233
+    "value": 160.928533328233,
+    "localCurrency": "KZT",
+    "usdRate": 537.064378
   },
   {
     "id": "KEN",
     "currency": "USD",
-    "value": 44.9343532165407
+    "value": 44.9343532165407,
+    "localCurrency": "KES",
+    "usdRate": 129.118087
   },
   {
     "id": "KGZ",
     "currency": "USD",
-    "value": 26.3240076204654
+    "value": 26.3240076204654,
+    "localCurrency": "KGS",
+    "usdRate": 87.346865
   },
   {
     "id": "KHM",
     "currency": "USD",
-    "value": 1342.76777541905
+    "value": 1342.76777541905,
+    "localCurrency": "KHR",
+    "usdRate": 4011.976171
   },
   {
     "id": "KNA",
     "currency": "USD",
-    "value": 1.7297273460267
+    "value": 1.7297273460267,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "KOR",
     "currency": "KRW",
-    "value": 838.897321
+    "value": 838.897321,
+    "localCurrency": "KRW",
+    "usdRate": 1385.785693
   },
   {
     "id": "KWT",
     "currency": "USD",
-    "value": 0.191333746039784
+    "value": 0.191333746039784,
+    "localCurrency": "KWD",
+    "usdRate": 0.305627
   },
   {
     "id": "LAO",
     "currency": "USD",
-    "value": 4376.34270339504
+    "value": 4376.34270339504,
+    "localCurrency": "LAK",
+    "usdRate": 21628.437608
   },
   {
     "id": "LBN",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "LBP",
+    "usdRate": 89500
   },
   {
     "id": "LBR",
     "currency": "USD",
-    "value": 0.448974198927997
+    "value": 0.448974198927997,
+    "localCurrency": "LRD",
+    "usdRate": 200.588187
   },
   {
     "id": "LBY",
     "currency": "USD",
-    "value": 2.1880665134926
+    "value": 2.1880665134926,
+    "localCurrency": "LYD",
+    "usdRate": 5.442982
   },
   {
     "id": "LCA",
     "currency": "USD",
-    "value": 1.38897762585527
+    "value": 1.38897762585527,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "LKA",
     "currency": "USD",
-    "value": 87.2686054398767
+    "value": 87.2686054398767,
+    "localCurrency": "LKR",
+    "usdRate": 300.610873
   },
   {
     "id": "LTU",
     "currency": "EUR",
-    "value": 0.498947
+    "value": 0.498947,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "LUX",
     "currency": "EUR",
-    "value": 0.842662
+    "value": 0.842662,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "LVA",
     "currency": "EUR",
-    "value": 0.492149
+    "value": 0.492149,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "MAC",
     "currency": "USD",
-    "value": 4.57687985894212
+    "value": 4.57687985894212,
+    "localCurrency": "MOP",
+    "usdRate": 8.085413
   },
   {
     "id": "MAR",
     "currency": "USD",
-    "value": 3.85270833400844
+    "value": 3.85270833400844,
+    "localCurrency": "MAD",
+    "usdRate": 9.070558
   },
   {
     "id": "MDA",
     "currency": "USD",
-    "value": 7.24116295823702
+    "value": 7.24116295823702,
+    "localCurrency": "MDL",
+    "usdRate": 16.990791
   },
   {
     "id": "MDG",
     "currency": "USD",
-    "value": 1309.42142437646
+    "value": 1309.42142437646,
+    "localCurrency": "MGA",
+    "usdRate": 4433.97936
   },
   {
     "id": "MDV",
     "currency": "USD",
-    "value": 7.66223533561443
+    "value": 7.66223533561443,
+    "localCurrency": "MVR",
+    "usdRate": 15.440704
   },
   {
     "id": "MEX",
     "currency": "MXN",
-    "value": 10.088687
+    "value": 10.088687,
+    "localCurrency": "MXN",
+    "usdRate": 18.637475
   },
   {
     "id": "MKD",
     "currency": "USD",
-    "value": 19.9145952005
+    "value": 19.9145952005,
+    "localCurrency": "MKD",
+    "usdRate": 53.212736
   },
   {
     "id": "MLI",
     "currency": "USD",
-    "value": 199.052170256603
+    "value": 199.052170256603,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "MLT",
     "currency": "EUR",
-    "value": 0.580787183405
+    "value": 0.580787183405,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "MMR",
     "currency": "USD",
-    "value": 475.941937399457
+    "value": 475.941937399457,
+    "localCurrency": "MMK",
+    "usdRate": 2100.27328
   },
   {
     "id": "MNE",
     "currency": "EUR",
-    "value": 0.358215488345
+    "value": 0.358215488345,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "MNG",
     "currency": "USD",
-    "value": 1187.78509119944
+    "value": 1187.78509119944,
+    "localCurrency": "MNT",
+    "usdRate": 3566.457341
   },
   {
     "id": "MOZ",
     "currency": "USD",
-    "value": 24.3364573196456
+    "value": 24.3364573196456,
+    "localCurrency": "MZN",
+    "usdRate": 63.89922
   },
   {
     "id": "MRT",
     "currency": "USD",
-    "value": 11.3479331724261
+    "value": 11.3479331724261,
+    "localCurrency": "MRU",
+    "usdRate": 39.972351
   },
   {
     "id": "MSR",
-    "currency": "USD"
+    "currency": "USD",
+    "value": 1.5,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "MUS",
     "currency": "USD",
-    "value": 17.7457676842579
+    "value": 17.7457676842579,
+    "localCurrency": "MUR",
+    "usdRate": 45.729007
   },
   {
     "id": "MWI",
     "currency": "USD",
-    "value": 475.260356686393
+    "value": 475.260356686393,
+    "localCurrency": "MWK",
+    "usdRate": 1740.031704
   },
   {
     "id": "MYS",
     "currency": "MYR",
-    "value": 1.40230118921937
+    "value": 1.40230118921937,
+    "localCurrency": "MYR",
+    "usdRate": 4.229721
   },
   {
     "id": "NAM",
     "currency": "USD",
-    "value": 6.92131935620122
+    "value": 6.92131935620122,
+    "localCurrency": "NAD",
+    "usdRate": 17.778687
   },
   {
     "id": "NER",
     "currency": "USD",
-    "value": 217.484011080956
+    "value": 217.484011080956,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "NGA",
     "currency": "NGN",
-    "value": 185.191872670853
+    "value": 185.191872670853,
+    "localCurrency": "NGN",
+    "usdRate": 1530.13905
   },
   {
     "id": "NIC",
     "currency": "USD",
-    "value": 11.9751457059146
+    "value": 11.9751457059146,
+    "localCurrency": "NIO",
+    "usdRate": 36.763985
   },
   {
     "id": "NLD",
     "currency": "EUR",
-    "value": 0.74837
+    "value": 0.74837,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "NOR",
     "currency": "NOK",
-    "value": 9.23318
+    "value": 9.23318,
+    "localCurrency": "NOK",
+    "usdRate": 10.19103
   },
   {
     "id": "NPL",
     "currency": "USD",
-    "value": 33.5637990824022
+    "value": 33.5637990824022,
+    "localCurrency": "NPR",
+    "usdRate": 140.406116
   },
   {
     "id": "NRU",
     "currency": "USD",
-    "value": 1.42897324846422
+    "value": 1.42897324846422,
+    "localCurrency": "AUD",
+    "usdRate": 1.538298
   },
   {
     "id": "NZL",
     "currency": "NZD",
-    "value": 1.46197
+    "value": 1.46197,
+    "localCurrency": "NZD",
+    "usdRate": 1.686045
   },
   {
     "id": "OMN",
     "currency": "USD",
-    "value": 0.186863544604535
+    "value": 0.186863544604535,
+    "localCurrency": "OMR",
+    "usdRate": 0.384497
   },
   {
     "id": "PAK",
     "currency": "PKR",
-    "value": 66.8569695048092
+    "value": 66.8569695048092,
+    "localCurrency": "PKR",
+    "usdRate": 283.838064
   },
   {
     "id": "PAN",
     "currency": "USD",
-    "value": 0.46136847720847
+    "value": 0.46136847720847,
+    "localCurrency": "PAB",
+    "usdRate": 1
   },
   {
     "id": "PER",
     "currency": "PEN",
-    "value": 1.78230274122345
+    "value": 1.78230274122345,
+    "localCurrency": "PEN",
+    "usdRate": 3.555019
   },
   {
     "id": "PHL",
     "currency": "PHP",
-    "value": 19.35653268202
+    "value": 19.35653268202,
+    "localCurrency": "PHP",
+    "usdRate": 57.381105
   },
   {
     "id": "PLW",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "PNG",
     "currency": "USD",
-    "value": 2.40404140657683
+    "value": 2.40404140657683,
+    "localCurrency": "PGK",
+    "usdRate": 4.139801
   },
   {
     "id": "POL",
     "currency": "PLN",
-    "value": 1.977246
+    "value": 1.977246,
+    "localCurrency": "PLN",
+    "usdRate": 3.67712
   },
   {
     "id": "PRT",
     "currency": "EUR",
-    "value": 0.52649
+    "value": 0.52649,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "PRY",
     "currency": "USD",
-    "value": 2618.66324027066
+    "value": 2618.66324027066,
+    "localCurrency": "PYG",
+    "usdRate": 7434.544366
   },
   {
     "id": "QAT",
     "currency": "QAR",
-    "value": 2.20160228698061
+    "value": 2.20160228698061,
+    "localCurrency": "QAR",
+    "usdRate": 3.64
   },
   {
     "id": "ROU",
     "currency": "RON",
-    "value": 1.8948233018
+    "value": 1.8948233018,
+    "localCurrency": "RON",
+    "usdRate": 4.377463
   },
   {
     "id": "RUS",
     "currency": "RUB",
-    "value": 29.0629745679481
+    "value": 29.0629745679481,
+    "localCurrency": "RUB",
+    "usdRate": 80.031909
   },
   {
     "id": "RWA",
     "currency": "USD",
-    "value": 355.085581602396
+    "value": 355.085581602396,
+    "localCurrency": "RWF",
+    "usdRate": 1449.056874
   },
   {
     "id": "SAU",
     "currency": "SAR",
-    "value": 1.84528724177458
+    "value": 1.84528724177458,
+    "localCurrency": "SAR",
+    "usdRate": 3.75
   },
   {
     "id": "SEN",
     "currency": "USD",
-    "value": 206.923043592064
+    "value": 206.923043592064,
+    "localCurrency": "XOF",
+    "usdRate": 563.543621
   },
   {
     "id": "SGP",
     "currency": "SGD",
-    "value": 0.804049648989492
+    "value": 0.804049648989492,
+    "localCurrency": "SGD",
+    "usdRate": 1.285719
   },
   {
     "id": "SLB",
     "currency": "USD",
-    "value": 6.32647037447066
+    "value": 6.32647037447066,
+    "localCurrency": "SBD",
+    "usdRate": 8.209683
   },
   {
     "id": "SLE",
     "currency": "USD",
-    "value": 5.61135876424203
+    "value": 5.61135876424203,
+    "localCurrency": "SLL",
+    "usdRate": 23056.126079
   },
   {
     "id": "SLV",
     "currency": "USD",
-    "value": 0.420661059675436
+    "value": 0.420661059675436,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "SRB",
     "currency": "EUR",
-    "value": 45.916090935
+    "value": 45.916090935,
+    "localCurrency": "RSD",
+    "usdRate": 101.035701
   },
   {
     "id": "STP",
     "currency": "USD",
-    "value": 12.1886021305125
+    "value": 12.1886021305125,
+    "localCurrency": "STN",
+    "usdRate": 21.048359
   },
   {
     "id": "SUR",
     "currency": "USD",
-    "value": 11.1731451518139
+    "value": 11.1731451518139,
+    "localCurrency": "SRD",
+    "usdRate": 36.974602
   },
   {
     "id": "SVK",
     "currency": "EUR",
-    "value": 0.512025
+    "value": 0.512025,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "SVN",
     "currency": "EUR",
-    "value": 0.557128
+    "value": 0.557128,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "SWE",
     "currency": "SEK",
-    "value": 8.587839
+    "value": 8.587839,
+    "localCurrency": "SEK",
+    "usdRate": 9.615091
   },
   {
     "id": "SWZ",
     "currency": "USD",
-    "value": 6.11835634325957
+    "value": 6.11835634325957,
+    "localCurrency": "SZL",
+    "usdRate": 17.778687
   },
   {
     "id": "SYC",
     "currency": "USD",
-    "value": 7.80668759041487
+    "value": 7.80668759041487,
+    "localCurrency": "SCR",
+    "usdRate": 14.609135
   },
   {
     "id": "TCA",
     "currency": "USD",
-    "value": 0.988206691271252
+    "value": 0.988206691271252,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "TCD",
     "currency": "USD",
-    "value": 208.006357227884
+    "value": 208.006357227884,
+    "localCurrency": "XAF",
+    "usdRate": 563.543621
   },
   {
     "id": "THA",
     "currency": "THB",
-    "value": 10.4918757581114
+    "value": 10.4918757581114,
+    "localCurrency": "THB",
+    "usdRate": 32.345281
   },
   {
     "id": "TJK",
     "currency": "USD",
-    "value": 2.67931126140168
+    "value": 2.67931126140168,
+    "localCurrency": "TJS",
+    "usdRate": 9.472647
   },
   {
     "id": "TKM",
     "currency": "USD",
-    "value": 1.47005670399505
+    "value": 1.47005670399505,
+    "localCurrency": "TMT",
+    "usdRate": 3.500913
   },
   {
     "id": "TON",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "TOP",
+    "usdRate": 2.390415
   },
   {
     "id": "TTO",
     "currency": "USD",
-    "value": 3.61890275790514
+    "value": 3.61890275790514,
+    "localCurrency": "TTD",
+    "usdRate": 6.752331
   },
   {
     "id": "TUN",
     "currency": "USD",
-    "value": 0.936914382772163
+    "value": 0.936914382772163,
+    "localCurrency": "TND",
+    "usdRate": 2.891763
   },
   {
     "id": "TUR",
     "currency": "TRY",
-    "value": 11.554529
+    "value": 11.554529,
+    "localCurrency": "TRY",
+    "usdRate": 40.688225
   },
   {
     "id": "TWN",
-    "currency": "TWD"
+    "currency": "TWD",
+    "value": 13.38,
+    "localCurrency": "TWD",
+    "usdRate": 29.89662
   },
   {
     "id": "TZA",
     "currency": "TZS",
-    "value": 730.424331119855
+    "value": 730.424331119855,
+    "localCurrency": "TZS",
+    "usdRate": 2463.644748
   },
   {
     "id": "UGA",
     "currency": "USD",
-    "value": 1237.35474469908
+    "value": 1237.35474469908,
+    "localCurrency": "UGX",
+    "usdRate": 3551.91989
   },
   {
     "id": "UKR",
     "currency": "USD",
-    "value": 11.6654001368824
+    "value": 11.6654001368824,
+    "localCurrency": "UAH",
+    "usdRate": 41.621664
   },
   {
     "id": "URY",
     "currency": "USD",
-    "value": 26.3976838152141
+    "value": 26.3976838152141,
+    "localCurrency": "UYU",
+    "usdRate": 40.11963
   },
   {
     "id": "USA",
     "currency": "USD",
-    "value": 1
+    "value": 1,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "UZB",
     "currency": "USD",
-    "value": 3367.64393969072
+    "value": 3367.64393969072,
+    "localCurrency": "UZS",
+    "usdRate": 12542.593672
   },
   {
     "id": "VCT",
     "currency": "USD",
-    "value": 1.45981547183907
+    "value": 1.45981547183907,
+    "localCurrency": "XCD",
+    "usdRate": 2.7
   },
   {
     "id": "VEN",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "VES",
+    "usdRate": 129.0535
   },
   {
     "id": "VGB",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "USD",
+    "usdRate": 1
   },
   {
     "id": "VNM",
     "currency": "VND",
-    "value": 6956.92750425086
+    "value": 6956.92750425086,
+    "localCurrency": "VND",
+    "usdRate": 26161.411817
   },
   {
     "id": "VUT",
     "currency": "USD",
-    "value": 117.195227977425
+    "value": 117.195227977425,
+    "localCurrency": "VUV",
+    "usdRate": 119.711128
   },
   {
     "id": "XKS",
-    "currency": "EUR"
+    "currency": "EUR",
+    "value": 0.362374835859874,
+    "localCurrency": "EUR",
+    "usdRate": 0.859419
   },
   {
     "id": "YEM",
     "currency": "USD",
-    "value": null
+    "value": null,
+    "localCurrency": "YER",
+    "usdRate": 240.27389
   },
   {
     "id": "ZAF",
     "currency": "ZAR",
-    "value": 7.41491099794419
+    "value": 7.41491099794419,
+    "localCurrency": "ZAR",
+    "usdRate": 17.779132
   },
   {
     "id": "ZMB",
     "currency": "USD",
-    "value": 7.65107091283453
+    "value": 7.65107091283453,
+    "localCurrency": "ZMW",
+    "usdRate": 23.05437
   },
   {
     "id": "ZWE",
     "currency": "USD",
-    "value": 9.97161059254851
+    "value": 9.97161059254851,
+    "localCurrency": "ZWL",
+    "usdRate": 26.7793
   }
 ]

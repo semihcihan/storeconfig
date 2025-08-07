@@ -7,15 +7,7 @@ interface TerritoryData {
   id: string;
   currency: string;
   value?: number | null;
-}
-
-interface WorldBankResponse {
-  page: number;
-  pages: number;
-  per_page: number;
-  total: number;
-  sourceid: string;
-  lastupdated: string;
+  localCurrency?: string;
 }
 
 interface WorldBankData {
@@ -35,6 +27,10 @@ interface WorldBankData {
   decimal: number;
 }
 
+interface CurrencyMapping {
+  [countryCode: string]: string;
+}
+
 async function checkCurrenciesFile(): Promise<void> {
   const currenciesPath = path.join(process.cwd(), "refData", "currencies.json");
 
@@ -49,7 +45,21 @@ async function loadCurrencies(): Promise<TerritoryData[]> {
   return JSON.parse(content);
 }
 
+async function loadCurrencyMapping(): Promise<CurrencyMapping> {
+  const mappingPath = path.join(
+    process.cwd(),
+    "refData",
+    "alpha3_to_currency.json"
+  );
+  const content = fs.readFileSync(mappingPath, "utf8");
+  return JSON.parse(content);
+}
+
 const date = "2024";
+/*
+We should manually fallback to https://www.imf.org/external/datamapper/api/?meta&geoitems&indicators&datasets&values=PPPEX
+PPP conversion factor, GDP (LCU per international $)
+*/
 async function fetchPPPData(): Promise<WorldBankData[]> {
   const apiEndpoint = `https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP?date=${date}&format=json&per_page=300`;
 
@@ -85,13 +95,19 @@ async function fetchPPPData(): Promise<WorldBankData[]> {
 
 async function updateCurrenciesWithPPP(
   currencies: TerritoryData[],
-  pppData: WorldBankData[]
+  pppData: WorldBankData[],
+  currencyMapping: CurrencyMapping
 ): Promise<{
   updatedCurrencies: TerritoryData[];
   nullValueTerritories: string[];
+  missingPPPTerritories: string[];
 }> {
   const updatedCurrencies = [...currencies];
   const nullValueTerritories: string[] = [];
+  const missingPPPTerritories: string[] = [];
+  const missingLocalCurrency: string[] = [];
+
+  logger.debug("Adding local currency information to territories...");
 
   for (const currency of updatedCurrencies) {
     const matchingPPP = pppData.find(
@@ -105,11 +121,32 @@ async function updateCurrenciesWithPPP(
         nullValueTerritories.push(currency.id);
       }
     } else {
-      nullValueTerritories.push(currency.id);
+      currency.value = null;
+      missingPPPTerritories.push(currency.id);
+    }
+
+    // Get local currency from ISO 4217 mapping
+    const localCurrency = currencyMapping[currency.id];
+    if (localCurrency) {
+      currency.localCurrency = localCurrency;
+    } else {
+      missingLocalCurrency.push(currency.id);
     }
   }
 
-  return { updatedCurrencies, nullValueTerritories };
+  if (missingLocalCurrency.length > 0) {
+    throw new Error(
+      `Territories not found in ISO 4217 mapping: ${missingLocalCurrency.join(
+        ", "
+      )}. Please update alpha3_to_currency.json to include these territories.`
+    );
+  }
+
+  return {
+    updatedCurrencies,
+    nullValueTerritories,
+    missingPPPTerritories,
+  };
 }
 
 async function saveUpdatedCurrencies(
@@ -129,16 +166,23 @@ async function main(): Promise<void> {
   await checkCurrenciesFile();
 
   const currencies = await loadCurrencies();
+  const currencyMapping = await loadCurrencyMapping();
   const pppData = await fetchPPPData();
 
-  const { updatedCurrencies, nullValueTerritories } =
-    await updateCurrenciesWithPPP(currencies, pppData);
+  const { updatedCurrencies, nullValueTerritories, missingPPPTerritories } =
+    await updateCurrenciesWithPPP(currencies, pppData, currencyMapping);
 
   await saveUpdatedCurrencies(updatedCurrencies);
 
   if (nullValueTerritories.length > 0) {
     logger.warn(
       `Territories with null PPP values: ${nullValueTerritories.join(", ")}`
+    );
+  }
+
+  if (missingPPPTerritories.length > 0) {
+    logger.warn(
+      `Territories missing PPP data: ${missingPPPTerritories.join(", ")}`
     );
   }
 
