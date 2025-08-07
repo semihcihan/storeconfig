@@ -1,0 +1,873 @@
+[
+  {
+    "id": "AFG",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "AGO",
+    "currency": "USD",
+    "value": 256.498886900301
+  },
+  {
+    "id": "AIA",
+    "currency": "USD"
+  },
+  {
+    "id": "ALB",
+    "currency": "USD",
+    "value": 39.680165668
+  },
+  {
+    "id": "ARE",
+    "currency": "AED",
+    "value": 2.32608612629563
+  },
+  {
+    "id": "ARG",
+    "currency": "USD",
+    "value": 420.076325493645
+  },
+  {
+    "id": "ARM",
+    "currency": "USD",
+    "value": 146.274215922544
+  },
+  {
+    "id": "ATG",
+    "currency": "USD",
+    "value": 1.90640316490645
+  },
+  {
+    "id": "AUS",
+    "currency": "AUD",
+    "value": 1.379937
+  },
+  {
+    "id": "AUT",
+    "currency": "EUR",
+    "value": 0.733163
+  },
+  {
+    "id": "AZE",
+    "currency": "USD",
+    "value": 0.493544786967812
+  },
+  {
+    "id": "BEL",
+    "currency": "EUR",
+    "value": 0.716744
+  },
+  {
+    "id": "BEN",
+    "currency": "USD",
+    "value": 203.098489252852
+  },
+  {
+    "id": "BFA",
+    "currency": "USD",
+    "value": 206.705433338539
+  },
+  {
+    "id": "BGR",
+    "currency": "BGN",
+    "value": 0.7661684602
+  },
+  {
+    "id": "BHR",
+    "currency": "USD",
+    "value": 0.168099443772525
+  },
+  {
+    "id": "BHS",
+    "currency": "USD",
+    "value": 0.957704859941285
+  },
+  {
+    "id": "BIH",
+    "currency": "EUR",
+    "value": 0.7369253892
+  },
+  {
+    "id": "BLR",
+    "currency": "USD",
+    "value": 0.817945059184378
+  },
+  {
+    "id": "BLZ",
+    "currency": "USD",
+    "value": 1.11704790233767
+  },
+  {
+    "id": "BMU",
+    "currency": "USD",
+    "value": 1.16051287468875
+  },
+  {
+    "id": "BOL",
+    "currency": "USD",
+    "value": 2.47085352241269
+  },
+  {
+    "id": "BRA",
+    "currency": "BRL",
+    "value": 2.48058601193917
+  },
+  {
+    "id": "BRB",
+    "currency": "USD",
+    "value": 2.23763713750194
+  },
+  {
+    "id": "BRN",
+    "currency": "USD",
+    "value": 0.496042451660227
+  },
+  {
+    "id": "BTN",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "BWA",
+    "currency": "USD",
+    "value": 5.08184454491831
+  },
+  {
+    "id": "CAN",
+    "currency": "CAD",
+    "value": 1.135486
+  },
+  {
+    "id": "CHE",
+    "currency": "CHF",
+    "value": 0.972889
+  },
+  {
+    "id": "CHL",
+    "currency": "CLP",
+    "value": 455.204936
+  },
+  {
+    "id": "CHN",
+    "currency": "CNY",
+    "value": 3.5325492491585
+  },
+  {
+    "id": "CIV",
+    "currency": "USD",
+    "value": 214.691686543874
+  },
+  {
+    "id": "CMR",
+    "currency": "USD",
+    "value": 191.11230450422
+  },
+  {
+    "id": "COD",
+    "currency": "USD",
+    "value": 1068.96015797139
+  },
+  {
+    "id": "COG",
+    "currency": "USD",
+    "value": 214.207575920898
+  },
+  {
+    "id": "COL",
+    "currency": "COP",
+    "value": 1500.145281
+  },
+  {
+    "id": "CPV",
+    "currency": "USD",
+    "value": 47.7207137618934
+  },
+  {
+    "id": "CRI",
+    "currency": "USD",
+    "value": 318.480268
+  },
+  {
+    "id": "CYM",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "CYP",
+    "currency": "EUR",
+    "value": 0.583154722865
+  },
+  {
+    "id": "CZE",
+    "currency": "CZK",
+    "value": 12.958701
+  },
+  {
+    "id": "DEU",
+    "currency": "EUR",
+    "value": 0.713045
+  },
+  {
+    "id": "DMA",
+    "currency": "USD",
+    "value": 1.31893659155379
+  },
+  {
+    "id": "DNK",
+    "currency": "DKK",
+    "value": 6.230083
+  },
+  {
+    "id": "DOM",
+    "currency": "USD",
+    "value": 23.521510706274
+  },
+  {
+    "id": "DZA",
+    "currency": "USD",
+    "value": 43.0061894174414
+  },
+  {
+    "id": "ECU",
+    "currency": "USD",
+    "value": 0.434001889105821
+  },
+  {
+    "id": "EGY",
+    "currency": "EGP",
+    "value": 6.24782044764882
+  },
+  {
+    "id": "ESP",
+    "currency": "EUR",
+    "value": 0.572856
+  },
+  {
+    "id": "EST",
+    "currency": "EUR",
+    "value": 0.583732
+  },
+  {
+    "id": "FIN",
+    "currency": "EUR",
+    "value": 0.766726
+  },
+  {
+    "id": "FJI",
+    "currency": "USD",
+    "value": 0.8897046963262
+  },
+  {
+    "id": "FRA",
+    "currency": "EUR",
+    "value": 0.695316
+  },
+  {
+    "id": "FSM",
+    "currency": "USD",
+    "value": 0.958535327301982
+  },
+  {
+    "id": "GAB",
+    "currency": "USD",
+    "value": 231.683817083262
+  },
+  {
+    "id": "GBR",
+    "currency": "GBP",
+    "value": 0.679372
+  },
+  {
+    "id": "GEO",
+    "currency": "USD",
+    "value": 0.880167854386657
+  },
+  {
+    "id": "GHA",
+    "currency": "USD",
+    "value": 4.25619723861007
+  },
+  {
+    "id": "GMB",
+    "currency": "USD",
+    "value": 17.6792566912748
+  },
+  {
+    "id": "GNB",
+    "currency": "USD",
+    "value": 191.274049136647
+  },
+  {
+    "id": "GRC",
+    "currency": "EUR",
+    "value": 0.518856
+  },
+  {
+    "id": "GRD",
+    "currency": "USD",
+    "value": 1.58938040899464
+  },
+  {
+    "id": "GTM",
+    "currency": "USD",
+    "value": 3.32078355507073
+  },
+  {
+    "id": "GUY",
+    "currency": "USD",
+    "value": 77.9760925992236
+  },
+  {
+    "id": "HKG",
+    "currency": "HKD",
+    "value": 5.61374821665673
+  },
+  {
+    "id": "HND",
+    "currency": "USD",
+    "value": 11.3509098940535
+  },
+  {
+    "id": "HRV",
+    "currency": "EUR",
+    "value": 0.45516265366
+  },
+  {
+    "id": "HUN",
+    "currency": "HUF",
+    "value": 178.951775
+  },
+  {
+    "id": "IDN",
+    "currency": "IDR",
+    "value": 4747.90857563225
+  },
+  {
+    "id": "IND",
+    "currency": "INR",
+    "value": 20.4456693184455
+  },
+  {
+    "id": "IRL",
+    "currency": "EUR",
+    "value": 0.755848
+  },
+  {
+    "id": "IRQ",
+    "currency": "USD",
+    "value": 545.873856082559
+  },
+  {
+    "id": "ISL",
+    "currency": "USD",
+    "value": 145.794044
+  },
+  {
+    "id": "ISR",
+    "currency": "ILS",
+    "value": 3.599136
+  },
+  {
+    "id": "ITA",
+    "currency": "EUR",
+    "value": 0.610785
+  },
+  {
+    "id": "JAM",
+    "currency": "USD",
+    "value": 94.163383968612
+  },
+  {
+    "id": "JOR",
+    "currency": "USD",
+    "value": 0.302994117340261
+  },
+  {
+    "id": "JPN",
+    "currency": "JPY",
+    "value": 95.109833
+  },
+  {
+    "id": "KAZ",
+    "currency": "KZT",
+    "value": 160.928533328233
+  },
+  {
+    "id": "KEN",
+    "currency": "USD",
+    "value": 44.9343532165407
+  },
+  {
+    "id": "KGZ",
+    "currency": "USD",
+    "value": 26.3240076204654
+  },
+  {
+    "id": "KHM",
+    "currency": "USD",
+    "value": 1342.76777541905
+  },
+  {
+    "id": "KNA",
+    "currency": "USD",
+    "value": 1.7297273460267
+  },
+  {
+    "id": "KOR",
+    "currency": "KRW",
+    "value": 838.897321
+  },
+  {
+    "id": "KWT",
+    "currency": "USD",
+    "value": 0.191333746039784
+  },
+  {
+    "id": "LAO",
+    "currency": "USD",
+    "value": 4376.34270339504
+  },
+  {
+    "id": "LBN",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "LBR",
+    "currency": "USD",
+    "value": 0.448974198927997
+  },
+  {
+    "id": "LBY",
+    "currency": "USD",
+    "value": 2.1880665134926
+  },
+  {
+    "id": "LCA",
+    "currency": "USD",
+    "value": 1.38897762585527
+  },
+  {
+    "id": "LKA",
+    "currency": "USD",
+    "value": 87.2686054398767
+  },
+  {
+    "id": "LTU",
+    "currency": "EUR",
+    "value": 0.498947
+  },
+  {
+    "id": "LUX",
+    "currency": "EUR",
+    "value": 0.842662
+  },
+  {
+    "id": "LVA",
+    "currency": "EUR",
+    "value": 0.492149
+  },
+  {
+    "id": "MAC",
+    "currency": "USD",
+    "value": 4.57687985894212
+  },
+  {
+    "id": "MAR",
+    "currency": "USD",
+    "value": 3.85270833400844
+  },
+  {
+    "id": "MDA",
+    "currency": "USD",
+    "value": 7.24116295823702
+  },
+  {
+    "id": "MDG",
+    "currency": "USD",
+    "value": 1309.42142437646
+  },
+  {
+    "id": "MDV",
+    "currency": "USD",
+    "value": 7.66223533561443
+  },
+  {
+    "id": "MEX",
+    "currency": "MXN",
+    "value": 10.088687
+  },
+  {
+    "id": "MKD",
+    "currency": "USD",
+    "value": 19.9145952005
+  },
+  {
+    "id": "MLI",
+    "currency": "USD",
+    "value": 199.052170256603
+  },
+  {
+    "id": "MLT",
+    "currency": "EUR",
+    "value": 0.580787183405
+  },
+  {
+    "id": "MMR",
+    "currency": "USD",
+    "value": 475.941937399457
+  },
+  {
+    "id": "MNE",
+    "currency": "EUR",
+    "value": 0.358215488345
+  },
+  {
+    "id": "MNG",
+    "currency": "USD",
+    "value": 1187.78509119944
+  },
+  {
+    "id": "MOZ",
+    "currency": "USD",
+    "value": 24.3364573196456
+  },
+  {
+    "id": "MRT",
+    "currency": "USD",
+    "value": 11.3479331724261
+  },
+  {
+    "id": "MSR",
+    "currency": "USD"
+  },
+  {
+    "id": "MUS",
+    "currency": "USD",
+    "value": 17.7457676842579
+  },
+  {
+    "id": "MWI",
+    "currency": "USD",
+    "value": 475.260356686393
+  },
+  {
+    "id": "MYS",
+    "currency": "MYR",
+    "value": 1.40230118921937
+  },
+  {
+    "id": "NAM",
+    "currency": "USD",
+    "value": 6.92131935620122
+  },
+  {
+    "id": "NER",
+    "currency": "USD",
+    "value": 217.484011080956
+  },
+  {
+    "id": "NGA",
+    "currency": "NGN",
+    "value": 185.191872670853
+  },
+  {
+    "id": "NIC",
+    "currency": "USD",
+    "value": 11.9751457059146
+  },
+  {
+    "id": "NLD",
+    "currency": "EUR",
+    "value": 0.74837
+  },
+  {
+    "id": "NOR",
+    "currency": "NOK",
+    "value": 9.23318
+  },
+  {
+    "id": "NPL",
+    "currency": "USD",
+    "value": 33.5637990824022
+  },
+  {
+    "id": "NRU",
+    "currency": "USD",
+    "value": 1.42897324846422
+  },
+  {
+    "id": "NZL",
+    "currency": "NZD",
+    "value": 1.46197
+  },
+  {
+    "id": "OMN",
+    "currency": "USD",
+    "value": 0.186863544604535
+  },
+  {
+    "id": "PAK",
+    "currency": "PKR",
+    "value": 66.8569695048092
+  },
+  {
+    "id": "PAN",
+    "currency": "USD",
+    "value": 0.46136847720847
+  },
+  {
+    "id": "PER",
+    "currency": "PEN",
+    "value": 1.78230274122345
+  },
+  {
+    "id": "PHL",
+    "currency": "PHP",
+    "value": 19.35653268202
+  },
+  {
+    "id": "PLW",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "PNG",
+    "currency": "USD",
+    "value": 2.40404140657683
+  },
+  {
+    "id": "POL",
+    "currency": "PLN",
+    "value": 1.977246
+  },
+  {
+    "id": "PRT",
+    "currency": "EUR",
+    "value": 0.52649
+  },
+  {
+    "id": "PRY",
+    "currency": "USD",
+    "value": 2618.66324027066
+  },
+  {
+    "id": "QAT",
+    "currency": "QAR",
+    "value": 2.20160228698061
+  },
+  {
+    "id": "ROU",
+    "currency": "RON",
+    "value": 1.8948233018
+  },
+  {
+    "id": "RUS",
+    "currency": "RUB",
+    "value": 29.0629745679481
+  },
+  {
+    "id": "RWA",
+    "currency": "USD",
+    "value": 355.085581602396
+  },
+  {
+    "id": "SAU",
+    "currency": "SAR",
+    "value": 1.84528724177458
+  },
+  {
+    "id": "SEN",
+    "currency": "USD",
+    "value": 206.923043592064
+  },
+  {
+    "id": "SGP",
+    "currency": "SGD",
+    "value": 0.804049648989492
+  },
+  {
+    "id": "SLB",
+    "currency": "USD",
+    "value": 6.32647037447066
+  },
+  {
+    "id": "SLE",
+    "currency": "USD",
+    "value": 5.61135876424203
+  },
+  {
+    "id": "SLV",
+    "currency": "USD",
+    "value": 0.420661059675436
+  },
+  {
+    "id": "SRB",
+    "currency": "EUR",
+    "value": 45.916090935
+  },
+  {
+    "id": "STP",
+    "currency": "USD",
+    "value": 12.1886021305125
+  },
+  {
+    "id": "SUR",
+    "currency": "USD",
+    "value": 11.1731451518139
+  },
+  {
+    "id": "SVK",
+    "currency": "EUR",
+    "value": 0.512025
+  },
+  {
+    "id": "SVN",
+    "currency": "EUR",
+    "value": 0.557128
+  },
+  {
+    "id": "SWE",
+    "currency": "SEK",
+    "value": 8.587839
+  },
+  {
+    "id": "SWZ",
+    "currency": "USD",
+    "value": 6.11835634325957
+  },
+  {
+    "id": "SYC",
+    "currency": "USD",
+    "value": 7.80668759041487
+  },
+  {
+    "id": "TCA",
+    "currency": "USD",
+    "value": 0.988206691271252
+  },
+  {
+    "id": "TCD",
+    "currency": "USD",
+    "value": 208.006357227884
+  },
+  {
+    "id": "THA",
+    "currency": "THB",
+    "value": 10.4918757581114
+  },
+  {
+    "id": "TJK",
+    "currency": "USD",
+    "value": 2.67931126140168
+  },
+  {
+    "id": "TKM",
+    "currency": "USD",
+    "value": 1.47005670399505
+  },
+  {
+    "id": "TON",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "TTO",
+    "currency": "USD",
+    "value": 3.61890275790514
+  },
+  {
+    "id": "TUN",
+    "currency": "USD",
+    "value": 0.936914382772163
+  },
+  {
+    "id": "TUR",
+    "currency": "TRY",
+    "value": 11.554529
+  },
+  {
+    "id": "TWN",
+    "currency": "TWD"
+  },
+  {
+    "id": "TZA",
+    "currency": "TZS",
+    "value": 730.424331119855
+  },
+  {
+    "id": "UGA",
+    "currency": "USD",
+    "value": 1237.35474469908
+  },
+  {
+    "id": "UKR",
+    "currency": "USD",
+    "value": 11.6654001368824
+  },
+  {
+    "id": "URY",
+    "currency": "USD",
+    "value": 26.3976838152141
+  },
+  {
+    "id": "USA",
+    "currency": "USD",
+    "value": 1
+  },
+  {
+    "id": "UZB",
+    "currency": "USD",
+    "value": 3367.64393969072
+  },
+  {
+    "id": "VCT",
+    "currency": "USD",
+    "value": 1.45981547183907
+  },
+  {
+    "id": "VEN",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "VGB",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "VNM",
+    "currency": "VND",
+    "value": 6956.92750425086
+  },
+  {
+    "id": "VUT",
+    "currency": "USD",
+    "value": 117.195227977425
+  },
+  {
+    "id": "XKS",
+    "currency": "EUR"
+  },
+  {
+    "id": "YEM",
+    "currency": "USD",
+    "value": null
+  },
+  {
+    "id": "ZAF",
+    "currency": "ZAR",
+    "value": 7.41491099794419
+  },
+  {
+    "id": "ZMB",
+    "currency": "USD",
+    "value": 7.65107091283453
+  },
+  {
+    "id": "ZWE",
+    "currency": "USD",
+    "value": 9.97161059254851
+  }
+]

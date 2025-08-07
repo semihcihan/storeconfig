@@ -1,13 +1,11 @@
 ## IDEAS TODOs
 
 - Create easy pricing changes
-- Have a documentation / README
 
-  - No start date and end date support, will be overridden (TELL THIS TO USER)
+Notes
 
-- multiple app infos problem ??
-
-- website
+- No start date and end date support, will be overridden (TELL THIS TO USER)
+- Worldwide
 
 # V2
 

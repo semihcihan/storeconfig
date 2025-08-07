@@ -19,7 +19,8 @@
     "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --file fetch.json",
     "apply-file": "npx ts-node src/cli.ts apply --current fetch.json --desired apply.json --id NOT_NEEDED",
     "plan-file": "npx ts-node src/cli.ts plan --current fetch.json --desired apply.json --id NOT_NEEDED",
-    "validate-file": "npx ts-node src/cli.ts validate-format --file apply.json"
+    "validate-file": "npx ts-node src/cli.ts validate-format --file apply.json",
+    "fetch-currencies": "npm run fetch-territories && npm run fetch-ppp"
   },
   "keywords": [],
   "author": "Semih Cihan",
