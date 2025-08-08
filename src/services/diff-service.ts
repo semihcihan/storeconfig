@@ -789,7 +789,9 @@ function diffAppAvailability(
     actions.push({
       type: "UPDATE_APP_AVAILABILITY",
       payload: {
-        availableTerritories: desiredState.availableTerritories,
+        availableTerritories: desiredState.availableTerritories as z.infer<
+          typeof TerritoryCodeSchema
+        >[],
       },
     });
   }

@@ -6,6 +6,7 @@ import {
 import { z } from "zod";
 import { getIAPAvailability, createIAPAvailability } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
+import { TerritoryCodeSchema } from "../../models/territories";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type InAppPurchasesV2Response =
@@ -33,7 +34,10 @@ async function createIAPAvailabilityForIAP(
 ): Promise<string> {
   logger.debug(`Creating IAP availability for IAP ${iapId}...`);
 
-  const territoryData = availability.availableTerritories.map((territory) => ({
+  let availableTerritories = availability.availableTerritories as z.infer<
+    typeof TerritoryCodeSchema
+  >[];
+  const territoryData = availableTerritories.map((territory) => ({
     type: "territories" as const,
     id: territory,
   }));

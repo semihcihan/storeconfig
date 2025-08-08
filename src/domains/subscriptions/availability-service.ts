@@ -9,6 +9,7 @@ import {
   createSubscriptionAvailability,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
+import { TerritoryCodeSchema } from "../../models/territories";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type SubscriptionAvailabilityCreateRequest =
@@ -48,7 +49,10 @@ async function createSubscriptionAvailabilityForSubscription(
     `Creating subscription availability for subscription ${subscriptionId}...`
   );
 
-  const territoryData = availability.availableTerritories.map((territory) => ({
+  let availableTerritories = availability.availableTerritories as z.infer<
+    typeof TerritoryCodeSchema
+  >[];
+  const territoryData = availableTerritories.map((territory) => ({
     type: "territories" as const,
     id: territory,
   }));

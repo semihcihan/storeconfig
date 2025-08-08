@@ -160,7 +160,9 @@ export async function updateAppAvailability(
   logger.debug(`Found ${territoryMap.size} territories`);
 
   // Build sets of current and desired territories
-  const currentTerritories = new Set(currentState.availableTerritories);
+  const currentTerritories = new Set(
+    currentState.availableTerritories as z.infer<typeof TerritoryCodeSchema>[]
+  );
   const desiredTerritories = new Set(availableTerritories);
 
   // Find territories that need to be enabled
