@@ -28,7 +28,12 @@ interface ExchangeRateResponse {
 }
 
 async function checkCurrenciesFile(): Promise<void> {
-  const currenciesPath = path.join(process.cwd(), "refData", "currencies.json");
+  const currenciesPath = path.join(
+    process.cwd(),
+    "src",
+    "data",
+    "currencies.json"
+  );
 
   if (!fs.existsSync(currenciesPath)) {
     throw new Error(
@@ -38,7 +43,12 @@ async function checkCurrenciesFile(): Promise<void> {
 }
 
 async function loadCurrencies(): Promise<TerritoryData[]> {
-  const currenciesPath = path.join(process.cwd(), "refData", "currencies.json");
+  const currenciesPath = path.join(
+    process.cwd(),
+    "src",
+    "data",
+    "currencies.json"
+  );
   const content = fs.readFileSync(currenciesPath, "utf8");
   return JSON.parse(content);
 }
@@ -98,7 +108,7 @@ async function updateExchangeRates(
 async function saveUpdatedCurrencies(
   currencies: TerritoryData[]
 ): Promise<void> {
-  const outputPath = path.join(process.cwd(), "refData", "currencies.json");
+  const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");
 
   logger.debug(`Saving updated currencies to ${outputPath}`);
   const jsonContent = JSON.stringify(currencies, null, 2);

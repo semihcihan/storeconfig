@@ -51,7 +51,7 @@ async function fetchAllTerritories(): Promise<TerritoryData[]> {
 async function saveTerritoriesToFile(
   territories: TerritoryData[]
 ): Promise<void> {
-  const outputPath = path.join(process.cwd(), "refData", "currencies.json");
+  const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");
   logger.debug(`Saving territories to ${outputPath}`);
 
   const jsonContent = JSON.stringify(territories, null, 2);

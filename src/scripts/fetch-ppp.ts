@@ -32,7 +32,12 @@ interface CurrencyMapping {
 }
 
 async function checkCurrenciesFile(): Promise<void> {
-  const currenciesPath = path.join(process.cwd(), "refData", "currencies.json");
+  const currenciesPath = path.join(
+    process.cwd(),
+    "src",
+    "data",
+    "currencies.json"
+  );
 
   if (!fs.existsSync(currenciesPath)) {
     throw new Error("currencies.json file does not exist");
@@ -40,7 +45,12 @@ async function checkCurrenciesFile(): Promise<void> {
 }
 
 async function loadCurrencies(): Promise<TerritoryData[]> {
-  const currenciesPath = path.join(process.cwd(), "refData", "currencies.json");
+  const currenciesPath = path.join(
+    process.cwd(),
+    "src",
+    "data",
+    "currencies.json"
+  );
   const content = fs.readFileSync(currenciesPath, "utf8");
   return JSON.parse(content);
 }
@@ -48,7 +58,8 @@ async function loadCurrencies(): Promise<TerritoryData[]> {
 async function loadCurrencyMapping(): Promise<CurrencyMapping> {
   const mappingPath = path.join(
     process.cwd(),
-    "refData",
+    "src",
+    "data",
     "alpha3_to_currency.json"
   );
   const content = fs.readFileSync(mappingPath, "utf8");
@@ -152,7 +163,7 @@ async function updateCurrenciesWithPPP(
 async function saveUpdatedCurrencies(
   currencies: TerritoryData[]
 ): Promise<void> {
-  const outputPath = path.join(process.cwd(), "refData", "currencies.json");
+  const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");
 
   logger.debug(`Saving updated currencies to ${outputPath}`);
   const jsonContent = JSON.stringify(currencies, null, 2);
