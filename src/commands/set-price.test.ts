@@ -38,7 +38,7 @@ const mockPricingItemsExist = jest.mocked(pricingItemsExist);
 
 describe("set-price command", () => {
   const mockArgv = {
-    input: "test-file.json",
+    file: "test-file.json",
   };
 
   beforeEach(() => {
@@ -61,6 +61,30 @@ describe("set-price command", () => {
     jest.clearAllMocks();
   });
 
+  describe("command structure", () => {
+    it("should have correct command name", () => {
+      expect(setPriceCommand.command).toBe("set-price");
+    });
+
+    it("should have correct description", () => {
+      expect(setPriceCommand.describe).toBe(
+        "Set prices for apps, in-app purchases, and subscriptions using interactive prompts"
+      );
+    });
+
+    it("should have builder defined", () => {
+      expect(setPriceCommand.builder).toBeDefined();
+    });
+
+    it("should have file parameter with correct configuration", () => {
+      const builder = setPriceCommand.builder as any;
+      expect(builder.file).toBeDefined();
+      expect(builder.file.alias).toBe("f");
+      expect(builder.file.demandOption).toBe(true);
+      expect(builder.file.type).toBe("string");
+    });
+  });
+
   describe("command execution", () => {
     it("should execute successfully with valid input", async () => {
       const mockData = { inAppPurchases: [{ id: "test" }] } as any;
@@ -79,7 +103,7 @@ describe("set-price command", () => {
       });
     });
 
-    it("should throw error when validation fails", async () => {
+    it("should handle validation errors and exit", async () => {
       const mockData = { inAppPurchases: [{ id: "test" }] } as any;
 
       mockReadJsonFile.mockReturnValue(mockData);
@@ -97,21 +121,20 @@ describe("set-price command", () => {
         expect.any(Error)
       );
     });
-  });
 
-  describe("command structure", () => {
-    it("should have correct command name", () => {
-      expect(setPriceCommand.command).toBe("set-price");
-    });
+    it("should handle file read errors and exit", async () => {
+      mockReadJsonFile.mockImplementation(() => {
+        throw new Error("File not found");
+      });
 
-    it("should have correct description", () => {
-      expect(setPriceCommand.describe).toBe(
-        "Set prices for apps, in-app purchases, and subscriptions using interactive prompts"
+      await expect(setPriceCommand.handler!(mockArgv as any)).rejects.toThrow(
+        "process.exit called"
       );
-    });
 
-    it("should have builder defined", () => {
-      expect(setPriceCommand.builder).toBeDefined();
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Set-price failed",
+        expect.any(Error)
+      );
     });
   });
 
@@ -127,6 +150,16 @@ describe("set-price command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Setting prices using file: test-file.json"
       );
+    });
+
+    it("should log successful completion", async () => {
+      const mockData = { inAppPurchases: [{ id: "test" }] } as any;
+
+      mockReadJsonFile.mockReturnValue(mockData);
+      mockValidateAppStoreModel.mockReturnValue(mockData);
+
+      await setPriceCommand.handler!(mockArgv as any);
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Pricing data gathered successfully:",
         {

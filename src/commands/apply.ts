@@ -46,8 +46,8 @@ const command: CommandModule = {
   command: "apply",
   describe: "Apply the changes to App Store Connect",
   builder: {
-    desired: {
-      alias: ["d", "desired-state"],
+    file: {
+      alias: "f",
       describe: "Path to the desired state JSON file.",
       demandOption: true,
       type: "string",
@@ -72,7 +72,7 @@ const command: CommandModule = {
     },
   },
   handler: async (argv) => {
-    const desiredStateFile = argv.desired as string;
+    const desiredStateFile = argv.file as string;
     const currentStateFile = argv.current as string | undefined;
     const appId = argv.id as string;
     const preview = argv.preview as boolean;

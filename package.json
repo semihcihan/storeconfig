@@ -21,7 +21,8 @@
     "plan-file": "npx ts-node src/cli.ts plan --current fetch.json --desired apply.json --id NOT_NEEDED",
     "validate-file": "npx ts-node src/cli.ts validate-format --file apply.json",
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts",
-    "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts"
+    "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
+    "set-price": "npx ts-node src/cli.ts set-price --file fetch.json"
   },
   "keywords": [],
   "author": "Semih Cihan",

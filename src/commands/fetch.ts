@@ -15,6 +15,7 @@ const fetchCommand: CommandModule = {
       type: "string",
     },
     file: {
+      alias: "f",
       describe: "Path to the output JSON file.",
       demandOption: true,
       type: "string",

@@ -1,5 +1,6 @@
 import { logger } from "../utils/logger";
 import * as fs from "fs";
+import * as readline from "readline";
 import type { AppStoreModel } from "../utils/validation-helpers";
 
 export interface InteractivePricingOptions {
@@ -33,6 +34,151 @@ export interface PricingRequest {
   minimumPrice?: number;
 }
 
+export interface PricingItem {
+  type: "app" | "inAppPurchase" | "subscription" | "offer";
+  id: string;
+  name: string;
+  offerType?: string;
+  parentName?: string;
+}
+
+function collectPricingItems(appStoreState: AppStoreModel): PricingItem[] {
+  const items: PricingItem[] = [];
+
+  // Add app if it has pricing
+  if (appStoreState.pricing) {
+    items.push({
+      type: "app",
+      id: appStoreState.appId,
+      name: `App (ID: ${appStoreState.appId})`,
+    });
+  }
+
+  // Add in-app purchases
+  if (appStoreState.inAppPurchases) {
+    appStoreState.inAppPurchases.forEach((iap) => {
+      items.push({
+        type: "inAppPurchase",
+        id: iap.productId,
+        name: iap.referenceName,
+      });
+    });
+  }
+
+  // Add subscriptions and their offers
+  if (appStoreState.subscriptionGroups) {
+    appStoreState.subscriptionGroups.forEach((group) => {
+      group.subscriptions.forEach((subscription) => {
+        // Add the subscription itself
+        items.push({
+          type: "subscription",
+          id: subscription.productId,
+          name: subscription.referenceName,
+        });
+
+        // Add introductory offers
+        if (subscription.introductoryOffers) {
+          subscription.introductoryOffers.forEach((offer) => {
+            items.push({
+              type: "offer",
+              id: subscription.productId,
+              name: `${offer.type} Introductory Offer`,
+              offerType: offer.type,
+              parentName: subscription.referenceName,
+            });
+          });
+        }
+
+        // Add promotional offers
+        if (subscription.promotionalOffers) {
+          subscription.promotionalOffers.forEach((offer) => {
+            items.push({
+              type: "offer",
+              id: offer.id,
+              name: `${offer.type} Promotional Offer`,
+              offerType: offer.type,
+              parentName: subscription.referenceName,
+            });
+          });
+        }
+      });
+    });
+  }
+
+  return items;
+}
+
+function displayItemSelection(items: PricingItem[]): void {
+  logger.info("\n📋 Available items for pricing:");
+  logger.info("=".repeat(50));
+
+  items.forEach((item, index) => {
+    const itemNumber = index + 1;
+    let displayName = item.name;
+
+    if (item.type === "offer") {
+      displayName = `${item.name} - belongs to "${item.parentName}"`;
+    }
+
+    logger.info(
+      `${itemNumber}. ${
+        item.type.charAt(0).toUpperCase() + item.type.slice(1)
+      }: "${displayName}" (ID: ${item.id})`
+    );
+  });
+
+  logger.info("=".repeat(50));
+}
+
+async function promptForItemSelection(
+  items: PricingItem[]
+): Promise<PricingItem> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    const askForSelection = () => {
+      rl.question(
+        logger.prompt(`Select an item (1-${items.length}): `),
+        (answer) => {
+          const selection = parseInt(answer.trim(), 10);
+
+          if (isNaN(selection) || selection < 1 || selection > items.length) {
+            logger.error(
+              `❌ Invalid selection. Please enter a number between 1 and ${items.length}.`
+            );
+            displayItemSelection(items);
+            askForSelection();
+            return;
+          }
+
+          rl.close();
+          resolve(items[selection - 1]);
+        }
+      );
+    };
+
+    askForSelection();
+  });
+}
+
+async function selectPricingItem(
+  appStoreState: AppStoreModel
+): Promise<PricingItem> {
+  const items = collectPricingItems(appStoreState);
+
+  if (items.length === 0) {
+    throw new Error(
+      "No items available for pricing. Please ensure your input file contains items with pricing information."
+    );
+  }
+
+  displayItemSelection(items);
+  return await promptForItemSelection(items);
+}
+
 export async function startInteractivePricing(
   options: InteractivePricingOptions
 ): Promise<PricingRequest> {
@@ -42,10 +188,12 @@ export async function startInteractivePricing(
   const originalContent = fs.readFileSync(inputFile, "utf-8");
 
   try {
-    // TODO: Implement interactive prompts in next steps
-    logger.info("Interactive prompts will be implemented in the next steps.");
+    // Step 2: Implement item selection prompt
+    logger.info("🔍 Starting item selection...");
+    const selectedItem = await selectPricingItem(appStoreState);
 
-    // TODO: Step 2: Implement item selection prompt
+    logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
+
     // TODO: Step 3: Implement base price prompt
     // TODO: Step 4: Implement pricing strategy selection
     // TODO: Step 5: Implement minimum price prompt (conditional)
@@ -53,9 +201,10 @@ export async function startInteractivePricing(
     // Temporary return for now - will be replaced with actual gathered data
     return {
       selectedItem: {
-        type: "app",
-        id: "",
-        name: "",
+        type: selectedItem.type,
+        id: selectedItem.id,
+        name: selectedItem.name,
+        offerType: selectedItem.offerType,
       },
       basePrice: 0,
       pricingStrategy: "apple",

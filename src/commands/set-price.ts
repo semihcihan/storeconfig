@@ -16,8 +16,8 @@ const setPriceCommand: CommandModule = {
   describe:
     "Set prices for apps, in-app purchases, and subscriptions using interactive prompts",
   builder: {
-    input: {
-      alias: ["i", "input-file"],
+    file: {
+      alias: "f",
       describe:
         "Path to the current state file (e.g., fetch.json) - will be updated in place",
       demandOption: true,
@@ -25,7 +25,7 @@ const setPriceCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
-    const inputFile = argv.input as string;
+    const inputFile = argv.file as string;
 
     logger.info(`Setting prices using file: ${inputFile}`);
 
