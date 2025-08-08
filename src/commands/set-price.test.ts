@@ -21,6 +21,7 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 jest.mock("../utils/logger");
 jest.mock("../utils/validation-helpers");
 jest.mock("../services/set-price-prompt-service");
+jest.mock("../utils/shortcut-converter");
 
 const mockLogger = jest.mocked(logger);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
@@ -32,9 +33,11 @@ import {
   startInteractivePricing,
   pricingItemsExist,
 } from "../services/set-price-prompt-service";
+import { removeShortcuts } from "../utils/shortcut-converter";
 
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);
 const mockPricingItemsExist = jest.mocked(pricingItemsExist);
+const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 
 describe("set-price command", () => {
   const mockArgv = {
@@ -55,6 +58,7 @@ describe("set-price command", () => {
       pricingStrategy: "apple",
     });
     mockPricingItemsExist.mockReturnValue(undefined);
+    mockRemoveShortcuts.mockReturnValue({} as any);
   });
 
   afterEach(() => {
@@ -88,18 +92,28 @@ describe("set-price command", () => {
   describe("command execution", () => {
     it("should execute successfully with valid input", async () => {
       const mockData = { inAppPurchases: [{ id: "test" }] } as any;
+      const mockDataWithoutShortcuts = {
+        inAppPurchases: [{ id: "test" }],
+      } as any;
 
       mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
+      mockRemoveShortcuts.mockReturnValue(mockDataWithoutShortcuts);
+      mockValidateAppStoreModel.mockReturnValue(mockDataWithoutShortcuts);
 
       await setPriceCommand.handler!(mockArgv as any);
 
       expect(mockReadJsonFile).toHaveBeenCalledWith("test-file.json");
-      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(mockData, false);
-      expect(mockPricingItemsExist).toHaveBeenCalledWith(mockData);
+      expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockData);
+      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
+        mockDataWithoutShortcuts,
+        false
+      );
+      expect(mockPricingItemsExist).toHaveBeenCalledWith(
+        mockDataWithoutShortcuts
+      );
       expect(mockStartInteractivePricing).toHaveBeenCalledWith({
         inputFile: "test-file.json",
-        appStoreState: mockData,
+        appStoreState: mockDataWithoutShortcuts,
       });
     });
 

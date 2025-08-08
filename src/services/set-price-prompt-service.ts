@@ -109,10 +109,8 @@ function collectPricingItems(appStoreState: AppStoreModel): PricingItem[] {
 }
 
 function displayItemSelection(items: PricingItem[]): void {
-  logger.info("\n📋 Available items for pricing:");
-  logger.info("=".repeat(50));
-
-  items.forEach((item, index) => {
+  const separator = "=".repeat(50);
+  const itemLines = items.map((item, index) => {
     const itemNumber = index + 1;
     let displayName = item.name;
 
@@ -120,14 +118,15 @@ function displayItemSelection(items: PricingItem[]): void {
       displayName = `${item.name} - belongs to "${item.parentName}"`;
     }
 
-    logger.info(
-      `${itemNumber}. ${
-        item.type.charAt(0).toUpperCase() + item.type.slice(1)
-      }: "${displayName}" (ID: ${item.id})`
-    );
+    return `${itemNumber}. ${
+      item.type.charAt(0).toUpperCase() + item.type.slice(1)
+    }: "${displayName}" (ID: ${item.id})`;
   });
 
-  logger.info("=".repeat(50));
+  const displayText = `\n📋 Available items for pricing:\n${separator}\n${itemLines.join(
+    "\n"
+  )}\n${separator}`;
+  logger.info(displayText);
 }
 
 async function promptForItemSelection(
@@ -188,8 +187,6 @@ export async function startInteractivePricing(
   const originalContent = fs.readFileSync(inputFile, "utf-8");
 
   try {
-    // Step 2: Implement item selection prompt
-    logger.info("🔍 Starting item selection...");
     const selectedItem = await selectPricingItem(appStoreState);
 
     logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);

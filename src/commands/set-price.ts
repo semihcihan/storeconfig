@@ -10,6 +10,7 @@ import {
   startInteractivePricing,
   pricingItemsExist,
 } from "../services/set-price-prompt-service";
+import { removeShortcuts } from "../utils/shortcut-converter";
 
 const setPriceCommand: CommandModule = {
   command: "set-price",
@@ -32,7 +33,7 @@ const setPriceCommand: CommandModule = {
     try {
       // Validate file structure and content
       const appStoreState = validateAppStoreModel(
-        readJsonFile(inputFile),
+        removeShortcuts(readJsonFile(inputFile)),
         false
       );
 
