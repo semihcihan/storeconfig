@@ -8,6 +8,7 @@ import { setLogLevel, LOG_LEVELS, DEFAULT_LOG_LEVEL } from "./utils/logger";
 import validateFormatCmd from "./commands/validate";
 import applyCmd from "./commands/apply";
 import fetchCmd from "./commands/fetch";
+import setPriceCmd from "./commands/set-price";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ yargs(hideBin(process.argv))
   .command(validateFormatCmd)
   .command(applyCmd)
   .command(fetchCmd)
+  .command(setPriceCmd)
   .command({
     command: "plan",
     describe: "Show a plan of changes (dry run) - alias for apply --preview",
