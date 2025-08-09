@@ -30,9 +30,9 @@ export interface PricingRequest {
     name: string;
     offerType?: string;
   };
-  basePrice: number;
+  basePrice: string;
   pricingStrategy: "apple" | "purchasingPower";
-  minimumPrice?: number;
+  minimumPrice?: string;
 }
 
 export async function startInteractivePricing(

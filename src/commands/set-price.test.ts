@@ -54,7 +54,7 @@ describe("set-price command", () => {
         id: "",
         name: "",
       },
-      basePrice: 0,
+      basePrice: "0.00",
       pricingStrategy: "apple",
     });
     mockPricingItemsExist.mockReturnValue(undefined);
@@ -182,7 +182,7 @@ describe("set-price command", () => {
             id: "",
             name: "",
           },
-          basePrice: 0,
+          basePrice: "0.00",
           pricingStrategy: "apple",
         }
       );

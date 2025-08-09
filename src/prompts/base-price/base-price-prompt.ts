@@ -36,7 +36,7 @@ function findNearestPrices(
 export async function promptForBaseUsdPrice(
   selectedItem: PricingItem,
   appStoreState: AppStoreModel
-): Promise<number> {
+): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -76,9 +76,10 @@ export async function promptForBaseUsdPrice(
             return;
           }
 
+          const canonical = parsed.toFixed(2);
           if (
             normalizedAvailablePrices.length &&
-            !normalizedAvailablePrices.includes(parsed.toFixed(2))
+            !normalizedAvailablePrices.includes(canonical)
           ) {
             const nearest = findNearestPrices(
               parsed,
@@ -86,9 +87,7 @@ export async function promptForBaseUsdPrice(
               20
             );
             logger.error(
-              `❌ The price ${parsed.toFixed(
-                2
-              )} is not an available Apple price.`
+              `❌ The price ${canonical} is not an available Apple price.`
             );
             if (nearest.length) {
               logger.info(`Closest available prices:\n${nearest.join(", ")}`);
@@ -98,7 +97,7 @@ export async function promptForBaseUsdPrice(
           }
 
           rl.close();
-          resolve(parsed);
+          resolve(canonical);
         }
       );
     };
