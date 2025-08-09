@@ -20,7 +20,7 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 // Mock dependencies
 jest.mock("../utils/logger");
 jest.mock("../utils/validation-helpers");
-jest.mock("../services/set-price-prompt-service");
+jest.mock("../services/set-price-service");
 jest.mock("../utils/shortcut-converter");
 
 const mockLogger = jest.mocked(logger);
@@ -32,7 +32,7 @@ import setPriceCommand from "./set-price";
 import {
   startInteractivePricing,
   pricingItemsExist,
-} from "../services/set-price-prompt-service";
+} from "../services/set-price-service";
 import { removeShortcuts } from "../utils/shortcut-converter";
 
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);

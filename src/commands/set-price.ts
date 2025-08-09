@@ -9,7 +9,7 @@ import {
 import {
   startInteractivePricing,
   pricingItemsExist,
-} from "../services/set-price-prompt-service";
+} from "../services/set-price-service";
 import { removeShortcuts } from "../utils/shortcut-converter";
 
 const setPriceCommand: CommandModule = {

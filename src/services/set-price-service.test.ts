@@ -36,8 +36,8 @@ const mockLogger = jest.mocked(logger);
 import {
   pricingItemsExist,
   startInteractivePricing,
-} from "./set-price-prompt-service";
-import { collectPricingItems } from "../prompts/item-selection";
+} from "./set-price-service";
+import { collectPricingItems } from "../set-price/item-selection";
 import { fetchAppPricePoints } from "../domains/pricing/api-client";
 import {
   fetchInAppPurchases,
@@ -48,7 +48,7 @@ import {
   fetchSubscriptionGroups,
 } from "../domains/subscriptions/api-client";
 
-describe("set-price-prompt-service", () => {
+describe("set-price-service", () => {
   const testInputFile = "test-file.json";
   const mockRl = {
     question: jest.fn(),
@@ -430,7 +430,7 @@ describe("set-price-prompt-service", () => {
       );
       expect(nearestLine).toBeDefined();
       // Ensure ascending numeric order
-      expect(nearestLine).toContain("0.99, 1.99, 2.99");
+      expect(nearestLine).toContain("0.99 | 1.99 | 2.99");
     });
   });
 

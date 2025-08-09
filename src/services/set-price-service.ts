@@ -1,8 +1,8 @@
 import { logger } from "../utils/logger";
 import * as fs from "fs";
 import type { AppStoreModel } from "../utils/validation-helpers";
-import { selectPricingItem } from "../prompts/item-selection";
-import { promptForBaseUsdPrice } from "../prompts/base-price/base-price-prompt";
+import { selectPricingItem } from "../set-price/item-selection";
+import { promptForBaseUsdPrice } from "../set-price/base-price/base-price-prompt";
 
 export interface InteractivePricingOptions {
   inputFile: string;

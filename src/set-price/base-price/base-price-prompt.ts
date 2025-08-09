@@ -90,7 +90,7 @@ export async function promptForBaseUsdPrice(
               `❌ The price ${canonical} is not an available Apple price.`
             );
             if (nearest.length) {
-              logger.info(`Closest available prices:\n${nearest.join(", ")}`);
+              logger.info(`Closest available prices:\n${nearest.join(" | ")}`);
             }
             ask();
             return;
