@@ -18,6 +18,8 @@ type InAppPurchaseV2CreateRequest =
 type InAppPurchaseV2UpdateRequest =
   components["schemas"]["InAppPurchaseV2UpdateRequest"];
 type InAppPurchaseV2Response = components["schemas"]["InAppPurchaseV2Response"];
+type InAppPurchasePricePointsResponse =
+  components["schemas"]["InAppPurchasePricePointsResponse"];
 
 type InAppPurchaseLocalizationCreateRequest =
   components["schemas"]["InAppPurchaseLocalizationCreateRequest"];
@@ -354,32 +356,12 @@ export async function findIAPPricePointId(
   territory: string,
   iapId: string
 ): Promise<string> {
-  const response = await api.GET("/v2/inAppPurchases/{id}/pricePoints", {
-    params: {
-      path: { id: iapId },
-      query: {
-        limit: 200,
-        include: ["territory"],
-        "filter[territory]": [territory],
-      },
-    },
-  });
+  const response = await fetchIAPPricePoints(iapId, territory);
 
-  if (response.error) {
-    throw response.error;
-  }
+  const pricePoints: InAppPurchasePricePointsResponse["data"] =
+    (response as InAppPurchasePricePointsResponse)?.data ?? [];
 
-  let pricePoints: any[] = [];
-  if (
-    response.data &&
-    typeof response.data === "object" &&
-    Array.isArray((response.data as any).data)
-  ) {
-    pricePoints = (response.data as any).data;
-  }
-
-  // Find the price point that matches the price and territory
-  const pricePoint = pricePoints.find((point: any) => {
+  const pricePoint = pricePoints.find((point) => {
     const pointPrice = point.attributes?.customerPrice;
     const pointTerritoryId = point.relationships?.territory?.data?.id;
     return pointPrice === price && pointTerritoryId === territory;
@@ -403,6 +385,29 @@ export async function findIAPPricePointId(
   }
 
   return pricePoint.id;
+}
+
+// Fetch IAP price points for a given IAP and territory
+export async function fetchIAPPricePoints(
+  iapId: string,
+  territory: string
+): Promise<any> {
+  const response = await api.GET("/v2/inAppPurchases/{id}/pricePoints", {
+    params: {
+      path: { id: iapId },
+      query: {
+        limit: 200,
+        include: ["territory"],
+        "filter[territory]": [territory],
+      },
+    },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data;
 }
 
 // Create IAP price schedule

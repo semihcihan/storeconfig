@@ -48,7 +48,6 @@ export async function fetchAppPricePoints(
   appId: string,
   territory: string
 ): Promise<any> {
-  // Using any for now to avoid complex type issues
   const response = await api.GET("/v1/apps/{id}/appPricePoints", {
     params: {
       path: { id: appId },

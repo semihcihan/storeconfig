@@ -16,6 +16,17 @@ jest.mock("fs");
 jest.mock("readline");
 jest.mock("../utils/logger");
 jest.mock("../utils/validation-helpers");
+jest.mock("../domains/pricing/api-client", () => ({
+  fetchAppPricePoints: jest.fn(),
+}));
+jest.mock("../domains/in-app-purchases/api-client", () => ({
+  fetchInAppPurchases: jest.fn(),
+  fetchIAPPricePoints: jest.fn(),
+}));
+jest.mock("../domains/subscriptions/api-client", () => ({
+  fetchAllSubscriptionPricePoints: jest.fn(),
+  fetchSubscriptionGroups: jest.fn(),
+}));
 
 const mockFs = jest.mocked(fs);
 const mockReadline = jest.mocked(readline);
@@ -26,6 +37,15 @@ import {
   pricingItemsExist,
   startInteractivePricing,
 } from "./set-price-prompt-service";
+import { fetchAppPricePoints } from "../domains/pricing/api-client";
+import {
+  fetchInAppPurchases,
+  fetchIAPPricePoints,
+} from "../domains/in-app-purchases/api-client";
+import {
+  fetchAllSubscriptionPricePoints,
+  fetchSubscriptionGroups,
+} from "../domains/subscriptions/api-client";
 
 describe("set-price-prompt-service", () => {
   const testInputFile = "test-file.json";
@@ -38,6 +58,41 @@ describe("set-price-prompt-service", () => {
     jest.clearAllMocks();
     mockFs.readFileSync.mockReturnValue("{}");
     mockReadline.createInterface.mockReturnValue(mockRl as any);
+
+    // Default API client mocks
+    jest.mocked(fetchAppPricePoints).mockResolvedValue({
+      data: [
+        { attributes: { customerPrice: "0.99" } },
+        { attributes: { customerPrice: "1.99" } },
+      ],
+    } as any);
+
+    jest.mocked(fetchInAppPurchases).mockResolvedValue({
+      data: [
+        {
+          id: "iap-1",
+          attributes: { productId: "com.example.premium" },
+        },
+      ],
+    } as any);
+    jest.mocked(fetchIAPPricePoints).mockResolvedValue({
+      data: [{ attributes: { customerPrice: "0.99" } }],
+    } as any);
+
+    jest.mocked(fetchSubscriptionGroups).mockResolvedValue({
+      data: [],
+      included: [
+        {
+          type: "subscriptions",
+          id: "sub-1",
+          attributes: { productId: "com.example.monthly" },
+        },
+      ],
+      links: { self: "" },
+    } as any);
+    jest.mocked(fetchAllSubscriptionPricePoints).mockResolvedValue({
+      data: [{ attributes: { customerPrice: "0.99" } }],
+    } as any);
   });
 
   afterEach(() => {
@@ -139,8 +194,10 @@ describe("set-price-prompt-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
+      const answers = ["1", "0.99"]; // select app, then base price
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
-        callback("1"); // Select the app
+        const next = answers.shift();
+        callback(next);
       });
 
       const result = await startInteractivePricing({
@@ -182,8 +239,10 @@ describe("set-price-prompt-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
+      const answers = ["1", "0.99"]; // select iap, then base price
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
-        callback("1"); // Select the IAP
+        const next = answers.shift();
+        callback(next);
       });
 
       const result = await startInteractivePricing({
@@ -246,8 +305,10 @@ describe("set-price-prompt-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
+      const answers = ["2", "0.99"]; // select offer, then base price
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
-        callback("2"); // Select the introductory offer
+        const next = answers.shift();
+        callback(next);
       });
 
       const result = await startInteractivePricing({
@@ -278,7 +339,7 @@ describe("set-price-prompt-service", () => {
           appStoreState: appState,
         })
       ).rejects.toThrow(
-        "No items available for pricing. Please ensure your input file contains items with pricing information."
+        "No items available for pricing. Please ensure the app contains items with pricing information (app, in-app purchase, or subscription)."
       );
     });
 
