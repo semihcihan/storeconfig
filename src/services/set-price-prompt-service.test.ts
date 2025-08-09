@@ -37,6 +37,7 @@ import {
   pricingItemsExist,
   startInteractivePricing,
 } from "./set-price-prompt-service";
+import { collectPricingItems } from "../prompts/item-selection";
 import { fetchAppPricePoints } from "../domains/pricing/api-client";
 import {
   fetchInAppPurchases,
@@ -258,7 +259,7 @@ describe("set-price-prompt-service", () => {
       });
     });
 
-    it("should handle item selection for introductory offer", async () => {
+    it("should handle item selection for paid introductory offer (FREE_TRIAL excluded)", async () => {
       const appState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "123456789",
@@ -289,8 +290,12 @@ describe("set-price-prompt-service", () => {
                 ],
                 introductoryOffers: [
                   {
-                    type: "FREE_TRIAL",
-                    duration: "ONE_WEEK",
+                    type: "PAY_UP_FRONT",
+                    duration: "ONE_MONTH",
+                    prices: [
+                      { price: "0.99", territory: "USA" },
+                      { price: "0.99", territory: "TUR" },
+                    ],
                     availableTerritories: "worldwide",
                   },
                 ],
@@ -319,8 +324,8 @@ describe("set-price-prompt-service", () => {
       expect(result.selectedItem).toEqual({
         type: "offer",
         id: "com.example.monthly",
-        name: "FREE_TRIAL Introductory Offer",
-        offerType: "FREE_TRIAL",
+        name: "PAY_UP_FRONT Introductory Offer",
+        offerType: "PAY_UP_FRONT",
       });
     });
 
@@ -386,6 +391,106 @@ describe("set-price-prompt-service", () => {
         testInputFile,
         originalContent
       );
+    });
+
+    it("should show nearest Apple prices in ascending order when entered price is invalid", async () => {
+      const appState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "123456789",
+        pricing: {
+          baseTerritory: "USA",
+          prices: [{ price: "0.99", territory: "USA" }],
+        },
+      };
+
+      // Override available price points for this test
+      jest.mocked(fetchAppPricePoints).mockResolvedValue({
+        data: [
+          { attributes: { customerPrice: "2.99" } },
+          { attributes: { customerPrice: "0.99" } },
+          { attributes: { customerPrice: "1.99" } },
+        ],
+      } as any);
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
+      const answers = ["1", "1.50", "0.99"]; // select app, invalid price to trigger nearest list, then valid price
+      mockRl.question.mockImplementation((prompt: any, callback: any) => {
+        const next = answers.shift();
+        callback(next);
+      });
+
+      await startInteractivePricing({
+        inputFile: testInputFile,
+        appStoreState: appState,
+      });
+
+      const infoCalls = mockLogger.info.mock.calls.map((c) => String(c[0]));
+      const nearestLine = infoCalls.find((m) =>
+        m.includes("Closest available prices:")
+      );
+      expect(nearestLine).toBeDefined();
+      // Ensure ascending numeric order
+      expect(nearestLine).toContain("0.99, 1.99, 2.99");
+    });
+  });
+
+  describe("collectPricingItems", () => {
+    it("excludes FREE_TRIAL offers from selectable items", () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-123",
+        subscriptionGroups: [
+          {
+            referenceName: "Group A",
+            localizations: [
+              { locale: "en-US", name: "Group A", customName: null },
+            ],
+            subscriptions: [
+              {
+                productId: "sub.monthly",
+                referenceName: "Monthly",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [
+                  { locale: "en-US", name: "Monthly", description: "desc" },
+                ],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                    availableTerritories: "worldwide",
+                  },
+                  {
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 1,
+                    prices: [{ price: "0.99", territory: "USA" }],
+                    availableTerritories: "worldwide",
+                  },
+                ],
+                promotionalOffers: [
+                  {
+                    id: "promo-free",
+                    referenceName: "Promo Free",
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                  },
+                ],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const items = collectPricingItems(state as any);
+      const names = items.map((i) => i.name);
+      expect(names.some((n) => n.includes("FREE_TRIAL"))).toBe(false);
+      expect(names.some((n) => n.includes("PAY_AS_YOU_GO"))).toBe(true);
     });
   });
 });

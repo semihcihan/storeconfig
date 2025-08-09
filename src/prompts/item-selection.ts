@@ -43,27 +43,31 @@ export function collectPricingItems(
         });
 
         if (subscription.introductoryOffers) {
-          subscription.introductoryOffers.forEach((offer) => {
-            items.push({
-              type: "offer",
-              id: subscription.productId,
-              name: `${offer.type} Introductory Offer`,
-              offerType: offer.type,
-              parentName: subscription.referenceName,
+          subscription.introductoryOffers
+            .filter((offer) => offer.type !== "FREE_TRIAL")
+            .forEach((offer) => {
+              items.push({
+                type: "offer",
+                id: subscription.productId,
+                name: `${offer.type} Introductory Offer`,
+                offerType: offer.type,
+                parentName: subscription.referenceName,
+              });
             });
-          });
         }
 
         if (subscription.promotionalOffers) {
-          subscription.promotionalOffers.forEach((offer) => {
-            items.push({
-              type: "offer",
-              id: offer.id,
-              name: `${offer.type} Promotional Offer`,
-              offerType: offer.type,
-              parentName: subscription.referenceName,
+          subscription.promotionalOffers
+            .filter((offer) => offer.type !== "FREE_TRIAL")
+            .forEach((offer) => {
+              items.push({
+                type: "offer",
+                id: offer.id,
+                name: `${offer.type} Promotional Offer`,
+                offerType: offer.type,
+                parentName: subscription.referenceName,
+              });
             });
-          });
         }
       });
     });

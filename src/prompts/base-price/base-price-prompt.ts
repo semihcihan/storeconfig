@@ -24,12 +24,13 @@ function findNearestPrices(
   availablePrices: string[],
   count: number
 ): string[] {
-  const scored = availablePrices
+  const nearest = availablePrices
     .map((p) => ({ price: p, diff: Math.abs(Number(p) - enteredPrice) }))
     .sort((a, b) => a.diff - b.diff)
     .slice(0, Math.max(0, count))
     .map((s) => s.price);
-  return scored;
+  // Ensure output is ordered ascending numerically for clearer UX
+  return nearest.sort((a, b) => Number(a) - Number(b));
 }
 
 export async function promptForBaseUsdPrice(
@@ -44,6 +45,16 @@ export async function promptForBaseUsdPrice(
     selectedItem,
     appStoreState
   );
+
+  // Normalize available prices to two decimals for robust comparison (e.g., "4.0" → "4.00")
+  const normalizedAvailablePrices = Array.from(
+    new Set(
+      (availablePrices || [])
+        .map((p) => Number(p))
+        .filter((n) => Number.isFinite(n) && n >= 0)
+        .map((n) => n.toFixed(2))
+    )
+  ).sort((a, b) => Number(a) - Number(b));
 
   if (!availablePrices.length) {
     throw new Error(
@@ -66,22 +77,21 @@ export async function promptForBaseUsdPrice(
           }
 
           if (
-            availablePrices.length &&
-            !availablePrices.includes(parsed.toFixed(2))
+            normalizedAvailablePrices.length &&
+            !normalizedAvailablePrices.includes(parsed.toFixed(2))
           ) {
-            const nearest = findNearestPrices(parsed, availablePrices, 20);
+            const nearest = findNearestPrices(
+              parsed,
+              normalizedAvailablePrices,
+              20
+            );
             logger.error(
               `❌ The price ${parsed.toFixed(
                 2
-              )} is not an available Apple price point.`
-            );
-            logger.info(
-              `All available USD price points: ${availablePrices.join(", ")}`
+              )} is not an available Apple price.`
             );
             if (nearest.length) {
-              logger.info(
-                `Closest ${nearest.length} prices: ${nearest.join(", ")}`
-              );
+              logger.info(`Closest available prices:\n${nearest.join(", ")}`);
             }
             ask();
             return;
