@@ -195,7 +195,7 @@ describe("set-price-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["1", "0.99"]; // select app, then base price
+      const answers = ["1", "0.99", "1"]; // select app, base price, strategy=Apple
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);
@@ -240,7 +240,7 @@ describe("set-price-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["1", "0.99"]; // select iap, then base price
+      const answers = ["1", "0.99", "2"]; // select iap, base price, strategy=PurchasingPower
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);
@@ -310,7 +310,7 @@ describe("set-price-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["2", "0.99"]; // select offer, then base price
+      const answers = ["2", "0.99", "1"]; // select offer, base price, strategy=Apple
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);
@@ -413,7 +413,7 @@ describe("set-price-service", () => {
       } as any);
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["1", "1.50", "0.99"]; // select app, invalid price to trigger nearest list, then valid price
+      const answers = ["1", "1.50", "0.99", "1"]; // select app, invalid price, valid price, strategy
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);

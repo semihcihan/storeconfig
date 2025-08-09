@@ -2,14 +2,7 @@ import * as readline from "readline";
 import { logger } from "../../utils/logger";
 import type { AppStoreModel } from "../../utils/validation-helpers";
 import { fetchUsaPricePointsForSelectedItem } from "./price-point-fetcher";
-
-export interface PricingItem {
-  type: "app" | "inAppPurchase" | "subscription" | "offer";
-  id: string;
-  name: string;
-  offerType?: string;
-  parentName?: string;
-}
+import type { PricingItem } from "../../models/pricing-request";
 
 function parsePriceInputToNumber(input: string): number | null {
   const trimmed = input.trim();

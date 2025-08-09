@@ -161,7 +161,7 @@ The command will guide users through the following prompts:
 
 #### Phase 1: Core Infrastructure
 
-1. **✅Create command structure**
+1. **✅ Create command structure**
 
    - Add new command to CLI (e.g., `set-price`)
    - Set up command parameters (input file path)
@@ -169,12 +169,12 @@ The command will guide users through the following prompts:
 
 2. **✅ Implement item selection prompt** (COMPLETED)
 
-   - ✅ Create numbered list display for all available items (apps, IAPs, subscriptions, offers)
-   - ✅ Implement input validation for selection range
-   - ✅ Add error handling with re-prompt functionality
-   - ✅ Display clear labels with item names and IDs
+   - Create numbered list display for all available items (apps, IAPs, subscriptions, offers)
+   - Implement input validation for selection range
+   - Add error handling with re-prompt functionality
+   - Display clear labels with item names and IDs
 
-3. **Implement base price prompt**
+3. **✅ Implement base price prompt**
 
    - Create price input with format validation (non-negative)
    - Fetch available Apple price points for validation

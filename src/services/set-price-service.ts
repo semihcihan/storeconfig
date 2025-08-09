@@ -3,11 +3,14 @@ import * as fs from "fs";
 import type { AppStoreModel } from "../utils/validation-helpers";
 import { selectPricingItem } from "../set-price/item-selection";
 import { promptForBaseUsdPrice } from "../set-price/base-price/base-price-prompt";
+import { promptForPricingStrategy } from "../set-price/strategy-prompt";
 
 export interface InteractivePricingOptions {
   inputFile: string;
   appStoreState: AppStoreModel;
 }
+
+import type { PricingRequest } from "../models/pricing-request";
 
 export function pricingItemsExist(appStoreState: AppStoreModel): void {
   // Check if file contains at least one item
@@ -23,18 +26,6 @@ export function pricingItemsExist(appStoreState: AppStoreModel): void {
   }
 }
 
-export interface PricingRequest {
-  selectedItem: {
-    type: "app" | "inAppPurchase" | "subscription" | "offer";
-    id: string;
-    name: string;
-    offerType?: string;
-  };
-  basePrice: string;
-  pricingStrategy: "apple" | "purchasingPower";
-  minimumPrice?: string;
-}
-
 export async function startInteractivePricing(
   options: InteractivePricingOptions
 ): Promise<PricingRequest> {
@@ -48,9 +39,8 @@ export async function startInteractivePricing(
 
     logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
 
-    // Step 3: Base price prompt with validation against Apple's price points
     const basePrice = await promptForBaseUsdPrice(selectedItem, appStoreState);
-    // TODO: Step 4: Implement pricing strategy selection
+    const pricingStrategy = await promptForPricingStrategy();
     // TODO: Step 5: Implement minimum price prompt (conditional)
 
     // Temporary return for now - will be enhanced in next steps
@@ -62,7 +52,7 @@ export async function startInteractivePricing(
         offerType: selectedItem.offerType,
       },
       basePrice,
-      pricingStrategy: "apple",
+      pricingStrategy,
     };
   } catch (error) {
     logger.error(`Interactive pricing failed`, error);

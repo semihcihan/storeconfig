@@ -16,6 +16,7 @@ describe("RetryMiddleware", () => {
   let wrappedApi: any;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     // Reset mocks
     jest.clearAllMocks();
 
@@ -31,6 +32,10 @@ describe("RetryMiddleware", () => {
       maxAttempts: 3,
       rateLimitDelayMs: [10, 30, 60], // Progressive delays for testing
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe("Successful requests", () => {
@@ -56,7 +61,9 @@ describe("RetryMiddleware", () => {
         .mockRejectedValueOnce(rateLimitError)
         .mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3);
@@ -74,7 +81,9 @@ describe("RetryMiddleware", () => {
         rateLimitError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -102,7 +111,9 @@ describe("RetryMiddleware", () => {
         appleApiError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -131,7 +142,9 @@ describe("RetryMiddleware", () => {
         errorResponse
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -146,9 +159,18 @@ describe("RetryMiddleware", () => {
       // All calls fail with rate limit
       mockApiClient.GET.mockRejectedValue(rateLimitError);
 
-      await expect(wrappedApi.GET("/test/endpoint")).rejects.toThrow(
-        "GET /test/endpoint failed after 3 attempts. Last error:"
-      );
+      const promise = wrappedApi.GET("/test/endpoint");
+      // Suppress unhandled rejection warnings
+      promise.catch(() => {});
+      await jest.runAllTimersAsync();
+      try {
+        await promise;
+        fail("Expected promise to reject");
+      } catch (e: any) {
+        expect(String(e?.message ?? e)).toContain(
+          "GET /test/endpoint failed after 3 attempts. Last error:"
+        );
+      }
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
     });
 
@@ -161,7 +183,9 @@ describe("RetryMiddleware", () => {
         .mockRejectedValueOnce(rateLimitError)
         .mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3);
@@ -186,7 +210,9 @@ describe("RetryMiddleware", () => {
         serverError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -258,7 +284,9 @@ describe("RetryMiddleware", () => {
         networkError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -276,7 +304,9 @@ describe("RetryMiddleware", () => {
         undiciTimeoutError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -294,7 +324,9 @@ describe("RetryMiddleware", () => {
         fetchFailedError
       ).mockResolvedValueOnce(successResponse);
 
-      const result = await wrappedApi.GET("/test/endpoint");
+      const promise = wrappedApi.GET("/test/endpoint");
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
@@ -312,9 +344,17 @@ describe("RetryMiddleware", () => {
         maxAttempts: 2,
       });
 
-      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toThrow(
-        "GET /test/endpoint failed after 2 attempts. Last error:"
-      );
+      const p1 = customWrappedApi.GET("/test/endpoint");
+      p1.catch(() => {});
+      await jest.runAllTimersAsync();
+      try {
+        await p1;
+        fail("Expected promise to reject");
+      } catch (e: any) {
+        expect(String(e?.message ?? e)).toContain(
+          "GET /test/endpoint failed after 2 attempts. Last error:"
+        );
+      }
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2); // Custom maxAttempts
     });
 
@@ -329,9 +369,17 @@ describe("RetryMiddleware", () => {
       mockApiClient.GET.mockRejectedValue(error);
 
       // Should retry even 4xx errors with custom shouldRetry
-      await expect(customWrappedApi.GET("/test/endpoint")).rejects.toThrow(
-        "GET /test/endpoint failed after 3 attempts. Last error:"
-      );
+      const p2 = customWrappedApi.GET("/test/endpoint");
+      p2.catch(() => {});
+      await jest.runAllTimersAsync();
+      try {
+        await p2;
+        fail("Expected promise to reject");
+      } catch (e: any) {
+        expect(String(e?.message ?? e)).toContain(
+          "GET /test/endpoint failed after 3 attempts. Last error:"
+        );
+      }
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3); // Default maxAttempts
     });
   });

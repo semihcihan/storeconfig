@@ -8,15 +8,8 @@ import {
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
 import type { AppStoreModel } from "../../utils/validation-helpers";
+import type { PricingItem } from "../../models/pricing-request";
 import type { components } from "../../generated/app-store-connect-api";
-
-export interface PricingItem {
-  type: "app" | "inAppPurchase" | "subscription" | "offer";
-  id: string;
-  name: string;
-  offerType?: string;
-  parentName?: string;
-}
 
 type HasCustomerPrice = { attributes?: { customerPrice?: string | null } };
 type PricePointResponseShape = { data?: HasCustomerPrice[] | null };
