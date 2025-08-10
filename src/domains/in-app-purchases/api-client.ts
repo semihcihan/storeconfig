@@ -359,7 +359,7 @@ export async function findIAPPricePointId(
   const response = await fetchIAPPricePoints(iapId, territory);
 
   const pricePoints: InAppPurchasePricePointsResponse["data"] =
-    (response as InAppPurchasePricePointsResponse)?.data ?? [];
+    response?.data ?? [];
 
   const pricePoint = pricePoints.find((point) => {
     const pointPrice = point.attributes?.customerPrice;
@@ -391,7 +391,7 @@ export async function findIAPPricePointId(
 export async function fetchIAPPricePoints(
   iapId: string,
   territory: string
-): Promise<any> {
+): Promise<InAppPurchasePricePointsResponse> {
   const response = await api.GET("/v2/inAppPurchases/{id}/pricePoints", {
     params: {
       path: { id: iapId },
@@ -404,10 +404,18 @@ export async function fetchIAPPricePoints(
   });
 
   if (response.error) {
-    throw response.error;
+    throw new ContextualError(
+      "Failed to get IAP price points",
+      response.error,
+      {
+        iapId,
+        territory,
+        operation: "fetchIAPPricePoints",
+      }
+    );
   }
 
-  return response.data;
+  return response.data as InAppPurchasePricePointsResponse;
 }
 
 // Create IAP price schedule

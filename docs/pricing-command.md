@@ -44,7 +44,7 @@ The command will guide users through the following prompts:
 - **Respect minimum USD price**: If a computed per-territory price (USD-equivalent) falls below the minimum, raise it to the minimum before any rounding/tier mapping (details TBD)
 - **Apply to all territories** (no include/exclude filtering)
 - **Handle subscriptions without base territory** by generating territory prices without requiring users to enter values one-by-one
-- **Update the selected item** with the new pricing in the input file
+- **Update the selected item in the input file only** (no App Store API calls in this command)
 
 ### Data Sources
 
@@ -131,8 +131,9 @@ The command will guide users through the following prompts:
 
 1. **Input validation**: Validate all user inputs and file structure
 2. **Price calculation**: Calculate prices based on selected strategy and inputs
-3. **File update**: Update the input file in place with new pricing
-4. **Rollback**: If any error occurs during the process, restore from backup
+3. **File update**: Update the input file in place with new pricing (state-only)
+4. **No App Store side effects**: This command does not call App Store APIs; a separate command will apply changes to Apple
+5. **Rollback**: If any error occurs during the process, restore from backup
 
 #### Progress Indication
 
@@ -144,8 +145,8 @@ The command will guide users through the following prompts:
 **For items using PriceScheduleSchema (with base territory):**
 
 - Use existing `baseTerritory` and its price from the `prices` array
-- This functionality is already in place for items that support base territory pricing
-- Calculate all territory prices based on the base USD price and Apple's pricing tiers
+- Generate the appropriate `priceSchedule` structure in the local state (e.g., base territory USA with the chosen base USD price)
+- No network calls are made here; this only updates the local JSON
 
 **For items without PriceScheduleSchema (no base territory):**
 
@@ -181,57 +182,53 @@ The command will guide users through the following prompts:
    - Implement price point validation against Apple's pricing tiers
    - Add error handling with helpful error messages and all the available price suggestions along with a separate more clear X nearest price points to the inputted one
 
-4. **Implement pricing strategy selection**
+4. **✅ Implement pricing strategy selection**
 
    - Create numbered options for Apple vs Purchasing Power strategies
    - Implement input validation (1 or 2)
    - Add error handling with re-prompt functionality
    - Display clear descriptions for each strategy
 
-5. **Implement minimum price prompt (conditional)**
-
-   - Create optional minimum price input (only for Purchasing Power strategy)
-   - Implement validation rules (positive number, ≤ base price, valid decimal)
-   - Add skip functionality (Enter to skip)
-   - Implement error handling with re-prompt or skip options
-
 #### Phase 2: Apple Pricing Strategy
 
-3. **Implement Apple pricing calculation**
+3. **Implement Apple pricing calculation for items with base territory**
 
    - Handle items with PriceScheduleSchema (base territory)
    - Use existing base territory functionality
-   - Calculate all territory prices based on Apple's pricing tiers
 
 4. **Handle items without base territory**
 
    - Investigate and implement pricing for items without PriceScheduleSchema
    - Research alternative approaches for subscription pricing
-
-5. **Add progress indication**
    - Implement visual progress indicators during long operations
-   - Show current operation status
 
 #### Phase 3: File Operations & Safety
 
-6. **Implement file update logic**
+5. **Implement file update logic**
 
-   - Update selected item with new pricing in input file
-   - Ensure atomic updates (all-or-nothing)
+   - Update selected item with new pricing in input file (state-only)
+   - Ensure atomic updates (all-or-nothing) where feasible
    - Implement rollback functionality from backup
 
-7. **Add comprehensive error handling**
+6. **Add comprehensive error handling**
    - Validate all inputs and file structure
    - Handle API errors gracefully
    - Provide clear error messages and recovery options
 
 #### Phase 4: Purchasing Power Strategy (Future)
 
-8. **Implement purchasing power calculations**
+7. **Implement purchasing power calculations**
 
    - Use @currencies.json for PPP data
    - Calculate territory-specific price adjustments
    - Implement minimum price floor logic
+
+8. **Implement minimum price prompt (conditional)**
+
+   - Create optional minimum price input (only for Purchasing Power strategy)
+   - Implement validation rules (positive number, ≤ base price, valid decimal)
+   - Add skip functionality (Enter to skip)
+   - Implement error handling with re-prompt or skip options
 
 9. **Testing and refinement**
    - Test with various item types and scenarios

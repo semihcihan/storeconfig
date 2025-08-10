@@ -1,14 +1,14 @@
 import type { CommandModule } from "yargs";
-import { logger } from "../utils/logger";
 import * as fs from "fs";
+import { logger } from "../utils/logger";
 import {
   readJsonFile,
   validateAppStoreModel,
-  type AppStoreModel,
 } from "../utils/validation-helpers";
 import {
   startInteractivePricing,
   pricingItemsExist,
+  applyPricing,
 } from "../services/set-price-service";
 import { removeShortcuts } from "../utils/shortcut-converter";
 
@@ -45,13 +45,16 @@ const setPriceCommand: CommandModule = {
       );
 
       // Delegate to interactive pricing service
-      const pricingResult = await startInteractivePricing({
+      const pricingRequest = await startInteractivePricing({
         inputFile,
         appStoreState,
       });
 
-      // TODO: Phase 2 - Apply the pricing changes using the gathered data
-      logger.info("Pricing data gathered successfully:", pricingResult);
+      logger.info("Pricing data:", pricingRequest);
+
+      const updatedState = applyPricing(appStoreState, pricingRequest);
+      fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
+      logger.info("✅ Updated file with pricing changes");
     } catch (error) {
       logger.error(`Set-price failed`, error);
       process.exit(1);

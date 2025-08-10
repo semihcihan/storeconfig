@@ -67,10 +67,7 @@ async function loadCurrencyMapping(): Promise<CurrencyMapping> {
 }
 
 const date = "2024";
-/*
-We should manually fallback to https://www.imf.org/external/datamapper/api/?meta&geoitems&indicators&datasets&values=PPPEX
-PPP conversion factor, GDP (LCU per international $)
-*/
+
 async function fetchPPPData(): Promise<WorldBankData[]> {
   const apiEndpoint = `https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP?date=${date}&format=json&per_page=300`;
 
@@ -108,11 +105,7 @@ async function updateCurrenciesWithPPP(
   currencies: TerritoryData[],
   pppData: WorldBankData[],
   currencyMapping: CurrencyMapping
-): Promise<{
-  updatedCurrencies: TerritoryData[];
-  nullValueTerritories: string[];
-  missingPPPTerritories: string[];
-}> {
+): Promise<TerritoryData[]> {
   const updatedCurrencies = [...currencies];
   const nullValueTerritories: string[] = [];
   const missingPPPTerritories: string[] = [];
@@ -153,11 +146,22 @@ async function updateCurrenciesWithPPP(
     );
   }
 
-  return {
-    updatedCurrencies,
-    nullValueTerritories,
-    missingPPPTerritories,
-  };
+  if (nullValueTerritories.length > 0) {
+    logger.warn(
+      `Territories with null PPP values: ${nullValueTerritories.join(", ")}`
+    );
+  }
+
+  if (missingPPPTerritories.length > 0) {
+    logger.warn(
+      `Territories missing PPP data: ${missingPPPTerritories.join(", ")}`
+    );
+    logger.warn(
+      `We should manually fallback to https://www.imf.org/external/datamapper/api/?meta&geoitems&indicators&datasets&values=PPPEX PPP conversion factor, GDP (LCU per international $)`
+    );
+  }
+
+  return updatedCurrencies;
 }
 
 async function saveUpdatedCurrencies(
@@ -180,22 +184,13 @@ async function main(): Promise<void> {
   const currencyMapping = await loadCurrencyMapping();
   const pppData = await fetchPPPData();
 
-  const { updatedCurrencies, nullValueTerritories, missingPPPTerritories } =
-    await updateCurrenciesWithPPP(currencies, pppData, currencyMapping);
+  const updatedCurrencies = await updateCurrenciesWithPPP(
+    currencies,
+    pppData,
+    currencyMapping
+  );
 
   await saveUpdatedCurrencies(updatedCurrencies);
-
-  if (nullValueTerritories.length > 0) {
-    logger.warn(
-      `Territories with null PPP values: ${nullValueTerritories.join(", ")}`
-    );
-  }
-
-  if (missingPPPTerritories.length > 0) {
-    logger.warn(
-      `Territories missing PPP data: ${missingPPPTerritories.join(", ")}`
-    );
-  }
 
   logger.debug("PPP data fetch completed successfully");
 }

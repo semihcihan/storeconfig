@@ -11,6 +11,8 @@ export interface InteractivePricingOptions {
 }
 
 import type { PricingRequest } from "../models/pricing-request";
+import { z } from "zod";
+import { PriceScheduleSchema } from "../models/app-store";
 
 export function pricingItemsExist(appStoreState: AppStoreModel): void {
   // Check if file contains at least one item
@@ -67,4 +69,76 @@ export async function startInteractivePricing(
 
     throw error;
   }
+}
+
+type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
+
+function isAppleStrategy(request: PricingRequest): boolean {
+  return request.pricingStrategy === "apple";
+}
+
+const BASE_TERRITORY = "USA";
+
+function buildBaseTerritoryPriceSchedule(basePrice: string): PriceSchedule {
+  return {
+    baseTerritory: BASE_TERRITORY,
+    prices: [
+      {
+        price: basePrice,
+        territory: BASE_TERRITORY,
+      },
+    ],
+  };
+}
+
+export function applyPricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): AppStoreModel {
+  logger.debug(
+    `Preparing pricing update in state. Item: ${pricingRequest.selectedItem.type} (${pricingRequest.selectedItem.name}), Strategy: ${pricingRequest.pricingStrategy}`
+  );
+
+  if (!isAppleStrategy(pricingRequest)) {
+    throw new Error(
+      `Pricing strategy '${pricingRequest.pricingStrategy}' is not implemented yet`
+    );
+  }
+
+  const { selectedItem, basePrice } = pricingRequest;
+
+  if (selectedItem.type === "app") {
+    const schedule = buildBaseTerritoryPriceSchedule(basePrice);
+    appStoreState.pricing = schedule;
+    return appStoreState;
+  }
+
+  if (selectedItem.type === "inAppPurchase") {
+    if (
+      !appStoreState.inAppPurchases ||
+      appStoreState.inAppPurchases.length === 0
+    ) {
+      throw new Error("No in-app purchases found in the state");
+    }
+    const iapIndex = appStoreState.inAppPurchases.findIndex(
+      (p) => p.productId === selectedItem.id
+    );
+    if (iapIndex === -1) {
+      throw new Error(
+        `In-app purchase with productId '${selectedItem.id}' not found`
+      );
+    }
+    const schedule = buildBaseTerritoryPriceSchedule(basePrice);
+    appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
+    return appStoreState;
+  }
+
+  if (selectedItem.type === "subscription" || selectedItem.type === "offer") {
+    throw new Error(
+      `Apple pricing for '${selectedItem.type}' is not implemented yet for state updates`
+    );
+  }
+
+  const _never: never = selectedItem.type as never;
+  throw new Error(`Unsupported item type: ${_never as any}`);
 }

@@ -17,7 +17,7 @@ type PricePointResponseShape = { data?: HasCustomerPrice[] | null };
 function extractCustomerPricesFromResponse(
   response:
     | PricePointResponseShape
-    | components["schemas"]["AppPricePointsV3Response"]
+    | components["schemas"]["AppPricePointsV3Response"]["data"]
     | components["schemas"]["InAppPurchasePricePointsResponse"]
     | components["schemas"]["SubscriptionPricePointsResponse"]
 ): string[] {
@@ -41,29 +41,34 @@ function isAPISubscription(item: unknown): item is APISubscription {
   );
 }
 
-export async function fetchUsaPricePointsForSelectedItem(
+export async function fetchUsaPricePointsForApp(
+  appId: string
+): Promise<string[]> {
+  const USA = "USA";
+  const resp = await fetchAppPricePoints(appId, USA);
+  return extractCustomerPricesFromResponse(resp);
+}
+
+export async function fetchUsaPricePointsForInAppPurchase(
+  selectedItem: PricingItem,
+  appId: string
+): Promise<string[]> {
+  const USA = "USA";
+  const iaps = await fetchInAppPurchases(appId);
+  const iapData = (iaps.data || []).find(
+    (it) => it.attributes?.productId === selectedItem.id
+  );
+  const iapId = iapData?.id;
+  if (!iapId) return [];
+  const resp = await fetchIAPPricePoints(iapId, USA);
+  return extractCustomerPricesFromResponse(resp);
+}
+
+export async function fetchUsaPricePointsForSubscriptionOrOffer(
   selectedItem: PricingItem,
   appStoreState: AppStoreModel
 ): Promise<string[]> {
   const USA = "USA";
-
-  if (selectedItem.type === "app") {
-    const resp = await fetchAppPricePoints(appStoreState.appId, USA);
-    return extractCustomerPricesFromResponse(resp);
-  }
-
-  if (selectedItem.type === "inAppPurchase") {
-    const iaps = await fetchInAppPurchases(appStoreState.appId);
-    const iapData = (iaps.data || []).find(
-      (it) => it.attributes?.productId === selectedItem.id
-    );
-    const iapId = iapData?.id;
-    if (!iapId) return [];
-    const resp = await fetchIAPPricePoints(iapId, USA);
-    return extractCustomerPricesFromResponse(resp);
-  }
-
-  // subscription or offer → validate against subscription price points
   const groups = await fetchSubscriptionGroups(appStoreState.appId);
   const included = groups.included || [];
   let targetSubscription: APISubscription | undefined;
@@ -95,4 +100,22 @@ export async function fetchUsaPricePointsForSelectedItem(
   if (!subscriptionId) return [];
   const resp = await fetchAllSubscriptionPricePoints(subscriptionId, USA);
   return extractCustomerPricesFromResponse(resp);
+}
+
+export async function fetchUsaPricePointsForSelectedItem(
+  selectedItem: PricingItem,
+  appStoreState: AppStoreModel
+): Promise<string[]> {
+  if (selectedItem.type === "app") {
+    return fetchUsaPricePointsForApp(appStoreState.appId);
+  }
+
+  if (selectedItem.type === "inAppPurchase") {
+    return fetchUsaPricePointsForInAppPurchase(
+      selectedItem,
+      appStoreState.appId
+    );
+  }
+
+  return fetchUsaPricePointsForSubscriptionOrOffer(selectedItem, appStoreState);
 }

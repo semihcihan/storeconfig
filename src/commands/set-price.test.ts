@@ -11,6 +11,7 @@ import {
   validateAppStoreModel,
   readJsonFile,
 } from "../utils/validation-helpers";
+import * as fs from "fs";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -20,12 +21,18 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 // Mock dependencies
 jest.mock("../utils/logger");
 jest.mock("../utils/validation-helpers");
-jest.mock("../services/set-price-service");
+jest.mock("../services/set-price-service", () => ({
+  startInteractivePricing: jest.fn(),
+  pricingItemsExist: jest.fn(),
+  applyPricing: jest.fn((state: any) => state),
+}));
 jest.mock("../utils/shortcut-converter");
+jest.mock("fs");
 
 const mockLogger = jest.mocked(logger);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockReadJsonFile = jest.mocked(readJsonFile);
+const mockFs = jest.mocked(fs);
 
 // Import the command after mocking
 import setPriceCommand from "./set-price";
@@ -59,6 +66,7 @@ describe("set-price command", () => {
     });
     mockPricingItemsExist.mockReturnValue(undefined);
     mockRemoveShortcuts.mockReturnValue({} as any);
+    mockFs.writeFileSync.mockReturnValue(undefined as any);
   });
 
   afterEach(() => {
@@ -115,6 +123,7 @@ describe("set-price command", () => {
         inputFile: "test-file.json",
         appStoreState: mockDataWithoutShortcuts,
       });
+      expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
     it("should handle validation errors and exit", async () => {
@@ -174,18 +183,15 @@ describe("set-price command", () => {
 
       await setPriceCommand.handler!(mockArgv as any);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "Pricing data gathered successfully:",
-        {
-          selectedItem: {
-            type: "app",
-            id: "",
-            name: "",
-          },
-          basePrice: "0.00",
-          pricingStrategy: "apple",
-        }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith("Pricing data:", {
+        selectedItem: {
+          type: "app",
+          id: "",
+          name: "",
+        },
+        basePrice: "0.00",
+        pricingStrategy: "apple",
+      });
     });
   });
 });

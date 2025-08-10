@@ -36,6 +36,7 @@ const mockLogger = jest.mocked(logger);
 import {
   pricingItemsExist,
   startInteractivePricing,
+  applyPricing,
 } from "./set-price-service";
 import { collectPricingItems } from "../set-price/item-selection";
 import { fetchAppPricePoints } from "../domains/pricing/api-client";
@@ -94,6 +95,105 @@ describe("set-price-service", () => {
     jest.mocked(fetchAllSubscriptionPricePoints).mockResolvedValue({
       data: [{ attributes: { customerPrice: "0.99" } }],
     } as any);
+  });
+
+  describe("applyPricing", () => {
+    it("updates app pricing in place with USA base territory", () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+      } as any;
+
+      const result = applyPricing(state, {
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePrice: "0.99",
+        pricingStrategy: "apple",
+      });
+
+      expect(result).toBe(state);
+      expect(state.pricing).toEqual({
+        baseTerritory: "USA",
+        prices: [{ price: "0.99", territory: "USA" }],
+      });
+    });
+
+    it("updates IAP priceSchedule in place with USA base territory", () => {
+      const productId = "com.example.premium";
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        inAppPurchases: [
+          {
+            productId,
+            type: "NON_CONSUMABLE",
+            referenceName: "Premium Feature",
+            familySharable: false,
+            localizations: [
+              { locale: "en-US", name: "Premium Feature", description: "" },
+            ],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: "worldwide",
+            },
+          },
+        ],
+      } as any;
+
+      const result = applyPricing(state, {
+        selectedItem: { type: "inAppPurchase", id: productId, name: "Premium" },
+        basePrice: "1.99",
+        pricingStrategy: "apple",
+      });
+
+      expect(result).toBe(state);
+      expect(state.inAppPurchases![0].priceSchedule).toEqual({
+        baseTerritory: "USA",
+        prices: [{ price: "1.99", territory: "USA" }],
+      });
+    });
+
+    it("throws when IAP is not found", () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        inAppPurchases: [],
+      } as any;
+
+      expect(() =>
+        applyPricing(state, {
+          selectedItem: { type: "inAppPurchase", id: "missing", name: "IAP" },
+          basePrice: "0.99",
+          pricingStrategy: "apple",
+        })
+      ).toThrow("No in-app purchases found in the state");
+    });
+
+    it("throws for subscription and offer (not implemented)", () => {
+      const baseState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+      } as any;
+
+      expect(() =>
+        applyPricing(baseState, {
+          selectedItem: { type: "subscription", id: "sub", name: "Sub" },
+          basePrice: "0.99",
+          pricingStrategy: "apple",
+        })
+      ).toThrow(
+        "Apple pricing for 'subscription' is not implemented yet for state updates"
+      );
+
+      expect(() =>
+        applyPricing(baseState, {
+          selectedItem: { type: "offer", id: "offer", name: "Offer" },
+          basePrice: "0.99",
+          pricingStrategy: "apple",
+        })
+      ).toThrow(
+        "Apple pricing for 'offer' is not implemented yet for state updates"
+      );
+    });
   });
 
   afterEach(() => {
