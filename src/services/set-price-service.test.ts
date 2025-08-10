@@ -64,8 +64,8 @@ describe("set-price-service", () => {
     // Default API client mocks
     jest.mocked(fetchAppPricePoints).mockResolvedValue({
       data: [
-        { attributes: { customerPrice: "0.99" } },
-        { attributes: { customerPrice: "1.99" } },
+        { id: "price-1", attributes: { customerPrice: "0.99" } },
+        { id: "price-2", attributes: { customerPrice: "1.99" } },
       ],
     } as any);
 
@@ -78,7 +78,7 @@ describe("set-price-service", () => {
       ],
     } as any);
     jest.mocked(fetchIAPPricePoints).mockResolvedValue({
-      data: [{ attributes: { customerPrice: "0.99" } }],
+      data: [{ id: "iap-price-1", attributes: { customerPrice: "0.99" } }],
     } as any);
 
     jest.mocked(fetchSubscriptionGroups).mockResolvedValue({
@@ -93,7 +93,7 @@ describe("set-price-service", () => {
       links: { self: "" },
     } as any);
     jest.mocked(fetchAllSubscriptionPricePoints).mockResolvedValue({
-      data: [{ attributes: { customerPrice: "0.99" } }],
+      data: [{ id: "sub-price-1", attributes: { customerPrice: "0.99" } }],
     } as any);
   });
 
@@ -106,7 +106,7 @@ describe("set-price-service", () => {
 
       const result = applyPricing(state, {
         selectedItem: { type: "app", id: "app-1", name: "App" },
-        basePrice: "0.99",
+        basePricePoint: { id: "price-1", price: "0.99" },
         pricingStrategy: "apple",
       });
 
@@ -141,7 +141,7 @@ describe("set-price-service", () => {
 
       const result = applyPricing(state, {
         selectedItem: { type: "inAppPurchase", id: productId, name: "Premium" },
-        basePrice: "1.99",
+        basePricePoint: { id: "price-2", price: "1.99" },
         pricingStrategy: "apple",
       });
 
@@ -162,7 +162,7 @@ describe("set-price-service", () => {
       expect(() =>
         applyPricing(state, {
           selectedItem: { type: "inAppPurchase", id: "missing", name: "IAP" },
-          basePrice: "0.99",
+          basePricePoint: { id: "price-4", price: "0.99" },
           pricingStrategy: "apple",
         })
       ).toThrow("No in-app purchases found in the state");
@@ -177,7 +177,7 @@ describe("set-price-service", () => {
       expect(() =>
         applyPricing(baseState, {
           selectedItem: { type: "subscription", id: "sub", name: "Sub" },
-          basePrice: "0.99",
+          basePricePoint: { id: "price-5", price: "0.99" },
           pricingStrategy: "apple",
         })
       ).toThrow(
@@ -187,7 +187,7 @@ describe("set-price-service", () => {
       expect(() =>
         applyPricing(baseState, {
           selectedItem: { type: "offer", id: "offer", name: "Offer" },
-          basePrice: "0.99",
+          basePricePoint: { id: "price-6", price: "0.99" },
           pricingStrategy: "apple",
         })
       ).toThrow(
@@ -506,9 +506,9 @@ describe("set-price-service", () => {
       // Override available price points for this test
       jest.mocked(fetchAppPricePoints).mockResolvedValue({
         data: [
-          { attributes: { customerPrice: "2.99" } },
-          { attributes: { customerPrice: "0.99" } },
-          { attributes: { customerPrice: "1.99" } },
+          { id: "price-3", attributes: { customerPrice: "2.99" } },
+          { id: "price-1", attributes: { customerPrice: "0.99" } },
+          { id: "price-2", attributes: { customerPrice: "1.99" } },
         ],
       } as any);
 

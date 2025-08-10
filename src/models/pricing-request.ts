@@ -1,5 +1,10 @@
 export type PricingStrategy = "apple" | "purchasingPower";
 
+export interface PricePointInfo {
+  id: string;
+  price: string;
+}
+
 export interface PricingItem {
   type: "app" | "inAppPurchase" | "subscription" | "offer";
   id: string;
@@ -10,7 +15,7 @@ export interface PricingItem {
 
 export interface PricingRequest {
   selectedItem: PricingItem;
-  basePrice: string;
+  basePricePoint: PricePointInfo;
   pricingStrategy: PricingStrategy;
   minimumPrice?: string;
 }

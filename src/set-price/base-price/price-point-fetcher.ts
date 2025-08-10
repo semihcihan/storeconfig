@@ -8,28 +8,45 @@ import {
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
 import type { AppStoreModel } from "../../utils/validation-helpers";
-import type { PricingItem } from "../../models/pricing-request";
+import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 import type { components } from "../../generated/app-store-connect-api";
 
-type HasCustomerPrice = { attributes?: { customerPrice?: string | null } };
+type HasCustomerPrice = {
+  id?: string;
+  attributes?: { customerPrice?: string | null };
+};
 type PricePointResponseShape = { data?: HasCustomerPrice[] | null };
 
-function extractCustomerPricesFromResponse(
+function extractPricePointInfoFromResponse(
   response:
     | PricePointResponseShape
     | components["schemas"]["AppPricePointsV3Response"]["data"]
     | components["schemas"]["InAppPurchasePricePointsResponse"]
     | components["schemas"]["SubscriptionPricePointsResponse"]
-): string[] {
+): PricePointInfo[] {
   if (!response || !Array.isArray((response as PricePointResponseShape).data)) {
     return [];
   }
   const dataArray = (response as PricePointResponseShape).data ?? [];
-  const prices = dataArray
-    .map((item) => item?.attributes?.customerPrice)
-    .filter((p): p is string => typeof p === "string");
-  const uniquePrices = Array.from(new Set(prices));
-  return uniquePrices.sort((a, b) => Number(a) - Number(b));
+  const pricePoints = dataArray
+    .map((item) => {
+      const price = item?.attributes?.customerPrice;
+      if (typeof price === "string" && item?.id) {
+        return { id: item.id, price };
+      }
+      return null;
+    })
+    .filter((p): p is PricePointInfo => p !== null);
+
+  const uniquePricePoints = pricePoints.reduce((acc, current) => {
+    const existing = acc.find((item) => item.price === current.price);
+    if (!existing) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as PricePointInfo[]);
+
+  return uniquePricePoints.sort((a, b) => Number(a.price) - Number(b.price));
 }
 
 type APISubscription = components["schemas"]["Subscription"];
@@ -43,16 +60,16 @@ function isAPISubscription(item: unknown): item is APISubscription {
 
 export async function fetchUsaPricePointsForApp(
   appId: string
-): Promise<string[]> {
+): Promise<PricePointInfo[]> {
   const USA = "USA";
   const resp = await fetchAppPricePoints(appId, USA);
-  return extractCustomerPricesFromResponse(resp);
+  return extractPricePointInfoFromResponse(resp);
 }
 
 export async function fetchUsaPricePointsForInAppPurchase(
   selectedItem: PricingItem,
   appId: string
-): Promise<string[]> {
+): Promise<PricePointInfo[]> {
   const USA = "USA";
   const iaps = await fetchInAppPurchases(appId);
   const iapData = (iaps.data || []).find(
@@ -61,13 +78,13 @@ export async function fetchUsaPricePointsForInAppPurchase(
   const iapId = iapData?.id;
   if (!iapId) return [];
   const resp = await fetchIAPPricePoints(iapId, USA);
-  return extractCustomerPricesFromResponse(resp);
+  return extractPricePointInfoFromResponse(resp);
 }
 
 export async function fetchUsaPricePointsForSubscriptionOrOffer(
   selectedItem: PricingItem,
   appStoreState: AppStoreModel
-): Promise<string[]> {
+): Promise<PricePointInfo[]> {
   const USA = "USA";
   const groups = await fetchSubscriptionGroups(appStoreState.appId);
   const included = groups.included || [];
@@ -99,13 +116,13 @@ export async function fetchUsaPricePointsForSubscriptionOrOffer(
   const subscriptionId = targetSubscription?.id;
   if (!subscriptionId) return [];
   const resp = await fetchAllSubscriptionPricePoints(subscriptionId, USA);
-  return extractCustomerPricesFromResponse(resp);
+  return extractPricePointInfoFromResponse(resp);
 }
 
 export async function fetchUsaPricePointsForSelectedItem(
   selectedItem: PricingItem,
   appStoreState: AppStoreModel
-): Promise<string[]> {
+): Promise<PricePointInfo[]> {
   if (selectedItem.type === "app") {
     return fetchUsaPricePointsForApp(appStoreState.appId);
   }

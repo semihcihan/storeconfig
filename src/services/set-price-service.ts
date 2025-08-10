@@ -2,7 +2,7 @@ import { logger } from "../utils/logger";
 import * as fs from "fs";
 import type { AppStoreModel } from "../utils/validation-helpers";
 import { selectPricingItem } from "../set-price/item-selection";
-import { promptForBaseUsdPrice } from "../set-price/base-price/base-price-prompt";
+import { promptForBasePricePoint } from "../set-price/base-price/base-price-prompt";
 import { promptForPricingStrategy } from "../set-price/strategy-prompt";
 
 export interface InteractivePricingOptions {
@@ -41,7 +41,10 @@ export async function startInteractivePricing(
 
     logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
 
-    const basePrice = await promptForBaseUsdPrice(selectedItem, appStoreState);
+    const basePricePoint = await promptForBasePricePoint(
+      selectedItem,
+      appStoreState
+    );
     const pricingStrategy = await promptForPricingStrategy();
     // TODO: Step 5: Implement minimum price prompt (conditional)
 
@@ -53,7 +56,7 @@ export async function startInteractivePricing(
         name: selectedItem.name,
         offerType: selectedItem.offerType,
       },
-      basePrice,
+      basePricePoint,
       pricingStrategy,
     };
   } catch (error) {
@@ -103,12 +106,19 @@ export function applyPricing(
     throw new Error(
       `Pricing strategy '${pricingRequest.pricingStrategy}' is not implemented yet`
     );
+  } else {
+    return applyApplePricing(appStoreState, pricingRequest);
   }
+}
 
-  const { selectedItem, basePrice } = pricingRequest;
+function applyApplePricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): AppStoreModel {
+  const { selectedItem, basePricePoint } = pricingRequest;
 
   if (selectedItem.type === "app") {
-    const schedule = buildBaseTerritoryPriceSchedule(basePrice);
+    const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
     appStoreState.pricing = schedule;
     return appStoreState;
   }
@@ -128,7 +138,7 @@ export function applyPricing(
         `In-app purchase with productId '${selectedItem.id}' not found`
       );
     }
-    const schedule = buildBaseTerritoryPriceSchedule(basePrice);
+    const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
     appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
     return appStoreState;
   }

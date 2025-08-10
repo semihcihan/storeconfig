@@ -2,7 +2,7 @@ import * as readline from "readline";
 import { logger } from "../../utils/logger";
 import type { AppStoreModel } from "../../utils/validation-helpers";
 import { fetchUsaPricePointsForSelectedItem } from "./price-point-fetcher";
-import type { PricingItem } from "../../models/pricing-request";
+import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 
 function parsePriceInputToNumber(input: string): number | null {
   const trimmed = input.trim();
@@ -26,15 +26,15 @@ function findNearestPrices(
   return nearest.sort((a, b) => Number(a) - Number(b));
 }
 
-export async function promptForBaseUsdPrice(
+export async function promptForBasePricePoint(
   selectedItem: PricingItem,
   appStoreState: AppStoreModel
-): Promise<string> {
+): Promise<PricePointInfo> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
-  const availablePrices = await fetchUsaPricePointsForSelectedItem(
+  const availablePricePoints = await fetchUsaPricePointsForSelectedItem(
     selectedItem,
     appStoreState
   );
@@ -42,14 +42,14 @@ export async function promptForBaseUsdPrice(
   // Normalize available prices to two decimals for robust comparison (e.g., "4.0" → "4.00")
   const normalizedAvailablePrices = Array.from(
     new Set(
-      (availablePrices || [])
-        .map((p) => Number(p))
+      (availablePricePoints || [])
+        .map((p) => Number(p.price))
         .filter((n) => Number.isFinite(n) && n >= 0)
         .map((n) => n.toFixed(2))
     )
   ).sort((a, b) => Number(a) - Number(b));
 
-  if (!availablePrices.length) {
+  if (!availablePricePoints.length) {
     throw new Error(
       "No available Apple price points found. This is unexpected. Please try again."
     );
@@ -90,7 +90,15 @@ export async function promptForBaseUsdPrice(
           }
 
           rl.close();
-          resolve(canonical);
+          const selectedPricePoint = availablePricePoints.find(
+            (p) => p.price === canonical
+          );
+          if (selectedPricePoint) {
+            resolve(selectedPricePoint);
+          } else {
+            // This shouldn't happen since we validated the price, but handle it gracefully
+            throw new Error(`Price point not found for price ${canonical}`);
+          }
         }
       );
     };
