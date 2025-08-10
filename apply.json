@@ -1,0 +1,193 @@
+{
+  "schemaVersion": "1.0.0",
+  "appId": "6503259293",
+  "primaryLocale": "en-US",
+  "pricing": {
+    "baseTerritory": "CAN",
+    "prices": [
+      {
+        "price": "20.99",
+        "territory": "CAN"
+      },
+      {
+        "price": "17.0",
+        "territory": "CHN"
+      },
+      {
+        "price": "50.99",
+        "territory": "TUR"
+      },
+      {
+        "price": "10.99",
+        "territory": "USA"
+      }
+    ]
+  },
+  "availableTerritories": ["TUR", "USA", "GBR", "CHN"],
+  "inAppPurchases": [
+    {
+      "productId": "new_product_id_10",
+      "type": "CONSUMABLE",
+      "referenceName": "weekly hey",
+      "familySharable": false,
+      "priceSchedule": {
+        "baseTerritory": "GBR",
+        "prices": [
+          {
+            "price": "10.99",
+            "territory": "GBR"
+          },
+          {
+            "price": "20.99",
+            "territory": "TUR"
+          },
+          {
+            "price": "10.99",
+            "territory": "USA"
+          }
+        ]
+      },
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Weekly Premium",
+          "description": "Weekly premium subscription"
+        },
+        {
+          "locale": "en-GB",
+          "name": "Weekly Premium",
+          "description": "Weekly premium subscription"
+        }
+      ],
+      "reviewNote": "heyy",
+      "availability": {
+        "availableInNewTerritories": false,
+        "availableTerritories": ["AUS", "NZL", "CAN", "GBR", "USA"]
+      }
+    }
+  ],
+  "subscriptionGroups": [
+    {
+      "referenceName": "weekly hey dsfgsadf asdf",
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Haftalık Premium asdf as asdf ",
+          "customName": "Haftalık Premium dfgh  asdf "
+        },
+        {
+          "locale": "en-GB",
+          "name": "Weekly Premiumsdfs sdf s",
+          "customName": "Weekly Premiumfdghdfs gd"
+        }
+      ],
+      "subscriptions": [
+        {
+          "productId": "new_product_id_10123",
+          "referenceName": "weekly heysdf",
+          "groupLevel": 1,
+          "subscriptionPeriod": "ONE_WEEK",
+          "familySharable": false,
+          "prices": [
+            {
+              "price": "10.99",
+              "territory": "GBR"
+            },
+            {
+              "price": "10.99",
+              "territory": "USA"
+            }
+          ],
+          "localizations": [
+            {
+              "locale": "en-GB",
+              "name": "Weekly Premium",
+              "description": "Weekly premium subscription"
+            }
+          ],
+          "introductoryOffers": [
+            {
+              "type": "PAY_UP_FRONT",
+              "duration": "TWO_MONTHS",
+              "prices": [
+                {
+                  "price": "10.99",
+                  "territory": "GBR"
+                }
+              ],
+              "availableTerritories": ["GBR"]
+            },
+            {
+              "type": "FREE_TRIAL",
+              "duration": "THREE_DAYS",
+              "availableTerritories": ["CAN"]
+            },
+            {
+              "type": "PAY_AS_YOU_GO",
+              "numberOfPeriods": 5,
+              "prices": [
+                {
+                  "price": "20.0",
+                  "territory": "CHN"
+                },
+                {
+                  "price": "10.99",
+                  "territory": "PER"
+                },
+                {
+                  "price": "10.99",
+                  "territory": "TUR"
+                }
+              ],
+              "availableTerritories": ["CHN", "PER", "TUR"]
+            }
+          ],
+          "promotionalOffers": [],
+          "reviewNote": "heyy",
+          "availability": {
+            "availableInNewTerritories": false,
+            "availableTerritories": ["GBR"]
+          }
+        }
+      ]
+    }
+  ],
+  "versionString": "2.2.0",
+  "localizations": [
+    {
+      "locale": "hr",
+      "description": "description hr",
+      "name": "name hr"
+    },
+    {
+      "locale": "fr-FR",
+      "description": "description fr"
+    },
+    {
+      "locale": "it"
+    },
+    {
+      "locale": "en-US",
+      "description": "Optimized test descriptionnnnn new",
+      "keywords": "optimized,test,keywords,some",
+      "marketingUrl": "http://test.com/optimized",
+      "promotionalText": "optimized test promo",
+      "supportUrl": "http://test.com/optimized-support",
+      "name": "Test App Name Updated",
+      "subtitle": "Test App Subtitle Updated",
+      "privacyPolicyUrl": "http://test.com/privacy-updated",
+      "privacyChoicesUrl": "http://test.com/privacy-choices-updated"
+    },
+    {
+      "locale": "cs",
+      "name": "name cs"
+    },
+    {
+      "locale": "zh-Hant",
+      "description": "description zh-Hant"
+    },
+    {
+      "locale": "zh-Hans"
+    }
+  ]
+}

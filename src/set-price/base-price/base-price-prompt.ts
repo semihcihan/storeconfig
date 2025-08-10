@@ -39,15 +39,15 @@ export async function promptForBasePricePoint(
     appStoreState
   );
 
-  // Normalize available prices to two decimals for robust comparison (e.g., "4.0" → "4.00")
-  const normalizedAvailablePrices = Array.from(
+  // Normalize available price points to two decimals for robust comparison (e.g., "4.0" → "4.00")
+  const normalizedAvailablePricePoints = Array.from(
     new Set(
       (availablePricePoints || [])
-        .map((p) => Number(p.price))
-        .filter((n) => Number.isFinite(n) && n >= 0)
-        .map((n) => n.toFixed(2))
+        .map((p) => ({ id: p.id, price: Number(p.price) }))
+        .filter((p) => Number.isFinite(p.price) && p.price >= 0)
+        .map((p) => ({ id: p.id, price: p.price.toFixed(2) }))
     )
-  ).sort((a, b) => Number(a) - Number(b));
+  ).sort((a, b) => Number(a.price) - Number(b.price));
 
   if (!availablePricePoints.length) {
     throw new Error(
@@ -71,12 +71,12 @@ export async function promptForBasePricePoint(
 
           const canonical = parsed.toFixed(2);
           if (
-            normalizedAvailablePrices.length &&
-            !normalizedAvailablePrices.includes(canonical)
+            normalizedAvailablePricePoints.length &&
+            !normalizedAvailablePricePoints.some((p) => p.price === canonical)
           ) {
             const nearest = findNearestPrices(
               parsed,
-              normalizedAvailablePrices,
+              normalizedAvailablePricePoints.map((p) => p.price),
               20
             );
             logger.error(
@@ -90,8 +90,10 @@ export async function promptForBasePricePoint(
           }
 
           rl.close();
+          const selectedNormalizedPricePoint =
+            normalizedAvailablePricePoints.find((p) => p.price === canonical);
           const selectedPricePoint = availablePricePoints.find(
-            (p) => p.price === canonical
+            (p) => p.id === selectedNormalizedPricePoint?.id
           );
           if (selectedPricePoint) {
             resolve(selectedPricePoint);

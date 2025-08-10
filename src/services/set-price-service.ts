@@ -4,6 +4,17 @@ import type { AppStoreModel } from "../utils/validation-helpers";
 import { selectPricingItem } from "../set-price/item-selection";
 import { promptForBasePricePoint } from "../set-price/base-price/base-price-prompt";
 import { promptForPricingStrategy } from "../set-price/strategy-prompt";
+import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
+import {
+  SubscriptionSchema,
+  PromotionalOfferSchema,
+  IntroductoryOfferSchema,
+} from "../models/app-store";
+import { z } from "zod";
+
+type Subscription = z.infer<typeof SubscriptionSchema>;
+type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
+type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 
 export interface InteractivePricingOptions {
   inputFile: string;
@@ -11,7 +22,6 @@ export interface InteractivePricingOptions {
 }
 
 import type { PricingRequest } from "../models/pricing-request";
-import { z } from "zod";
 import { PriceScheduleSchema } from "../models/app-store";
 
 export function pricingItemsExist(appStoreState: AppStoreModel): void {
@@ -94,10 +104,10 @@ function buildBaseTerritoryPriceSchedule(basePrice: string): PriceSchedule {
   };
 }
 
-export function applyPricing(
+export async function applyPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
-): AppStoreModel {
+): Promise<AppStoreModel> {
   logger.debug(
     `Preparing pricing update in state. Item: ${pricingRequest.selectedItem.type} (${pricingRequest.selectedItem.name}), Strategy: ${pricingRequest.pricingStrategy}`
   );
@@ -106,49 +116,170 @@ export function applyPricing(
     throw new Error(
       `Pricing strategy '${pricingRequest.pricingStrategy}' is not implemented yet`
     );
-  } else {
-    return applyApplePricing(appStoreState, pricingRequest);
+  }
+
+  return await applyApplePricing(appStoreState, pricingRequest);
+}
+
+async function applyApplePricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): Promise<AppStoreModel> {
+  const { selectedItem } = pricingRequest;
+
+  switch (selectedItem.type) {
+    case "app":
+      return applyAppPricing(appStoreState, pricingRequest);
+    case "inAppPurchase":
+      return applyInAppPurchasePricing(appStoreState, pricingRequest);
+    case "subscription":
+      return applySubscriptionPricing(appStoreState, pricingRequest);
+    case "offer":
+      return applyOfferPricing(appStoreState, pricingRequest);
+    default:
+      const _never: never = selectedItem.type as never;
+      throw new Error(`Unsupported item type: ${_never as any}`);
   }
 }
 
-function applyApplePricing(
+async function applyAppPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
-): AppStoreModel {
+): Promise<AppStoreModel> {
+  const { basePricePoint } = pricingRequest;
+  const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
+  appStoreState.pricing = schedule;
+  return Promise.resolve(appStoreState);
+}
+
+async function applyInAppPurchasePricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): Promise<AppStoreModel> {
   const { selectedItem, basePricePoint } = pricingRequest;
 
-  if (selectedItem.type === "app") {
-    const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
-    appStoreState.pricing = schedule;
-    return appStoreState;
+  if (
+    !appStoreState.inAppPurchases ||
+    appStoreState.inAppPurchases.length === 0
+  ) {
+    return Promise.reject(new Error("No in-app purchases found in the state"));
   }
 
-  if (selectedItem.type === "inAppPurchase") {
-    if (
-      !appStoreState.inAppPurchases ||
-      appStoreState.inAppPurchases.length === 0
-    ) {
-      throw new Error("No in-app purchases found in the state");
-    }
-    const iapIndex = appStoreState.inAppPurchases.findIndex(
-      (p) => p.productId === selectedItem.id
+  const iapIndex = appStoreState.inAppPurchases.findIndex(
+    (p) => p.productId === selectedItem.id
+  );
+
+  if (iapIndex === -1) {
+    return Promise.reject(
+      new Error(`In-app purchase with productId '${selectedItem.id}' not found`)
     );
-    if (iapIndex === -1) {
-      throw new Error(
-        `In-app purchase with productId '${selectedItem.id}' not found`
+  }
+
+  const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
+  appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
+  return Promise.resolve(appStoreState);
+}
+
+async function applySubscriptionPricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): Promise<AppStoreModel> {
+  const { selectedItem, basePricePoint } = pricingRequest;
+
+  const subscription = findSubscriptionInState(appStoreState, selectedItem.id);
+
+  if (!subscription) {
+    return Promise.reject(
+      new Error(`Subscription with ID ${selectedItem.id} not found`)
+    );
+  }
+
+  const prices = await buildSubscriptionPricesWithEqualizations(
+    basePricePoint.id
+  );
+
+  subscription.prices = prices;
+  return appStoreState;
+}
+
+async function applyOfferPricing(
+  appStoreState: AppStoreModel,
+  pricingRequest: PricingRequest
+): Promise<AppStoreModel> {
+  const { selectedItem, basePricePoint } = pricingRequest;
+
+  const offerResult = findOfferInState(
+    appStoreState,
+    selectedItem.id,
+    selectedItem.offerType
+  );
+
+  if (!offerResult) {
+    return Promise.reject(
+      new Error(`Offer with ID ${selectedItem.id} not found`)
+    );
+  }
+
+  const { subscription, offer } = offerResult;
+
+  if (offer.type === "FREE_TRIAL") {
+    return Promise.reject(
+      new Error("FREE_TRIAL promotional offers do not support pricing")
+    );
+  }
+
+  const prices = await buildSubscriptionPricesWithEqualizations(
+    basePricePoint.id
+  );
+
+  offer.prices = prices;
+  return appStoreState;
+}
+
+function findSubscriptionInState(
+  appStoreState: AppStoreModel,
+  subscriptionId: string
+): Subscription | undefined {
+  // Search through subscriptionGroups for the subscription
+  for (const group of appStoreState.subscriptionGroups || []) {
+    const subscription = group.subscriptions.find(
+      (sub) => sub.productId === subscriptionId
+    );
+    if (subscription) {
+      return subscription;
+    }
+  }
+  return undefined;
+}
+
+function findOfferInState(
+  appStoreState: AppStoreModel,
+  id: string,
+  offerType?: string
+):
+  | { subscription: Subscription; offer: PromotionalOffer | IntroductoryOffer }
+  | undefined {
+  // Search through subscriptionGroups for the offer
+  for (const group of appStoreState.subscriptionGroups || []) {
+    for (const subscription of group.subscriptions) {
+      // Check promotional offers first (by ID)
+      const promotionalOffer = subscription.promotionalOffers?.find(
+        (o) => o.id === id
       );
+      if (promotionalOffer) {
+        return { subscription, offer: promotionalOffer };
+      }
+
+      // Check introductory offers (by subscription ID and offer type)
+      if (subscription.productId === id && offerType) {
+        const introductoryOffer = subscription.introductoryOffers?.find(
+          (o) => o.type === offerType
+        );
+        if (introductoryOffer) {
+          return { subscription, offer: introductoryOffer };
+        }
+      }
     }
-    const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
-    appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
-    return appStoreState;
   }
-
-  if (selectedItem.type === "subscription" || selectedItem.type === "offer") {
-    throw new Error(
-      `Apple pricing for '${selectedItem.type}' is not implemented yet for state updates`
-    );
-  }
-
-  const _never: never = selectedItem.type as never;
-  throw new Error(`Unsupported item type: ${_never as any}`);
+  return undefined;
 }

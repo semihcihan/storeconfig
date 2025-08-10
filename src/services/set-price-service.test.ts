@@ -27,6 +27,9 @@ jest.mock("../domains/subscriptions/api-client", () => ({
   fetchAllSubscriptionPricePoints: jest.fn(),
   fetchSubscriptionGroups: jest.fn(),
 }));
+jest.mock("../domains/subscriptions/pricing-service", () => ({
+  buildSubscriptionPricesWithEqualizations: jest.fn(),
+}));
 
 const mockFs = jest.mocked(fs);
 const mockReadline = jest.mocked(readline);
@@ -48,6 +51,7 @@ import {
   fetchAllSubscriptionPricePoints,
   fetchSubscriptionGroups,
 } from "../domains/subscriptions/api-client";
+import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
 
 describe("set-price-service", () => {
   const testInputFile = "test-file.json";
@@ -95,16 +99,22 @@ describe("set-price-service", () => {
     jest.mocked(fetchAllSubscriptionPricePoints).mockResolvedValue({
       data: [{ id: "sub-price-1", attributes: { customerPrice: "0.99" } }],
     } as any);
+
+    // Mock the equalizations function
+    jest.mocked(buildSubscriptionPricesWithEqualizations).mockResolvedValue([
+      { price: "0.99", territory: "USA" },
+      { price: "0.89", territory: "GBR" },
+    ]);
   });
 
   describe("applyPricing", () => {
-    it("updates app pricing in place with USA base territory", () => {
+    it("updates app pricing in place with USA base territory", async () => {
       const state: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "app-1",
       } as any;
 
-      const result = applyPricing(state, {
+      const result = await applyPricing(state, {
         selectedItem: { type: "app", id: "app-1", name: "App" },
         basePricePoint: { id: "price-1", price: "0.99" },
         pricingStrategy: "apple",
@@ -117,7 +127,7 @@ describe("set-price-service", () => {
       });
     });
 
-    it("updates IAP priceSchedule in place with USA base territory", () => {
+    it("updates IAP priceSchedule in place with USA base territory", async () => {
       const productId = "com.example.premium";
       const state: AppStoreModel = {
         schemaVersion: "1.0.0",
@@ -139,7 +149,7 @@ describe("set-price-service", () => {
         ],
       } as any;
 
-      const result = applyPricing(state, {
+      const result = await applyPricing(state, {
         selectedItem: { type: "inAppPurchase", id: productId, name: "Premium" },
         basePricePoint: { id: "price-2", price: "1.99" },
         pricingStrategy: "apple",
@@ -152,47 +162,196 @@ describe("set-price-service", () => {
       });
     });
 
-    it("throws when IAP is not found", () => {
+    it("throws when IAP is not found", async () => {
       const state: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "app-1",
         inAppPurchases: [],
       } as any;
 
-      expect(() =>
-        applyPricing(state, {
+      await expect(
+        await applyPricing(state, {
           selectedItem: { type: "inAppPurchase", id: "missing", name: "IAP" },
           basePricePoint: { id: "price-4", price: "0.99" },
           pricingStrategy: "apple",
         })
-      ).toThrow("No in-app purchases found in the state");
+      ).rejects.toThrow("No in-app purchases found in the state");
     });
 
-    it("throws for subscription and offer (not implemented)", () => {
+    it("throws for subscription when not found", async () => {
       const baseState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "app-1",
       } as any;
 
-      expect(() =>
-        applyPricing(baseState, {
+      await expect(
+        await applyPricing(baseState, {
           selectedItem: { type: "subscription", id: "sub", name: "Sub" },
           basePricePoint: { id: "price-5", price: "0.99" },
           pricingStrategy: "apple",
         })
-      ).toThrow(
-        "Apple pricing for 'subscription' is not implemented yet for state updates"
-      );
+      ).rejects.toThrow("Subscription with ID sub not found");
+    });
 
-      expect(() =>
-        applyPricing(baseState, {
+    it("throws for offer when not found", async () => {
+      const baseState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+      } as any;
+
+      await expect(
+        await applyPricing(baseState, {
           selectedItem: { type: "offer", id: "offer", name: "Offer" },
           basePricePoint: { id: "price-6", price: "0.99" },
           pricingStrategy: "apple",
         })
-      ).toThrow(
-        "Apple pricing for 'offer' is not implemented yet for state updates"
-      );
+      ).rejects.toThrow("Offer with ID offer not found");
+    });
+
+    it("updates subscription pricing using equalizations", async () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        subscriptionGroups: [
+          {
+            referenceName: "Premium",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "com.example.monthly",
+                referenceName: "Monthly Premium",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              } as any,
+            ],
+          },
+        ],
+      } as any;
+
+      const result = await applyPricing(state, {
+        selectedItem: {
+          type: "subscription",
+          id: "com.example.monthly",
+          name: "Monthly Premium",
+        },
+        basePricePoint: { id: "price-7", price: "0.99" },
+        pricingStrategy: "apple",
+      });
+
+      expect(result).toBe(state);
+      expect(state.subscriptionGroups![0].subscriptions[0].prices).toEqual([
+        { price: "0.99", territory: "USA" },
+        { price: "0.89", territory: "GBR" },
+      ]);
+    });
+
+    it("updates promotional offer pricing using equalizations", async () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        subscriptionGroups: [
+          {
+            referenceName: "Premium",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "com.example.monthly",
+                referenceName: "Monthly Premium",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                promotionalOffers: [
+                  {
+                    id: "promo-1",
+                    referenceName: "Intro Offer",
+                    type: "PAY_AS_YOU_GO",
+                    numberOfPeriods: 3,
+                    prices: [],
+                  } as any,
+                ],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              } as any,
+            ],
+          },
+        ],
+      } as any;
+
+      const result = await applyPricing(state, {
+        selectedItem: { type: "offer", id: "promo-1", name: "Intro Offer" },
+        basePricePoint: { id: "price-8", price: "0.49" },
+        pricingStrategy: "apple",
+      });
+
+      expect(result).toBe(state);
+      const promotionalOffer =
+        state.subscriptionGroups![0].subscriptions[0].promotionalOffers![0];
+      if (
+        promotionalOffer.type === "PAY_AS_YOU_GO" ||
+        promotionalOffer.type === "PAY_UP_FRONT"
+      ) {
+        expect(promotionalOffer.prices).toEqual([
+          { price: "0.99", territory: "USA" },
+          { price: "0.89", territory: "GBR" },
+        ]);
+      } else {
+        throw new Error("Expected promotional offer to have prices");
+      }
+    });
+
+    it("throws for FREE_TRIAL promotional offers", async () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        subscriptionGroups: [
+          {
+            referenceName: "Premium",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "com.example.monthly",
+                referenceName: "Monthly Premium",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                promotionalOffers: [
+                  {
+                    id: "promo-2",
+                    referenceName: "Free Trial",
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                  } as any,
+                ],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              } as any,
+            ],
+          },
+        ],
+      } as any;
+
+      await expect(
+        applyPricing(state, {
+          selectedItem: { type: "offer", id: "promo-2", name: "Free Trial" },
+          basePricePoint: { id: "price-9", price: "0.00" },
+          pricingStrategy: "apple",
+        })
+      ).rejects.toThrow("FREE_TRIAL promotional offers do not support pricing");
     });
   });
 

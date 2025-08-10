@@ -52,7 +52,7 @@ const setPriceCommand: CommandModule = {
 
       logger.info("Pricing data:", pricingRequest);
 
-      const updatedState = applyPricing(appStoreState, pricingRequest);
+      const updatedState = await applyPricing(appStoreState, pricingRequest);
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
       logger.info("✅ Updated file with pricing changes");
     } catch (error) {

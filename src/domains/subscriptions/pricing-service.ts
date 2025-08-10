@@ -7,6 +7,7 @@ import {
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
 import { ContextualError } from "../../helpers/error-handling-helpers";
+import { api } from "../../services/api";
 
 type SubscriptionPriceCreateRequest =
   components["schemas"]["SubscriptionPriceCreateRequest"];
@@ -202,4 +203,61 @@ export async function updateSubscriptionPrices(
   // For subscription pricing, we always create new prices with preserveCurrentPrice: true
   // This ensures existing subscribers keep their current price while new subscribers get the new price
   await createSubscriptionPrices(subscriptionId, prices);
+}
+
+export async function buildSubscriptionPricesWithEqualizations(
+  pricePointId: string
+): Promise<Price[]> {
+  try {
+    const equalizationsResponse = await api.GET(
+      "/v1/subscriptionPricePoints/{id}/equalizations",
+      {
+        params: {
+          path: { id: pricePointId },
+          query: {
+            "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
+            include: ["territory"],
+            limit: 8000,
+          },
+        },
+      }
+    );
+
+    if (equalizationsResponse.error) {
+      throw equalizationsResponse.error;
+    }
+
+    // Type guard for equalizations response
+    if (
+      !equalizationsResponse.data ||
+      typeof equalizationsResponse.data === "string"
+    ) {
+      throw new Error("Invalid response structure from equalizations API");
+    }
+
+    const equalizationsData = equalizationsResponse.data.data;
+    if (!Array.isArray(equalizationsData)) {
+      throw new Error("Equalizations response data is not an array");
+    }
+
+    const prices: Price[] = equalizationsData
+      .map((item: any) => {
+        if (
+          !item.relationships?.territory?.data?.id ||
+          !item.attributes?.customerPrice
+        ) {
+          return null;
+        }
+        return {
+          price: item.attributes.customerPrice,
+          territory: item.relationships.territory.data.id,
+        };
+      })
+      .filter(Boolean) as Price[];
+
+    return prices;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch equalizations: ${errorMessage}`);
+  }
 }
