@@ -34,11 +34,18 @@ function createWinstonLogger(): winston.Logger {
 export function setLogLevel(level: LogLevel): void {
   if (LOG_LEVELS.includes(level)) {
     winstonLogger.level = level;
+    // Also update the active logger instance
+    if (activeLogger instanceof WinstonLogger) {
+      activeLogger.setLevel(level);
+    }
   } else {
     console.warn(
       `Invalid log level: ${level}. Using '${DEFAULT_LOG_LEVEL}' as default.`
     );
     winstonLogger.level = DEFAULT_LOG_LEVEL;
+    if (activeLogger instanceof WinstonLogger) {
+      activeLogger.setLevel(DEFAULT_LOG_LEVEL);
+    }
   }
 }
 
@@ -99,20 +106,27 @@ class WinstonLogger implements Logger {
     // Winston doesn't have a prompt method, so we'll use console for this
     return message;
   }
+
+  // Add method to update log level
+  setLevel(level: LogLevel): void {
+    if (LOG_LEVELS.includes(level)) {
+      this.winstonLogger.level = level;
+    }
+  }
 }
 
 // Create the Winston logger instance
 let winstonLogger: winston.Logger = createWinstonLogger();
 
 // Default logger instance (used throughout the app)
-let activeLogger: Logger = new WinstonLogger();
+let activeLogger: WinstonLogger = new WinstonLogger();
 
 // Export the logger instance
 export const logger: Logger = activeLogger;
 
 // Allow overriding the logger (for DI/testing/advanced use)
 export function setLogger(newLogger: Logger) {
-  activeLogger = newLogger;
+  activeLogger = newLogger as WinstonLogger;
   // Update the exported logger reference
   (exports as any).logger = activeLogger;
 }

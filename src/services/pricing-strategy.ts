@@ -48,9 +48,16 @@ export class ApplePricingStrategy implements PricingStrategy {
         ];
       case "subscription":
       case "offer":
-        return await buildSubscriptionPricesWithEqualizations(
+        const equalizedPrices = await buildSubscriptionPricesWithEqualizations(
           basePricePoint.id
         );
+        return [
+          {
+            price: basePricePoint.price,
+            territory: BASE_TERRITORY,
+          },
+          ...equalizedPrices,
+        ];
     }
   }
 }

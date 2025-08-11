@@ -2,7 +2,6 @@
 
 - Create easy pricing changes
 
-  - zero price when possible - only on app
   - price points
   - cache
 

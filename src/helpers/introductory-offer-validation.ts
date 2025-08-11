@@ -176,13 +176,14 @@ export function validateIntroductoryOffers(
       offer.type === "PAY_AS_YOU_GO" ||
       offer.type === "PAY_UP_FRONT"
     ) {
-      for (const price of offer.prices) {
-        if (territoryOffers.has(price.territory)) {
+      // Only check territories where the offer is actually available
+      for (const territory of offer.availableTerritories) {
+        if (territoryOffers.has(territory)) {
           throw new Error(
-            `Multiple introductory offers found for territory '${price.territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
+            `Multiple introductory offers found for territory '${territory}' in subscription '${subscriptionProductId}'. Only one offer per territory is allowed.`
           );
         }
-        territoryOffers.set(price.territory, offer);
+        territoryOffers.set(territory, offer);
       }
     }
   }

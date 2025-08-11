@@ -203,8 +203,58 @@ describe("Introductory Offer Validation", () => {
       ];
 
       expect(() => {
-        validateIntroductoryOffers("sub1", "ONE_YEAR", offers);
-      }).toThrow(/period 'ONE_YEAR'/);
+        validateIntroductoryOffers("my-subscription", "ONE_MONTH", offers);
+      }).toThrow(/period 'ONE_MONTH'/);
+    });
+
+    it("should only check availableTerritories for territory uniqueness, not all price territories", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [
+            { territory: "USA", price: "4.99" },
+            { territory: "CAN", price: "5.99" },
+            { territory: "GBR", price: "3.99" },
+          ],
+          availableTerritories: ["USA", "CAN"], // Only USA and CAN are actually available
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["GBR"], // GBR is available for this offer
+        },
+      ];
+
+      // This should NOT throw an error because GBR appears in both offers
+      // but the first offer is not available in GBR (only in USA and CAN)
+      expect(() => {
+        validateIntroductoryOffers("sub1", "ONE_MONTH", offers);
+      }).not.toThrow();
+    });
+
+    it("should throw error when offers are actually available in the same territory", () => {
+      const offers: IntroductoryOffer[] = [
+        {
+          type: "PAY_UP_FRONT",
+          duration: "ONE_MONTH",
+          prices: [
+            { territory: "USA", price: "4.99" },
+            { territory: "CAN", price: "5.99" },
+          ],
+          availableTerritories: ["USA", "CAN"],
+        },
+        {
+          type: "FREE_TRIAL",
+          duration: "ONE_WEEK",
+          availableTerritories: ["USA"], // USA is available for both offers
+        },
+      ];
+
+      // This SHOULD throw an error because both offers are available in USA
+      expect(() => {
+        validateIntroductoryOffers("sub1", "ONE_MONTH", offers);
+      }).toThrow(/Multiple introductory offers found for territory 'USA'/);
     });
   });
 
