@@ -4,6 +4,7 @@ import type { AppStoreModel } from "../utils/validation-helpers";
 import { selectPricingItem } from "../set-price/item-selection";
 import { promptForBasePricePoint } from "../set-price/base-price/base-price-prompt";
 import { promptForPricingStrategy } from "../set-price/strategy-prompt";
+import { promptForMinimumPrice } from "../set-price/minimum-price-prompt";
 import {
   SubscriptionSchema,
   PromotionalOfferSchema,
@@ -58,7 +59,10 @@ export async function startInteractivePricing(
       appStoreState
     );
     const pricingStrategy = await promptForPricingStrategy();
-    // TODO: Step 5: Implement minimum price prompt (conditional)
+    const minimumPrice = await promptForMinimumPrice(
+      pricingStrategy,
+      basePricePoint.price
+    );
 
     return {
       selectedItem: {
@@ -69,6 +73,7 @@ export async function startInteractivePricing(
       },
       basePricePoint,
       pricingStrategy,
+      minimumPrice,
     };
   } catch (error) {
     logger.error(`Interactive pricing failed`, error);
@@ -83,8 +88,6 @@ export async function startInteractivePricing(
     throw error;
   }
 }
-
-type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
 
 export async function applyPricing(
   appStoreState: AppStoreModel,
