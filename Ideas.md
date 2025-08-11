@@ -1,11 +1,11 @@
 ## IDEAS TODOs
 
 - Create easy pricing changes
-  - zero price when possible?
+
+  - zero price when possible - only on app
   - price points
   - cache
-- private loadCurrencies(): void {
-  // TODO: handle by refetching the values??
+
 - beautify logs
   error: Set-price failed ❌ Validation failed! {"context":{"result":{"_error":{"issues":[{"code":"custom","message":"Subscription 'new_product_id_10123' is available in territory 'GBR' but has no price defined for this territory","path":["subscriptionGroups",0,"subscriptions",0,"prices"]}],"name":"ZodError"},"error":{"issues":[{"code":"custom","message":"Subscription 'new_product_id_10123' is available in territory 'GBR' but has no price defined for this territory","path":["subscriptionGroups",0,"subscriptions",0,"prices"]}],"name":"ZodError"},"success":false}},"errors":[{"code":"custom","message":"Subscription 'new_product_id_10123' is available in territory 'GBR' but has no price defined for this territory","path":["subscriptionGroups",0,"subscriptions",0,"prices"]}],"name":"ContextualError","originalError":{"issues":[{"code":"custom","message":"Subscription 'new_product_id_10123' is available in territory 'GBR' but has no price defined for this territory","path":["subscriptionGroups",0,"subscriptions",0,"prices"]}],"name":"ZodError"},"stack":"ZodError: [\n {\n \"code\": \"custom\",\n \"message\": \"Subscription 'new_product_id_10123' is available in territory 'GBR' but has no price defined for this territory\",\n \"path\": [\n \"subscriptionGroups\",\n 0,\n \"subscriptions\",\n 0,\n \"prices\"\n ]\n }\n]\n at Object.get error [as error] (/Users/semihcihan/development/workspace/developer-tool/node_modules/zod/v3/types.cjs:45:31)\n at validateAppStoreModel (/Users/semihcihan/development/workspace/developer-tool/src/utils/validation-helpers.ts:40:62)\n at Object.handler (/Users/semihcihan/development/workspace/developer-tool/src/commands/set-price.ts:34:50)\n at /Users/semihcihan/development/workspace/developer-tool/node_modules/yargs/build/index.cjs:1:8993\n at j (/Users/semihcihan/development/workspace/developer-tool/node_modules/yargs/build/index.cjs:1:4956)\n at _.handleValidationAndGetResult (/Users/semihcihan/development/workspace/developer-tool/node*modules/yargs/build/index.cjs:1:8962)\n at *.applyMiddlewareAndGetResult (/Users/semihcihan/development/workspace/developer-tool/node*modules/yargs/build/index.cjs:1:9604)\n at *.runCommand (/Users/semihcihan/development/workspace/developer-tool/node_modules/yargs/build/index.cjs:1:7231)\n at te.[runYargsParserAndExecuteCommands] (/Users/semihcihan/development/workspace/developer-tool/node_modules/yargs/build/index.cjs:1:58539)\n at te.parse (/Users/semihcihan/development/workspace/developer-tool/node_modules/yargs/build/index.cjs:1:40478)"}
 

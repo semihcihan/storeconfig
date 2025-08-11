@@ -6,6 +6,7 @@ import { TerritoryCodeSchema } from "../models/territories";
 import * as fs from "fs";
 import * as path from "path";
 import { ContextualError } from "../helpers/error-handling-helpers";
+import { territoryCodes } from "../models/territories";
 
 type Price = z.infer<typeof PriceSchema>;
 type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
@@ -59,7 +60,7 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
   }
 
   private loadCurrencies(): void {
-    // TODO: handle by refetching the values??
+    logger.debug(`Loading territories from currencies.json`);
     try {
       const currenciesPath = path.join(
         process.cwd(),
@@ -70,14 +71,10 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
       if (fs.existsSync(currenciesPath)) {
         const content = fs.readFileSync(currenciesPath, "utf8");
         this.currencies = JSON.parse(content);
-        logger.info(
-          `Loaded ${this.currencies.length} territories from currencies.json`
-        );
       } else {
-        logger.warn(
-          "currencies.json file not found, using empty currencies list"
-        );
-        this.currencies = [];
+        throw new ContextualError("Currencies file not found", {
+          currenciesPath,
+        });
       }
     } catch (error) {
       throw new ContextualError("Failed to load currencies", error, {
@@ -100,45 +97,38 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     const invalidTerritories: string[] = [];
 
     for (const territory of this.currencies) {
-      try {
-        if (!this.isValidTerritoryCode(territory.id)) {
-          invalidTerritories.push(territory.id);
-          continue;
-        }
+      if (!territoryCodes.includes(territory.id as any)) {
+        invalidTerritories.push(territory.id);
+        continue;
+      }
 
-        const price = this.calculateTerritoryPrice(
-          territory,
-          basePriceNumber,
-          minPriceNumber
-        );
-        if (price !== null) {
-          prices.push({
-            price: price.toString(),
-            territory: territory.id as TerritoryCode,
-          });
-        } else {
-          territoriesWithMissingData.push(territory.id);
-        }
-      } catch (error) {
-        logger.warn(
-          `Failed to calculate price for territory ${territory.id}:`,
-          error
-        );
+      const price = this.calculateTerritoryPrice(
+        territory,
+        basePriceNumber,
+        minPriceNumber
+      );
+      if (price !== null) {
+        prices.push({
+          price: price.toString(),
+          territory: territory.id as TerritoryCode,
+        });
+      } else {
         territoriesWithMissingData.push(territory.id);
       }
     }
 
-    if (invalidTerritories.length > 0) {
-      logger.warn(
-        `Skipped ${invalidTerritories.length} invalid territory codes:`,
-        invalidTerritories
-      );
-    }
-
     if (territoriesWithMissingData.length > 0) {
+      // TODO: handle by using Apple prices?
       logger.warn(
         `Could not calculate prices for ${territoriesWithMissingData.length} territories due to missing data:`,
         territoriesWithMissingData
+      );
+    }
+
+    if (invalidTerritories.length > 0) {
+      logger.debug(
+        `Skipped ${invalidTerritories.length} territories with invalid territory codes:`,
+        invalidTerritories
       );
     }
 
@@ -150,12 +140,6 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
       baseTerritory: this.BASE_TERRITORY,
       prices,
     };
-  }
-
-  private isValidTerritoryCode(
-    territoryId: string
-  ): territoryId is TerritoryCode {
-    return TerritoryCodeSchema.safeParse(territoryId).success;
   }
 
   private calculateTerritoryPrice(

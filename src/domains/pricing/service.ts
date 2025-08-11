@@ -32,8 +32,7 @@ async function findAppPricePointId(
   appId: string
 ): Promise<string> {
   const response = await fetchAppPricePoints(appId, territory);
-
-  const pricePoints = response || [];
+  const pricePoints = response?.data || [];
 
   // Find the price point that matches the price and territory
   const pricePoint = pricePoints.find((point: any) => {

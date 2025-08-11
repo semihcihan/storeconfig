@@ -47,7 +47,7 @@ export async function getAppPriceSchedule(
 export async function fetchAppPricePoints(
   appId: string,
   territory: string
-): Promise<components["schemas"]["AppPricePointsV3Response"]["data"]> {
+): Promise<components["schemas"]["AppPricePointsV3Response"]> {
   const response = await api.GET("/v1/apps/{id}/appPricePoints", {
     params: {
       path: { id: appId },
@@ -74,8 +74,7 @@ export async function fetchAppPricePoints(
     );
   }
 
-  return (response.data as components["schemas"]["AppPricePointsV3Response"])
-    .data;
+  return response.data as components["schemas"]["AppPricePointsV3Response"];
 }
 
 // Get current manual prices from the price schedule

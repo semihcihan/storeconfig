@@ -21,6 +21,14 @@ jest.mock("path", () => ({
 }));
 
 describe("PricingStrategy", () => {
+  const mockFs = require("fs");
+  const mockPath = require("path");
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPath.join.mockReturnValue("/mock/path/currencies.json");
+  });
+
   describe("createPricingStrategy", () => {
     it("should create ApplePricingStrategy for 'apple' strategy", () => {
       const strategy = createPricingStrategy("apple");
@@ -28,6 +36,19 @@ describe("PricingStrategy", () => {
     });
 
     it("should create PurchasingPowerPricingStrategy for 'purchasingPower' strategy", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(
+        JSON.stringify([
+          {
+            id: "USA",
+            currency: "USD",
+            value: 1.0,
+            localCurrency: "USD",
+            usdRate: 1.0,
+          },
+        ])
+      );
+
       const strategy = createPricingStrategy("purchasingPower");
       expect(strategy).toBeInstanceOf(PurchasingPowerPricingStrategy);
     });
@@ -124,11 +145,24 @@ describe("PricingStrategy", () => {
       );
     });
 
-    it("should handle missing currencies file gracefully", () => {
-      mockFs.existsSync.mockReturnValue(false);
+    it("should throw error when loading currencies file fails", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockImplementation(() => {
+        throw new Error("File read error");
+      });
 
-      strategy = new PurchasingPowerPricingStrategy();
-      expect(strategy.buildPriceSchedule("1.00").prices).toHaveLength(0);
+      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
+        "Failed to load currencies"
+      );
+    });
+
+    it("should throw error when currencies file contains invalid JSON", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue("invalid json");
+
+      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
+        "Failed to load currencies"
+      );
     });
 
     it("should build price schedule with purchasing power based pricing", () => {
