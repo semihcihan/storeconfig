@@ -31,20 +31,17 @@ const setPriceCommand: CommandModule = {
     logger.info(`Setting prices using file: ${inputFile}`);
 
     try {
-      // Validate file structure and content
       const appStoreState = validateAppStoreModel(
         removeShortcuts(readJsonFile(inputFile)),
         false
       );
 
-      // Validate that pricing items exist
       pricingItemsExist(appStoreState);
 
       logger.debug(
         "✅ File validation passed! Ready to proceed with interactive prompts."
       );
 
-      // Delegate to interactive pricing service
       const pricingRequest = await startInteractivePricing({
         inputFile,
         appStoreState,

@@ -170,7 +170,7 @@ describe("set-price-service", () => {
       } as any;
 
       await expect(
-        await applyPricing(state, {
+        applyPricing(state, {
           selectedItem: { type: "inAppPurchase", id: "missing", name: "IAP" },
           basePricePoint: { id: "price-4", price: "0.99" },
           pricingStrategy: "apple",
@@ -185,7 +185,7 @@ describe("set-price-service", () => {
       } as any;
 
       await expect(
-        await applyPricing(baseState, {
+        applyPricing(baseState, {
           selectedItem: { type: "subscription", id: "sub", name: "Sub" },
           basePricePoint: { id: "price-5", price: "0.99" },
           pricingStrategy: "apple",
@@ -200,7 +200,7 @@ describe("set-price-service", () => {
       } as any;
 
       await expect(
-        await applyPricing(baseState, {
+        applyPricing(baseState, {
           selectedItem: { type: "offer", id: "offer", name: "Offer" },
           basePricePoint: { id: "price-6", price: "0.99" },
           pricingStrategy: "apple",

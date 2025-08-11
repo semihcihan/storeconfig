@@ -257,7 +257,8 @@ export async function buildSubscriptionPricesWithEqualizations(
 
     return prices;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to fetch equalizations: ${errorMessage}`);
+    throw new ContextualError(`Failed to fetch equalizations`, error, {
+      pricePointId,
+    });
   }
 }
