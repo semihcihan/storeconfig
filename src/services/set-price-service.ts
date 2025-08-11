@@ -14,6 +14,7 @@ import { z } from "zod";
 import {
   createPricingStrategy,
   type PricingStrategy,
+  BASE_TERRITORY,
 } from "./pricing-strategy";
 
 type Subscription = z.infer<typeof SubscriptionSchema>;
@@ -64,6 +65,7 @@ export async function startInteractivePricing(
     );
 
     return {
+      appId: appStoreState.appId,
       selectedItem: {
         type: selectedItem.type,
         id: selectedItem.id,
@@ -132,11 +134,11 @@ async function applyAppPricing(
   strategy: PricingStrategy
 ): Promise<AppStoreModel> {
   const { basePricePoint } = pricingRequest;
-  const schedule = strategy.buildPriceSchedule(
-    basePricePoint.price,
-    pricingRequest.minimumPrice
-  );
-  appStoreState.pricing = schedule;
+  const prices = await strategy.getPrices(pricingRequest, appStoreState);
+  appStoreState.pricing = {
+    baseTerritory: BASE_TERRITORY,
+    prices,
+  };
   return appStoreState;
 }
 
@@ -164,11 +166,11 @@ async function applyInAppPurchasePricing(
     );
   }
 
-  const schedule = strategy.buildPriceSchedule(
-    basePricePoint.price,
-    pricingRequest.minimumPrice
-  );
-  appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
+  const prices = await strategy.getPrices(pricingRequest, appStoreState);
+  appStoreState.inAppPurchases[iapIndex].priceSchedule = {
+    baseTerritory: BASE_TERRITORY,
+    prices,
+  };
   return appStoreState;
 }
 
@@ -185,10 +187,7 @@ async function applySubscriptionPricing(
     throw new Error(`Subscription with ID ${selectedItem.id} not found`);
   }
 
-  const prices = await strategy.buildSubscriptionPrices(
-    basePricePoint.id,
-    pricingRequest.minimumPrice
-  );
+  const prices = await strategy.getPrices(pricingRequest, appStoreState);
 
   subscription.prices = prices;
   return appStoreState;
@@ -217,10 +216,7 @@ async function applyOfferPricing(
     throw new Error("FREE_TRIAL promotional offers do not support pricing");
   }
 
-  const prices = await strategy.buildSubscriptionPrices(
-    basePricePoint.id,
-    pricingRequest.minimumPrice
-  );
+  const prices = await strategy.getPrices(pricingRequest, appStoreState);
 
   offer.prices = prices;
   return appStoreState;

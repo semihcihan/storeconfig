@@ -11,6 +11,11 @@ import type { AppStoreModel } from "../../utils/validation-helpers";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 import type { components } from "../../generated/app-store-connect-api";
 
+// Simple caches to avoid refetching/resolving per territory
+const iapIdCache = new Map<string, string>(); // key: `${appId}:${productId}` → iapId
+const subscriptionIdCache = new Map<string, string>(); // key: `${appId}:${selectedKey}` → subscriptionId
+const pricePointsCache = new Map<string, PricePointInfo[]>(); // key: `${kind}:${identifier}:${territory}`
+
 type HasCustomerPrice = {
   id?: string;
   attributes?: { customerPrice?: string | null };
@@ -58,81 +63,112 @@ function isAPISubscription(item: unknown): item is APISubscription {
   );
 }
 
-export async function fetchUsaPricePointsForApp(
-  appId: string
+async function fetchTerritoryPricePointsForApp(
+  appId: string,
+  territoryId: string
 ): Promise<PricePointInfo[]> {
-  const USA = "USA";
-  const resp = await fetchAppPricePoints(appId, USA);
-  return extractPricePointInfoFromResponse(resp);
+  const cacheKey = `app:${appId}:${territoryId}`;
+  const cached = pricePointsCache.get(cacheKey);
+  if (cached) return cached;
+  const resp = await fetchAppPricePoints(appId, territoryId);
+  const points = extractPricePointInfoFromResponse(resp);
+  pricePointsCache.set(cacheKey, points);
+  return points;
 }
 
-export async function fetchUsaPricePointsForInAppPurchase(
+async function fetchTerritoryPricePointsForInAppPurchase(
   selectedItem: PricingItem,
-  appId: string
+  appId: string,
+  territoryId: string
 ): Promise<PricePointInfo[]> {
-  const USA = "USA";
-  const iaps = await fetchInAppPurchases(appId);
-  const iapData = (iaps.data || []).find(
-    (it) => it.attributes?.productId === selectedItem.id
-  );
-  const iapId = iapData?.id;
-  if (!iapId) return [];
-  const resp = await fetchIAPPricePoints(iapId, USA);
-  return extractPricePointInfoFromResponse(resp);
+  const idCacheKey = `${appId}:${selectedItem.id}`;
+  let iapId = iapIdCache.get(idCacheKey);
+  if (!iapId) {
+    const iaps = await fetchInAppPurchases(appId);
+    const iapData = (iaps.data || []).find(
+      (it) => it.attributes?.productId === selectedItem.id
+    );
+    iapId = iapData?.id || "";
+    if (!iapId) return [];
+    iapIdCache.set(idCacheKey, iapId);
+  }
+  const cacheKey = `iap:${iapId}:${territoryId}`;
+  const cached = pricePointsCache.get(cacheKey);
+  if (cached) return cached;
+  const resp = await fetchIAPPricePoints(iapId, territoryId);
+  const points = extractPricePointInfoFromResponse(resp);
+  pricePointsCache.set(cacheKey, points);
+  return points;
 }
 
-export async function fetchUsaPricePointsForSubscriptionOrOffer(
+async function fetchTerritoryPricePointsForSubscriptionOrOffer(
   selectedItem: PricingItem,
-  appStoreState: AppStoreModel
+  appStoreState: AppStoreModel,
+  territoryId: string
 ): Promise<PricePointInfo[]> {
-  const USA = "USA";
-  const groups = await fetchSubscriptionGroups(appStoreState.appId);
-  const included = groups.included || [];
-  let targetSubscription: APISubscription | undefined;
+  const selectedKey = `${selectedItem.id}:${selectedItem.offerType || ""}`;
+  const idCacheKey = `${appStoreState.appId}:${selectedKey}`;
+  let subscriptionId = subscriptionIdCache.get(idCacheKey);
+  if (!subscriptionId) {
+    const groups = await fetchSubscriptionGroups(appStoreState.appId);
+    const included = groups.included || [];
+    const subs = included.filter(isAPISubscription);
 
-  // Try by subscription productId directly first (works for subscriptions and intro offers)
-  targetSubscription = included.find(
-    (inc): inc is APISubscription =>
-      isAPISubscription(inc) && inc.attributes?.productId === selectedItem.id
-  );
+    // Direct productId match
+    subscriptionId = subs.find(
+      (s) => s.attributes?.productId === selectedItem.id
+    )?.id as string | undefined;
 
-  if (!targetSubscription && selectedItem.type === "offer") {
-    // For promotional offers, find the subscription that contains this offer id in current state
-    const parentProductId = appStoreState.subscriptionGroups
-      ?.flatMap((g) => g.subscriptions)
-      .find((s) =>
-        s.promotionalOffers?.some((o) => o.id === selectedItem.id)
-      )?.productId;
-
-    if (parentProductId) {
-      targetSubscription = included.find(
-        (inc): inc is APISubscription =>
-          isAPISubscription(inc) &&
-          inc.attributes?.productId === parentProductId
-      );
+    if (!subscriptionId && selectedItem.type === "offer") {
+      // For promotional offers, search owning subscription
+      for (const sub of subs) {
+        const offers = sub.relationships?.promotionalOffers?.data;
+        if (
+          Array.isArray(offers) &&
+          offers.some((o) => o.id === selectedItem.id)
+        ) {
+          subscriptionId = sub.id;
+          break;
+        }
+      }
     }
+
+    if (!subscriptionId) return [];
+    subscriptionIdCache.set(idCacheKey, subscriptionId);
   }
 
-  const subscriptionId = targetSubscription?.id;
-  if (!subscriptionId) return [];
-  const resp = await fetchAllSubscriptionPricePoints(subscriptionId, USA);
-  return extractPricePointInfoFromResponse(resp);
+  const cacheKey = `sub:${subscriptionId}:${territoryId}`;
+  const cached = pricePointsCache.get(cacheKey);
+  if (cached) return cached;
+  const resp = await fetchAllSubscriptionPricePoints(
+    subscriptionId,
+    territoryId
+  );
+  const points = extractPricePointInfoFromResponse(resp);
+  pricePointsCache.set(cacheKey, points);
+  return points;
 }
 
-export async function fetchUsaPricePointsForSelectedItem(
+export async function fetchTerritoryPricePointsForSelectedItem(
   selectedItem: PricingItem,
-  appStoreState: AppStoreModel
+  appStoreState: AppStoreModel,
+  territoryId: string
 ): Promise<PricePointInfo[]> {
   if (selectedItem.type === "app") {
-    return fetchUsaPricePointsForApp(appStoreState.appId);
+    return fetchTerritoryPricePointsForApp(appStoreState.appId, territoryId);
   }
 
   if (selectedItem.type === "inAppPurchase") {
-    return fetchUsaPricePointsForInAppPurchase(
+    return fetchTerritoryPricePointsForInAppPurchase(
       selectedItem,
-      appStoreState.appId
+      appStoreState.appId,
+      territoryId
     );
   }
 
-  return fetchUsaPricePointsForSubscriptionOrOffer(selectedItem, appStoreState);
+  return fetchTerritoryPricePointsForSubscriptionOrOffer(
+    selectedItem,
+    appStoreState,
+    territoryId
+  );
 }

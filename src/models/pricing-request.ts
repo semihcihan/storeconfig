@@ -14,6 +14,7 @@ export interface PricingItem {
 }
 
 export interface PricingRequest {
+  appId: string;
   selectedItem: PricingItem;
   basePricePoint: PricePointInfo;
   pricingStrategy: PricingStrategy;

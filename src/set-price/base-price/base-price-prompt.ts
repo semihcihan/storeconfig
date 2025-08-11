@@ -1,7 +1,7 @@
 import * as readline from "readline";
 import { logger } from "../../utils/logger";
 import type { AppStoreModel } from "../../utils/validation-helpers";
-import { fetchUsaPricePointsForSelectedItem } from "./price-point-fetcher";
+import { fetchTerritoryPricePointsForSelectedItem } from "./price-point-fetcher";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 
 function parsePriceInputToNumber(input: string): number | null {
@@ -34,9 +34,10 @@ export async function promptForBasePricePoint(
     input: process.stdin,
     output: process.stdout,
   });
-  const availablePricePoints = await fetchUsaPricePointsForSelectedItem(
+  const availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
     selectedItem,
-    appStoreState
+    appStoreState,
+    "USA"
   );
 
   // Normalize available price points to two decimals for robust comparison (e.g., "4.0" → "4.00")

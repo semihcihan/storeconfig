@@ -7,9 +7,13 @@ import * as fs from "fs";
 import * as path from "path";
 import { ContextualError } from "../helpers/error-handling-helpers";
 import { territoryCodes } from "../models/territories";
+import { PricingRequest } from "../models/pricing-request";
+import type { AppStoreModel } from "../utils/validation-helpers";
+import { fetchTerritoryPricePointsForSelectedItem } from "../set-price/base-price/price-point-fetcher";
+
+export const BASE_TERRITORY = "USA";
 
 type Price = z.infer<typeof PriceSchema>;
-type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
 type TerritoryCode = z.infer<typeof TerritoryCodeSchema>;
 
 export interface TerritoryData {
@@ -21,38 +25,37 @@ export interface TerritoryData {
 }
 
 export interface PricingStrategy {
-  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule;
-  buildSubscriptionPrices(
-    pricePointId: string,
-    minPrice?: string
+  getPrices(
+    request: PricingRequest,
+    appStoreState: AppStoreModel
   ): Promise<Price[]>;
 }
 
 export class ApplePricingStrategy implements PricingStrategy {
-  private readonly BASE_TERRITORY = "USA";
-
-  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule {
-    return {
-      baseTerritory: this.BASE_TERRITORY,
-      prices: [
-        {
-          price: basePrice,
-          territory: this.BASE_TERRITORY,
-        },
-      ],
-    };
-  }
-
-  async buildSubscriptionPrices(
-    pricePointId: string,
-    minPrice?: string
+  async getPrices(
+    request: PricingRequest,
+    _appStoreState: AppStoreModel
   ): Promise<Price[]> {
-    return await buildSubscriptionPricesWithEqualizations(pricePointId);
+    const { basePricePoint } = request;
+    switch (request.selectedItem.type) {
+      case "app":
+      case "inAppPurchase":
+        return [
+          {
+            price: basePricePoint.price,
+            territory: BASE_TERRITORY,
+          },
+        ];
+      case "subscription":
+      case "offer":
+        return await buildSubscriptionPricesWithEqualizations(
+          basePricePoint.id
+        );
+    }
   }
 }
 
 export class PurchasingPowerPricingStrategy implements PricingStrategy {
-  private readonly BASE_TERRITORY = "USA";
   private currencies: TerritoryData[] = [];
 
   constructor() {
@@ -83,12 +86,23 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     }
   }
 
-  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule {
-    const basePriceNumber = parseFloat(basePrice);
-    const minPriceNumber = minPrice ? parseFloat(minPrice) : 0;
+  async getPrices(
+    request: PricingRequest,
+    appStoreState: AppStoreModel
+  ): Promise<Price[]> {
+    return await this.prices(request, appStoreState);
+  }
+
+  async prices(
+    request: PricingRequest,
+    appStoreState: AppStoreModel
+  ): Promise<Price[]> {
+    const { basePricePoint, minimumPrice } = request;
+    const basePriceNumber = parseFloat(basePricePoint.price);
+    const minPriceNumber = minimumPrice ? parseFloat(minimumPrice) : 0;
     if (isNaN(basePriceNumber)) {
       throw new ContextualError("Invalid base price format", {
-        basePrice,
+        basePrice: basePricePoint.price,
       });
     }
 
@@ -102,19 +116,28 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
         continue;
       }
 
-      const price = this.calculateTerritoryPrice(
+      const pppPriceLocal = this.calculatePPPPrice(
         territory,
         basePriceNumber,
         minPriceNumber
       );
-      if (price !== null) {
-        prices.push({
-          price: price.toString(),
-          territory: territory.id as TerritoryCode,
-        });
-      } else {
+      if (pppPriceLocal === null) {
         territoriesWithMissingData.push(territory.id);
+        continue;
       }
+
+      // Snap to nearest valid price point for the entity and territory
+      const snappedPrice = await this.findNearestValidPrice(
+        request,
+        appStoreState,
+        territory.id,
+        pppPriceLocal
+      );
+
+      prices.push({
+        price: snappedPrice,
+        territory: territory.id as TerritoryCode,
+      });
     }
 
     if (territoriesWithMissingData.length > 0) {
@@ -136,13 +159,10 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
       `Successfully calculated prices for ${prices.length} territories`
     );
 
-    return {
-      baseTerritory: this.BASE_TERRITORY,
-      prices,
-    };
+    return prices;
   }
 
-  private calculateTerritoryPrice(
+  private calculatePPPPrice(
     territory: TerritoryData,
     basePriceUSD: number,
     minPriceUSD: number
@@ -191,12 +211,73 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     );
   }
 
-  async buildSubscriptionPrices(
-    pricePointId: string,
-    minPrice?: string
-  ): Promise<Price[]> {
-    const schedule = this.buildPriceSchedule(pricePointId, minPrice);
-    return schedule.prices;
+  private pickNearestPriceString(
+    target: number,
+    priceStrings: string[]
+  ): string {
+    if (!priceStrings || priceStrings.length === 0) {
+      throw new Error("No price points available to pick from");
+    }
+
+    // First, look for exact match (preserving original string format)
+    for (const priceStr of priceStrings) {
+      if (Math.abs(Number(priceStr) - target) < 0.0001) {
+        return priceStr;
+      }
+    }
+
+    // Convert to numbers for comparison, but keep original strings for return
+    const priceNumbers = priceStrings.map((p) => Number(p));
+    const sortedIndices = priceNumbers
+      .map((num, index) => ({ num, index }))
+      .sort((a, b) => a.num - b.num);
+
+    // Find first >= target (round up)
+    for (const { num, index } of sortedIndices) {
+      if (num >= target) {
+        return priceStrings[index];
+      }
+    }
+
+    // Otherwise, round down to the largest < target
+    return priceStrings[sortedIndices[sortedIndices.length - 1].index];
+  }
+
+  private async findNearestValidPrice(
+    request: PricingRequest,
+    appStoreState: AppStoreModel,
+    territoryId: string,
+    targetLocalPrice: number
+  ): Promise<string> {
+    try {
+      const pricePoints = await fetchTerritoryPricePointsForSelectedItem(
+        request.selectedItem,
+        appStoreState,
+        territoryId
+      );
+      if (!pricePoints || pricePoints.length === 0) {
+        throw new ContextualError(
+          "No price points returned for territory",
+          undefined,
+          {
+            entityType: request.selectedItem.type,
+            territoryId,
+          }
+        );
+      }
+      const priceStrings = pricePoints.map((p) => p.price);
+      return this.pickNearestPriceString(targetLocalPrice, priceStrings);
+    } catch (error) {
+      throw new ContextualError(
+        "Failed to find nearest valid price point",
+        error,
+        {
+          entityType: request.selectedItem.type,
+          territoryId,
+          targetLocalPrice,
+        }
+      );
+    }
   }
 }
 
