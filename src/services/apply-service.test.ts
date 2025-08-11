@@ -1087,7 +1087,6 @@ describe("Subscription Group Actions", () => {
             { territory: "USA", price: "0.99" },
             { territory: "GBR", price: "0.79" },
           ],
-          availableTerritories: ["USA", "GBR"],
         },
       },
     };
@@ -1104,7 +1103,6 @@ describe("Subscription Group Actions", () => {
           { territory: "USA", price: "0.99" },
           { territory: "GBR", price: "0.79" },
         ],
-        availableTerritories: ["USA", "GBR"],
       },
       expect.any(Map), // newlyCreatedSubscriptions
       expect.objectContaining({

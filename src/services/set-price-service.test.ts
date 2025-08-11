@@ -286,7 +286,6 @@ describe("set-price-service", () => {
                 ],
                 availability: {
                   availableInNewTerritories: true,
-                  availableTerritories: "worldwide",
                 },
               } as any,
             ],
@@ -309,7 +308,7 @@ describe("set-price-service", () => {
         promotionalOffer.type === "PAY_UP_FRONT"
       ) {
         expect(promotionalOffer.prices).toEqual([
-          { price: "0.99", territory: "USA" },
+          { price: "0.49", territory: "USA" },
           { price: "0.89", territory: "GBR" },
         ]);
       } else {
@@ -563,7 +562,6 @@ describe("set-price-service", () => {
                       { price: "0.99", territory: "USA" },
                       { price: "0.99", territory: "TUR" },
                     ],
-                    availableTerritories: "worldwide",
                   },
                 ],
                 availability: {
@@ -733,7 +731,6 @@ describe("set-price-service", () => {
                     type: "PAY_AS_YOU_GO",
                     numberOfPeriods: 1,
                     prices: [{ price: "0.99", territory: "USA" }],
-                    availableTerritories: "worldwide",
                   },
                 ],
                 promotionalOffers: [

@@ -1213,7 +1213,6 @@ describe("diff-service", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "USA", price: "1.99" }],
-        availableTerritories: ["USA"],
       };
 
       const desiredState: AppStoreModel = {
@@ -1276,7 +1275,6 @@ describe("diff-service", () => {
                     type: "PAY_AS_YOU_GO",
                     numberOfPeriods: 3,
                     prices: [{ territory: "CAN", price: "2.99" }],
-                    availableTerritories: ["CAN"],
                   },
                 ],
               },
@@ -1304,7 +1302,6 @@ describe("diff-service", () => {
                     type: "PAY_AS_YOU_GO",
                     numberOfPeriods: 3,
                     prices: [{ territory: "CAN", price: "3.99" }], // Changed price
-                    availableTerritories: ["CAN"],
                   },
                 ],
               },
@@ -1334,7 +1331,6 @@ describe("diff-service", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "CAN", price: "2.99" }],
-        availableTerritories: ["CAN"],
       });
 
       // Verify the create action is for the new PAY_AS_YOU_GO offer
@@ -1342,7 +1338,6 @@ describe("diff-service", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "CAN", price: "3.99" }],
-        availableTerritories: ["CAN"],
       });
     });
 
@@ -1388,7 +1383,6 @@ describe("diff-service", () => {
                     type: "PAY_UP_FRONT",
                     duration: "ONE_MONTH",
                     prices: [{ territory: "CAN", price: "4.99" }],
-                    availableTerritories: ["CAN"],
                   },
                 ],
               },
@@ -1410,7 +1404,6 @@ describe("diff-service", () => {
             type: "PAY_UP_FRONT",
             duration: "ONE_MONTH",
             prices: [{ territory: "CAN", price: "4.99" }],
-            availableTerritories: ["CAN"],
           },
         },
       });
@@ -1436,7 +1429,6 @@ describe("diff-service", () => {
                     type: "PAY_AS_YOU_GO",
                     numberOfPeriods: 3,
                     prices: [{ territory: "CAN", price: "2.99" }],
-                    availableTerritories: ["CAN"],
                   },
                 ],
               },
@@ -1479,7 +1471,6 @@ describe("diff-service", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 3,
             prices: [{ territory: "CAN", price: "2.99" }],
-            availableTerritories: ["CAN"],
           },
         },
       });
@@ -1553,7 +1544,6 @@ describe("diff-service", () => {
                       { territory: "CAN", price: "2.99" },
                       { territory: "GBR", price: "3.99" },
                     ],
-                    availableTerritories: ["USA", "CAN", "GBR"],
                   },
                 ],
               },
@@ -1580,7 +1570,6 @@ describe("diff-service", () => {
                       { territory: "GBR", price: "3.99" },
                       { territory: "USA", price: "1.99" },
                     ], // Different order
-                    availableTerritories: ["CAN", "GBR", "USA"], // Also different order
                   },
                 ],
               },
@@ -1612,7 +1601,6 @@ describe("diff-service", () => {
                       { territory: "USA", price: "1.99" },
                       { territory: "CAN", price: "2.99" },
                     ],
-                    availableTerritories: ["USA", "CAN"],
                   },
                 ],
               },
@@ -1639,7 +1627,6 @@ describe("diff-service", () => {
                       { territory: "CAN", price: "2.99" },
                       { territory: "GBR", price: "3.99" }, // Added new territory
                     ],
-                    availableTerritories: ["USA", "CAN", "GBR"], // Added new territory
                   },
                 ],
               },
@@ -1665,7 +1652,6 @@ describe("diff-service", () => {
                   { territory: "USA", price: "1.99" },
                   { territory: "CAN", price: "2.99" },
                 ],
-                availableTerritories: ["USA", "CAN"],
               },
             },
           },
@@ -1682,7 +1668,6 @@ describe("diff-service", () => {
                   { territory: "CAN", price: "2.99" },
                   { territory: "GBR", price: "3.99" },
                 ],
-                availableTerritories: ["USA", "CAN", "GBR"],
               },
             },
           },
@@ -3859,7 +3844,6 @@ describe("diff-service", () => {
                       { territory: "USA", price: "0.99" },
                       { territory: "DEU", price: "0.89" },
                     ],
-                    availableTerritories: ["USA", "DEU"],
                   },
                 ],
               },
@@ -3891,7 +3875,6 @@ describe("diff-service", () => {
                       { territory: "USA", price: "0.99" },
                       { territory: "GBR", price: "0.79" },
                     ],
-                    availableTerritories: ["USA", "GBR"],
                   },
                   {
                     type: "PAY_UP_FRONT",
@@ -3900,7 +3883,6 @@ describe("diff-service", () => {
                       { territory: "USA", price: "1.99" },
                       { territory: "DEU", price: "1.89" },
                     ],
-                    availableTerritories: ["USA", "DEU"],
                   },
                 ],
               },

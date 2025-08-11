@@ -31,7 +31,6 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -46,7 +45,6 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 6,
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -75,7 +73,6 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_UP_FRONT",
           duration: "THREE_DAYS", // Invalid for ONE_MONTH PAY_UP_FRONT
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -90,7 +87,6 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 13, // Invalid for ONE_MONTH subscription
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -124,13 +120,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_UP_FRONT",
           duration: "TWO_MONTHS",
           prices: [{ territory: "USA", price: "8.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -145,13 +139,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 6,
           prices: [{ territory: "USA", price: "4.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 12,
           prices: [{ territory: "USA", price: "8.99" }],
-          availableTerritories: ["USA"],
         },
       ];
 
@@ -207,7 +199,7 @@ describe("Introductory Offer Validation", () => {
       }).toThrow(/period 'ONE_MONTH'/);
     });
 
-    it("should only check availableTerritories for territory uniqueness, not all price territories", () => {
+    it("should check all price territories for territory uniqueness for PAY_AS_YOU_GO and PAY_UP_FRONT offers", () => {
       const offers: IntroductoryOffer[] = [
         {
           type: "PAY_UP_FRONT",
@@ -217,7 +209,6 @@ describe("Introductory Offer Validation", () => {
             { territory: "CAN", price: "5.99" },
             { territory: "GBR", price: "3.99" },
           ],
-          availableTerritories: ["USA", "CAN"], // Only USA and CAN are actually available
         },
         {
           type: "FREE_TRIAL",
@@ -226,11 +217,11 @@ describe("Introductory Offer Validation", () => {
         },
       ];
 
-      // This should NOT throw an error because GBR appears in both offers
-      // but the first offer is not available in GBR (only in USA and CAN)
+      // This SHOULD throw an error because GBR appears in both offers
+      // (PAY_UP_FRONT has a price for GBR, and FREE_TRIAL is available in GBR)
       expect(() => {
         validateIntroductoryOffers("sub1", "ONE_MONTH", offers);
-      }).not.toThrow();
+      }).toThrow(/Multiple introductory offers found for territory 'GBR'/);
     });
 
     it("should throw error when offers are actually available in the same territory", () => {
@@ -242,7 +233,6 @@ describe("Introductory Offer Validation", () => {
             { territory: "USA", price: "4.99" },
             { territory: "CAN", price: "5.99" },
           ],
-          availableTerritories: ["USA", "CAN"],
         },
         {
           type: "FREE_TRIAL",
@@ -265,13 +255,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 1,
           prices: [{ territory: "USA", price: "0.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "GBR", price: "2.99" }],
-          availableTerritories: ["GBR"],
         },
         {
           type: "FREE_TRIAL",
@@ -289,13 +277,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 1,
           prices: [{ territory: "USA", price: "0.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 1,
           prices: [{ territory: "GBR", price: "1.99" }],
-          availableTerritories: ["GBR"],
         },
       ];
 
@@ -314,13 +300,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "USA", price: "2.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "GBR", price: "3.99" }],
-          availableTerritories: ["GBR"],
         },
       ];
 
@@ -362,13 +346,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 1,
           prices: [{ territory: "USA", price: "0.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 2,
           prices: [{ territory: "GBR", price: "1.99" }],
-          availableTerritories: ["GBR"],
         },
       ];
 
@@ -381,13 +363,11 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "USA", price: "2.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_UP_FRONT",
           duration: "THREE_MONTHS",
           prices: [{ territory: "GBR", price: "7.99" }],
-          availableTerritories: ["GBR"],
         },
       ];
 
@@ -422,19 +402,16 @@ describe("Introductory Offer Validation", () => {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 1,
           prices: [{ territory: "USA", price: "0.99" }],
-          availableTerritories: ["USA"],
         },
         {
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: 2,
           prices: [{ territory: "GBR", price: "1.99" }],
-          availableTerritories: ["GBR"],
         },
         {
           type: "PAY_UP_FRONT",
           duration: "ONE_MONTH",
           prices: [{ territory: "CAN", price: "2.99" }],
-          availableTerritories: ["CAN"],
         },
         {
           type: "FREE_TRIAL",
@@ -453,7 +430,6 @@ describe("Introductory Offer Validation", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "USA", price: "1.99" }],
-        availableTerritories: ["USA"],
       };
 
       const key = getIntroductoryOfferGroupingKey(offer);
@@ -465,7 +441,6 @@ describe("Introductory Offer Validation", () => {
         type: "PAY_UP_FRONT",
         duration: "ONE_MONTH",
         prices: [{ territory: "USA", price: "4.99" }],
-        availableTerritories: ["USA"],
       };
 
       const key = getIntroductoryOfferGroupingKey(offer);
@@ -488,14 +463,12 @@ describe("Introductory Offer Validation", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "USA", price: "1.99" }],
-        availableTerritories: ["USA"],
       };
 
       const offer2: IntroductoryOffer = {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 5,
         prices: [{ territory: "USA", price: "2.99" }],
-        availableTerritories: ["USA"],
       };
 
       const key1 = getIntroductoryOfferGroupingKey(offer1);
@@ -513,7 +486,6 @@ describe("Introductory Offer Validation", () => {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 3,
         prices: [{ territory: "USA", price: "1.99" }],
-        availableTerritories: ["USA"],
       };
 
       const description = getIntroductoryOfferGroupingDescription(offer);
@@ -525,7 +497,6 @@ describe("Introductory Offer Validation", () => {
         type: "PAY_UP_FRONT",
         duration: "ONE_MONTH",
         prices: [{ territory: "USA", price: "4.99" }],
-        availableTerritories: ["USA"],
       };
 
       const description = getIntroductoryOfferGroupingDescription(offer);

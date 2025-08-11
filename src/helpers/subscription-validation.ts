@@ -31,30 +31,6 @@ export function validateSubscriptionTerritoryPricing(
       });
     }
   }
-
-  // Check introductory offers pricing (except FREE_TRIAL types)
-  for (const offer of introductoryOffers) {
-    if (offer.type === "FREE_TRIAL") {
-      // FREE_TRIAL offers don't have prices, so we skip them
-      continue;
-    }
-
-    if (offer.type === "PAY_AS_YOU_GO" || offer.type === "PAY_UP_FRONT") {
-      const offerPriceTerritories = new Set(
-        offer.prices?.map((p: any) => p.territory) || []
-      );
-
-      for (const territory of offer.availableTerritories || []) {
-        if (!offerPriceTerritories.has(territory)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Introductory offer of type '${offer.type}' for subscription '${subscription.productId}' is available in territory '${territory}' but has no price defined for this territory`,
-            path: ["introductoryOffers"],
-          });
-        }
-      }
-    }
-  }
 }
 
 /**

@@ -43,7 +43,10 @@ export function useShortcuts(data: any): any {
       (offer: any) => {
         const convertedOffer = { ...offer };
 
-        if (Array.isArray(convertedOffer.availableTerritories)) {
+        if (
+          offer.type === "FREE_TRIAL" &&
+          Array.isArray(convertedOffer.availableTerritories)
+        ) {
           if (
             deepEqualUnordered(
               convertedOffer.availableTerritories,
@@ -53,6 +56,8 @@ export function useShortcuts(data: any): any {
             convertedOffer.availableTerritories = [WORLDWIDE_TERRITORY_CODE];
           }
         }
+        // PAY_AS_YOU_GO and PAY_UP_FRONT offers no longer have availableTerritories
+        // so they don't participate in shortcut conversion
 
         return convertedOffer;
       }
@@ -124,7 +129,10 @@ export function removeShortcuts(data: any): any {
       (offer: any) => {
         const convertedOffer = { ...offer };
 
-        if (Array.isArray(convertedOffer.availableTerritories)) {
+        if (
+          offer.type === "FREE_TRIAL" &&
+          Array.isArray(convertedOffer.availableTerritories)
+        ) {
           if (
             convertedOffer.availableTerritories.length === 1 &&
             isWorldwideTerritory(convertedOffer.availableTerritories[0])
@@ -132,6 +140,8 @@ export function removeShortcuts(data: any): any {
             convertedOffer.availableTerritories = [...territoryCodes];
           }
         }
+        // PAY_AS_YOU_GO and PAY_UP_FRONT offers no longer have availableTerritories
+        // so they don't participate in shortcut conversion
 
         return convertedOffer;
       }

@@ -93,7 +93,6 @@ describe("Subscription Validation", () => {
               { price: "0.99", territory: "USA" },
               { price: "1.99", territory: "CAN" },
             ],
-            availableTerritories: ["USA", "CAN"],
           },
         ],
       };
@@ -106,7 +105,7 @@ describe("Subscription Validation", () => {
       expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
-    it("should fail validation for PAY_AS_YOU_GO offers missing prices for territories", () => {
+    it("should pass validation for PAY_AS_YOU_GO offers with prices for all territories", () => {
       const subscription = {
         productId: "test_product",
         availability: {
@@ -118,7 +117,6 @@ describe("Subscription Validation", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "0.99", territory: "USA" }],
-            availableTerritories: ["USA", "CAN"],
           },
         ],
       };
@@ -128,12 +126,7 @@ describe("Subscription Validation", () => {
       } as any;
 
       validateSubscriptionTerritoryPricing(subscription, mockCtx);
-      expect(mockCtx.addIssue).toHaveBeenCalledWith({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'test_product' is available in territory 'CAN' but has no price defined for this territory",
-        path: ["introductoryOffers"],
-      });
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
     it("should pass validation for PAY_UP_FRONT offers with prices for all territories", () => {
@@ -151,7 +144,6 @@ describe("Subscription Validation", () => {
               { price: "9.99", territory: "USA" },
               { price: "12.99", territory: "CAN" },
             ],
-            availableTerritories: ["USA", "CAN"],
           },
         ],
       };
@@ -164,7 +156,7 @@ describe("Subscription Validation", () => {
       expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
-    it("should fail validation for PAY_UP_FRONT offers missing prices for territories", () => {
+    it("should pass validation for PAY_UP_FRONT offers with prices for all territories", () => {
       const subscription = {
         productId: "test_product",
         availability: {
@@ -176,7 +168,6 @@ describe("Subscription Validation", () => {
             type: "PAY_UP_FRONT",
             duration: "ONE_MONTH",
             prices: [{ price: "9.99", territory: "USA" }],
-            availableTerritories: ["USA", "CAN"],
           },
         ],
       };
@@ -186,12 +177,7 @@ describe("Subscription Validation", () => {
       } as any;
 
       validateSubscriptionTerritoryPricing(subscription, mockCtx);
-      expect(mockCtx.addIssue).toHaveBeenCalledWith({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Introductory offer of type 'PAY_UP_FRONT' for subscription 'test_product' is available in territory 'CAN' but has no price defined for this territory",
-        path: ["introductoryOffers"],
-      });
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
     it("should handle multiple introductory offers correctly", () => {
@@ -211,7 +197,6 @@ describe("Subscription Validation", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "0.99", territory: "USA" }],
-            availableTerritories: ["USA"],
           },
         ],
       };
@@ -292,7 +277,6 @@ describe("Subscription Validation", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: undefined,
-            availableTerritories: ["USA"],
           },
         ],
       };
@@ -302,27 +286,19 @@ describe("Subscription Validation", () => {
       } as any;
 
       validateSubscriptionTerritoryPricing(subscription, mockCtx);
-      expect(mockCtx.addIssue).toHaveBeenCalledWith({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Introductory offer of type 'PAY_AS_YOU_GO' for subscription 'test_product' is available in territory 'USA' but has no price defined for this territory",
-        path: ["introductoryOffers"],
-      });
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
     it("should handle missing availableTerritories in introductory offers gracefully", () => {
       const subscription = {
         productId: "test_product",
-        availability: {
-          availableTerritories: ["USA"],
-        },
+        availability: {},
         prices: [{ price: "4.99", territory: "USA" }],
         introductoryOffers: [
           {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "0.99", territory: "USA" }],
-            availableTerritories: undefined,
           },
         ],
       };
@@ -384,7 +360,6 @@ describe("Subscription Validation", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "0.99", territory: "USA" }],
-            availableTerritories: ["USA"],
           },
           {
             type: "FREE_TRIAL",
@@ -423,13 +398,11 @@ describe("Subscription Validation", () => {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "0.99", territory: "USA" }],
-            availableTerritories: ["USA"],
           },
           {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
             prices: [{ price: "1.99", territory: "CAN" }],
-            availableTerritories: ["CAN"],
           },
         ],
         promotionalOffers: [],
@@ -467,13 +440,11 @@ describe("Subscription Validation", () => {
             type: "PAY_UP_FRONT",
             duration: "ONE_MONTH",
             prices: [{ price: "9.99", territory: "USA" }],
-            availableTerritories: ["USA"],
           },
           {
             type: "PAY_UP_FRONT",
             duration: "ONE_MONTH",
             prices: [{ price: "12.99", territory: "CAN" }],
-            availableTerritories: ["CAN"],
           },
         ],
         promotionalOffers: [],
@@ -553,13 +524,11 @@ describe("Subscription Validation", () => {
             type: "PAY_UP_FRONT",
             duration: "THREE_MONTHS",
             prices: [{ price: "19.99", territory: "TUR" }],
-            availableTerritories: ["TUR"],
           },
           {
             type: "PAY_UP_FRONT",
             duration: "THREE_MONTHS",
             prices: [{ price: "19.99", territory: "AZE" }],
-            availableTerritories: ["AZE"],
           },
         ],
         promotionalOffers: [],

@@ -51,12 +51,16 @@ export class ApplePricingStrategy implements PricingStrategy {
         const equalizedPrices = await buildSubscriptionPricesWithEqualizations(
           basePricePoint.id
         );
+        // Filter out the base territory from equalized prices to avoid duplicates
+        const filteredEqualizedPrices = equalizedPrices.filter(
+          (price) => price.territory !== BASE_TERRITORY
+        );
         return [
           {
             price: basePricePoint.price,
             territory: BASE_TERRITORY,
           },
-          ...equalizedPrices,
+          ...filteredEqualizedPrices,
         ];
     }
   }

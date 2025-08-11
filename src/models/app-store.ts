@@ -82,14 +82,12 @@ const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
   numberOfPeriods: z.number(),
   prices: z.array(PriceSchema),
-  availableTerritories: AvailableTerritoriesSchema,
 });
 
 const IntroOfferPayUpFrontSchema = z.object({
   type: z.literal("PAY_UP_FRONT"),
   duration: SubscriptionOfferDurationSchema,
   prices: z.array(PriceSchema),
-  availableTerritories: AvailableTerritoriesSchema,
 });
 
 const IntroOfferFreeSchema = z.object({

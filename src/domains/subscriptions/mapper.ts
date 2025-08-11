@@ -184,13 +184,9 @@ export async function mapIntroductoryOffers(
           type: "PAY_AS_YOU_GO",
           numberOfPeriods: durationInfo.numberOfPeriods,
           prices: [],
-          availableTerritories: [],
         };
       }
       const offer = groupedOffers[key] as any;
-      if (offer.availableTerritories) {
-        offer.availableTerritories.push(territory);
-      }
       const pricePointRel =
         offerData.relationships.subscriptionPricePoint?.data;
       if (pricePointRel) {
@@ -217,13 +213,9 @@ export async function mapIntroductoryOffers(
           type: "PAY_UP_FRONT",
           duration: durationInfo.duration,
           prices: [],
-          availableTerritories: [],
         };
       }
       const offer = groupedOffers[key] as any;
-      if (offer.availableTerritories) {
-        offer.availableTerritories.push(territory);
-      }
       const pricePointRel =
         offerData.relationships.subscriptionPricePoint?.data;
       if (pricePointRel) {
