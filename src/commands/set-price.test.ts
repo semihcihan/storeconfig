@@ -56,6 +56,7 @@ describe("set-price command", () => {
     mockLogger.info.mockReturnValue(undefined);
     mockLogger.error.mockReturnValue(undefined);
     mockStartInteractivePricing.mockResolvedValue({
+      appId: "app-1",
       selectedItem: {
         type: "app",
         id: "",
@@ -184,6 +185,7 @@ describe("set-price command", () => {
       await setPriceCommand.handler!(mockArgv as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith("Pricing data:", {
+        appId: "app-1",
         selectedItem: {
           type: "app",
           id: "",

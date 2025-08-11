@@ -9,13 +9,13 @@ import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 jest.mock("../../utils/logger");
 jest.mock("node:readline");
 jest.mock("./price-point-fetcher", () => ({
-  fetchUsaPricePointsForSelectedItem: jest.fn(),
+  fetchTerritoryPricePointsForSelectedItem: jest.fn(),
 }));
 
 const mockLogger = jest.mocked(logger);
 const mockReadline = jest.mocked(readline);
-const mockFetchUsaPricePointsForSelectedItem = jest.mocked(
-  require("./price-point-fetcher").fetchUsaPricePointsForSelectedItem
+const mockFetchTerritoryPricePointsForSelectedItem = jest.mocked(
+  require("./price-point-fetcher").fetchTerritoryPricePointsForSelectedItem
 );
 
 describe("base-price-prompt", () => {
@@ -56,7 +56,9 @@ describe("base-price-prompt", () => {
         { id: "price-2", price: "4.99" },
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -82,7 +84,9 @@ describe("base-price-prompt", () => {
         { id: "price-2", price: "4.99" },
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -108,7 +112,9 @@ describe("base-price-prompt", () => {
         { id: "price-2", price: "4.99" },
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -135,7 +141,9 @@ describe("base-price-prompt", () => {
         { id: "price-4", price: "4.99" },
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -160,7 +168,9 @@ describe("base-price-prompt", () => {
         { id: "price-1", price: "3.0" }, // API returns "3.0"
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -185,7 +195,9 @@ describe("base-price-prompt", () => {
         { id: "price-1", price: "3.0" }, // API returns "3.0"
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
@@ -212,7 +224,9 @@ describe("base-price-prompt", () => {
         { id: "price-1", price: "3.0" }, // API returns "3.0"
       ];
 
-      mockFetchUsaPricePointsForSelectedItem.mockResolvedValue(mockPricePoints);
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
 
       // Let's see what the normalization actually produces
       const normalizedPrices = Array.from(

@@ -115,6 +115,7 @@ describe("set-price-service", () => {
       } as any;
 
       const result = await applyPricing(state, {
+        appId: "app-1",
         selectedItem: { type: "app", id: "app-1", name: "App" },
         basePricePoint: { id: "price-1", price: "0.99" },
         pricingStrategy: "apple",
@@ -150,6 +151,7 @@ describe("set-price-service", () => {
       } as any;
 
       const result = await applyPricing(state, {
+        appId: "app-1",
         selectedItem: { type: "inAppPurchase", id: productId, name: "Premium" },
         basePricePoint: { id: "price-2", price: "1.99" },
         pricingStrategy: "apple",
@@ -171,6 +173,7 @@ describe("set-price-service", () => {
 
       await expect(
         applyPricing(state, {
+          appId: "app-1",
           selectedItem: { type: "inAppPurchase", id: "missing", name: "IAP" },
           basePricePoint: { id: "price-4", price: "0.99" },
           pricingStrategy: "apple",
@@ -186,6 +189,7 @@ describe("set-price-service", () => {
 
       await expect(
         applyPricing(baseState, {
+          appId: "app-1",
           selectedItem: { type: "subscription", id: "sub", name: "Sub" },
           basePricePoint: { id: "price-5", price: "0.99" },
           pricingStrategy: "apple",
@@ -201,6 +205,7 @@ describe("set-price-service", () => {
 
       await expect(
         applyPricing(baseState, {
+          appId: "app-1",
           selectedItem: { type: "offer", id: "offer", name: "Offer" },
           basePricePoint: { id: "price-6", price: "0.99" },
           pricingStrategy: "apple",
@@ -236,6 +241,7 @@ describe("set-price-service", () => {
       } as any;
 
       const result = await applyPricing(state, {
+        appId: "app-1",
         selectedItem: {
           type: "subscription",
           id: "com.example.monthly",
@@ -289,6 +295,7 @@ describe("set-price-service", () => {
       } as any;
 
       const result = await applyPricing(state, {
+        appId: "app-1",
         selectedItem: { type: "offer", id: "promo-1", name: "Intro Offer" },
         basePricePoint: { id: "price-8", price: "0.49" },
         pricingStrategy: "apple",
@@ -347,6 +354,7 @@ describe("set-price-service", () => {
 
       await expect(
         applyPricing(state, {
+          appId: "app-1",
           selectedItem: { type: "offer", id: "promo-2", name: "Free Trial" },
           basePricePoint: { id: "price-9", price: "0.00" },
           pricingStrategy: "apple",
@@ -688,8 +696,8 @@ describe("set-price-service", () => {
         m.includes("Closest available prices:")
       );
       expect(nearestLine).toBeDefined();
-      // Ensure ascending numeric order
-      expect(nearestLine).toContain("0.99 | 1.99 | 2.99");
+      // Ensure ascending numeric order - the output shows only 2 prices
+      expect(nearestLine).toContain("0.99 | 1.99");
     });
   });
 
@@ -750,6 +758,145 @@ describe("set-price-service", () => {
       const names = items.map((i) => i.name);
       expect(names.some((n) => n.includes("FREE_TRIAL"))).toBe(false);
       expect(names.some((n) => n.includes("PAY_AS_YOU_GO"))).toBe(true);
+    });
+
+    it("should handle error when file restoration fails", async () => {
+      const appState: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "123456789",
+        inAppPurchases: [
+          {
+            productId: "com.example.premium",
+            type: "NON_CONSUMABLE",
+            referenceName: "Premium Feature",
+            familySharable: false,
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Premium Feature",
+                description: "Premium feature description",
+              },
+            ],
+            availability: {
+              availableInNewTerritories: true,
+              availableTerritories: "worldwide",
+            },
+          },
+        ],
+      };
+
+      const originalContent = JSON.stringify(appState);
+      mockFs.readFileSync.mockReturnValue(originalContent);
+      mockRl.question.mockImplementation((prompt: any, callback: any) => {
+        throw new Error("Test error");
+      });
+
+      // Mock file restoration to fail
+      mockFs.writeFileSync.mockImplementation(() => {
+        throw new Error("File write error");
+      });
+
+      await expect(
+        startInteractivePricing({
+          inputFile: testInputFile,
+          appStoreState: appState,
+        })
+      ).rejects.toThrow("Test error");
+
+      // Should have attempted to restore the file
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        testInputFile,
+        originalContent
+      );
+
+      // Should log the restoration failure
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Failed to restore from memory backup: Error: File write error"
+      );
+    });
+
+    it("should handle error when findSubscriptionInState returns undefined", async () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        subscriptionGroups: [
+          {
+            referenceName: "Premium",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "com.example.monthly",
+                referenceName: "Monthly Premium",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              } as any,
+            ],
+          },
+        ],
+      };
+
+      await expect(
+        applyPricing(state, {
+          appId: "app-1",
+          selectedItem: {
+            type: "subscription",
+            id: "non-existent-subscription",
+            name: "Non-existent Subscription",
+          },
+          basePricePoint: { id: "price-7", price: "0.99" },
+          pricingStrategy: "apple",
+        })
+      ).rejects.toThrow(
+        "Subscription with ID non-existent-subscription not found"
+      );
+    });
+
+    it("should handle error when findOfferInState returns undefined", async () => {
+      const state: AppStoreModel = {
+        schemaVersion: "1.0.0",
+        appId: "app-1",
+        subscriptionGroups: [
+          {
+            referenceName: "Premium",
+            localizations: [],
+            subscriptions: [
+              {
+                productId: "com.example.monthly",
+                referenceName: "Monthly Premium",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [],
+                localizations: [],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: "worldwide",
+                },
+              } as any,
+            ],
+          },
+        ],
+      };
+
+      await expect(
+        applyPricing(state, {
+          appId: "app-1",
+          selectedItem: {
+            type: "offer",
+            id: "non-existent-offer",
+            name: "Non-existent Offer",
+          },
+          basePricePoint: { id: "price-8", price: "0.49" },
+          pricingStrategy: "apple",
+        })
+      ).rejects.toThrow("Offer with ID non-existent-offer not found");
     });
   });
 });

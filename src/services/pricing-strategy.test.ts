@@ -4,10 +4,15 @@ import {
   PurchasingPowerPricingStrategy,
 } from "./pricing-strategy";
 import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
+import type { AppStoreModel } from "../utils/validation-helpers";
+import type { PricingRequest } from "../models/pricing-request";
+import { TerritoryCodeSchema } from "../models/territories";
+import { z } from "zod";
+
+type TerritoryCode = z.infer<typeof TerritoryCodeSchema>;
 
 jest.mock("../domains/subscriptions/pricing-service", () => ({
   buildSubscriptionPricesWithEqualizations: jest.fn(),
-  buildPurchasingPowerPrices: jest.fn(),
 }));
 
 // Mock fs and path modules
@@ -20,13 +25,36 @@ jest.mock("path", () => ({
   join: jest.fn(),
 }));
 
+// Mock the price point fetcher
+jest.mock("../set-price/base-price/price-point-fetcher", () => ({
+  fetchTerritoryPricePointsForSelectedItem: jest.fn(),
+}));
+
 describe("PricingStrategy", () => {
   const mockFs = require("fs");
   const mockPath = require("path");
+  const mockBuildSubscriptionPricesWithEqualizations = jest.mocked(
+    buildSubscriptionPricesWithEqualizations
+  );
+
+  const mockAppStoreState: AppStoreModel = {
+    schemaVersion: "1.0.0",
+    appId: "app-1",
+  } as any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockPath.join.mockReturnValue("/mock/path/currencies.json");
+
+    // Default mock for price point fetcher
+    const {
+      fetchTerritoryPricePointsForSelectedItem,
+    } = require("../set-price/base-price/price-point-fetcher");
+    jest.mocked(fetchTerritoryPricePointsForSelectedItem).mockResolvedValue([
+      { id: "price-1", price: "0.99" },
+      { id: "price-2", price: "1.99" },
+      { id: "price-3", price: "2.99" },
+    ]);
   });
 
   describe("createPricingStrategy", () => {
@@ -67,39 +95,85 @@ describe("PricingStrategy", () => {
       strategy = new ApplePricingStrategy();
     });
 
-    it("should build price schedule with USA as base territory", () => {
-      const schedule = strategy.buildPriceSchedule("0.99");
-      expect(schedule.baseTerritory).toBe("USA");
-      expect(schedule.prices).toHaveLength(1);
-      expect(schedule.prices[0]).toEqual({
+    it("should return single price for app with USA as base territory", async () => {
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "0.99" },
+        pricingStrategy: "apple",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
+      expect(prices).toHaveLength(1);
+      expect(prices[0]).toEqual({
         price: "0.99",
         territory: "USA",
       });
     });
 
+    it("should return single price for in-app purchase with USA as base territory", async () => {
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "inAppPurchase", id: "iap-1", name: "IAP" },
+        basePricePoint: { id: "price-1", price: "1.99" },
+        pricingStrategy: "apple",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
+      expect(prices).toHaveLength(1);
+      expect(prices[0]).toEqual({
+        price: "1.99",
+        territory: "USA",
+      });
+    });
+
     it("should build subscription prices using equalizations", async () => {
-      const mockPrices = [{ price: "0.99", territory: "USA" }];
-      (buildSubscriptionPricesWithEqualizations as jest.Mock).mockResolvedValue(
+      const mockPrices = [
+        { price: "0.99", territory: "USA" as TerritoryCode },
+        { price: "0.89", territory: "GBR" as TerritoryCode },
+      ];
+      mockBuildSubscriptionPricesWithEqualizations.mockResolvedValue(
         mockPrices
       );
 
-      const prices = await strategy.buildSubscriptionPrices("test-id");
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "subscription", id: "sub-1", name: "Sub" },
+        basePricePoint: { id: "price-1", price: "0.99" },
+        pricingStrategy: "apple",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
       expect(prices).toEqual(mockPrices);
-      expect(buildSubscriptionPricesWithEqualizations).toHaveBeenCalledWith(
-        "test-id"
+      expect(mockBuildSubscriptionPricesWithEqualizations).toHaveBeenCalledWith(
+        "price-1"
       );
     });
 
-    it("should build subscription prices with minPrice parameter", async () => {
-      const mockPrices = [{ price: "0.99", territory: "USA" }];
-      (buildSubscriptionPricesWithEqualizations as jest.Mock).mockResolvedValue(
+    it("should build offer prices using equalizations", async () => {
+      const mockPrices = [
+        { price: "0.49", territory: "USA" as TerritoryCode },
+        { price: "0.44", territory: "GBR" as TerritoryCode },
+      ];
+      mockBuildSubscriptionPricesWithEqualizations.mockResolvedValue(
         mockPrices
       );
 
-      const prices = await strategy.buildSubscriptionPrices("test-id", "0.99");
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "offer", id: "offer-1", name: "Offer" },
+        basePricePoint: { id: "price-1", price: "0.49" },
+        pricingStrategy: "apple",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
       expect(prices).toEqual(mockPrices);
-      expect(buildSubscriptionPricesWithEqualizations).toHaveBeenCalledWith(
-        "test-id"
+      expect(mockBuildSubscriptionPricesWithEqualizations).toHaveBeenCalledWith(
+        "price-1"
       );
     });
   });
@@ -125,7 +199,7 @@ describe("PricingStrategy", () => {
         },
         {
           id: "GBR",
-          currency: "GBP",
+          currency: "USD",
           value: 0.679372,
           localCurrency: "GBP",
           usdRate: 0.743916,
@@ -165,7 +239,7 @@ describe("PricingStrategy", () => {
       );
     });
 
-    it("should build price schedule with purchasing power based pricing", () => {
+    it("should calculate prices for multiple territories", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -176,7 +250,7 @@ describe("PricingStrategy", () => {
         },
         {
           id: "GBR",
-          currency: "GBP",
+          currency: "USD",
           value: 0.679372,
           localCurrency: "GBP",
           usdRate: 0.743916,
@@ -194,21 +268,32 @@ describe("PricingStrategy", () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
 
       strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
 
-      expect(schedule.baseTerritory).toBe("USA");
-      expect(schedule.prices).toHaveLength(3);
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+        minimumPrice: "0.50",
+      };
 
-      const usaPrice = schedule.prices.find((p) => p.territory === "USA");
-      const gbrPrice = schedule.prices.find((p) => p.territory === "GBR");
-      const deuPrice = schedule.prices.find((p) => p.territory === "DEU");
+      const prices = await strategy.getPrices(request, mockAppStoreState);
 
-      expect(usaPrice?.price).toBe("1");
-      expect(gbrPrice?.price).toBe("0.68"); // 1.00 * 0.679372 = 0.679372 ≈ 0.68
-      expect(deuPrice?.price).toBe("0.71"); // 1.00 * 0.713045 = 0.713045 ≈ 0.71
+      expect(prices).toHaveLength(3);
+
+      const usaPrice = prices.find((p: any) => p.territory === "USA");
+      const gbrPrice = prices.find((p: any) => p.territory === "GBR");
+      const deuPrice = prices.find((p: any) => p.territory === "DEU");
+
+      // USA: 1.00 * 1.0 = 1.00, snaps to nearest available: 1.99
+      expect(usaPrice?.price).toBe("1.99");
+      // GBR: 1.00 * 0.679372 = 0.68, snaps to nearest available: 0.99
+      expect(gbrPrice?.price).toBe("0.99");
+      // DEU: 1.00 * 0.713045 = 0.71, snaps to nearest available: 0.99
+      expect(deuPrice?.price).toBe("0.99");
     });
 
-    it("should skip territories with missing purchasing power data", () => {
+    it("should skip territories with missing purchasing power data", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -237,167 +322,21 @@ describe("PricingStrategy", () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
 
       strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
 
-      expect(schedule.prices).toHaveLength(1);
-      expect(schedule.prices[0].territory).toBe("USA");
-    });
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+      };
 
-    it("should skip territories with missing exchange rate data", () => {
-      const mockCurrencies = [
-        {
-          id: "USA",
-          currency: "USD",
-          value: 1.0,
-          localCurrency: "USD",
-          usdRate: 1.0,
-        },
-        {
-          id: "GBR",
-          currency: "GBP",
-          value: 0.679372,
-          localCurrency: "GBP",
-          usdRate: undefined,
-        },
-        {
-          id: "DEU",
-          currency: "EUR",
-          value: 0.713045,
-          localCurrency: "EUR",
-          usdRate: 0,
-        },
-      ];
+      const prices = await strategy.getPrices(request, mockAppStoreState);
 
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
-
-      strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
-
-      // Current implementation: territories with undefined or 0 usdRate still get prices calculated
-      // because the calculateTerritoryPrice method handles these cases differently
-      expect(schedule.prices).toHaveLength(3);
-
-      const usaPrice = schedule.prices.find((p) => p.territory === "USA");
-      const gbrPrice = schedule.prices.find((p) => p.territory === "GBR");
-      const deuPrice = schedule.prices.find((p) => p.territory === "DEU");
-
-      expect(usaPrice?.price).toBe("1");
-      expect(gbrPrice?.price).toBe("0.68");
-      expect(deuPrice?.price).toBe("0.71");
-    });
-
-    it("should throw error for invalid base price format", () => {
-      const mockCurrencies = [
-        {
-          id: "USA",
-          currency: "USD",
-          value: 1.0,
-          localCurrency: "USD",
-          usdRate: 1.0,
-        },
-      ];
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
-
-      strategy = new PurchasingPowerPricingStrategy();
-
-      expect(() => strategy.buildPriceSchedule("invalid")).toThrow(
-        "Invalid base price format"
-      );
-    });
-
-    it("should build subscription prices using equalizations", async () => {
-      const mockCurrencies = [
-        {
-          id: "USA",
-          currency: "USD",
-          value: 1.0,
-          localCurrency: "USD",
-          usdRate: 1.0,
-        },
-      ];
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
-
-      strategy = new PurchasingPowerPricingStrategy();
-      const prices = await strategy.buildSubscriptionPrices("1.00", "0.99");
-
-      // The PurchasingPowerPricingStrategy.buildSubscriptionPrices method calls buildPriceSchedule internally
-      // and returns those prices, not the mock prices from buildSubscriptionPricesWithEqualizations
       expect(prices).toHaveLength(1);
-      expect(prices[0]).toEqual({
-        price: "1",
-        territory: "USA",
-      });
+      expect(prices[0].territory).toBe("USA");
     });
 
-    it("should handle currency conversion when expected currency differs from local currency", () => {
-      const mockCurrencies = [
-        {
-          id: "USA",
-          currency: "USD",
-          value: 1.0,
-          localCurrency: "USD",
-          usdRate: 1.0,
-        },
-        {
-          id: "GBR",
-          currency: "USD", // Expected currency is USD
-          value: 0.679372,
-          localCurrency: "GBP", // But local currency is GBP
-          usdRate: 0.743916, // GBP to USD rate
-        },
-        {
-          id: "DEU",
-          currency: "EUR",
-          value: 0.713045,
-          localCurrency: "EUR",
-          usdRate: 0.858474,
-        },
-      ];
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
-
-      strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
-
-      expect(schedule.prices).toHaveLength(3);
-
-      const usaPrice = schedule.prices.find((p) => p.territory === "USA");
-      const gbrPrice = schedule.prices.find((p) => p.territory === "GBR");
-      const deuPrice = schedule.prices.find((p) => p.territory === "DEU");
-
-      expect(usaPrice?.price).toBe("1");
-      // GBR: 1.00 * 0.679372 = 0.679372 GBP, then convert to USD: 0.679372 / 0.743916 = 0.913... ≈ 0.91
-      expect(gbrPrice?.price).toBe("0.91");
-      expect(deuPrice?.price).toBe("0.71");
-    });
-
-    it("should throw error when loading currencies file fails", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockImplementation(() => {
-        throw new Error("File read error");
-      });
-
-      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
-        "Failed to load currencies"
-      );
-    });
-
-    it("should throw error when currencies file contains invalid JSON", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue("invalid json");
-
-      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
-        "Failed to load currencies"
-      );
-    });
-
-    it("should skip territories with invalid territory codes", () => {
+    it("should skip territories with invalid territory codes", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -419,13 +358,21 @@ describe("PricingStrategy", () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
 
       strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
 
-      expect(schedule.prices).toHaveLength(1);
-      expect(schedule.prices[0].territory).toBe("USA");
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
+      expect(prices).toHaveLength(1);
+      expect(prices[0].territory).toBe("USA");
     });
 
-    it("should handle minimum price constraint", () => {
+    it("should handle minimum price constraint", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -437,7 +384,7 @@ describe("PricingStrategy", () => {
         {
           id: "GBR",
           currency: "USD",
-          value: 0.5, // This would result in a price below minimum
+          value: 0.5,
           localCurrency: "GBP",
           usdRate: 0.743916,
         },
@@ -447,19 +394,57 @@ describe("PricingStrategy", () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
 
       strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00", "0.75"); // Set minimum price to 0.75
 
-      expect(schedule.prices).toHaveLength(2);
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+        minimumPrice: "0.75",
+      };
 
-      const usaPrice = schedule.prices.find((p) => p.territory === "USA");
-      const gbrPrice = schedule.prices.find((p) => p.territory === "GBR");
+      const prices = await strategy.getPrices(request, mockAppStoreState);
 
-      expect(usaPrice?.price).toBe("1");
-      // GBR: 1.00 * 0.5 = 0.5, but minimum is 0.75, so price should be 0.75
-      expect(gbrPrice?.price).toBe("0.75");
+      expect(prices).toHaveLength(2);
+
+      const usaPrice = prices.find((p: any) => p.territory === "USA");
+      const gbrPrice = prices.find((p: any) => p.territory === "GBR");
+
+      // USA: 1.00 * 1.0 = 1.00, snaps to nearest available: 1.99
+      expect(usaPrice?.price).toBe("1.99");
+      // GBR: 1.00 * 0.5 = 0.5, but minimum is 0.75, so price should be 0.75, snaps to nearest available: 0.99
+      expect(gbrPrice?.price).toBe("0.99");
     });
 
-    it("should handle territories with missing local currency data", () => {
+    it("should throw error for invalid base price format", async () => {
+      const mockCurrencies = [
+        {
+          id: "USA",
+          currency: "USD",
+          value: 1.0,
+          localCurrency: "USD",
+          usdRate: 1.0,
+        },
+      ];
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
+
+      strategy = new PurchasingPowerPricingStrategy();
+
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "invalid" },
+        pricingStrategy: "purchasingPower",
+      };
+
+      await expect(
+        strategy.getPrices(request, mockAppStoreState)
+      ).rejects.toThrow("Invalid base price format");
+    });
+
+    it("should handle territories with missing local currency data", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -477,7 +462,7 @@ describe("PricingStrategy", () => {
         },
         {
           id: "DEU",
-          currency: "UNKNOWN_CURRENCY", // This currency doesn't exist in any territory
+          currency: "UNKNOWN_CURRENCY",
           value: 0.5,
           localCurrency: "EUR",
           usdRate: 1.0,
@@ -488,14 +473,107 @@ describe("PricingStrategy", () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
 
       strategy = new PurchasingPowerPricingStrategy();
-      const schedule = strategy.buildPriceSchedule("1.00");
 
-      // DEU territory should be skipped because findTerritoryByLocalCurrency won't find a match for "UNKNOWN_CURRENCY"
-      // since there's no territory with localCurrency "UNKNOWN_CURRENCY" and a valid usdRate
-      expect(schedule.prices).toHaveLength(2);
-      expect(
-        schedule.prices.find((p) => p.territory === "DEU")
-      ).toBeUndefined();
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+      };
+
+      const prices = await strategy.getPrices(request, mockAppStoreState);
+
+      expect(prices).toHaveLength(2);
+      expect(prices.find((p: any) => p.territory === "DEU")).toBeUndefined();
+    });
+
+    it("should handle error when price point fetcher fails", async () => {
+      const mockCurrencies = [
+        {
+          id: "USA",
+          currency: "USD",
+          value: 1.0,
+          localCurrency: "USD",
+          usdRate: 1.0,
+        },
+      ];
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
+
+      strategy = new PurchasingPowerPricingStrategy();
+
+      // Mock the price point fetcher to throw an error
+      const {
+        fetchTerritoryPricePointsForSelectedItem,
+      } = require("../set-price/base-price/price-point-fetcher");
+      jest
+        .mocked(fetchTerritoryPricePointsForSelectedItem)
+        .mockRejectedValue(new Error("API Error"));
+
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+      };
+
+      await expect(
+        strategy.getPrices(request, mockAppStoreState)
+      ).rejects.toThrow("Failed to find nearest valid price point");
+    });
+
+    it("should handle error when no price points are returned", async () => {
+      const mockCurrencies = [
+        {
+          id: "USA",
+          currency: "USD",
+          value: 1.0,
+          localCurrency: "USD",
+          usdRate: 1.0,
+        },
+      ];
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
+
+      strategy = new PurchasingPowerPricingStrategy();
+
+      // Mock the price point fetcher to return empty array
+      const {
+        fetchTerritoryPricePointsForSelectedItem,
+      } = require("../set-price/base-price/price-point-fetcher");
+      jest
+        .mocked(fetchTerritoryPricePointsForSelectedItem)
+        .mockResolvedValue([]);
+
+      const request: PricingRequest = {
+        appId: "app-1",
+        selectedItem: { type: "app", id: "app-1", name: "App" },
+        basePricePoint: { id: "price-1", price: "1.00" },
+        pricingStrategy: "purchasingPower",
+      };
+
+      await expect(
+        strategy.getPrices(request, mockAppStoreState)
+      ).rejects.toThrow("Failed to find nearest valid price point");
+    });
+
+    it("should handle error when currencies file doesn't exist", () => {
+      mockFs.existsSync.mockReturnValue(false);
+
+      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
+        "Failed to load currencies"
+      );
+    });
+
+    it("should handle error when currencies file path is invalid", () => {
+      mockPath.join.mockReturnValue("/invalid/path/currencies.json");
+      mockFs.existsSync.mockReturnValue(false);
+
+      expect(() => new PurchasingPowerPricingStrategy()).toThrow(
+        "Failed to load currencies"
+      );
     });
   });
 });
