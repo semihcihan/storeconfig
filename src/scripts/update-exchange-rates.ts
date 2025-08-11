@@ -2,14 +2,7 @@ import { logger } from "../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
-
-interface TerritoryData {
-  id: string;
-  currency: string;
-  value?: number | null;
-  localCurrency?: string;
-  usdRate?: number;
-}
+import { TerritoryData } from "./fetch-ppp";
 
 interface ExchangeRateResponse {
   result: string;

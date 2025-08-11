@@ -1,19 +1,36 @@
 import { PriceSchema, PriceScheduleSchema } from "../models/app-store";
 import { z } from "zod";
 import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
+import { logger } from "../utils/logger";
+import { TerritoryCodeSchema } from "../models/territories";
+import * as fs from "fs";
+import * as path from "path";
+import { ContextualError } from "../helpers/error-handling-helpers";
 
 type Price = z.infer<typeof PriceSchema>;
 type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
+type TerritoryCode = z.infer<typeof TerritoryCodeSchema>;
+
+export interface TerritoryData {
+  id: string;
+  currency: string;
+  value?: number | null;
+  localCurrency?: string;
+  usdRate?: number;
+}
 
 export interface PricingStrategy {
-  buildPriceSchedule(basePrice: string): PriceSchedule;
-  buildSubscriptionPrices(pricePointId: string): Promise<Price[]>;
+  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule;
+  buildSubscriptionPrices(
+    pricePointId: string,
+    minPrice?: string
+  ): Promise<Price[]>;
 }
 
 export class ApplePricingStrategy implements PricingStrategy {
   private readonly BASE_TERRITORY = "USA";
 
-  buildPriceSchedule(basePrice: string): PriceSchedule {
+  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule {
     return {
       baseTerritory: this.BASE_TERRITORY,
       prices: [
@@ -25,23 +42,177 @@ export class ApplePricingStrategy implements PricingStrategy {
     };
   }
 
-  async buildSubscriptionPrices(pricePointId: string): Promise<Price[]> {
+  async buildSubscriptionPrices(
+    pricePointId: string,
+    minPrice?: string
+  ): Promise<Price[]> {
     return await buildSubscriptionPricesWithEqualizations(pricePointId);
   }
 }
 
 export class PurchasingPowerPricingStrategy implements PricingStrategy {
-  buildPriceSchedule(basePrice: string): PriceSchedule {
-    // TODO: Implement purchasing power based pricing
-    // For now, return empty schedule
+  private readonly BASE_TERRITORY = "USA";
+  private currencies: TerritoryData[] = [];
+
+  constructor() {
+    this.loadCurrencies();
+  }
+
+  private loadCurrencies(): void {
+    // TODO: handle by refetching the values??
+    try {
+      const currenciesPath = path.join(
+        process.cwd(),
+        "src",
+        "data",
+        "currencies.json"
+      );
+      if (fs.existsSync(currenciesPath)) {
+        const content = fs.readFileSync(currenciesPath, "utf8");
+        this.currencies = JSON.parse(content);
+        logger.info(
+          `Loaded ${this.currencies.length} territories from currencies.json`
+        );
+      } else {
+        logger.warn(
+          "currencies.json file not found, using empty currencies list"
+        );
+        this.currencies = [];
+      }
+    } catch (error) {
+      throw new ContextualError("Failed to load currencies", error, {
+        error,
+      });
+    }
+  }
+
+  buildPriceSchedule(basePrice: string, minPrice?: string): PriceSchedule {
+    const basePriceNumber = parseFloat(basePrice);
+    const minPriceNumber = minPrice ? parseFloat(minPrice) : 0;
+    if (isNaN(basePriceNumber)) {
+      throw new ContextualError("Invalid base price format", {
+        basePrice,
+      });
+    }
+
+    const prices: Price[] = [];
+    const territoriesWithMissingData: string[] = [];
+    const invalidTerritories: string[] = [];
+
+    for (const territory of this.currencies) {
+      try {
+        if (!this.isValidTerritoryCode(territory.id)) {
+          invalidTerritories.push(territory.id);
+          continue;
+        }
+
+        const price = this.calculateTerritoryPrice(
+          territory,
+          basePriceNumber,
+          minPriceNumber
+        );
+        if (price !== null) {
+          prices.push({
+            price: price.toString(),
+            territory: territory.id as TerritoryCode,
+          });
+        } else {
+          territoriesWithMissingData.push(territory.id);
+        }
+      } catch (error) {
+        logger.warn(
+          `Failed to calculate price for territory ${territory.id}:`,
+          error
+        );
+        territoriesWithMissingData.push(territory.id);
+      }
+    }
+
+    if (invalidTerritories.length > 0) {
+      logger.warn(
+        `Skipped ${invalidTerritories.length} invalid territory codes:`,
+        invalidTerritories
+      );
+    }
+
+    if (territoriesWithMissingData.length > 0) {
+      logger.warn(
+        `Could not calculate prices for ${territoriesWithMissingData.length} territories due to missing data:`,
+        territoriesWithMissingData
+      );
+    }
+
+    logger.info(
+      `Successfully calculated prices for ${prices.length} territories`
+    );
+
     return {
-      baseTerritory: "USA",
-      prices: [],
+      baseTerritory: this.BASE_TERRITORY,
+      prices,
     };
   }
 
-  async buildSubscriptionPrices(pricePointId: string): Promise<Price[]> {
-    return [];
+  private isValidTerritoryCode(
+    territoryId: string
+  ): territoryId is TerritoryCode {
+    return TerritoryCodeSchema.safeParse(territoryId).success;
+  }
+
+  private calculateTerritoryPrice(
+    territory: TerritoryData,
+    basePriceUSD: number,
+    minPriceUSD: number
+  ): number | null {
+    const resultConverter = (price: number) => Math.round(price * 100) / 100;
+
+    if (!territory.value || territory.value <= 0) {
+      return null;
+    }
+
+    // Calculate fair price in local currency using PPP ratio
+    const fairPriceLocalCurrency = basePriceUSD * territory.value;
+
+    // If the territory doesn't have a USD conversion rate, we can't calculate the price
+    if (!territory.usdRate) {
+      return resultConverter(fairPriceLocalCurrency);
+    }
+
+    // Convert from fair local price to fair USD price
+    const fairPriceUSD = Math.max(
+      fairPriceLocalCurrency / territory.usdRate,
+      minPriceUSD
+    );
+
+    // Find the target currency
+    const targetCurrencyTerritory = this.findTerritoryByLocalCurrency(
+      territory.currency
+    );
+
+    // If the target currency doesn't have a USD conversion rate, we can't calculate the price
+    if (!targetCurrencyTerritory || !targetCurrencyTerritory.usdRate) {
+      return null;
+    }
+
+    return resultConverter(fairPriceUSD * targetCurrencyTerritory.usdRate);
+  }
+
+  private findTerritoryByLocalCurrency(currency: string): TerritoryData | null {
+    return (
+      this.currencies.find(
+        (territory) =>
+          territory.localCurrency === currency &&
+          territory.usdRate &&
+          territory.usdRate > 0
+      ) || null
+    );
+  }
+
+  async buildSubscriptionPrices(
+    pricePointId: string,
+    minPrice?: string
+  ): Promise<Price[]> {
+    const schedule = this.buildPriceSchedule(pricePointId, minPrice);
+    return schedule.prices;
   }
 }
 

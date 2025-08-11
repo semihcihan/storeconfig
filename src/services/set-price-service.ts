@@ -26,7 +26,6 @@ export interface InteractivePricingOptions {
 }
 
 import type { PricingRequest } from "../models/pricing-request";
-import { PriceScheduleSchema } from "../models/app-store";
 
 export function pricingItemsExist(appStoreState: AppStoreModel): void {
   // Check if file contains at least one item
@@ -133,7 +132,10 @@ async function applyAppPricing(
   strategy: PricingStrategy
 ): Promise<AppStoreModel> {
   const { basePricePoint } = pricingRequest;
-  const schedule = strategy.buildPriceSchedule(basePricePoint.price);
+  const schedule = strategy.buildPriceSchedule(
+    basePricePoint.price,
+    pricingRequest.minimumPrice
+  );
   appStoreState.pricing = schedule;
   return appStoreState;
 }
@@ -162,7 +164,10 @@ async function applyInAppPurchasePricing(
     );
   }
 
-  const schedule = strategy.buildPriceSchedule(basePricePoint.price);
+  const schedule = strategy.buildPriceSchedule(
+    basePricePoint.price,
+    pricingRequest.minimumPrice
+  );
   appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
   return appStoreState;
 }
@@ -180,7 +185,10 @@ async function applySubscriptionPricing(
     throw new Error(`Subscription with ID ${selectedItem.id} not found`);
   }
 
-  const prices = await strategy.buildSubscriptionPrices(basePricePoint.id);
+  const prices = await strategy.buildSubscriptionPrices(
+    basePricePoint.id,
+    pricingRequest.minimumPrice
+  );
 
   subscription.prices = prices;
   return appStoreState;
@@ -209,7 +217,10 @@ async function applyOfferPricing(
     throw new Error("FREE_TRIAL promotional offers do not support pricing");
   }
 
-  const prices = await strategy.buildSubscriptionPrices(basePricePoint.id);
+  const prices = await strategy.buildSubscriptionPrices(
+    basePricePoint.id,
+    pricingRequest.minimumPrice
+  );
 
   offer.prices = prices;
   return appStoreState;

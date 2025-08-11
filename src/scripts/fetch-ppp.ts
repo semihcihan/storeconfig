@@ -3,11 +3,12 @@ import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
 
-interface TerritoryData {
+export interface TerritoryData {
   id: string;
   currency: string;
   value?: number | null;
   localCurrency?: string;
+  usdRate?: number;
 }
 
 interface WorldBankData {
