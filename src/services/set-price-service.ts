@@ -83,9 +83,13 @@ export async function startInteractivePricing(
 
 type PriceSchedule = z.infer<typeof PriceScheduleSchema>;
 
+function isAppleStrategy(request: PricingRequest): boolean {
+  return request.pricingStrategy === "apple";
+}
+
 const BASE_TERRITORY = "USA";
 
-function buildApplePriceSchedule(basePrice: string): PriceSchedule {
+function buildBaseTerritoryPriceSchedule(basePrice: string): PriceSchedule {
   return {
     baseTerritory: BASE_TERRITORY,
     prices: [
@@ -95,34 +99,6 @@ function buildApplePriceSchedule(basePrice: string): PriceSchedule {
       },
     ],
   };
-}
-
-function buildPurchasingPowerPrices(basePrice: string): PriceSchedule {
-  // TODO: Implement purchasing power pricing logic
-  return {
-    baseTerritory: BASE_TERRITORY,
-    prices: [
-      {
-        price: basePrice,
-        territory: BASE_TERRITORY,
-      },
-    ],
-  };
-}
-
-function buildPriceSchedule(
-  strategy: "apple" | "purchasingPower",
-  basePrice: string
-): PriceSchedule {
-  switch (strategy) {
-    case "apple":
-      return buildApplePriceSchedule(basePrice);
-    case "purchasingPower":
-      return buildPurchasingPowerPrices(basePrice);
-    default:
-      const _never: never = strategy as never;
-      throw new Error(`Unsupported pricing strategy: ${_never as any}`);
-  }
 }
 
 export async function applyPricing(
@@ -133,10 +109,16 @@ export async function applyPricing(
     `Preparing pricing update in state. Item: ${pricingRequest.selectedItem.type} (${pricingRequest.selectedItem.name}), Strategy: ${pricingRequest.pricingStrategy}`
   );
 
-  return await applyPricingByStrategy(appStoreState, pricingRequest);
+  if (!isAppleStrategy(pricingRequest)) {
+    throw new Error(
+      `Pricing strategy '${pricingRequest.pricingStrategy}' is not implemented yet`
+    );
+  } else {
+    return await applyApplePricing(appStoreState, pricingRequest);
+  }
 }
 
-async function applyPricingByStrategy(
+async function applyApplePricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
@@ -161,8 +143,8 @@ async function applyAppPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
-  const { basePricePoint, pricingStrategy } = pricingRequest;
-  const schedule = buildPriceSchedule(pricingStrategy, basePricePoint.price);
+  const { basePricePoint } = pricingRequest;
+  const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
   appStoreState.pricing = schedule;
   return appStoreState;
 }
@@ -171,7 +153,7 @@ async function applyInAppPurchasePricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
-  const { selectedItem, basePricePoint, pricingStrategy } = pricingRequest;
+  const { selectedItem, basePricePoint } = pricingRequest;
 
   if (
     !appStoreState.inAppPurchases ||
@@ -190,7 +172,7 @@ async function applyInAppPurchasePricing(
     );
   }
 
-  const schedule = buildPriceSchedule(pricingStrategy, basePricePoint.price);
+  const schedule = buildBaseTerritoryPriceSchedule(basePricePoint.price);
   appStoreState.inAppPurchases[iapIndex].priceSchedule = schedule;
   return appStoreState;
 }
@@ -199,7 +181,7 @@ async function applySubscriptionPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
-  const { selectedItem, basePricePoint, pricingStrategy } = pricingRequest;
+  const { selectedItem, basePricePoint } = pricingRequest;
 
   const subscription = findSubscriptionInState(appStoreState, selectedItem.id);
 
@@ -207,20 +189,11 @@ async function applySubscriptionPricing(
     throw new Error(`Subscription with ID ${selectedItem.id} not found`);
   }
 
-  if (pricingStrategy === "apple") {
-    const prices = await buildSubscriptionPricesWithEqualizations(
-      basePricePoint.id
-    );
-    subscription.prices = prices;
-  } else {
-    // For purchasing power strategy, we'll need to implement territory-specific pricing
-    // For now, use the same logic as Apple strategy
-    const prices = await buildSubscriptionPricesWithEqualizations(
-      basePricePoint.id
-    );
-    subscription.prices = prices;
-  }
+  const prices = await buildSubscriptionPricesWithEqualizations(
+    basePricePoint.id
+  );
 
+  subscription.prices = prices;
   return appStoreState;
 }
 
@@ -228,7 +201,7 @@ async function applyOfferPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
-  const { selectedItem, basePricePoint, pricingStrategy } = pricingRequest;
+  const { selectedItem, basePricePoint } = pricingRequest;
 
   const offerResult = findOfferInState(
     appStoreState,
@@ -246,20 +219,11 @@ async function applyOfferPricing(
     throw new Error("FREE_TRIAL promotional offers do not support pricing");
   }
 
-  if (pricingStrategy === "apple") {
-    const prices = await buildSubscriptionPricesWithEqualizations(
-      basePricePoint.id
-    );
-    offer.prices = prices;
-  } else {
-    // For purchasing power strategy, we'll need to implement territory-specific pricing
-    // For now, use the same logic as Apple strategy
-    const prices = await buildSubscriptionPricesWithEqualizations(
-      basePricePoint.id
-    );
-    offer.prices = prices;
-  }
+  const prices = await buildSubscriptionPricesWithEqualizations(
+    basePricePoint.id
+  );
 
+  offer.prices = prices;
   return appStoreState;
 }
 
