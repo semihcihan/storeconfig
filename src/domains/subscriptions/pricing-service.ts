@@ -25,6 +25,11 @@ type Price = z.infer<typeof PriceSchema>;
 // Cache for subscription price points to avoid repeated API calls
 const pricePointsCache = new Map<string, Map<string, string>>();
 
+// Function to clear cache (mainly for testing)
+export function clearPricePointsCache(): void {
+  pricePointsCache.clear();
+}
+
 // Helper function to find subscription ID by product ID
 export function findSubscriptionId(
   subscriptionProductId: string,

@@ -16,6 +16,13 @@ const iapIdCache = new Map<string, string>(); // key: `${appId}:${productId}` â†
 const subscriptionIdCache = new Map<string, string>(); // key: `${appId}:${selectedKey}` â†’ subscriptionId
 const pricePointsCache = new Map<string, PricePointInfo[]>(); // key: `${kind}:${identifier}:${territory}`
 
+// Function to clear all caches (mainly for testing)
+export function clearCaches(): void {
+  iapIdCache.clear();
+  subscriptionIdCache.clear();
+  pricePointsCache.clear();
+}
+
 type HasCustomerPrice = {
   id?: string;
   attributes?: { customerPrice?: string | null };

@@ -2,7 +2,6 @@
 
 - Create easy pricing changes
 
-  - price points
   - cache
 
 - beautify logs
