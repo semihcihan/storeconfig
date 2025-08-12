@@ -8,6 +8,18 @@ module.exports = {
   collectCoverage: false,
   coverageReporters: ["text"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  // Add Jest caching for better performance
+  cache: true,
+  cacheDirectory: ".jest-cache",
+  // Use modern transform syntax instead of deprecated globals
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        useESM: false,
+      },
+    ],
+  },
   collectCoverageFrom: [
     "src/**/*.{js,ts}",
     "!src/**/*.test.{js,ts}",
