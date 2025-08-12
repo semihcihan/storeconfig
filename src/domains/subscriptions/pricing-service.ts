@@ -183,12 +183,10 @@ export async function createSubscriptionPrices(
     `Creating ${prices.length} subscription prices for subscription ${subscriptionId}`
   );
 
-  // Process all operations in parallel (each with its own retry logic)
-  await Promise.all(
-    prices.map((price) =>
-      createSubscriptionPriceForTerritory(subscriptionId, price)
-    )
-  );
+  // Process all operations sequentially to avoid 429 API rate limit errors
+  for (const price of prices) {
+    await createSubscriptionPriceForTerritory(subscriptionId, price);
+  }
 
   logger.debug(
     `Successfully created ${prices.length} subscription prices for subscription ${subscriptionId}`
