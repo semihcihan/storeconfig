@@ -11,7 +11,7 @@ export interface TerritoryData {
   usdRate?: number;
 }
 
-interface WorldBankData {
+export interface WorldBankData {
   indicator: {
     id: string;
     value: string;
@@ -32,7 +32,7 @@ interface CurrencyMapping {
   [countryCode: string]: string;
 }
 
-async function checkCurrenciesFile(): Promise<void> {
+export async function checkCurrenciesFile(): Promise<void> {
   const currenciesPath = path.join(
     process.cwd(),
     "src",
@@ -45,7 +45,7 @@ async function checkCurrenciesFile(): Promise<void> {
   }
 }
 
-async function loadCurrencies(): Promise<TerritoryData[]> {
+export async function loadCurrencies(): Promise<TerritoryData[]> {
   const currenciesPath = path.join(
     process.cwd(),
     "src",
@@ -56,7 +56,7 @@ async function loadCurrencies(): Promise<TerritoryData[]> {
   return JSON.parse(content);
 }
 
-async function loadCurrencyMapping(): Promise<CurrencyMapping> {
+export async function loadCurrencyMapping(): Promise<CurrencyMapping> {
   const mappingPath = path.join(
     process.cwd(),
     "src",
@@ -69,7 +69,7 @@ async function loadCurrencyMapping(): Promise<CurrencyMapping> {
 
 const date = "2024";
 
-async function fetchPPPData(): Promise<WorldBankData[]> {
+export async function fetchPPPData(): Promise<WorldBankData[]> {
   const apiEndpoint = `https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP?date=${date}&format=json&per_page=300`;
 
   logger.debug(
@@ -102,7 +102,7 @@ async function fetchPPPData(): Promise<WorldBankData[]> {
   }
 }
 
-async function updateCurrenciesWithPPP(
+export async function updateCurrenciesWithPPP(
   currencies: TerritoryData[],
   pppData: WorldBankData[],
   currencyMapping: CurrencyMapping
@@ -165,7 +165,7 @@ async function updateCurrenciesWithPPP(
   return updatedCurrencies;
 }
 
-async function saveUpdatedCurrencies(
+export async function saveUpdatedCurrencies(
   currencies: TerritoryData[]
 ): Promise<void> {
   const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");

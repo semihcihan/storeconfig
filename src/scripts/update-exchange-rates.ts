@@ -4,7 +4,7 @@ import * as path from "path";
 import axios from "axios";
 import { TerritoryData } from "./fetch-ppp";
 
-interface ExchangeRateResponse {
+export interface ExchangeRateResponse {
   result: string;
   provider: string;
   documentation: string;
@@ -20,7 +20,7 @@ interface ExchangeRateResponse {
   };
 }
 
-async function checkCurrenciesFile(): Promise<void> {
+export async function checkCurrenciesFile(): Promise<void> {
   const currenciesPath = path.join(
     process.cwd(),
     "src",
@@ -35,7 +35,7 @@ async function checkCurrenciesFile(): Promise<void> {
   }
 }
 
-async function loadCurrencies(): Promise<TerritoryData[]> {
+export async function loadCurrencies(): Promise<TerritoryData[]> {
   const currenciesPath = path.join(
     process.cwd(),
     "src",
@@ -46,7 +46,7 @@ async function loadCurrencies(): Promise<TerritoryData[]> {
   return JSON.parse(content);
 }
 
-async function fetchUSDExchangeRates(): Promise<ExchangeRateResponse> {
+export async function fetchUSDExchangeRates(): Promise<ExchangeRateResponse> {
   const apiEndpoint = "https://open.er-api.com/v6/latest/USD";
 
   logger.debug("Fetching USD exchange rates from Exchange Rate API...");
@@ -71,7 +71,7 @@ async function fetchUSDExchangeRates(): Promise<ExchangeRateResponse> {
   }
 }
 
-async function updateExchangeRates(
+export async function updateExchangeRates(
   currencies: TerritoryData[],
   exchangeRates: ExchangeRateResponse
 ): Promise<{
@@ -87,7 +87,7 @@ async function updateExchangeRates(
     if (currency.localCurrency) {
       // Get USD exchange rate for the local currency
       const usdRate = exchangeRates.rates[currency.localCurrency];
-      if (usdRate !== undefined) {
+      if (usdRate !== undefined && usdRate > 0) {
         currency.usdRate = usdRate;
       } else {
         nullValueExchangeRates.push(currency.id);
@@ -98,7 +98,7 @@ async function updateExchangeRates(
   return { updatedCurrencies, nullValueExchangeRates };
 }
 
-async function saveUpdatedCurrencies(
+export async function saveUpdatedCurrencies(
   currencies: TerritoryData[]
 ): Promise<void> {
   const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");

@@ -152,7 +152,7 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     }
 
     if (territoriesWithMissingData.length > 0) {
-      // TODO: handle by using Apple prices?
+      // TODO: handle by using Apple prices? only needed for subscriptions as the others have a base territory
       logger.warn(
         `Could not calculate prices for ${territoriesWithMissingData.length} territories due to missing data:`,
         territoriesWithMissingData

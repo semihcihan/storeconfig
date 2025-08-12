@@ -8,7 +8,7 @@ interface TerritoryData {
   currency: string;
 }
 
-async function fetchAllTerritories(): Promise<TerritoryData[]> {
+export async function fetchAllTerritories(): Promise<TerritoryData[]> {
   const territories: TerritoryData[] = [];
   const limit = 200;
 
@@ -48,7 +48,7 @@ async function fetchAllTerritories(): Promise<TerritoryData[]> {
   return territories;
 }
 
-async function saveTerritoriesToFile(
+export async function saveTerritoriesToFile(
   territories: TerritoryData[]
 ): Promise<void> {
   const outputPath = path.join(process.cwd(), "src", "data", "currencies.json");
