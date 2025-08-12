@@ -20,7 +20,7 @@
     "apply-file": "npx ts-node src/cli.ts apply --c fetch.json --f apply.json --id NOT_NEEDED",
     "plan-file": "npx ts-node src/cli.ts plan --c fetch.json --f apply.json --id NOT_NEEDED",
     "validate-file": "npx ts-node src/cli.ts validate-format --f apply.json",
-    "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts",
+    "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",
     "test-equalizations": "npx ts-node src/research/test-equalizations.ts"

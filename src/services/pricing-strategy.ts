@@ -21,7 +21,7 @@ export interface TerritoryData {
   currency: string;
   value?: number | null;
   localCurrency?: string;
-  usdRate?: number;
+  usdRate: number;
 }
 
 export interface PricingStrategy {
@@ -154,7 +154,8 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     if (territoriesWithMissingData.length > 0) {
       // TODO: handle by using Apple prices? only needed for subscriptions as the others have a base territory
       logger.warn(
-        `Could not calculate prices for ${territoriesWithMissingData.length} territories due to missing data:`,
+        `Could not calculate prices for ${territoriesWithMissingData.length} territories due to missing data,
+        Will use value as usdRate to ignore the PPP ratio`,
         territoriesWithMissingData
       );
     }
@@ -179,18 +180,14 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     minPriceUSD: number
   ): number | null {
     const resultConverter = (price: number) => Math.round(price * 100) / 100;
-
-    if (!territory.value || territory.value <= 0) {
-      return null;
+    let pppValue = territory.value;
+    if (!pppValue || pppValue <= 0) {
+      // If the territory doesn't have a PPP value, use the USD conversion rate to ignore the PPP ratio
+      pppValue = territory.usdRate;
     }
 
     // Calculate fair price in local currency using PPP ratio
-    const fairPriceLocalCurrency = basePriceUSD * territory.value;
-
-    // If the territory doesn't have a USD conversion rate, we can't calculate the price
-    if (!territory.usdRate) {
-      return resultConverter(fairPriceLocalCurrency);
-    }
+    const fairPriceLocalCurrency = basePriceUSD * pppValue;
 
     // Convert from fair local price to fair USD price
     const fairPriceUSD = Math.max(

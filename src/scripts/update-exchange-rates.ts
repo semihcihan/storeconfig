@@ -2,7 +2,7 @@ import { logger } from "../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
-import { TerritoryData } from "./fetch-ppp";
+import { TerritoryData } from "../services/pricing-strategy";
 
 export interface ExchangeRateResponse {
   result: string;
@@ -123,7 +123,7 @@ async function main(): Promise<void> {
   await saveUpdatedCurrencies(updatedCurrencies);
 
   if (nullValueExchangeRates.length > 0) {
-    logger.warn(
+    throw new Error(
       `Territories with missing USD exchange rates: ${nullValueExchangeRates.join(
         ", "
       )}`

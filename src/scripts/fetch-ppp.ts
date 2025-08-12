@@ -2,34 +2,29 @@ import { logger } from "../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
+import { TerritoryData } from "../services/pricing-strategy";
 
-export interface TerritoryData {
-  id: string;
-  currency: string;
-  value?: number | null;
-  localCurrency?: string;
-  usdRate?: number;
-}
-
-export interface WorldBankData {
-  indicator: {
-    id: string;
-    value: string;
-  };
-  country: {
-    id: string;
-    value: string;
-  };
-  countryiso3code: string;
-  date: string;
+export interface PPPData {
+  territory: string;
   value: number | null;
-  unit: string;
-  obs_status: string;
-  decimal: number;
 }
 
 interface CurrencyMapping {
   [countryCode: string]: string;
+}
+
+interface PPEXValue {
+  [date: string]: number;
+}
+
+interface PPPEXData {
+  [territory: string]: PPEXValue;
+}
+
+interface IMFAPIResponse {
+  values: {
+    PPPEX: PPPEXData;
+  };
 }
 
 export async function checkCurrenciesFile(): Promise<void> {
@@ -67,16 +62,16 @@ export async function loadCurrencyMapping(): Promise<CurrencyMapping> {
   return JSON.parse(content);
 }
 
-const date = "2024";
+const date = "2025";
 
-export async function fetchPPPData(): Promise<WorldBankData[]> {
-  const apiEndpoint = `https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP?date=${date}&format=json&per_page=300`;
+export async function fetchPPPData(): Promise<PPPData[]> {
+  const apiEndpoint = `https://www.imf.org/external/datamapper/api/v1/PPPEX?periods=${date}`;
 
   logger.debug(
     `Fetching PPP conversion factor data for ${date} from World Bank API...`
   );
 
-  const response = await axios.get(apiEndpoint, {
+  const response = await axios.get<IMFAPIResponse>(apiEndpoint, {
     timeout: 5000,
     headers: {
       "User-Agent": "Developer-Tool/1.0",
@@ -87,55 +82,58 @@ export async function fetchPPPData(): Promise<WorldBankData[]> {
   if (response.status === 200 && response.data) {
     logger.debug("Successfully connected to World Bank API");
 
-    const [metadata, data] = response.data;
+    const {
+      values: { PPPEX },
+    } = response.data;
 
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid response format from World Bank API");
-    }
+    const pppData: PPPData[] = Object.entries(PPPEX).map(
+      ([territory, dateValues]: [string, PPEXValue]) => ({
+        territory,
+        value: dateValues[date] || null,
+      })
+    );
 
     logger.debug(
-      `Successfully fetched PPP data for ${data.length} countries from World Bank API`
+      `Successfully fetched PPP data for ${pppData.length} countries from World Bank API`
     );
-    return data;
+    return pppData;
   } else {
     throw new Error(`World Bank API returned status ${response.status}`);
   }
 }
 
 export async function updateCurrenciesWithPPP(
-  currencies: TerritoryData[],
-  pppData: WorldBankData[],
+  territoryData: TerritoryData[],
+  pppData: PPPData[],
   currencyMapping: CurrencyMapping
 ): Promise<TerritoryData[]> {
-  const updatedCurrencies = [...currencies];
+  const updatedTerritoryData = [...territoryData];
   const nullValueTerritories: string[] = [];
   const missingPPPTerritories: string[] = [];
   const missingLocalCurrency: string[] = [];
 
   logger.debug("Adding local currency information to territories...");
 
-  for (const currency of updatedCurrencies) {
-    const matchingPPP = pppData.find(
-      (ppp) => ppp.countryiso3code === currency.id
-    );
+  for (const territory of updatedTerritoryData) {
+    const matchingPPP = pppData.find((ppp) => ppp.territory === territory.id);
 
     if (matchingPPP) {
-      currency.value = matchingPPP.value;
+      territory.value = matchingPPP.value;
 
       if (matchingPPP.value === null) {
-        nullValueTerritories.push(currency.id);
+        nullValueTerritories.push(territory.id);
       }
     } else {
-      currency.value = null;
-      missingPPPTerritories.push(currency.id);
+      territory.value = null;
+      missingPPPTerritories.push(territory.id);
     }
 
     // Get local currency from ISO 4217 mapping
-    const localCurrency = currencyMapping[currency.id];
+    const localCurrency = currencyMapping[territory.id];
     if (localCurrency) {
-      currency.localCurrency = localCurrency;
+      territory.localCurrency = localCurrency;
     } else {
-      missingLocalCurrency.push(currency.id);
+      missingLocalCurrency.push(territory.id);
     }
   }
 
@@ -157,12 +155,9 @@ export async function updateCurrenciesWithPPP(
     logger.warn(
       `Territories missing PPP data: ${missingPPPTerritories.join(", ")}`
     );
-    logger.warn(
-      `We should manually fallback to https://www.imf.org/external/datamapper/api/?meta&geoitems&indicators&datasets&values=PPPEX PPP conversion factor, GDP (LCU per international $)`
-    );
   }
 
-  return updatedCurrencies;
+  return updatedTerritoryData;
 }
 
 export async function saveUpdatedCurrencies(

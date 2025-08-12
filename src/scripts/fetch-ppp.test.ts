@@ -2,7 +2,8 @@ import { jest } from "@jest/globals";
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
-import { TerritoryData, WorldBankData } from "./fetch-ppp";
+import { TerritoryData } from "../services/pricing-strategy";
+import { PPPData } from "./fetch-ppp";
 import {
   checkCurrenciesFile,
   loadCurrencies,
@@ -28,26 +29,11 @@ const mockedPath = path as jest.Mocked<typeof path>;
 const originalCwd = process.cwd;
 const mockCwd = "/mock/workspace";
 
-// Helper function to create mock WorldBankData
-function createMockWorldBankData(
-  countryCode: string,
-  value: number | null
-): WorldBankData {
+// Helper function to create mock PPPData
+function createMockPPPData(countryCode: string, value: number | null): PPPData {
   return {
-    indicator: {
-      id: "PA.NUS.PPP",
-      value: "PPP conversion factor, GDP (LCU per international $)",
-    },
-    country: {
-      id: countryCode,
-      value: countryCode,
-    },
-    countryiso3code: countryCode,
-    date: "2024",
+    territory: countryCode,
     value: value,
-    unit: "LCU per international $",
-    obs_status: "OK",
-    decimal: 6,
   };
 }
 
@@ -84,8 +70,8 @@ describe("fetch-ppp", () => {
   describe("loadCurrencies", () => {
     it("should load and parse currencies from file", async () => {
       const mockCurrencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "GBR", currency: "GBP" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "GBR", currency: "GBP", usdRate: 1 },
       ];
 
       mockedFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
@@ -136,22 +122,26 @@ describe("fetch-ppp", () => {
     it("should fetch PPP data successfully", async () => {
       const mockResponse = {
         status: 200,
-        data: [
-          { metadata: "info" },
-          [
-            createMockWorldBankData("USA", 1.0),
-            createMockWorldBankData("GBR", 0.68),
-          ],
-        ],
+        data: {
+          values: {
+            PPPEX: {
+              USA: { "2025": 1.0 },
+              GBR: { "2025": 0.68 },
+            },
+          },
+        },
       };
 
       mockedAxios.get.mockResolvedValue(mockResponse);
 
       const result = await fetchPPPData();
 
-      expect(result).toEqual(mockResponse.data[1]);
+      expect(result).toEqual([
+        { territory: "USA", value: 1.0 },
+        { territory: "GBR", value: 0.68 },
+      ]);
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        "https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP?date=2024&format=json&per_page=300",
+        "https://www.imf.org/external/datamapper/api/v1/PPPEX?periods=2025",
         {
           timeout: 5000,
           headers: {
@@ -162,40 +152,35 @@ describe("fetch-ppp", () => {
       );
     });
 
+    it("should handle missing date values", async () => {
+      const mockResponse = {
+        status: 200,
+        data: {
+          values: {
+            PPPEX: {
+              USA: { "2023": 1.0 }, // Different year
+              GBR: { "2025": 0.68 },
+            },
+          },
+        },
+      };
+
+      mockedAxios.get.mockResolvedValue(mockResponse);
+
+      const result = await fetchPPPData();
+
+      expect(result).toEqual([
+        { territory: "USA", value: null },
+        { territory: "GBR", value: 0.68 },
+      ]);
+    });
+
     it("should throw error on non-200 status", async () => {
       const mockResponse = { status: 500, data: null };
       mockedAxios.get.mockResolvedValue(mockResponse);
 
       await expect(fetchPPPData()).rejects.toThrow(
         "World Bank API returned status 500"
-      );
-    });
-
-    it("should throw error on invalid response format", async () => {
-      const mockResponse = {
-        status: 200,
-        data: ["metadata only"],
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
-
-      await expect(fetchPPPData()).rejects.toThrow(
-        "Invalid response format from World Bank API"
-      );
-    });
-
-    it("should throw error on non-array data", async () => {
-      const mockResponse = {
-        status: 200,
-        data: [
-          { metadata: "info" },
-          { invalid: "format" }, // Second element is not an array
-        ],
-      };
-
-      mockedAxios.get.mockResolvedValue(mockResponse);
-
-      await expect(fetchPPPData()).rejects.toThrow(
-        "Invalid response format from World Bank API"
       );
     });
 
@@ -210,14 +195,14 @@ describe("fetch-ppp", () => {
   describe("updateCurrenciesWithPPP", () => {
     it("should update currencies with PPP data and local currency mapping", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "GBR", currency: "GBP" },
-        { id: "XXX", currency: "XXX" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "GBR", currency: "GBP", usdRate: 1 },
+        { id: "XXX", currency: "XXX", usdRate: 1 },
       ];
 
       const pppData = [
-        createMockWorldBankData("USA", 1.0),
-        createMockWorldBankData("GBR", 0.68),
+        createMockPPPData("USA", 1.0),
+        createMockPPPData("GBR", 0.68),
       ];
 
       const currencyMapping = {
@@ -242,13 +227,13 @@ describe("fetch-ppp", () => {
 
     it("should handle null PPP values", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "NULL", currency: "NULL" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "NULL", currency: "NULL", usdRate: 1 },
       ];
 
       const pppData = [
-        createMockWorldBankData("USA", 1.0),
-        createMockWorldBankData("NULL", null),
+        createMockPPPData("USA", 1.0),
+        createMockPPPData("NULL", null),
       ];
 
       const currencyMapping = {
@@ -268,11 +253,11 @@ describe("fetch-ppp", () => {
 
     it("should handle missing PPP data", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "MISSING", currency: "MISSING" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "MISSING", currency: "MISSING", usdRate: 1 },
       ];
 
-      const pppData = [createMockWorldBankData("USA", 1.0)];
+      const pppData = [createMockPPPData("USA", 1.0)];
 
       const currencyMapping = {
         USA: "USD",
@@ -291,11 +276,11 @@ describe("fetch-ppp", () => {
 
     it("should throw error when territory is missing from currency mapping", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "MISSING", currency: "MISSING" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "MISSING", currency: "MISSING", usdRate: 1 },
       ];
 
-      const pppData = [createMockWorldBankData("USA", 1.0)];
+      const pppData = [createMockPPPData("USA", 1.0)];
 
       const currencyMapping = {
         USA: "USD",
@@ -316,10 +301,11 @@ describe("fetch-ppp", () => {
           currency: "USD",
           value: 0.5, // Existing value
           localCurrency: "USD", // Existing localCurrency
+          usdRate: 1,
         },
       ];
 
-      const pppData = [createMockWorldBankData("USA", 1.0)];
+      const pppData = [createMockPPPData("USA", 1.0)];
 
       const currencyMapping = {
         USA: "USD",
@@ -341,8 +327,20 @@ describe("fetch-ppp", () => {
   describe("saveUpdatedCurrencies", () => {
     it("should save currencies to file", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", value: 1.0, localCurrency: "USD" },
-        { id: "GBR", currency: "GBP", value: 0.68, localCurrency: "GBP" },
+        {
+          id: "USA",
+          currency: "USD",
+          value: 1.0,
+          localCurrency: "USD",
+          usdRate: 1,
+        },
+        {
+          id: "GBR",
+          currency: "GBP",
+          value: 0.68,
+          localCurrency: "GBP",
+          usdRate: 1,
+        },
       ];
 
       await saveUpdatedCurrencies(currencies);
@@ -358,11 +356,11 @@ describe("fetch-ppp", () => {
   describe("integration scenarios", () => {
     it("should handle empty PPP data array", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" },
-        { id: "GBR", currency: "GBP" },
+        { id: "USA", currency: "USD", usdRate: 1 },
+        { id: "GBR", currency: "GBP", usdRate: 1 },
       ];
 
-      const pppData: WorldBankData[] = [];
+      const pppData: PPPData[] = [];
 
       const currencyMapping = {
         USA: "USD",
@@ -390,7 +388,7 @@ describe("fetch-ppp", () => {
         },
       ];
 
-      const pppData = [createMockWorldBankData("USA", 1.0)];
+      const pppData = [createMockPPPData("USA", 1.0)];
 
       const currencyMapping = {
         USA: "USD",

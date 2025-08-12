@@ -293,7 +293,7 @@ describe("PricingStrategy", () => {
       expect(deuPrice?.price).toBe("0.99");
     });
 
-    it("should skip territories with missing purchasing power data", async () => {
+    it("should use usdRate for territories with missing purchasing power data", async () => {
       const mockCurrencies = [
         {
           id: "USA",
@@ -332,8 +332,18 @@ describe("PricingStrategy", () => {
 
       const prices = await strategy.getPrices(request, mockAppStoreState);
 
-      expect(prices).toHaveLength(1);
-      expect(prices[0].territory).toBe("USA");
+      expect(prices).toHaveLength(3);
+
+      const usaPrice = prices.find((p: any) => p.territory === "USA");
+      const afgPrice = prices.find((p: any) => p.territory === "AFG");
+      const btnPrice = prices.find((p: any) => p.territory === "BTN");
+
+      // USA: 1.00 * 1.0 = 1.00, snaps to nearest available: 1.99
+      expect(usaPrice?.price).toBe("1.99");
+      // AFG: 1.00 * 68.587167 = 68.59, snaps to nearest available: 99.99 (or highest available)
+      expect(afgPrice?.price).toBeDefined();
+      // BTN: 1.00 * 87.624905 = 87.62, snaps to nearest available: 99.99 (or highest available)
+      expect(btnPrice?.price).toBeDefined();
     });
 
     it("should skip territories with invalid territory codes", async () => {

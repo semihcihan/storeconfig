@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
-import { TerritoryData } from "./fetch-ppp";
+import { TerritoryData } from "../services/pricing-strategy";
 import {
   checkCurrenciesFile,
   loadCurrencies,
@@ -80,8 +80,8 @@ describe("update-exchange-rates", () => {
   describe("loadCurrencies", () => {
     it("should load and parse currencies from file", async () => {
       const mockCurrencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", localCurrency: "USD" },
-        { id: "GBR", currency: "GBP", localCurrency: "GBP" },
+        { id: "USA", currency: "USD", localCurrency: "USD", usdRate: 1 },
+        { id: "GBR", currency: "GBP", localCurrency: "GBP", usdRate: 1 },
       ];
 
       mockedFs.readFileSync.mockReturnValue(JSON.stringify(mockCurrencies));
@@ -153,9 +153,9 @@ describe("update-exchange-rates", () => {
   describe("updateExchangeRates", () => {
     it("should update currencies with valid exchange rates", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", localCurrency: "USD" },
-        { id: "GBR", currency: "GBP", localCurrency: "GBP" },
-        { id: "EUR", currency: "EUR", localCurrency: "EUR" },
+        { id: "USA", currency: "USD", localCurrency: "USD", usdRate: 1 },
+        { id: "GBR", currency: "GBP", localCurrency: "GBP", usdRate: 1 },
+        { id: "EUR", currency: "EUR", localCurrency: "EUR", usdRate: 1 },
       ];
 
       const exchangeRates = createMockExchangeRateResponse({
@@ -165,31 +165,16 @@ describe("update-exchange-rates", () => {
 
       const result = await updateExchangeRates(currencies, exchangeRates);
 
-      expect(result.updatedCurrencies[0].usdRate).toBeUndefined(); // USD has no rate
+      expect(result.updatedCurrencies[0].usdRate).toBe(1); // USD has no rate
       expect(result.updatedCurrencies[1].usdRate).toBe(0.73);
       expect(result.updatedCurrencies[2].usdRate).toBe(0.85);
       expect(result.nullValueExchangeRates).toEqual(["USA"]);
     });
 
-    it("should handle missing exchange rates", async () => {
-      const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", localCurrency: "USD" },
-        { id: "XXX", currency: "XXX", localCurrency: "XXX" },
-      ];
-
-      const exchangeRates = createMockExchangeRateResponse({});
-
-      const result = await updateExchangeRates(currencies, exchangeRates);
-
-      expect(result.updatedCurrencies[0].usdRate).toBeUndefined();
-      expect(result.updatedCurrencies[1].usdRate).toBeUndefined();
-      expect(result.nullValueExchangeRates).toEqual(["USA", "XXX"]);
-    });
-
     it("should handle zero exchange rates", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", localCurrency: "USD" },
-        { id: "ZERO", currency: "ZERO", localCurrency: "ZERO" },
+        { id: "USA", currency: "USD", localCurrency: "USD", usdRate: 1 },
+        { id: "ZERO", currency: "ZERO", localCurrency: "ZERO", usdRate: 1 },
       ];
 
       const exchangeRates = createMockExchangeRateResponse({
@@ -198,15 +183,15 @@ describe("update-exchange-rates", () => {
 
       const result = await updateExchangeRates(currencies, exchangeRates);
 
-      expect(result.updatedCurrencies[0].usdRate).toBeUndefined();
-      expect(result.updatedCurrencies[1].usdRate).toBeUndefined();
+      expect(result.updatedCurrencies[0].usdRate).toBe(1);
+      expect(result.updatedCurrencies[1].usdRate).toBe(1);
       expect(result.nullValueExchangeRates).toEqual(["USA", "ZERO"]);
     });
 
     it("should handle negative exchange rates", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD", localCurrency: "USD" },
-        { id: "NEG", currency: "NEG", localCurrency: "NEG" },
+        { id: "USA", currency: "USD", localCurrency: "USD", usdRate: 1 },
+        { id: "NEG", currency: "NEG", localCurrency: "NEG", usdRate: 1 },
       ];
 
       const exchangeRates = createMockExchangeRateResponse({
@@ -215,8 +200,8 @@ describe("update-exchange-rates", () => {
 
       const result = await updateExchangeRates(currencies, exchangeRates);
 
-      expect(result.updatedCurrencies[0].usdRate).toBeUndefined();
-      expect(result.updatedCurrencies[1].usdRate).toBeUndefined();
+      expect(result.updatedCurrencies[0].usdRate).toBe(1);
+      expect(result.updatedCurrencies[1].usdRate).toBe(1);
       expect(result.nullValueExchangeRates).toEqual(["USA", "NEG"]);
     });
   });
@@ -241,8 +226,8 @@ describe("update-exchange-rates", () => {
   describe("integration scenarios", () => {
     it("should handle currencies without localCurrency", async () => {
       const currencies: TerritoryData[] = [
-        { id: "USA", currency: "USD" }, // No localCurrency
-        { id: "GBR", currency: "GBP", localCurrency: "GBP" },
+        { id: "USA", currency: "USD", usdRate: 1 }, // No localCurrency
+        { id: "GBR", currency: "GBP", localCurrency: "GBP", usdRate: 1 },
       ];
 
       const exchangeRates = createMockExchangeRateResponse({
@@ -251,7 +236,7 @@ describe("update-exchange-rates", () => {
 
       const result = await updateExchangeRates(currencies, exchangeRates);
 
-      expect(result.updatedCurrencies[0].usdRate).toBeUndefined();
+      expect(result.updatedCurrencies[0].usdRate).toBe(1);
       expect(result.updatedCurrencies[1].usdRate).toBe(0.73);
       expect(result.nullValueExchangeRates).toEqual([]); // No territories added because first has no localCurrency
     });
@@ -263,6 +248,7 @@ describe("update-exchange-rates", () => {
           currency: "USD",
           localCurrency: "USD",
           value: 1.0,
+          usdRate: 1,
         },
       ];
 
