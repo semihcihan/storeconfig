@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { validateIntroductoryOffersGrouping } from "./introductory-offer-validation";
+import {
+  validateIntroductoryOffersGrouping,
+  validateIntroductoryOffers,
+} from "./introductory-offer-validation";
 
 /**
  * Validates that each available territory has subscription prices defined
@@ -14,7 +17,6 @@ export function validateSubscriptionTerritoryPricing(
   const availableTerritories =
     subscription.availability?.availableTerritories || [];
   const subscriptionPrices = subscription.prices || [];
-  const introductoryOffers = subscription.introductoryOffers || [];
 
   // Create sets for efficient lookup
   const subscriptionPriceTerritories = new Set(
@@ -64,4 +66,9 @@ export function validateSubscription(
 
   // Validate territory pricing
   validateSubscriptionTerritoryPricing(subscription, ctx);
+  validateIntroductoryOffers(
+    subscription.productId,
+    subscription.subscriptionPeriod,
+    subscription.introductoryOffers
+  );
 }

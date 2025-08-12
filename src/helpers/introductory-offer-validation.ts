@@ -112,6 +112,10 @@ export function validateIntroductoryOffers(
   subscriptionPeriod: string,
   offers: IntroductoryOffer[]
 ): void {
+  if (!offers) {
+    return;
+  }
+
   const territoryOffers = new Map<string, IntroductoryOffer>();
 
   for (const offer of offers) {

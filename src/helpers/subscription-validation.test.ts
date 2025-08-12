@@ -364,7 +364,7 @@ describe("Subscription Validation", () => {
           {
             type: "FREE_TRIAL",
             duration: "ONE_WEEK",
-            availableTerritories: ["USA"],
+            availableTerritories: ["CAN"],
           },
         ],
         promotionalOffers: [],

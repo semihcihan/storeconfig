@@ -402,13 +402,13 @@ describe("Introductory Offers Grouping Validation", () => {
         {
           type: "PAY_UP_FRONT" as const,
           duration: "ONE_MONTH" as const,
-          prices: [{ price: "2.99", territory: "USA" }],
-          availableTerritories: ["USA"],
+          prices: [{ price: "2.99", territory: "CAN" }],
+          availableTerritories: ["CAN"],
         },
         {
           type: "FREE_TRIAL" as const,
           duration: "ONE_WEEK" as const,
-          availableTerritories: ["USA"],
+          availableTerritories: ["GBR"],
         },
       ],
     };
