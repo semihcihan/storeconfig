@@ -23,7 +23,7 @@
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",
-    "test-equalizations": "npx ts-node src/research/test-equalizations.ts"
+    "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.json"
   },
   "keywords": [],
   "author": "Semih Cihan",
