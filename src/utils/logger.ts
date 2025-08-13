@@ -1,4 +1,5 @@
 import winston from "winston";
+import util from "util";
 
 // Log levels in order of priority
 export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
@@ -18,14 +19,36 @@ function getInitialLogLevel(): LogLevel {
 
 // Winston logger configuration
 function createWinstonLogger(): winston.Logger {
+  const { combine, colorize, errors, printf, splat } = winston.format;
+
+  const consoleFormat = combine(
+    errors({ stack: true }),
+    splat(),
+    colorize({ all: true }),
+    printf((info) => {
+      const { level, message } = info as any;
+      const parts: string[] = [];
+
+      if ((info as any).stack) {
+        parts.push((info as any).stack);
+      }
+
+      const splatSymbol = Symbol.for("splat");
+      const extras = (info as any)[splatSymbol] as unknown[] | undefined;
+      if (!parts.length && extras && extras.length > 0) {
+        const rendered = extras.length === 1 ? extras[0] : extras;
+        parts.push(util.inspect(rendered, { colors: true, depth: null }));
+      }
+
+      const suffix = parts.length > 0 ? `\n${parts.join("\n")}` : "";
+      return `${level}: ${message}${suffix}`;
+    })
+  );
+
   return winston.createLogger({
     exitOnError: true,
     level: getInitialLogLevel(),
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.errors({ stack: false }),
-      winston.format.simple()
-    ),
+    format: consoleFormat,
     transports: [new winston.transports.Console()],
   });
 }
@@ -39,7 +62,7 @@ export function setLogLevel(level: LogLevel): void {
       activeLogger.setLevel(level);
     }
   } else {
-    console.warn(
+    winstonLogger.warn(
       `Invalid log level: ${level}. Using '${DEFAULT_LOG_LEVEL}' as default.`
     );
     winstonLogger.level = DEFAULT_LOG_LEVEL;
