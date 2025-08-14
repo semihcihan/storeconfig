@@ -7,23 +7,13 @@ import {
 import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 import {
-  getAppPriceSchedule,
   fetchAppPricePoints,
-  fetchCurrentManualPrices,
-  fetchBaseTerritory,
   createAppPriceSchedule as createAppPriceScheduleAPI,
 } from "../../domains/pricing/api-client";
 import { ContextualError } from "../../helpers/error-handling-helpers";
 
-type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type Price = z.infer<typeof PriceSchema>;
 type Territory = z.infer<typeof TerritoryCodeSchema>;
-
-// Helper function to get app price schedule ID from app ID
-async function getAppPriceScheduleId(appId: string): Promise<string | null> {
-  const response = await getAppPriceSchedule(appId);
-  return response?.data?.id || null;
-}
 
 // Helper function to find app price point ID for a given price and territory
 async function findAppPricePointId(
@@ -56,18 +46,6 @@ async function findAppPricePointId(
   }
 
   return pricePoint.id;
-}
-
-// Helper function to get current manual prices from the price schedule
-async function getCurrentManualPrices(priceScheduleId: string): Promise<any[]> {
-  const response = await fetchCurrentManualPrices(priceScheduleId);
-  return response.data || [];
-}
-
-// Helper function to get base territory
-async function getBaseTerritory(priceScheduleId: string): Promise<string> {
-  const response = await fetchBaseTerritory(priceScheduleId);
-  return response.data?.id || "";
 }
 
 // Create price schedule request builder

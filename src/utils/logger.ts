@@ -37,7 +37,14 @@ function createWinstonLogger(): winston.Logger {
       const extras = (info as any)[splatSymbol] as unknown[] | undefined;
       if (!parts.length && extras && extras.length > 0) {
         const rendered = extras.length === 1 ? extras[0] : extras;
-        parts.push(util.inspect(rendered, { colors: true, depth: null }));
+        parts.push(
+          util.inspect(rendered, {
+            colors: true,
+            depth: null,
+            maxArrayLength: null,
+            maxStringLength: null,
+          })
+        );
       }
 
       const suffix = parts.length > 0 ? `\n${parts.join("\n")}` : "";

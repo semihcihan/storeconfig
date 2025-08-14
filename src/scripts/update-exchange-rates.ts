@@ -93,6 +93,12 @@ export async function updateExchangeRates(
         nullValueExchangeRates.push(currency.id);
       }
     }
+
+    if (currency.id === "YEM") {
+      if (currency.value) {
+        currency.usdRate = currency.value;
+      }
+    }
   }
 
   return { updatedCurrencies, nullValueExchangeRates };
