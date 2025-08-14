@@ -475,7 +475,7 @@ describe("set-price-service", () => {
       expect(result.selectedItem).toEqual({
         type: "app",
         id: "123456789",
-        name: "App (ID: 123456789)",
+        name: "App",
         offerType: undefined,
       });
     });

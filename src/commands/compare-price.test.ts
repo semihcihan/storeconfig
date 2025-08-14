@@ -20,8 +20,10 @@ jest.mock("fs");
 
 // Mock the entire compare-price-service module
 const mockAnalyzePricing = jest.fn();
+const mockExportAnalysis = jest.fn();
 jest.mock("../services/compare-price-service", () => ({
   analyzePricing: mockAnalyzePricing,
+  exportAnalysis: mockExportAnalysis,
 }));
 
 const mockLogger = jest.mocked(logger);
@@ -63,17 +65,29 @@ describe("compare-price command", () => {
         name: "App (ID: app-123)",
       },
       prices: [
-        { territory: "USA", usdPrice: 0.99 },
-        { territory: "GBR", usdPrice: 0.99 },
+        {
+          territory: "USA",
+          localPrice: 0.99,
+          localCurrency: "USD",
+          usdPrice: 0.99,
+          usdPercentage: 100,
+        },
+        {
+          territory: "GBR",
+          localPrice: 0.79,
+          localCurrency: "GBP",
+          usdPrice: 0.99,
+          usdPercentage: 100,
+        },
       ],
     },
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLogger.info.mockReturnValue(undefined);
     mockLogger.error.mockReturnValue(undefined);
     mockAnalyzePricing.mockReturnValue(mockAnalysis);
+    mockExportAnalysis.mockReturnValue(undefined);
     mockFs.readFileSync.mockReturnValue("" as any);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
     mockFs.existsSync.mockReturnValue(true);
@@ -150,30 +164,27 @@ describe("compare-price command", () => {
 
       await comparePriceCommand.handler(mockArgv);
 
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        mockArgv.output,
-        JSON.stringify(mockAnalysis, null, 2)
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "test-output.json"
       );
     });
 
-    it("should log success messages", async () => {
+    it("should handle output file with .xlsx extension", async () => {
+      const mockArgvWithXlsx = {
+        ...mockArgv,
+        output: "test-output.xlsx",
+      };
+
       mockFs.readFileSync
         .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
         .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
 
-      await comparePriceCommand.handler(mockArgv);
+      await comparePriceCommand.handler(mockArgvWithXlsx);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        `Reading app store data from: ${mockArgv.input}`
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        `Writing price comparison analysis to: ${mockArgv.output}`
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        `Generated price comparison analysis for ${mockAnalysis.length} items`
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        `Successfully wrote price comparison analysis to ${mockArgv.output}`
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "test-output.xlsx"
       );
     });
 
@@ -260,8 +271,8 @@ describe("compare-price command", () => {
       mockFs.readFileSync
         .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
         .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
-      mockFs.writeFileSync.mockImplementation(() => {
-        throw new Error("Write failed");
+      mockExportAnalysis.mockImplementation(() => {
+        throw new Error("Export failed");
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(

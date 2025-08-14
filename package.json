@@ -23,7 +23,7 @@
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",
-    "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.json"
+    "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.xlsx"
   },
   "keywords": [],
   "author": "Semih Cihan",
@@ -39,6 +39,7 @@
     "jsonwebtoken": "^9.0.2",
     "openapi-fetch": "^0.14.0",
     "winston": "^3.17.0",
+    "xlsx": "^0.18.5",
     "yargs": "^17.7.2",
     "zod": "^3.25.74"
   },

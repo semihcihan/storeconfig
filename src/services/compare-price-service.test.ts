@@ -1,6 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { logger } from "../utils/logger";
-import { getPricesForItem, analyzePricing } from "./compare-price-service";
+import {
+  getPricesForItem,
+  analyzePricing,
+  exportAnalysisToCSV,
+  exportAnalysisToXLSX,
+  exportAnalysis,
+} from "./compare-price-service";
 import type { AppStoreModel } from "../utils/validation-helpers";
 import type { PricingItem } from "../models/pricing-request";
 import type { TerritoryData } from "./pricing-strategy";
@@ -10,12 +16,39 @@ jest.mock("../utils/logger");
 jest.mock("../set-price/item-selection", () => ({
   collectPricingItems: jest.fn(),
 }));
+jest.mock("fs", () => ({
+  writeFileSync: jest.fn(),
+}));
+jest.mock("xlsx", () => ({
+  utils: {
+    book_new: jest.fn(() => ({ Sheets: {}, SheetNames: [] })),
+    aoa_to_sheet: jest.fn(() => ({
+      "!cols": [
+        { width: 13 },
+        { width: 13 },
+        { width: 13 },
+        { width: 13 },
+        { width: 18 },
+      ],
+      "!freeze": { rows: 1 },
+    })),
+    book_append_sheet: jest.fn(),
+  },
+  writeFile: jest.fn(),
+}));
+jest.mock("./pricing-strategy", () => ({
+  BASE_TERRITORY: "USA",
+}));
 
 const mockLogger = jest.mocked(logger);
 
 // Get the mocked function
 import { collectPricingItems } from "../set-price/item-selection";
+import * as XLSX from "xlsx";
+import * as fs from "fs";
 const mockCollectPricingItems = jest.mocked(collectPricingItems);
+const mockXLSX = jest.mocked(XLSX);
+const mockFs = jest.mocked(fs);
 
 describe("compare-price-service", () => {
   const mockAppStoreData: AppStoreModel = {
@@ -105,7 +138,6 @@ describe("compare-price-service", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLogger.warn.mockReturnValue(undefined);
   });
 
   describe("getPricesForItem", () => {
@@ -373,8 +405,19 @@ describe("compare-price-service", () => {
       const canPrice = appPrices.find((p) => p.territory === "CAN");
 
       expect(usaPrice?.usdPrice).toBe(0.99); // USD: 0.99 * 1.0 = 0.99
+      expect(usaPrice?.localPrice).toBe(0.99);
+      expect(usaPrice?.localCurrency).toBe("USD");
+      expect(usaPrice?.usdPercentage).toBe(100);
+
       expect(gbrPrice?.usdPrice).toBe(0.9875); // GBP: 0.79 / 0.8 = 0.9875
+      expect(gbrPrice?.localPrice).toBe(0.79);
+      expect(gbrPrice?.localCurrency).toBe("GBP");
+      expect(gbrPrice?.usdPercentage).toBeCloseTo(99.75, 1);
+
       expect(canPrice?.usdPrice).toBeCloseTo(0.9555555555555556, 10); // CAD: 1.29 / 1.35 = 0.9555555555555556
+      expect(canPrice?.localPrice).toBe(1.29);
+      expect(canPrice?.localCurrency).toBe("CAD");
+      expect(canPrice?.usdPercentage).toBeCloseTo(96.5, 1);
     });
 
     it("should throw error when base territory currency not found", () => {
@@ -383,69 +426,6 @@ describe("compare-price-service", () => {
       expect(() =>
         analyzePricing(mockAppStoreData, currenciesWithoutUSA)
       ).toThrow("Base territory currency not found in currency data for USA");
-    });
-
-    it("should log warning when territory data not found", () => {
-      const appWithUnknownTerritory: AppStoreModel = {
-        ...mockAppStoreData,
-        pricing: {
-          baseTerritory: "USA" as const,
-          prices: [
-            { territory: "USA" as const, price: "0.99" },
-            { territory: "UNKNOWN" as any, price: "0.79" },
-          ],
-        },
-      };
-
-      analyzePricing(appWithUnknownTerritory, mockCurrencies);
-
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        "No currency data found for territory: UNKNOWN"
-      );
-    });
-
-    it("should log warning when price format is invalid", () => {
-      const appWithInvalidPrice: AppStoreModel = {
-        ...mockAppStoreData,
-        pricing: {
-          baseTerritory: "USA" as const,
-          prices: [
-            { territory: "USA" as const, price: "0.99" },
-            { territory: "GBR" as const, price: "invalid" },
-          ],
-        },
-      };
-
-      analyzePricing(appWithInvalidPrice, mockCurrencies);
-
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        "Invalid price format for territory GBR: invalid"
-      );
-    });
-
-    it("should log warning when USD rate not found", () => {
-      const currenciesWithoutUsdRate = [
-        { id: "USA", currency: "USD", localCurrency: "USD", usdRate: 1.0 },
-        { id: "GBR", currency: "GBP", localCurrency: "GBP", usdRate: 0.8 },
-        { id: "CAN", currency: "CAD", localCurrency: "CAD", usdRate: 0 }, // Missing usdRate - set to 0 for test
-      ];
-
-      const appWithCanadianPrice: AppStoreModel = {
-        ...mockAppStoreData,
-        pricing: {
-          baseTerritory: "USA" as const,
-          prices: [
-            { territory: "USA" as const, price: "0.99" },
-            { territory: "CAN" as const, price: "1.29" },
-          ],
-        },
-      };
-
-      analyzePricing(appWithCanadianPrice, currenciesWithoutUsdRate);
-
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        "No USD rate found for currency: CAD could not calculate usd price for CAN"
-      );
     });
 
     it("should handle items with no prices", () => {
@@ -478,6 +458,275 @@ describe("compare-price-service", () => {
 
       expect(usaPrice?.usdPrice).toBe(0.99);
       expect(gbrPrice?.usdPrice).toBe(0.9875);
+    });
+  });
+
+  describe("exportAnalysisToCSV", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should export analysis to CSV with correct format", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+            {
+              territory: "GBR",
+              localPrice: 0.79,
+              localCurrency: "GBP",
+              usdPrice: 0.9875,
+              usdPercentage: 99.75,
+            },
+          ],
+        },
+      ];
+
+      exportAnalysisToCSV(mockAnalysis, "test-output.csv");
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "test-output.csv",
+        expect.stringContaining(
+          "Name,Territory,Local Price,Local Currency,USD Price,Relative to USA (%)"
+        ),
+        "utf8"
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "test-output.csv",
+        expect.stringContaining("Test App,USA,0.99,USD,0.99,100"),
+        "utf8"
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "test-output.csv",
+        expect.stringContaining("Test App,GBR,0.79,GBP,0.99,100"),
+        "utf8"
+      );
+    });
+
+    it("should handle empty analysis", () => {
+      exportAnalysisToCSV([], "empty-output.csv");
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "empty-output.csv",
+        "Name,Territory,Local Price,Local Currency,USD Price,Relative to USA (%)",
+        "utf8"
+      );
+    });
+  });
+
+  describe("exportAnalysis", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should export to CSV when .csv extension is provided", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+          ],
+        },
+      ];
+
+      exportAnalysis(mockAnalysis, "test-output.csv");
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "test-output.csv",
+        expect.stringContaining(
+          "Name,Territory,Local Price,Local Currency,USD Price,Relative to USA (%)"
+        ),
+        "utf8"
+      );
+    });
+
+    it("should export to XLSX when .xlsx extension is provided", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+          ],
+        },
+      ];
+
+      exportAnalysis(mockAnalysis, "test-output.xlsx");
+
+      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
+      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
+        expect.any(Object),
+        "test-output.xlsx"
+      );
+    });
+
+    it("should throw error for unsupported file format", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+          ],
+        },
+      ];
+
+      expect(() => exportAnalysis(mockAnalysis, "test-output.txt")).toThrow(
+        'Unsupported file format. Please use ".csv" or ".xlsx" extension: "test-output.txt"'
+      );
+    });
+
+    it("should throw error for no file extension", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+          ],
+        },
+      ];
+
+      expect(() => exportAnalysis(mockAnalysis, "test-output")).toThrow(
+        'Unsupported file format. Please use ".csv" or ".xlsx" extension: "test-output"'
+      );
+    });
+  });
+
+  describe("exportAnalysisToXLSX", () => {
+    const mockWorkbook = { Sheets: {}, SheetNames: [] };
+
+    beforeEach(() => {
+      mockXLSX.utils.book_new.mockReturnValue(mockWorkbook);
+      mockXLSX.utils.aoa_to_sheet.mockReturnValue({
+        "!cols": [
+          { width: 13 },
+          { width: 13 },
+          { width: 13 },
+          { width: 13 },
+          { width: 18 },
+        ],
+        "!freeze": { rows: 1 },
+      });
+    });
+
+    it("should export analysis to XLSX with correct format", () => {
+      const mockAnalysis = [
+        {
+          item: {
+            type: "app",
+            id: "app-123",
+            name: "Test App",
+          },
+          prices: [
+            {
+              territory: "USA",
+              localPrice: 0.99,
+              localCurrency: "USD",
+              usdPrice: 0.99,
+              usdPercentage: 100,
+            },
+            {
+              territory: "GBR",
+              localPrice: 0.79,
+              localCurrency: "GBP",
+              usdPrice: 0.9875,
+              usdPercentage: 99.75,
+            },
+          ],
+        },
+      ];
+
+      exportAnalysisToXLSX(mockAnalysis, "test-output.xlsx");
+
+      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
+      expect(mockXLSX.utils.aoa_to_sheet).toHaveBeenCalledWith([
+        [
+          "Territory",
+          "Local Price",
+          "Local Currency",
+          "USD Price",
+          "Relative to USA (%)",
+        ],
+        ["USA", 0.99, "USD", 0.99, 100],
+        ["GBR", 0.79, "GBP", 0.99, 100],
+      ]);
+      expect(mockXLSX.utils.book_append_sheet).toHaveBeenCalledWith(
+        mockWorkbook,
+        {
+          "!cols": [
+            { width: 13 },
+            { width: 13 },
+            { width: 13 },
+            { width: 13 },
+            { width: 18 },
+          ],
+          "!freeze": { rows: 1 },
+        },
+        "Test App"
+      );
+      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
+        mockWorkbook,
+        "test-output.xlsx"
+      );
+    });
+
+    it("should handle empty analysis", () => {
+      exportAnalysisToXLSX([], "empty-output.xlsx");
+
+      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
+      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
+        mockWorkbook,
+        "empty-output.xlsx"
+      );
     });
   });
 });

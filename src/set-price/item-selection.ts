@@ -12,7 +12,7 @@ export function collectPricingItems(
     items.push({
       type: "app",
       id: appStoreState.appId,
-      name: `App (ID: ${appStoreState.appId})`,
+      name: "App",
     });
   }
 

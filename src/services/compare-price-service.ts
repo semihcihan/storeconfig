@@ -6,10 +6,12 @@ import type { TerritoryData } from "./pricing-strategy";
 import type { z } from "zod";
 import { BASE_TERRITORY } from "./pricing-strategy";
 import { collectPricingItems } from "../set-price/item-selection";
+import * as XLSX from "xlsx";
+import * as fs from "fs";
 
 export interface PriceComparison {
   territory: string;
-  localPrice: string;
+  localPrice: number;
   localCurrency: string;
   usdPrice: number;
   usdPercentage: number;
@@ -21,10 +23,11 @@ export interface PricingAnalysis {
     id: string;
     name: string;
   };
-  prices: {
-    territory: string;
-    usdPrice: number;
-  }[];
+  prices: PriceComparison[];
+}
+
+function sheetName(analysis: PricingAnalysis): string {
+  return analysis.item.name;
 }
 
 export function getPricesForItem(
@@ -133,7 +136,7 @@ export function analyzePricing(
 
       priceComparisons.push({
         territory: price.territory,
-        localPrice: price.price,
+        localPrice: appStoreCurrencyPriceForTerritory,
         localCurrency: territoryData.currency,
         usdPrice,
         usdPercentage: 0, // Will be calculated later
@@ -156,13 +159,96 @@ export function analyzePricing(
           id: item.id,
           name: item.name,
         },
-        prices: priceComparisons.map((p) => ({
-          territory: p.territory,
-          usdPrice: p.usdPrice,
-        })),
+        prices: priceComparisons,
       });
     }
   });
 
   return analysis;
+}
+
+const headers = [
+  "Territory",
+  "Local Price",
+  "Local Currency",
+  "USD Price",
+  "Relative to USA (%)",
+];
+
+export function exportAnalysisToCSV(
+  analysis: PricingAnalysis[],
+  outputPath: string
+): void {
+  const csvRows: string[] = [];
+
+  csvRows.push(["Name", ...headers].join(","));
+
+  analysis.forEach((item) => {
+    item.prices.forEach((price) => {
+      csvRows.push(
+        `${sheetName(item)},${price.territory},${price.localPrice},${
+          price.localCurrency
+        },${price.usdPrice.toFixed(2)},${price.usdPercentage.toFixed(0)}`
+      );
+    });
+  });
+
+  const csvContent = csvRows.join("\n");
+  fs.writeFileSync(outputPath, csvContent, "utf8");
+}
+
+export function exportAnalysis(
+  analysis: PricingAnalysis[],
+  outputPath: string
+): void {
+  const fileExtension = outputPath.toLowerCase().split(".").pop();
+
+  if (!fileExtension || (fileExtension !== "csv" && fileExtension !== "xlsx")) {
+    throw new Error(
+      `Unsupported file format. Please use ".csv" or ".xlsx" extension: "${outputPath}"`
+    );
+  }
+
+  if (fileExtension === "csv") {
+    exportAnalysisToCSV(analysis, outputPath);
+  } else {
+    exportAnalysisToXLSX(analysis, outputPath);
+  }
+}
+
+export function exportAnalysisToXLSX(
+  analysis: PricingAnalysis[],
+  outputPath: string
+): void {
+  const workbook = XLSX.utils.book_new();
+
+  analysis.forEach((item) => {
+    const name = sheetName(item);
+
+    const rows = item.prices.map((price) => [
+      price.territory,
+      price.localPrice,
+      price.localCurrency,
+      parseFloat(price.usdPrice.toFixed(2)),
+      parseFloat(price.usdPercentage.toFixed(0)),
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+    // Set column widths to approximately 2x default (default is ~8-10 characters)
+    worksheet["!cols"] = [
+      { width: 13 }, // Territory
+      { width: 13 }, // Local Price
+      { width: 13 }, // Local Currency
+      { width: 13 }, // USD Price
+      { width: 18 }, // Relative to USA (%)
+    ];
+
+    // Freeze the first row (headers) so they stay visible when sorting
+    worksheet["!freeze"] = { rows: 1 };
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, name);
+  });
+
+  XLSX.writeFile(workbook, outputPath);
 }

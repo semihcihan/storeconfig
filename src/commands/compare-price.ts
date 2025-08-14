@@ -1,7 +1,10 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
-import { analyzePricing } from "../services/compare-price-service";
+import {
+  analyzePricing,
+  exportAnalysis,
+} from "../services/compare-price-service";
 
 const comparePriceCommand: CommandModule = {
   command: "compare-price",
@@ -15,17 +18,15 @@ const comparePriceCommand: CommandModule = {
     },
     output: {
       alias: "o",
-      describe: "Path to the output JSON file for price comparison analysis",
+      describe:
+        "Path to the output file for price comparison analysis (.csv or .xlsx)",
       demandOption: true,
       type: "string",
     },
   },
   handler: async (argv) => {
     const inputFile = argv.input as string;
-    const outputFile = argv.output as string;
-
-    logger.info(`Reading app store data from: ${inputFile}`);
-    logger.info(`Writing price comparison analysis to: ${outputFile}`);
+    let outputFile = argv.output as string;
 
     try {
       const appStoreData = JSON.parse(fs.readFileSync(inputFile, "utf8"));
@@ -34,14 +35,9 @@ const comparePriceCommand: CommandModule = {
       );
 
       const analysis = analyzePricing(appStoreData, currenciesData);
-      logger.info(
-        `Generated price comparison analysis for ${analysis.length} items`
-      );
 
-      fs.writeFileSync(outputFile, JSON.stringify(analysis, null, 2));
-      logger.info(
-        `Successfully wrote price comparison analysis to ${outputFile}`
-      );
+      exportAnalysis(analysis, outputFile);
+      logger.info(`Successfully exported analysis to ${outputFile}`);
     } catch (error) {
       logger.error(`Price comparison failed`, error);
       process.exit(1);
