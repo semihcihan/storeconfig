@@ -95,6 +95,7 @@ export async function updateExchangeRates(
     }
 
     if (currency.id === "YEM") {
+      // YEM has a special case and don't result in a fair price
       if (currency.value) {
         currency.usdRate = currency.value;
       }

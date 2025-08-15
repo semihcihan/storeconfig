@@ -35,6 +35,8 @@ ASC_PRIVATE_KEY_PATH=/path/to/your/AuthKey_YOUR_KEY_ID.p8
 
 The pricing model differs between In-App Purchases and Subscriptions due to App Store Connect API capabilities.
 
+When making requests to the App Store Connect API that involve creating new related resources, temporary IDs used to link these resources within the request must be formatted as a string enclosed in ${...}. For example, a temporary ID could be ${new-price-1}. This format is essential for the API to correctly parse and establish relationships between the newly created entities.
+
 ### In-App Purchase Pricing
 
 For standard In-App Purchases (consumables, non-consumables), specify a concrete `price` for each territory within a `priceSchedule` object:
