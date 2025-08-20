@@ -173,16 +173,18 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     return prices;
   }
 
+  private resultConverter(price: number): number {
+    return Math.round(price * 100) / 100;
+  }
+
   private calculatePPPPrice(
     territory: TerritoryData,
     basePriceUSD: number,
     minPriceUSD: number
   ): number | null {
-    const resultConverter = (price: number) => Math.round(price * 100) / 100;
     let pppValue = territory.value;
     if (!pppValue || pppValue <= 0) {
-      // If the territory doesn't have a PPP value, use the USD conversion rate to ignore the PPP ratio
-      pppValue = territory.usdRate;
+      return this.calculateExchangeRateConversionPrice(territory, basePriceUSD);
     }
 
     // Calculate fair price in local currency using PPP ratio
@@ -201,10 +203,24 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
 
     // If the target currency doesn't have a USD conversion rate, we can't calculate the price
     if (!targetCurrencyTerritory || !targetCurrencyTerritory.usdRate) {
-      return null;
+      throw new ContextualError("Cannot calculate price", territory);
     }
 
-    return resultConverter(fairPriceUSD * targetCurrencyTerritory.usdRate);
+    return this.resultConverter(fairPriceUSD * targetCurrencyTerritory.usdRate);
+  }
+
+  private calculateExchangeRateConversionPrice(
+    territory: TerritoryData,
+    basePriceUSD: number
+  ): number | null {
+    const targetCurrencyTerritory = this.findTerritoryByLocalCurrency(
+      territory.currency
+    );
+    if (!targetCurrencyTerritory) {
+      throw new ContextualError("Cannot calculate price", territory);
+    }
+    let price = basePriceUSD * targetCurrencyTerritory.usdRate;
+    return this.resultConverter(price);
   }
 
   private findTerritoryByLocalCurrency(currency: string): TerritoryData | null {

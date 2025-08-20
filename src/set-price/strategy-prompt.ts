@@ -7,7 +7,7 @@ function displayStrategyOptions(): void {
   const lines = [
     "Select pricing strategy:",
     "1. Apple (uses Apple's standard pricing tiers)",
-    "2. Purchasing Power (adjusts for local purchasing power)",
+    "2. Purchasing Power (uses local purchasing power parity for fair pricing)",
   ];
   logger.info(`\n${separator}\n${lines.join("\n")}\n${separator}`);
 }

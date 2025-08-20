@@ -47,11 +47,11 @@ const setPriceCommand: CommandModule = {
         appStoreState,
       });
 
-      logger.info("Pricing data:", pricingRequest);
+      logger.debug("Pricing data:", pricingRequest);
 
       const updatedState = await applyPricing(appStoreState, pricingRequest);
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
-      logger.info("✅ Updated file with pricing changes");
+      logger.info(`✅ Updated ${inputFile} with pricing changes.`);
     } catch (error) {
       logger.error(`Set-price failed`, error);
       process.exit(1);

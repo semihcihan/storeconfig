@@ -1,9 +1,5 @@
 import { logger } from "../../utils/logger";
-import {
-  AppStoreModelSchema,
-  PriceSchema,
-  PriceScheduleSchema,
-} from "../../models/app-store";
+import { PriceSchema, PriceScheduleSchema } from "../../models/app-store";
 import { TerritoryCodeSchema } from "../../models/territories";
 import { z } from "zod";
 import {
@@ -11,7 +7,6 @@ import {
   findIAPPricePointId,
   createIAPPriceSchedule,
 } from "./api-client";
-import { ContextualError } from "../../helpers/error-handling-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
 type Price = z.infer<typeof PriceSchema>;
@@ -20,8 +15,9 @@ type InAppPurchasesV2Response =
   components["schemas"]["InAppPurchasesV2Response"];
 type InAppPurchasePriceScheduleCreateRequest =
   components["schemas"]["InAppPurchasePriceScheduleCreateRequest"];
-type InAppPurchasePriceScheduleResponse =
-  components["schemas"]["InAppPurchasePriceScheduleResponse"];
+type InAppPurchasePrice = components["schemas"]["InAppPurchasePrice"];
+type InAppPurchasePriceInlineCreate =
+  components["schemas"]["InAppPurchasePriceInlineCreate"];
 
 // Helper function to extract IAP ID from current state response
 function extractIAPId(
@@ -40,11 +36,11 @@ function buildIAPPriceScheduleRequest(
   baseTerritory: Territory,
   prices: Price[]
 ): InAppPurchasePriceScheduleCreateRequest {
-  const manualPrices = [];
-  const includedPrices = [];
+  const manualPrices: { type: "inAppPurchasePrices"; id: string }[] = [];
+  const includedPrices: InAppPurchasePrice[] = [];
 
-  for (const priceEntry of prices) {
-    const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+  prices.forEach((priceEntry, index) => {
+    const tempPriceId = `\${price-${priceEntry.territory}-${index}}`;
 
     manualPrices.push({
       type: "inAppPurchasePrices" as const,
@@ -56,8 +52,8 @@ function buildIAPPriceScheduleRequest(
       id: tempPriceId,
       attributes: {
         manual: true,
-        startDate: null,
-        endDate: null,
+        startDate: undefined,
+        endDate: undefined,
       },
       relationships: {
         inAppPurchasePricePoint: {
@@ -74,7 +70,7 @@ function buildIAPPriceScheduleRequest(
         },
       },
     });
-  }
+  });
 
   return {
     data: {
@@ -97,7 +93,7 @@ function buildIAPPriceScheduleRequest(
         },
       },
     },
-    included: includedPrices as any,
+    included: includedPrices,
   };
 }
 
@@ -126,9 +122,11 @@ async function createIAPPriceScheduleForIAP(
         iapId
       );
 
-      (createRequest.included as any)[
-        i
-      ].relationships.inAppPurchasePricePoint.data.id = pricePointId;
+      if (createRequest.included) {
+        (
+          createRequest.included[i] as any
+        ).relationships.inAppPurchasePricePoint.data.id = pricePointId;
+      }
     }
 
     await createIAPPriceSchedule(createRequest);

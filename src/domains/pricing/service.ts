@@ -11,6 +11,11 @@ import {
   createAppPriceSchedule as createAppPriceScheduleAPI,
 } from "../../domains/pricing/api-client";
 import { ContextualError } from "../../helpers/error-handling-helpers";
+import type { components } from "../../generated/app-store-connect-api";
+
+type AppPriceScheduleCreateRequest =
+  components["schemas"]["AppPriceScheduleCreateRequest"];
+type AppPriceV2 = components["schemas"]["AppPriceV2"];
 
 type Price = z.infer<typeof PriceSchema>;
 type Territory = z.infer<typeof TerritoryCodeSchema>;
@@ -53,12 +58,12 @@ function buildPriceScheduleRequest(
   appId: string,
   baseTerritory: Territory,
   prices: Price[]
-): any {
-  const manualPrices = [];
-  const includedPrices = [];
+): AppPriceScheduleCreateRequest {
+  const manualPrices: { type: "appPrices"; id: string }[] = [];
+  const includedPrices: AppPriceV2[] = [];
 
-  for (const priceEntry of prices) {
-    const tempPriceId = `temp-price-${priceEntry.territory}-${Date.now()}`;
+  prices.forEach((priceEntry, index) => {
+    const tempPriceId = `\${price-${priceEntry.territory}-${index}}`;
 
     manualPrices.push({
       type: "appPrices" as const,
@@ -70,8 +75,8 @@ function buildPriceScheduleRequest(
       id: tempPriceId,
       attributes: {
         manual: true,
-        startDate: null,
-        endDate: null,
+        startDate: undefined,
+        endDate: undefined,
       },
       relationships: {
         appPricePoint: {
@@ -88,7 +93,7 @@ function buildPriceScheduleRequest(
         },
       },
     });
-  }
+  });
 
   return {
     data: {
@@ -138,9 +143,10 @@ export async function createAppPriceSchedule(
       priceEntry.territory,
       appId
     );
-
-    createRequest.included[i].relationships.appPricePoint.data.id =
-      pricePointId;
+    if (createRequest.included) {
+      (createRequest.included[i] as any).relationships.appPricePoint.data.id =
+        pricePointId;
+    }
   }
 
   await createAppPriceScheduleAPI(createRequest);

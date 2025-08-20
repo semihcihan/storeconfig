@@ -36,6 +36,7 @@
   error: Interactive pricing failed {"errors":[{"code":"NOT_AUTHORIZED","detail":"Provide a properly configured and signed bearer token, and make sure that it has not expired. Learn more about Generating Tokens for API Requests https://developer.apple.com/go/?id=api-generating-tokens","status":"401","title":"Authentication credentials are missing or invalid."}]}
   info: Restored file from memory backup
   error: Set-price failed {"errors":[{"code":"NOT_AUTHORIZED","detail":"Provide a properly configured and signed bearer token, and make sure that it has not expired. Learn more about Generating Tokens for API Requests https://developer.apple.com/go/?id=api-generating-tokens","status":"401","title":"Authentication credentials are missing or invalid."}]}
+- retrylarda warn etme, o detayi gizlemis ol debug logla. zaten 3. de calismazsa patlicak
 
 # Notes for documentation
 
