@@ -2,7 +2,7 @@ import { CommandModule } from "yargs";
 import {
   readJsonFile,
   validateAppStoreModel,
-} from "../utils/validation-helpers";
+} from "../helpers/validation-helpers";
 import { logger } from "../utils/logger";
 import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
 

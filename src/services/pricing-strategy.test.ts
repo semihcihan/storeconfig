@@ -4,7 +4,7 @@ import {
   PurchasingPowerPricingStrategy,
 } from "./pricing-strategy";
 import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 import type { PricingRequest } from "../models/pricing-request";
 import { TerritoryCodeSchema } from "../models/territories";
 import { z } from "zod";
@@ -472,10 +472,10 @@ describe("PricingStrategy", () => {
         },
         {
           id: "DEU",
-          currency: "UNKNOWN_CURRENCY",
+          currency: "USD",
           value: 0.5,
           localCurrency: "EUR",
-          usdRate: 1.0,
+          usdRate: 0.85,
         },
       ];
 
@@ -493,8 +493,8 @@ describe("PricingStrategy", () => {
 
       const prices = await strategy.getPrices(request, mockAppStoreState);
 
-      expect(prices).toHaveLength(2);
-      expect(prices.find((p: any) => p.territory === "DEU")).toBeUndefined();
+      expect(prices).toHaveLength(3);
+      expect(prices.find((p: any) => p.territory === "DEU")).toBeDefined();
     });
 
     it("should handle error when price point fetcher fails", async () => {

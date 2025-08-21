@@ -7,7 +7,7 @@ import {
   exportAnalysisToXLSX,
   exportAnalysis,
 } from "./compare-price-service";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 import type { PricingItem } from "../models/pricing-request";
 import type { TerritoryData } from "./pricing-strategy";
 

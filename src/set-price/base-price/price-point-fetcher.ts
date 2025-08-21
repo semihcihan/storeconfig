@@ -7,9 +7,10 @@ import {
   fetchAllSubscriptionPricePoints,
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
-import type { AppStoreModel } from "../../utils/validation-helpers";
+import type { AppStoreModel } from "../../models/app-store";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 import type { components } from "../../generated/app-store-connect-api";
+import { ContextualError } from "../../helpers/error-handling-helpers";
 
 // Simple caches to avoid refetching/resolving per territory
 const iapIdCache = new Map<string, string>(); // key: `${appId}:${productId}` → iapId
@@ -96,7 +97,17 @@ async function fetchTerritoryPricePointsForInAppPurchase(
       (it) => it.attributes?.productId === selectedItem.id
     );
     iapId = iapData?.id || "";
-    if (!iapId) return [];
+    if (!iapId) {
+      throw new ContextualError(
+        "The in-app purchase does not exist, please create it first.",
+        undefined,
+        {
+          appId,
+          selectedItem,
+          territoryId,
+        }
+      );
+    }
     iapIdCache.set(idCacheKey, iapId);
   }
   const cacheKey = `iap:${iapId}:${territoryId}`;
@@ -140,7 +151,17 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
       }
     }
 
-    if (!subscriptionId) return [];
+    if (!subscriptionId) {
+      throw new ContextualError(
+        "The subscription does not exist, please create it first.",
+        undefined,
+        {
+          appId: appStoreState.appId,
+          selectedItem,
+          territoryId,
+        }
+      );
+    }
     subscriptionIdCache.set(idCacheKey, subscriptionId);
   }
 

@@ -1,6 +1,6 @@
 import { logger } from "../utils/logger";
 import * as fs from "fs";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 import { selectPricingItem } from "../set-price/item-selection";
 import { promptForBasePricePoint } from "../set-price/base-price/base-price-prompt";
 import { promptForPricingStrategy } from "../set-price/strategy-prompt";

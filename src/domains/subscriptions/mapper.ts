@@ -438,10 +438,7 @@ export async function mapSubscription(
     introductoryOffers: introductoryOffers,
     promotionalOffers: promotionalOffers,
     prices: prices,
-    availability: availability || {
-      availableInNewTerritories: true,
-      availableTerritories: [],
-    },
+    availability: availability,
     reviewNote: reviewNote === null ? undefined : reviewNote,
   };
   return sub;

@@ -12,8 +12,7 @@ import {
   fetchAllSubscriptionPricePoints,
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
-import type { AppStoreModel } from "../../utils/validation-helpers";
-import type { PricingItem } from "../../models/pricing-request";
+import type { AppStoreModel } from "../../models/app-store";
 
 // Mock dependencies
 jest.mock("../../domains/pricing/api-client");
@@ -202,13 +201,16 @@ describe("PricePointFetcher", () => {
 
       MockFetchInAppPurchases.mockResolvedValue(mockIAPs as any);
 
-      const result = await fetchTerritoryPricePointsForSelectedItem(
-        { type: "inAppPurchase", id: "product1", name: "Test IAP" },
-        testAppStoreState,
-        testTerritoryId
+      await expect(
+        fetchTerritoryPricePointsForSelectedItem(
+          { type: "inAppPurchase", id: "product1", name: "Test IAP" },
+          testAppStoreState,
+          testTerritoryId
+        )
+      ).rejects.toThrow(
+        "The in-app purchase does not exist, please create it first."
       );
 
-      expect(result).toEqual([]);
       expect(MockFetchIAPPricePoints).not.toHaveBeenCalled();
     });
   });
@@ -364,13 +366,20 @@ describe("PricePointFetcher", () => {
         mockSubscriptionGroups as any
       );
 
-      const result = await fetchTerritoryPricePointsForSelectedItem(
-        { type: "subscription", id: "sub-product1", name: "Test Subscription" },
-        testAppStoreState,
-        testTerritoryId
+      await expect(
+        fetchTerritoryPricePointsForSelectedItem(
+          {
+            type: "subscription",
+            id: "sub-product1",
+            name: "Test Subscription",
+          },
+          testAppStoreState,
+          testTerritoryId
+        )
+      ).rejects.toThrow(
+        "The subscription does not exist, please create it first."
       );
 
-      expect(result).toEqual([]);
       expect(MockFetchAllSubscriptionPricePoints).not.toHaveBeenCalled();
     });
   });

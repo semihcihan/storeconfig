@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 import type { PricingItem } from "../models/pricing-request";
 import { PriceSchema } from "../models/app-store";
 import type { TerritoryData } from "./pricing-strategy";
@@ -51,7 +51,7 @@ export function getPricesForItem(
         (s) => s.productId === item.id
       );
       if (subscription) {
-        return subscription.prices;
+        return subscription.prices || [];
       }
     }
   }

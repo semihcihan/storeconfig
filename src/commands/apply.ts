@@ -8,7 +8,7 @@ import {
   readJsonFile,
   validateAppStoreModel,
   type AppStoreModel,
-} from "../utils/validation-helpers";
+} from "../helpers/validation-helpers";
 import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
 

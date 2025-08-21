@@ -36,7 +36,7 @@ type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
 type Price = z.infer<typeof PriceSchema>;
 
-function diffPriceSchedule(
+function diffIAPPriceSchedule(
   productId: string,
   currentSchedule: InAppPurchase["priceSchedule"],
   desiredSchedule: InAppPurchase["priceSchedule"]
@@ -216,14 +216,13 @@ function diffInAppPurchases(
         payload: { inAppPurchase: desiredIap },
       });
 
-      // For new IAPs, also generate actions for localizations and pricing
+      // For new IAPs, also generate actions for localizations, availability, and pricing
+      // Availability must be created before pricing to ensure the IAP is properly configured
       actions.push(
         ...diffLocalizations(productId, [], desiredIap.localizations || [])
       );
-      actions.push(
-        ...diffPriceSchedule(productId, undefined, desiredIap.priceSchedule)
-      );
 
+      // Create availability first (required field)
       if (desiredIap.availability) {
         actions.push({
           type: "UPDATE_IAP_AVAILABILITY",
@@ -233,6 +232,11 @@ function diffInAppPurchases(
           },
         });
       }
+
+      // Create pricing after availability is set up
+      actions.push(
+        ...diffIAPPriceSchedule(productId, undefined, desiredIap.priceSchedule)
+      );
     } else {
       if (currentIap.type !== desiredIap.type) {
         throw new Error(
@@ -265,7 +269,8 @@ function diffInAppPurchases(
         });
       }
 
-      // Diff nested localizations and prices
+      // Diff nested localizations, availability, and prices
+      // Availability must be handled before pricing to ensure the IAP is properly configured
       actions.push(
         ...diffLocalizations(
           productId,
@@ -273,14 +278,8 @@ function diffInAppPurchases(
           desiredIap.localizations || []
         )
       );
-      actions.push(
-        ...diffPriceSchedule(
-          productId,
-          currentIap.priceSchedule,
-          desiredIap.priceSchedule
-        )
-      );
 
+      // Handle availability changes first
       if (
         desiredIap.availability &&
         !deepEqualUnordered(
@@ -296,6 +295,15 @@ function diffInAppPurchases(
           },
         });
       }
+
+      // Handle pricing changes after availability is set up
+      actions.push(
+        ...diffIAPPriceSchedule(
+          productId,
+          currentIap.priceSchedule,
+          desiredIap.priceSchedule
+        )
+      );
     }
   }
 
@@ -527,7 +535,7 @@ function diffSubscriptions(
         ...diffSubscriptionLocalizations(
           productId,
           [],
-          desiredSub.localizations
+          desiredSub.localizations || []
         )
       );
 
@@ -543,7 +551,9 @@ function diffSubscriptions(
       }
 
       // Create pricing after availability is set up
-      actions.push(...diffSubscriptionPrices(productId, [], desiredSub.prices));
+      actions.push(
+        ...diffSubscriptionPrices(productId, [], desiredSub.prices || [])
+      );
 
       actions.push(
         ...diffIntroductoryOffers(
@@ -598,34 +608,12 @@ function diffSubscriptions(
       actions.push(
         ...diffSubscriptionLocalizations(
           productId,
-          currentSub.localizations,
-          desiredSub.localizations
-        )
-      );
-      actions.push(
-        ...diffSubscriptionPrices(
-          productId,
-          currentSub.prices,
-          desiredSub.prices
-        )
-      );
-      actions.push(
-        ...diffIntroductoryOffers(
-          productId,
-          currentSub.subscriptionPeriod,
-          currentSub.introductoryOffers || [],
-          desiredSub.introductoryOffers || []
-        )
-      );
-      actions.push(
-        ...diffPromotionalOffers(
-          productId,
-          currentSub.promotionalOffers || [],
-          desiredSub.promotionalOffers || []
+          currentSub.localizations || [],
+          desiredSub.localizations || []
         )
       );
 
-      // Handle availability changes
+      // Handle availability changes first
       if (
         desiredSub.availability &&
         !deepEqualUnordered(currentSub.availability, desiredSub.availability)
@@ -644,6 +632,30 @@ function diffSubscriptions(
           `Cannot remove availability from subscription ${productId}. Availability cannot be removed once set.`
         );
       }
+
+      // Handle pricing and offers after availability is set up
+      actions.push(
+        ...diffSubscriptionPrices(
+          productId,
+          currentSub.prices || [],
+          desiredSub.prices || []
+        )
+      );
+      actions.push(
+        ...diffIntroductoryOffers(
+          productId,
+          currentSub.subscriptionPeriod,
+          currentSub.introductoryOffers || [],
+          desiredSub.introductoryOffers || []
+        )
+      );
+      actions.push(
+        ...diffPromotionalOffers(
+          productId,
+          currentSub.promotionalOffers || [],
+          desiredSub.promotionalOffers || []
+        )
+      );
     }
   }
 

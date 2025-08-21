@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import {
   readJsonFile,
   validateAppStoreModel,
-} from "../utils/validation-helpers";
+} from "../helpers/validation-helpers";
 import {
   startInteractivePricing,
   pricingItemsExist,

@@ -10,7 +10,7 @@ import { logger } from "../utils/logger";
 import {
   readJsonFile,
   validateAppStoreModel,
-} from "../utils/validation-helpers";
+} from "../helpers/validation-helpers";
 import { removeShortcuts } from "../utils/shortcut-converter";
 
 // Mock process.exit before importing the command
@@ -20,7 +20,7 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 
 // Mock dependencies
 jest.mock("../utils/logger");
-jest.mock("../utils/validation-helpers");
+jest.mock("../helpers/validation-helpers");
 jest.mock("../utils/shortcut-converter");
 
 const mockLogger = jest.mocked(logger);

@@ -9,13 +9,13 @@ import {
 import * as fs from "fs";
 import * as readline from "readline";
 import { logger } from "../utils/logger";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 
 // Mock dependencies
 jest.mock("fs");
 jest.mock("readline");
 jest.mock("../utils/logger");
-jest.mock("../utils/validation-helpers");
+jest.mock("../helpers/validation-helpers");
 jest.mock("../domains/pricing/api-client", () => ({
   fetchAppPricePoints: jest.fn(),
 }));

@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { PriceSchema } from "../models/app-store";
-
-type Price = z.infer<typeof PriceSchema>;
+import { logger } from "../utils/logger";
+import { AppStoreModelSchema } from "../models/app-store";
+import { readFileSync } from "fs";
+import { ContextualError } from "../helpers/error-handling-helpers";
 
 /**
  * Deep compare two objects, treating arrays as unordered sets
@@ -61,3 +62,69 @@ export const isValidProductId = (productId: string): boolean => {
   const productIdRegex = /^[a-zA-Z0-9._]+$/;
   return productIdRegex.test(productId);
 };
+
+export function validateJsonFile(filePath: string, showSuccessMessage = false) {
+  const jsonData = readJsonFile(filePath);
+  return validateAppStoreModel(jsonData, showSuccessMessage);
+}
+
+export function readJsonFile(filePath: string): any {
+  const fileContent = readFileSync(filePath, "utf-8");
+
+  try {
+    return JSON.parse(fileContent);
+  } catch (jsonError) {
+    throw new ContextualError(
+      `❌ Invalid JSON format! ${filePath}`,
+      jsonError,
+      {
+        filePath,
+        jsonError,
+      }
+    );
+  }
+}
+
+export function validateAppStoreModel(data: any, showSuccessMessage = false) {
+  const result = AppStoreModelSchema.safeParse(data);
+
+  if (result.success) {
+    if (showSuccessMessage) {
+      logger.info(
+        "✅ Validation passed! The JSON file format and structure are valid."
+      );
+    }
+    return result.data;
+  } else {
+    throw new ContextualError(`❌ Validation failed!`, result.error, {
+      result,
+    });
+  }
+}
+
+/**
+ * Validates AppStore model data with custom business logic
+ * @param data - The AppStore model data to validate
+ * @param ctx - The Zod refinement context
+ */
+export function validateAppStoreModelData(
+  data: any,
+  ctx: z.RefinementCtx
+): void {
+  if (
+    data.primaryLocale &&
+    data.localizations &&
+    data.localizations.length > 0
+  ) {
+    const primaryLocaleExists = data.localizations.some(
+      (loc: any) => loc.locale === data.primaryLocale
+    );
+    if (!primaryLocaleExists) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Primary locale '${data.primaryLocale}' must exist in the localizations array`,
+        path: ["primaryLocale"],
+      });
+    }
+  }
+}

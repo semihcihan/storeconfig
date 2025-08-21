@@ -308,6 +308,73 @@ describe("AppStore Models", () => {
         );
       }
     });
+
+    it("should pass validation when prices is missing", () => {
+      const subscription = {
+        productId: "prod.monthly",
+        referenceName: "Monthly Subscription",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+      };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
+
+    it("should pass validation when localizations is missing but availability exists", () => {
+      const subscription = {
+        productId: "prod.monthly",
+        referenceName: "Monthly Subscription",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA", "CAN", "GBR"],
+        },
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
+
+    it("should fail validation when availability is missing but prices exist", () => {
+      const subscription = {
+        productId: "prod.monthly",
+        referenceName: "Monthly Subscription",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(
+          "Subscription 'prod.monthly' has pricing defined but no availability. You need to set up availabilities first."
+        );
+      }
+    });
+
+    it("should pass validation when all optional fields are missing", () => {
+      const subscription = {
+        productId: "prod.monthly",
+        referenceName: "Monthly Subscription",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+      };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("InAppPurchaseSchema", () => {
@@ -318,6 +385,17 @@ describe("AppStore Models", () => {
       familySharable: false,
       localizations: [],
     };
+
+    it("should pass validation when localizations is missing", () => {
+      const iap = {
+        productId: "iap.product",
+        type: "CONSUMABLE" as const,
+        referenceName: "Test IAP",
+        familySharable: false,
+      };
+      const result = InAppPurchaseSchema.safeParse(iap);
+      expect(result.success).toBe(true);
+    });
 
     it("should pass validation for valid product ID", () => {
       const iap = {

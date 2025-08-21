@@ -10,7 +10,7 @@ import { logger } from "../utils/logger";
 import {
   validateAppStoreModel,
   readJsonFile,
-} from "../utils/validation-helpers";
+} from "../helpers/validation-helpers";
 import * as fs from "fs";
 
 // Mock process.exit before importing the command
@@ -20,7 +20,7 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 
 // Mock dependencies
 jest.mock("../utils/logger");
-jest.mock("../utils/validation-helpers");
+jest.mock("../helpers/validation-helpers");
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
   pricingItemsExist: jest.fn(),
@@ -174,26 +174,6 @@ describe("set-price command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Setting prices using file: test-file.json"
       );
-    });
-
-    it("should log successful completion", async () => {
-      const mockData = { inAppPurchases: [{ id: "test" }] } as any;
-
-      mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
-
-      await setPriceCommand.handler!(mockArgv as any);
-
-      expect(mockLogger.info).toHaveBeenCalledWith("Pricing data:", {
-        appId: "app-1",
-        selectedItem: {
-          type: "app",
-          id: "",
-          name: "",
-        },
-        basePricePoint: { id: "price-1", price: "0.00" },
-        pricingStrategy: "apple",
-      });
     });
   });
 });

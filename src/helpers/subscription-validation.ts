@@ -14,9 +14,20 @@ export function validateSubscriptionTerritoryPricing(
   subscription: any,
   ctx: z.RefinementCtx
 ): void {
-  const availableTerritories =
-    subscription.availability?.availableTerritories || [];
   const subscriptionPrices = subscription.prices || [];
+  const availability = subscription.availability;
+
+  // If pricing exists but no availability, that's an error
+  if (subscriptionPrices.length > 0 && !availability) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Subscription '${subscription.productId}' has pricing defined but no availability. You need to set up availabilities first.`,
+      path: ["availability"],
+    });
+    return;
+  }
+
+  const availableTerritories = availability?.availableTerritories || [];
 
   // Create sets for efficient lookup
   const subscriptionPriceTerritories = new Set(

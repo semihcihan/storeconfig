@@ -520,6 +520,13 @@ describe("diff-service", () => {
         },
       });
       expect(plan[2]).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          availability: MOCK_STATE_1.inAppPurchases![0].availability,
+        },
+      });
+      expect(plan[3]).toEqual({
         type: "UPDATE_IAP_PRICING",
         payload: {
           productId: MOCK_STATE_1.inAppPurchases![0].productId,
@@ -529,13 +536,6 @@ describe("diff-service", () => {
             updatedPrices: [],
             deletedTerritories: [],
           },
-        },
-      });
-      expect(plan[3]).toEqual({
-        type: "UPDATE_IAP_AVAILABILITY",
-        payload: {
-          productId: MOCK_STATE_1.inAppPurchases![0].productId,
-          availability: MOCK_STATE_1.inAppPurchases![0].availability,
         },
       });
     });

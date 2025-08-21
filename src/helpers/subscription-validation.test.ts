@@ -209,10 +209,30 @@ describe("Subscription Validation", () => {
       expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
-    it("should handle missing availability gracefully", () => {
+    it("should require availability when pricing exists", () => {
       const subscription = {
         productId: "test_product",
         prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Subscription 'test_product' has pricing defined but no availability. You need to set up availabilities first.",
+        path: ["availability"],
+      });
+    });
+
+    it("should allow missing availability when no pricing exists", () => {
+      const subscription = {
+        productId: "test_product",
+        prices: [],
         introductoryOffers: [],
       };
 

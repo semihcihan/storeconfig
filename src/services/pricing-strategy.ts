@@ -8,7 +8,7 @@ import * as path from "path";
 import { ContextualError } from "../helpers/error-handling-helpers";
 import { territoryCodes } from "../models/territories";
 import { PricingRequest } from "../models/pricing-request";
-import type { AppStoreModel } from "../utils/validation-helpers";
+import type { AppStoreModel } from "../models/app-store";
 import { fetchTerritoryPricePointsForSelectedItem } from "../set-price/base-price/price-point-fetcher";
 
 export const BASE_TERRITORY = "USA";
@@ -184,7 +184,9 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
   ): number | null {
     let pppValue = territory.value;
     if (!pppValue || pppValue <= 0) {
-      return this.calculateExchangeRateConversionPrice(territory, basePriceUSD);
+      // If the territory doesn't have a PPP value
+      // use the USD conversion rate to ignore the PPP ratio and convert with exchange rate
+      pppValue = territory.usdRate;
     }
 
     // Calculate fair price in local currency using PPP ratio
@@ -207,20 +209,6 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     }
 
     return this.resultConverter(fairPriceUSD * targetCurrencyTerritory.usdRate);
-  }
-
-  private calculateExchangeRateConversionPrice(
-    territory: TerritoryData,
-    basePriceUSD: number
-  ): number | null {
-    const targetCurrencyTerritory = this.findTerritoryByLocalCurrency(
-      territory.currency
-    );
-    if (!targetCurrencyTerritory) {
-      throw new ContextualError("Cannot calculate price", territory);
-    }
-    let price = basePriceUSD * targetCurrencyTerritory.usdRate;
-    return this.resultConverter(price);
   }
 
   private findTerritoryByLocalCurrency(currency: string): TerritoryData | null {

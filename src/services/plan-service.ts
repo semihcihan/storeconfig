@@ -2,7 +2,7 @@ import { logger } from "../utils/logger";
 import { AnyAction } from "../models/diff-plan";
 
 export async function showAction(action: AnyAction) {
-  logger.info(`Executing action: ${action.type}`);
+  logger.info(`${action.type}`);
   switch (action.type) {
     // In-App Purchases
     case "CREATE_IN_APP_PURCHASE":

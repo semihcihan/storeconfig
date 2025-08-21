@@ -4,7 +4,10 @@ import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
+import { validateAppStoreModelData } from "../helpers/validation-helpers";
 import { WORLDWIDE_TERRITORY_CODE } from "../utils/shortcut-converter";
+
+export type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 export const APP_STORE_SCHEMA_VERSION = "1.0.0";
 
@@ -141,12 +144,12 @@ export const SubscriptionSchema = z
     groupLevel: z.number(),
     subscriptionPeriod: SubscriptionPeriodSchema,
     familySharable: z.boolean(),
-    prices: z.array(PriceSchema),
-    localizations: z.array(LocalizationSchema),
+    prices: z.array(PriceSchema).optional(),
+    localizations: z.array(LocalizationSchema).optional(),
     introductoryOffers: z.array(IntroductoryOfferSchema).optional(),
     promotionalOffers: z.array(PromotionalOfferSchema).optional(),
     reviewNote: z.string().optional(),
-    availability: AvailabilitySchema,
+    availability: AvailabilitySchema.optional(),
   })
   .superRefine(validateSubscription);
 
@@ -169,7 +172,7 @@ export const InAppPurchaseSchema = z.object({
   referenceName: z.string(),
   familySharable: z.boolean(),
   priceSchedule: PriceScheduleSchema.optional(),
-  localizations: z.array(LocalizationSchema),
+  localizations: z.array(LocalizationSchema).optional(),
   reviewNote: z.string().optional(),
   availability: AvailabilitySchema.optional(),
 });
@@ -210,21 +213,4 @@ export const AppStoreModelSchema = z
     versionString: z.string().optional(),
     localizations: z.array(AppStoreLocalizationSchema).optional(),
   })
-  .superRefine((data, ctx) => {
-    if (
-      data.primaryLocale &&
-      data.localizations &&
-      data.localizations.length > 0
-    ) {
-      const primaryLocaleExists = data.localizations.some(
-        (loc) => loc.locale === data.primaryLocale
-      );
-      if (!primaryLocaleExists) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Primary locale '${data.primaryLocale}' must exist in the localizations array`,
-          path: ["primaryLocale"],
-        });
-      }
-    }
-  });
+  .superRefine(validateAppStoreModelData);

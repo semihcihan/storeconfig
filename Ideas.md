@@ -1,6 +1,12 @@
 ## IDEAS TODOs
 
 - test pricing
+  - fails on new iap
+  - try on new sub
+  - try on new intro
+  - try on new app
+- start end dates, scheduling
+- improve logging on showAction by gathering
 
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
@@ -46,8 +52,7 @@
 # V2
 
 - other platforms
-- intro offers
-- start end dates, scheduling
+- promo offers
 - billing grace period
 - add new fields to support
   - age rating
