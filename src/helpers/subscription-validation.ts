@@ -75,9 +75,20 @@ export function validateSubscription(
     }
   }
 
-  validateIntroductoryOffers(
-    subscription.productId,
-    subscription.subscriptionPeriod,
-    subscription.introductoryOffers
-  );
+  try {
+    validateIntroductoryOffers(
+      subscription.productId,
+      subscription.subscriptionPeriod,
+      subscription.introductoryOffers
+    );
+  } catch (error) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Introductory offers validation failed",
+      path: ["introductoryOffers"],
+    });
+  }
 }

@@ -7,10 +7,8 @@ import {
   afterEach,
 } from "@jest/globals";
 import { logger } from "../utils/logger";
-import {
-  validateAppStoreModel,
-  readJsonFile,
-} from "../helpers/validation-helpers";
+import { readJsonFile } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 import * as fs from "fs";
 
 // Mock process.exit before importing the command
@@ -21,6 +19,7 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 // Mock dependencies
 jest.mock("../utils/logger");
 jest.mock("../helpers/validation-helpers");
+jest.mock("../helpers/validation-model");
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
   pricingItemsExist: jest.fn(),
@@ -114,8 +113,7 @@ describe("set-price command", () => {
       expect(mockReadJsonFile).toHaveBeenCalledWith("test-file.json");
       expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockData);
       expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
-        mockDataWithoutShortcuts,
-        false
+        mockDataWithoutShortcuts
       );
       expect(mockPricingItemsExist).toHaveBeenCalledWith(
         mockDataWithoutShortcuts

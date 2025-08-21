@@ -11,10 +11,8 @@ import { fetchAppStoreState } from "../services/fetch-service";
 import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
-import {
-  readJsonFile,
-  validateAppStoreModel,
-} from "../helpers/validation-helpers";
+import { readJsonFile } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 import { removeShortcuts } from "../utils/shortcut-converter";
 
 // Mock process.exit before importing the command
@@ -29,6 +27,7 @@ jest.mock("../services/diff-service");
 jest.mock("../services/apply-service");
 jest.mock("../services/plan-service");
 jest.mock("../helpers/validation-helpers");
+jest.mock("../helpers/validation-model");
 jest.mock("../utils/shortcut-converter");
 jest.mock("readline", () => ({
   createInterface: jest.fn().mockReturnValue({

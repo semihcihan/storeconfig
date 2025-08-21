@@ -5,6 +5,7 @@ import {
   AppStoreModelSchema,
 } from "./app-store";
 import { isValidProductId } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 import { describe, it, expect } from "@jest/globals";
 
 jest.mock("./territories", () => ({
@@ -277,7 +278,7 @@ describe("AppStore Models", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should fail validation if prices for some territories are missing", () => {
+    it("should fail validation if prices for some territories are missing when context is apply", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [
@@ -286,27 +287,101 @@ describe("AppStore Models", () => {
           // Missing price for GBR
         ],
       };
-      const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe(
-          "Subscription 'prod.monthly' is available in territory 'GBR' but has no price defined for this territory"
-        );
-      }
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      expect(() =>
+        validateAppStoreModel(mockAppStoreData, false, "apply")
+      ).toThrow(
+        "Business rule validation failed: Subscription 'prod.monthly' is available in territory 'GBR' but has no price defined for this territory"
+      );
     });
 
-    it("should fail validation if the prices array is empty", () => {
+    it("should pass validation if prices for some territories are missing when context is fetch", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          // Missing price for GBR
+        ],
+      };
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "fetch");
+      expect(result).toBeDefined();
+    });
+
+    it("should fail validation if the prices array is empty when context is apply", () => {
       const subscription = {
         ...validSubscriptionData,
         prices: [],
       };
-      const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe(
-          "Subscription 'prod.monthly' is available in territory 'USA' but has no price defined for this territory"
-        );
-      }
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      expect(() =>
+        validateAppStoreModel(mockAppStoreData, false, "apply")
+      ).toThrow(
+        "Business rule validation failed: Subscription 'prod.monthly' is available in territory 'USA' but has no price defined for this territory"
+      );
+    });
+
+    it("should pass validation if the prices array is empty when context is fetch", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [],
+      };
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "fetch");
+      expect(result).toBeDefined();
     });
 
     it("should pass validation when prices is missing", () => {
@@ -342,7 +417,7 @@ describe("AppStore Models", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should fail validation when availability is missing but prices exist", () => {
+    it("should fail validation when availability is missing but prices exist when context is apply", () => {
       const subscription = {
         productId: "prod.monthly",
         referenceName: "Monthly Subscription",
@@ -355,13 +430,56 @@ describe("AppStore Models", () => {
           { territory: "GBR", price: "8.99" },
         ],
       };
-      const result = SubscriptionSchema.safeParse(subscription);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe(
-          "Subscription 'prod.monthly' has pricing defined but no availability. You need to set up availabilities first."
-        );
-      }
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      expect(() =>
+        validateAppStoreModel(mockAppStoreData, false, "apply")
+      ).toThrow(
+        "Business rule validation failed: Subscription 'prod.monthly' has pricing defined but no availability. You need to set up availabilities first."
+      );
+    });
+
+    it("should pass validation when availability is missing but prices exist when context is fetch", () => {
+      const subscription = {
+        productId: "prod.monthly",
+        referenceName: "Monthly Subscription",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+
+      // Create a mock app store data structure
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "fetch");
+      expect(result).toBeDefined();
     });
 
     it("should pass validation when all optional fields are missing", () => {
@@ -374,6 +492,230 @@ describe("AppStore Models", () => {
       };
       const result = SubscriptionSchema.safeParse(subscription);
       expect(result.success).toBe(true);
+    });
+
+    it("should pass business rule validation when context is apply and all validations pass", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "apply");
+      expect(result).toBeDefined();
+      expect(result.subscriptionGroups?.[0]?.subscriptions?.[0]).toEqual(
+        subscription
+      );
+    });
+
+    it("should not run business rule validation when context is fetch", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [], // This would fail business rule validation
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      // Should pass because business rule validation is not run for fetch context
+      const result = validateAppStoreModel(mockAppStoreData, false, "fetch");
+      expect(result).toBeDefined();
+    });
+
+    it("should handle missing subscriptionGroups gracefully", () => {
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        // No subscriptionGroups
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "apply");
+      expect(result).toBeDefined();
+    });
+
+    it("should handle empty subscriptionGroups gracefully", () => {
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "apply");
+      expect(result).toBeDefined();
+    });
+
+    it("should validate multiple subscriptions in a group when context is apply", () => {
+      const subscription1 = {
+        ...validSubscriptionData,
+        productId: "prod.monthly",
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+
+      const subscription2 = {
+        ...validSubscriptionData,
+        productId: "prod.yearly",
+        prices: [
+          { territory: "USA", price: "99.99" },
+          { territory: "CAN", price: "129.99" },
+          // Missing price for GBR - should fail validation
+        ],
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription1, subscription2],
+          },
+        ],
+      };
+
+      expect(() =>
+        validateAppStoreModel(mockAppStoreData, false, "apply")
+      ).toThrow(
+        "Business rule validation failed: Subscription 'prod.yearly' is available in territory 'GBR' but has no price defined for this territory"
+      );
+    });
+
+    it("should validate multiple subscription groups when context is apply", () => {
+      const subscription1 = {
+        ...validSubscriptionData,
+        productId: "prod.monthly",
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+
+      const subscription2 = {
+        ...validSubscriptionData,
+        productId: "prod.yearly",
+        prices: [
+          { territory: "USA", price: "99.99" },
+          { territory: "CAN", price: "129.99" },
+          { territory: "GBR", price: "89.99" },
+        ],
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Group 1",
+            localizations: [],
+            subscriptions: [subscription1],
+          },
+          {
+            referenceName: "Group 2",
+            localizations: [],
+            subscriptions: [subscription2],
+          },
+        ],
+      };
+
+      const result = validateAppStoreModel(mockAppStoreData, false, "apply");
+      expect(result).toBeDefined();
+      expect(result.subscriptionGroups).toHaveLength(2);
+    });
+
+    it("should pass validation when context is fetch even with invalid subscription data", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [], // This would fail business rule validation
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA", "CAN", "GBR"],
+        },
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      // Should pass because business rule validation is not run for fetch context
+      const result = validateAppStoreModel(mockAppStoreData, false, "fetch");
+      expect(result).toBeDefined();
+    });
+
+    it("should show success message when showSuccessMessage is true", () => {
+      const subscription = {
+        ...validSubscriptionData,
+        prices: [
+          { territory: "USA", price: "9.99" },
+          { territory: "CAN", price: "12.99" },
+          { territory: "GBR", price: "8.99" },
+        ],
+      };
+
+      const mockAppStoreData = {
+        schemaVersion: "1.0.0",
+        appId: "test-app-id",
+        subscriptionGroups: [
+          {
+            referenceName: "Test Group",
+            localizations: [],
+            subscriptions: [subscription],
+          },
+        ],
+      };
+
+      // Mock the logger to capture the info call
+      const mockLogger = require("../utils/logger");
+      const originalInfo = mockLogger.logger.info;
+      const mockInfo = jest.fn();
+      mockLogger.logger.info = mockInfo;
+
+      try {
+        const result = validateAppStoreModel(mockAppStoreData, true, "fetch");
+        expect(result).toBeDefined();
+        expect(mockInfo).toHaveBeenCalledWith(
+          "✅ Validation passed! The JSON file format and structure are valid."
+        );
+      } finally {
+        // Restore the original logger
+        mockLogger.logger.info = originalInfo;
+      }
     });
   });
 

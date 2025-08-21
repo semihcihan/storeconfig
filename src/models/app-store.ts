@@ -2,9 +2,11 @@ import { z } from "zod";
 import type { components } from "../generated/app-store-connect-api";
 import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
-import { isValidProductId } from "../helpers/validation-helpers";
+import {
+  isValidProductId,
+  validateAppStoreModelData,
+} from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
-import { validateAppStoreModelData } from "../helpers/validation-helpers";
 import { WORLDWIDE_TERRITORY_CODE } from "../utils/shortcut-converter";
 
 export type AppStoreModel = z.infer<typeof AppStoreModelSchema>;

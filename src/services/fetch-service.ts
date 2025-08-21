@@ -6,7 +6,7 @@ import {
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
 import { optimizeLocalizationsByPrimaryLocale } from "../helpers/localization-helpers";
-import { validateAppStoreModel } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 
 // Import API clients
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";

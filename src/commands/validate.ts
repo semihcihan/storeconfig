@@ -1,10 +1,8 @@
 import { CommandModule } from "yargs";
-import {
-  readJsonFile,
-  validateAppStoreModel,
-} from "../helpers/validation-helpers";
+import { readJsonFile } from "../helpers/validation-helpers";
 import { logger } from "../utils/logger";
 import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
+import { validateAppStoreModel } from "../helpers/validation-model";
 
 const command: CommandModule = {
   command: "validate-format",

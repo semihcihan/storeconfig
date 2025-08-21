@@ -1,10 +1,8 @@
 import type { CommandModule } from "yargs";
 import * as fs from "fs";
 import { logger } from "../utils/logger";
-import {
-  readJsonFile,
-  validateAppStoreModel,
-} from "../helpers/validation-helpers";
+import { readJsonFile } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 import {
   startInteractivePricing,
   pricingItemsExist,

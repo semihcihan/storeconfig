@@ -4,10 +4,8 @@ import { fetchAppStoreState } from "../services/fetch-service";
 import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
-import {
-  readJsonFile,
-  validateAppStoreModel,
-} from "../helpers/validation-helpers";
+import { readJsonFile } from "../helpers/validation-helpers";
+import { validateAppStoreModel } from "../helpers/validation-model";
 import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
 

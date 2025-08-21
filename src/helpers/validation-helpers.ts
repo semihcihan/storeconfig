@@ -1,9 +1,6 @@
 import { z } from "zod";
-import { logger } from "../utils/logger";
-import { AppStoreModelSchema } from "../models/app-store";
 import { readFileSync } from "fs";
 import { ContextualError } from "../helpers/error-handling-helpers";
-import { validateSubscriptionTerritoryPricing } from "./subscription-validation";
 
 /**
  * Deep compare two objects, treating arrays as unordered sets
@@ -52,18 +49,6 @@ export function deepEqualUnordered(a: any, b: any): boolean {
   return false;
 }
 
-/**
- * Validates if a product ID follows the correct format
- * Product ID can only contain alphanumeric characters, underscores, and periods
- * @param productId - The product ID to validate
- * @returns true if the product ID is valid, false otherwise
- */
-export const isValidProductId = (productId: string): boolean => {
-  // Product ID can only contain alphanumeric characters, underscores, and periods
-  const productIdRegex = /^[a-zA-Z0-9._]+$/;
-  return productIdRegex.test(productId);
-};
-
 export function readJsonFile(filePath: string): any {
   const fileContent = readFileSync(filePath, "utf-8");
 
@@ -81,49 +66,17 @@ export function readJsonFile(filePath: string): any {
   }
 }
 
-export function validateAppStoreModel(
-  data: any,
-  showSuccessMessage = false,
-  context: "fetch" | "apply" = "fetch"
-) {
-  const result = AppStoreModelSchema.safeParse(data);
-
-  if (result.success) {
-    // If context is "apply", run additional business rule validations
-    if (context === "apply") {
-      // Validate subscription territory pricing
-      if (result.data.subscriptionGroups) {
-        for (const group of result.data.subscriptionGroups) {
-          for (const subscription of group.subscriptions) {
-            // Create a mock context for the validation function
-            const mockCtx = {
-              addIssue: (issue: any) => {
-                throw new ContextualError(
-                  `Business rule validation failed: ${issue.message}`,
-                  null,
-                  { issue, path: issue.path }
-                );
-              },
-              path: [],
-            };
-            validateSubscriptionTerritoryPricing(subscription, mockCtx);
-          }
-        }
-      }
-    }
-
-    if (showSuccessMessage) {
-      logger.info(
-        "✅ Validation passed! The JSON file format and structure are valid."
-      );
-    }
-    return result.data;
-  } else {
-    throw new ContextualError(`❌ Validation failed!`, result.error, {
-      result,
-    });
-  }
-}
+/**
+ * Validates if a product ID follows the correct format
+ * Product ID can only contain alphanumeric characters, underscores, and periods
+ * @param productId - The product ID to validate
+ * @returns true if the product ID is valid, false otherwise
+ */
+export const isValidProductId = (productId: string): boolean => {
+  // Product ID can only contain alphanumeric characters, underscores, and periods
+  const productIdRegex = /^[a-zA-Z0-9._]+$/;
+  return productIdRegex.test(productId);
+};
 
 /**
  * Validates AppStore model data with custom business logic
