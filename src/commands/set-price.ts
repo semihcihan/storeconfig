@@ -32,8 +32,7 @@ const setPriceCommand: CommandModule = {
 
     try {
       const appStoreState = validateAppStoreModel(
-        removeShortcuts(readJsonFile(inputFile)),
-        false
+        removeShortcuts(readJsonFile(inputFile))
       );
 
       pricingItemsExist(appStoreState);

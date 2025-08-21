@@ -6,6 +6,7 @@ import {
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
 import { optimizeLocalizationsByPrimaryLocale } from "../helpers/localization-helpers";
+import { validateAppStoreModel } from "../helpers/validation-helpers";
 
 // Import API clients
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
@@ -130,6 +131,6 @@ export async function fetchAppStoreState(
       optimizedLocalizations.length > 0 ? optimizedLocalizations : undefined,
   };
 
-  const parsedData = AppStoreModelSchema.parse(result);
+  const parsedData = validateAppStoreModel(result);
   return parsedData;
 }

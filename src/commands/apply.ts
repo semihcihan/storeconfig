@@ -7,10 +7,11 @@ import { showPlan } from "../services/plan-service";
 import {
   readJsonFile,
   validateAppStoreModel,
-  type AppStoreModel,
 } from "../helpers/validation-helpers";
 import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
+
+import type { AppStoreModel } from "../models/app-store";
 
 const confirmChanges = async (): Promise<boolean> => {
   const rl = readline.createInterface({
@@ -81,8 +82,7 @@ const command: CommandModule = {
 
     try {
       const desiredState = validateAppStoreModel(
-        removeShortcuts(readJsonFile(desiredStateFile)),
-        false
+        removeShortcuts(readJsonFile(desiredStateFile))
       );
 
       let currentState: AppStoreModel;
@@ -90,8 +90,7 @@ const command: CommandModule = {
       if (currentStateFile) {
         logger.info(`Using ${currentStateFile} as current state.`);
         currentState = validateAppStoreModel(
-          removeShortcuts(readJsonFile(currentStateFile)),
-          false
+          removeShortcuts(readJsonFile(currentStateFile))
         );
       } else {
         logger.info(`Fetching current state for app ID: ${appId}`);

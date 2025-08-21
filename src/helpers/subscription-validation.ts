@@ -75,8 +75,6 @@ export function validateSubscription(
     }
   }
 
-  // Validate territory pricing
-  validateSubscriptionTerritoryPricing(subscription, ctx);
   validateIntroductoryOffers(
     subscription.productId,
     subscription.subscriptionPeriod,
