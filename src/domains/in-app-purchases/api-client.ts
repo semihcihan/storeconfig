@@ -432,3 +432,14 @@ export async function createIAPPriceSchedule(
 
   return response.data;
 }
+
+// Delete an in-app purchase
+export async function deleteInAppPurchase(iapId: string): Promise<void> {
+  const response = await api.DELETE("/v2/inAppPurchases/{id}", {
+    params: { path: { id: iapId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}

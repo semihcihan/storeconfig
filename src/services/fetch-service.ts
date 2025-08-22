@@ -31,7 +31,7 @@ import { AppStoreLocalizationSchema } from "../models/app-store";
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 // Fetch and map in-app purchases
-async function fetchAndMapInAppPurchases(appId: string) {
+export async function fetchAndMapInAppPurchases(appId: string) {
   try {
     const inAppPurchasesData = await fetchInAppPurchases(appId);
     return await mapInAppPurchases(inAppPurchasesData);
@@ -48,7 +48,7 @@ async function fetchAndMapInAppPurchases(appId: string) {
 }
 
 // Fetch and map subscription groups
-async function fetchAndMapSubscriptionGroups(appId: string) {
+export async function fetchAndMapSubscriptionGroups(appId: string) {
   try {
     const subscriptionGroupsData = await fetchSubscriptionGroups(appId);
     return await mapSubscriptionGroups(subscriptionGroupsData);

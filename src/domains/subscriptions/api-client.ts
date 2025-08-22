@@ -489,3 +489,27 @@ export async function deleteSubscriptionIntroductoryOffer(
     throw response.error;
   }
 }
+
+// Delete a subscription
+export async function deleteSubscription(
+  subscriptionId: string
+): Promise<void> {
+  const response = await api.DELETE("/v1/subscriptions/{id}", {
+    params: { path: { id: subscriptionId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}
+
+// Delete a subscription group
+export async function deleteSubscriptionGroup(groupId: string): Promise<void> {
+  const response = await api.DELETE("/v1/subscriptionGroups/{id}", {
+    params: { path: { id: groupId } },
+  });
+
+  if (response.error) {
+    throw response.error;
+  }
+}
