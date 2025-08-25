@@ -23,13 +23,21 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
     // Retry on rate limiting
     if (isRateLimitError(error)) return true;
 
-    // Retry on 5xx server errors
-    if (error?.status >= 500) return true;
+    // Retry on 5xx server errors (both number and string)
+    if (
+      error?.status >= 500 ||
+      (typeof error?.status === "string" && parseInt(error.status) >= 500)
+    )
+      return true;
 
     // Handle Apple API error structure where status is in errors array
     if (error?.errors && Array.isArray(error.errors)) {
       for (const err of error.errors) {
-        if (err.status >= 500) return true;
+        if (
+          err.status >= 500 ||
+          (typeof err.status === "string" && parseInt(err.status) >= 500)
+        )
+          return true;
       }
     }
 

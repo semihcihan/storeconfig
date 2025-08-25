@@ -2,7 +2,7 @@ import { apply } from "./apply-service";
 import { AnyAction } from "../models/diff-plan";
 import { AppStoreModel } from "../models/app-store";
 import { fetchAndMapInAppPurchases } from "./fetch-service";
-import { logger, setLogLevel } from "../utils/logger";
+import { logger } from "../utils/logger";
 import {
   generateTestIdentifier,
   generateConstantLengthTestIdentifier,
@@ -668,17 +668,17 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Premium ${uniqueId}`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
                   description: `Unlock premium features`,
                 },
                 {
                   locale: "es-ES",
-                  name: `Premium ${uniqueId}`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
                   description: `Unlock premium features`,
                 },
                 {
                   locale: "fr-FR",
-                  name: `Premium ${uniqueId}`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
                   description: `Unlock premium features`,
                 },
               ],
@@ -760,8 +760,8 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Premium Feature ${uniqueId}`,
-                  description: `Unlock premium functionality with this purchase`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
+                  description: `Unlock premium functionality`,
                 },
               ],
               reviewNote: `This IAP provides temporary access to premium features`,
@@ -814,13 +814,13 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Premium Feature ${uniqueId}`,
-                  description: `Unlock premium functionality with this purchase`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
+                  description: `Unlock premium functionality`,
                 },
                 {
                   locale: "es-ES",
-                  name: `Función Premium ${uniqueId}`,
-                  description: `Desbloquea funcionalidad premium con esta compra`,
+                  name: `Premium ${uniqueId.slice(-8)}`,
+                  description: `Unlock premium functionality`,
                 },
               ],
               availability: {
@@ -1667,7 +1667,7 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Consumable Feature ${uniqueId}`,
+                  name: `Consumable ${uniqueId.slice(-8)}`,
                   description: `Temporary feature access`,
                 },
               ],
@@ -1833,7 +1833,7 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Non-Consumable Feature ${uniqueId}`,
+                  name: `Non-Consumable ${uniqueId.slice(-8)}`,
                   description: `Permanent feature access`,
                 },
               ],
@@ -2008,7 +2008,7 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Subscription Feature ${uniqueId}`,
+                  name: `Subscription ${uniqueId.slice(-8)}`,
                   description: `Time-limited feature access`,
                 },
               ],
@@ -2297,7 +2297,7 @@ describe("Apply Service IAP Integration Tests", () => {
               },
               availability: {
                 availableInNewTerritories: false,
-                availableTerritories: ["USA"],
+                availableTerritories: ["USA", "GBR"],
               },
             },
           ],
@@ -2359,7 +2359,7 @@ describe("Apply Service IAP Integration Tests", () => {
               localizations: [
                 {
                   locale: "en-US",
-                  name: `Invalid Locale ${uniqueId}`,
+                  name: `Invalid ${uniqueId.slice(-8)}`,
                   description: `Test with invalid locale`,
                 },
               ],
@@ -2436,9 +2436,6 @@ describe("Apply Service IAP Integration Tests", () => {
 
   // Cleanup after all tests
   afterAll(async () => {
-    // Temporarily enable logging for cleanup
-    setLogLevel("info");
-
     // Use the common cleanup utility to find and delete all test resources
     await cleanupTestIAPResources(TEST_APP_ID);
   });

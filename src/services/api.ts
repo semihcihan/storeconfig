@@ -5,9 +5,7 @@ import { createRetryMiddleware } from "./retry-middleware";
 
 const baseApi = createClient<paths>({
   baseUrl: "https://api.appstoreconnect.apple.com",
-  headers: {
-    Authorization: `Bearer ${getAuthToken()}`,
-  },
+  // Remove static headers - we'll use middleware instead
   querySerializer: (params) => {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -18,6 +16,24 @@ const baseApi = createClient<paths>({
       }
     }
     return search.toString();
+  },
+});
+
+// Add middleware to inject fresh token on every request
+baseApi.use({
+  onRequest: (options) => {
+    // getAuthToken() will automatically use cached token or refresh if needed
+    const token = getAuthToken();
+
+    // Create new request with fresh Authorization header
+    const newRequest = new Request(options.request, {
+      headers: {
+        ...Object.fromEntries(options.request.headers.entries()),
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return newRequest;
   },
 });
 
