@@ -7,22 +7,35 @@ import {
   deleteSubscriptionGroup,
 } from "../domains/subscriptions/api-client";
 
+export const TEST_APP_ID = "6503259293";
+const TEST_PREFIX = "INTEG_TEST_";
+
 // Generate a highly unique test identifier to avoid conflicts
 // Keep it under 64 characters for Apple API limits
 export function generateTestIdentifier(): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8); // 6 chars
   const processId = process.pid.toString().slice(-4); // last 4 digits
-  return `INTEG_TEST_${timestamp}_${processId}_${random}`;
+  return `${TEST_PREFIX}${timestamp}_${processId}_${random}`;
+}
+
+// Generate a constant-length test identifier for length-related testing
+// This ensures consistent test results when testing Apple's API length limits
+export function generateConstantLengthTestIdentifier(): string {
+  const random = Math.random().toString(36).substring(2, 8); // 6 chars
+  const processId = process.pid.toString().slice(-4); // last 4 digits
+  // Use a fixed timestamp to ensure consistent length
+  const fixedTimestamp = "1700000000000"; // 13 chars, fixed
+  return `${TEST_PREFIX}${fixedTimestamp}_${processId}_${random}`;
 }
 
 // Check if a resource identifier is a test resource
-export function isTestResource(identifier: string): boolean {
-  return identifier.startsWith("INTEG_TEST_");
+function isTestResource(identifier: string): boolean {
+  return identifier.startsWith(TEST_PREFIX);
 }
 
 // Find and collect all test resources for cleanup
-export async function findTestResources(appId: string): Promise<{
+async function findTestResources(appId: string): Promise<{
   iapIds: string[];
   subscriptionIds: string[];
   subscriptionGroupIds: string[];
@@ -110,14 +123,39 @@ export async function findTestResources(appId: string): Promise<{
   return testResources;
 }
 
-// Clean up all test resources
-export async function cleanupTestResources(appId: string): Promise<void> {
-  logger.info("🧹 Starting automatic test cleanup...");
+// Clean up test IAP resources
+export async function cleanupTestIAPResources(appId: string): Promise<void> {
+  logger.info("🧹 Starting IAP test cleanup...");
 
   const testResources = await findTestResources(appId);
 
-  logger.info("   Resources to clean up:", {
+  logger.info("   IAPs to clean up:", {
     iapIds: testResources.iapIds.length,
+  });
+
+  // Delete IAPs
+  for (const iapId of testResources.iapIds) {
+    try {
+      logger.info(`   Deleting IAP: ${iapId}`);
+      await deleteInAppPurchase(iapId);
+      logger.info(`   ✅ Deleted IAP: ${iapId}`);
+    } catch (error) {
+      logger.error(`   ❌ Failed to delete IAP ${iapId}:`, error);
+    }
+  }
+
+  logger.info("🧹 IAP test cleanup completed!");
+}
+
+// Clean up test subscription resources
+export async function cleanupTestSubscriptionResources(
+  appId: string
+): Promise<void> {
+  logger.info("🧹 Starting subscription test cleanup...");
+
+  const testResources = await findTestResources(appId);
+
+  logger.info("   Subscriptions to clean up:", {
     subscriptionIds: testResources.subscriptionIds.length,
     subscriptionGroupIds: testResources.subscriptionGroupIds.length,
   });
@@ -136,7 +174,7 @@ export async function cleanupTestResources(appId: string): Promise<void> {
     }
   }
 
-  // Delete subscription groups
+  // Delete subscription groups after all subscriptions are removed
   for (const groupId of testResources.subscriptionGroupIds) {
     try {
       logger.info(`   Deleting subscription group: ${groupId}`);
@@ -150,16 +188,5 @@ export async function cleanupTestResources(appId: string): Promise<void> {
     }
   }
 
-  // Delete IAPs
-  for (const iapId of testResources.iapIds) {
-    try {
-      logger.info(`   Deleting IAP: ${iapId}`);
-      await deleteInAppPurchase(iapId);
-      logger.info(`   ✅ Deleted IAP: ${iapId}`);
-    } catch (error) {
-      logger.error(`   ❌ Failed to delete IAP ${iapId}:`, error);
-    }
-  }
-
-  logger.info("🧹 Test cleanup completed!");
+  logger.info("🧹 Subscription test cleanup completed!");
 }

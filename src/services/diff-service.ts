@@ -177,7 +177,7 @@ function diffLocalizations(
   return actions;
 }
 
-function diffInAppPurchases(
+export function diffInAppPurchases(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
 ): AnyAction[] {
@@ -498,7 +498,7 @@ function diffPromotionalOffers(
   return [];
 }
 
-function diffSubscriptions(
+export function diffSubscriptions(
   groupReferenceName: string,
   currentSubscriptions: Subscription[],
   desiredSubscriptions: Subscription[]
@@ -711,7 +711,7 @@ function diffSubscriptionGroupLocalizations(
   return actions;
 }
 
-function diffSubscriptionGroups(
+export function diffSubscriptionGroups(
   currentState: AppStoreModel,
   desiredState: AppStoreModel
 ): AnyAction[] {
