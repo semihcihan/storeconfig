@@ -24,6 +24,8 @@ module.exports = {
     "src/**/*.{js,ts}",
     "!src/**/*.test.{js,ts}",
     "!src/**/*.spec.{js,ts}",
+    "!src/**/*.integration.test.{js,ts}",
+    "!src/**/*.e2e.test.{js,ts}",
     "!src/generated/**/*",
     "!**/node_modules/**",
     "!**/dist/**",
