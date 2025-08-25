@@ -21,5 +21,5 @@ const baseApi = createClient<paths>({
   },
 });
 
-// Wrap the API client with retry middleware only
+// Wrap the API client with retry middleware
 export const api = createRetryMiddleware(baseApi);

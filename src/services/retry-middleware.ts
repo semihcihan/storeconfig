@@ -4,6 +4,7 @@ import {
   isRateLimitError,
   ContextualError,
 } from "../helpers/error-handling-helpers";
+import { withAuthRetry } from "./auth-interceptor";
 
 export interface RetryOptions {
   maxAttempts?: number;
@@ -130,11 +131,16 @@ function createRetryWrapper<T extends Record<string, any>>(
 
     for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
       try {
-        // Make the actual API call
-        const response = await handler(...args);
+        // Make the actual API call with auth retry for 401 errors
+        const response = await withAuthRetry(() => handler(...args));
 
         // Check if the response contains an error (openapi-fetch pattern)
-        if (response && typeof response === "object" && response.error) {
+        if (
+          response &&
+          typeof response === "object" &&
+          "error" in response &&
+          response.error
+        ) {
           // This is an error response from openapi-fetch
           if (config.shouldRetry(response.error)) {
             lastError = response.error;

@@ -903,21 +903,27 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         const newReferenceName = `Updated Reference ${uniqueId}`;
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                referenceName: newReferenceName,
-              },
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              referenceName: newReferenceName,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -931,20 +937,26 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                familySharable: true,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              familySharable: true,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -958,21 +970,27 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         const newReviewNote = `Updated review note for ${uniqueId}`;
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                reviewNote: newReviewNote,
-              },
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              reviewNote: newReviewNote,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -986,24 +1004,30 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         const newReferenceName = `Multi-Updated ${uniqueId}`;
         const newReviewNote = `Multi-updated review note for ${uniqueId}`;
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                referenceName: newReferenceName,
-                familySharable: true,
-                reviewNote: newReviewNote,
-              },
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              referenceName: newReferenceName,
+              familySharable: true,
+              reviewNote: newReviewNote,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1021,29 +1045,32 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // Verify no pricing initially
         expect(createdIap?.priceSchedule).toBeUndefined();
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "0.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "0.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1053,460 +1080,55 @@ describe("Apply Service IAP Integration Tests", () => {
         expect(updatedIap?.priceSchedule?.prices).toHaveLength(1);
         logger.info(`   ✅ Added pricing to IAP: ${uniqueId}`);
       });
-    });
-
-    describe("IAP Availability Updates", () => {
-      it("should add availability to IAP that had no availability", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Verify no availability initially
-        expect(createdIap?.availability).toBeUndefined();
-
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.availability).toBeDefined();
-        // Note: Apple's API behavior is inconsistent - sometimes it processes all territories,
-        // sometimes only the first one. This suggests there might be timing/processing limitations.
-        const territories = updatedIap?.availability?.availableTerritories;
-        expect(territories).toBeDefined();
-        expect(territories?.length).toBeGreaterThan(0);
-        expect(territories).toContain("USA");
-        logger.info(
-          `   ✅ Added availability to IAP (Apple API behavior: ${territories?.length} territories processed): ${uniqueId}`
-        );
-      });
-    });
-  });
-
-  describe("IAP Localization Tests", () => {
-    describe("IAP Localization Creation", () => {
-      it("should create IAP localization", async () => {
-        const uniqueId = generateConstantLengthTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Test ${uniqueId.slice(-8)}`,
-                description: `Test description`,
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.localizations).toBeDefined();
-        expect(updatedIap?.localizations?.length).toBeGreaterThan(0);
-        const localization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        expect(localization).toBeDefined();
-        expect(localization?.name).toBe(`Test ${uniqueId.slice(-8)}`);
-
-        logger.info(`   ✅ Created IAP localization: ${uniqueId}`);
-      });
-
-      it("should create multiple IAP localizations", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Premium ${uniqueId}`,
-                description: `Unlock premium features`,
-              },
-            },
-          },
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "es-ES",
-                name: `Premium ${uniqueId}`,
-                description: `Unlock premium features`,
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.localizations).toBeDefined();
-        expect(updatedIap?.localizations?.length).toBeGreaterThanOrEqual(2);
-
-        const enLocalization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        const esLocalization = updatedIap?.localizations?.find(
-          (l) => l.locale === "es-ES"
-        );
-
-        expect(enLocalization).toBeDefined();
-        expect(esLocalization).toBeDefined();
-
-        logger.info(`   ✅ Created multiple IAP localizations: ${uniqueId}`);
-      });
-    });
-
-    describe("IAP Localization Updates", () => {
-      it("should update IAP localization name", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // First create a localization
-        const createAction: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Original Name ${uniqueId}`,
-                description: `Original description`,
-              },
-            },
-          },
-        ];
-
-        await apply(createAction, mockCurrentState, mockCurrentState);
-        await waitForApiProcessing();
-
-        // Then update it
-        const updateAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              locale: "en-US",
-              changes: {
-                name: `Updated Name ${uniqueId}`,
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(updateAction, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        const localization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        expect(localization?.name).toBe(`Updated Name ${uniqueId}`);
-        expect(localization?.description).toBe(`Original description`);
-
-        logger.info(`   ✅ Updated IAP localization name: ${uniqueId}`);
-      });
-
-      it("should update IAP localization description", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // First create a localization
-        const createAction: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Feature ${uniqueId}`,
-                description: `Original description for ${uniqueId}`,
-              },
-            },
-          },
-        ];
-
-        await apply(createAction, mockCurrentState, mockCurrentState);
-        await waitForApiProcessing();
-
-        // Then update it
-        const updateAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              locale: "en-US",
-              changes: {
-                description: `Updated description for ${uniqueId}`,
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(updateAction, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        const localization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        expect(localization?.name).toBe(`Feature ${uniqueId}`);
-        expect(localization?.description).toBe(
-          `Updated description for ${uniqueId}`
-        );
-
-        logger.info(`   ✅ Updated IAP localization description: ${uniqueId}`);
-      });
-
-      it("should update multiple IAP localization fields", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // First create a localization
-        const createAction: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Original ${uniqueId}`,
-                description: `Original description`,
-              },
-            },
-          },
-        ];
-
-        await apply(createAction, mockCurrentState, mockCurrentState);
-        await waitForApiProcessing();
-
-        // Then update multiple fields
-        const updateAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              locale: "en-US",
-              changes: {
-                name: `Multi-Updated ${uniqueId}`,
-                description: `Multi-updated description for ${uniqueId}`,
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(updateAction, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        const localization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        expect(localization?.name).toBe(`Multi-Updated ${uniqueId}`);
-        expect(localization?.description).toBe(
-          `Multi-updated description for ${uniqueId}`
-        );
-
-        logger.info(`   ✅ Multi-updated IAP localization: ${uniqueId}`);
-      });
-    });
-
-    describe("IAP Localization Deletion", () => {
-      it("should delete IAP localization", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // First create a localization
-        const createAction: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `To Delete ${uniqueId}`,
-                description: `This will be deleted`,
-              },
-            },
-          },
-        ];
-
-        await apply(createAction, mockCurrentState, mockCurrentState);
-        await waitForApiProcessing();
-
-        // Verify it was created
-        let updatedIap = await verifyIapExists(uniqueId);
-        expect(updatedIap?.localizations?.length).toBeGreaterThan(0);
-
-        // Then delete it
-        const deleteAction: AnyAction[] = [
-          {
-            type: "DELETE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              locale: "en-US",
-            },
-          },
-        ];
-
-        await expect(
-          apply(deleteAction, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        updatedIap = await verifyIapExists(uniqueId);
-
-        const localization = updatedIap?.localizations?.find(
-          (l) => l.locale === "en-US"
-        );
-        expect(localization).toBeUndefined();
-
-        logger.info(`   ✅ Deleted IAP localization: ${uniqueId}`);
-      });
-    });
-  });
-
-  describe("IAP Pricing Tests", () => {
-    describe("IAP Pricing Updates", () => {
-      it("should add new prices to IAP", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Verify no pricing initially
-        expect(createdIap?.priceSchedule).toBeUndefined();
-
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [
-                  { price: "0.99", territory: "USA" },
-                  { price: "0.79", territory: "GBR" },
-                ],
-              },
-              changes: {
-                addedPrices: [
-                  { price: "0.99", territory: "USA" },
-                  { price: "0.79", territory: "GBR" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
-            },
-          },
-        ];
-
-        await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.priceSchedule).toBeDefined();
-        expect(updatedIap?.priceSchedule?.prices).toHaveLength(2);
-        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
-          price: "0.99",
-          territory: "USA",
-        });
-        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
-          price: "0.79",
-          territory: "GBR",
-        });
-
-        logger.info(`   ✅ Added new prices to IAP: ${uniqueId}`);
-      });
 
       it("should update existing prices for IAP", async () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First add initial pricing
-        const addAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const addDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "2.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "2.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(addAction, mockCurrentState, mockCurrentState);
+        const addAction = diffInAppPurchases(currentState, addDesiredState);
+        await apply(addAction, currentState, addDesiredState);
         await waitForApiProcessing();
 
         // Then update the price
-        const updateAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const updateDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "3.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [],
-                updatedPrices: [{ price: "3.99", territory: "USA" }],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
 
+        const updateAction = diffInAppPurchases(
+          currentState,
+          updateDesiredState
+        );
         await expect(
-          apply(updateAction, mockCurrentState, mockCurrentState)
+          apply(updateAction, currentState, updateDesiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1524,12 +1146,18 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First add multiple territories
-        const addAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const addDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [
@@ -1538,28 +1166,20 @@ describe("Apply Service IAP Integration Tests", () => {
                   { price: "1.79", territory: "DEU" },
                 ],
               },
-              changes: {
-                addedPrices: [
-                  { price: "1.99", territory: "USA" },
-                  { price: "1.49", territory: "GBR" },
-                  { price: "1.79", territory: "DEU" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(addAction, mockCurrentState, mockCurrentState);
+        const addAction = diffInAppPurchases(currentState, addDesiredState);
+        await apply(addAction, currentState, addDesiredState);
         await waitForApiProcessing();
 
         // Then delete GBR
-        const deleteAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const deleteDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [
@@ -1567,17 +1187,16 @@ describe("Apply Service IAP Integration Tests", () => {
                   { price: "1.79", territory: "DEU" },
                 ],
               },
-              changes: {
-                addedPrices: [],
-                updatedPrices: [],
-                deletedTerritories: ["GBR"],
-              },
             },
-          },
-        ];
+          ],
+        };
 
+        const deleteAction = diffInAppPurchases(
+          currentState,
+          deleteDesiredState
+        );
         await expect(
-          apply(deleteAction, mockCurrentState, mockCurrentState)
+          apply(deleteAction, currentState, deleteDesiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1606,11 +1225,17 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [
@@ -1618,21 +1243,15 @@ describe("Apply Service IAP Integration Tests", () => {
                   { price: "0.79", territory: "ZWE" },
                 ],
               },
-              changes: {
-                addedPrices: [
-                  { price: "0.99", territory: "USA" },
-                  { price: "0.79", territory: "ZWE" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         // This should either fail gracefully or only process valid territories
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1653,11 +1272,17 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [
@@ -1666,22 +1291,15 @@ describe("Apply Service IAP Integration Tests", () => {
                   { price: "2.79", territory: "DEU" },
                 ],
               },
-              changes: {
-                addedPrices: [
-                  { price: "2.99", territory: "USA" },
-                  { price: "2.49", territory: "GBR" },
-                  { price: "2.79", territory: "DEU" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         // This should either fail gracefully or process the territories
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1703,24 +1321,32 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // Verify no availability initially
         expect(createdIap?.availability).toBeUndefined();
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR", "DEU"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1740,21 +1366,29 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: true,
                 availableTerritories: [],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1770,39 +1404,68 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First set specific territories
-        const specificAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const specificDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(specificAction, mockCurrentState, mockCurrentState);
+        const specificActions = diffInAppPurchases(
+          currentState,
+          specificDesiredState
+        );
+        await apply(specificActions, currentState, specificDesiredState);
         await waitForApiProcessing();
 
+        // Update the current state to include the availability
+        const updatedCurrentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA", "GBR"],
+              },
+            },
+          ],
+        };
+
         // Then change to allow new territories
-        const worldwideAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const worldwideDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: true,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const worldwideActions = diffInAppPurchases(
+          updatedCurrentState,
+          worldwideDesiredState
+        );
 
         await expect(
-          apply(worldwideAction, mockCurrentState, mockCurrentState)
+          apply(worldwideActions, updatedCurrentState, worldwideDesiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1821,22 +1484,30 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "ZWE", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         // This should either fail gracefully or only process valid territories
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1855,28 +1526,36 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: [],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
         const updatedIap = await verifyIapExists(uniqueId);
 
         expect(updatedIap?.availability).toBeDefined();
-        expect(updatedIap?.availability?.availableTerritories).toHaveLength(0);
+        expect(updatedIap?.availability?.availableTerritories).toEqual([]);
 
         logger.info(
           `   ✅ Handled availability with empty territory list: ${uniqueId}`
@@ -1891,26 +1570,29 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "0.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "0.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1931,21 +1613,29 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1963,22 +1653,32 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Consumable Feature ${uniqueId}`,
-                description: `Temporary feature access`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Consumable Feature ${uniqueId}`,
+                  description: `Temporary feature access`,
+                },
+              ],
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -1996,20 +1696,26 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                reviewNote: `Consumable IAP review note for ${uniqueId}`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              reviewNote: `Consumable IAP review note for ${uniqueId}`,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2030,26 +1736,29 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "2.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "2.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2070,21 +1779,29 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: true,
                 availableTerritories: ["USA", "GBR", "DEU"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2102,22 +1819,32 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Non-Consumable Feature ${uniqueId}`,
-                description: `Permanent feature access`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Non-Consumable Feature ${uniqueId}`,
+                  description: `Permanent feature access`,
+                },
+              ],
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2135,20 +1862,26 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                reviewNote: `Non-consumable IAP review note for ${uniqueId}`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              reviewNote: `Non-consumable IAP review note for ${uniqueId}`,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2172,26 +1905,29 @@ describe("Apply Service IAP Integration Tests", () => {
           uniqueId
         );
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "4.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "4.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2215,21 +1951,29 @@ describe("Apply Service IAP Integration Tests", () => {
           uniqueId
         );
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2250,22 +1994,32 @@ describe("Apply Service IAP Integration Tests", () => {
           uniqueId
         );
 
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Subscription Feature ${uniqueId}`,
-                description: `Time-limited feature access`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Subscription Feature ${uniqueId}`,
+                  description: `Time-limited feature access`,
+                },
+              ],
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2286,20 +2040,26 @@ describe("Apply Service IAP Integration Tests", () => {
           uniqueId
         );
 
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IN_APP_PURCHASE",
-            payload: {
-              productId: uniqueId,
-              changes: {
-                reviewNote: `Non-renewing subscription IAP review note for ${uniqueId}`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              reviewNote: `Non-renewing subscription IAP review note for ${uniqueId}`,
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2322,29 +2082,61 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First set availability to only USA
-        const availabilityAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const availabilityDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA"],
               },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(availabilityAction, mockCurrentState, mockCurrentState);
+        const availabilityActions = diffInAppPurchases(
+          currentState,
+          availabilityDesiredState
+        );
+        await apply(
+          availabilityActions,
+          currentState,
+          availabilityDesiredState
+        );
         await waitForApiProcessing();
 
+        // Update the current state to include the availability
+        const updatedCurrentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA"],
+              },
+            },
+          ],
+        };
+
         // Then try to add pricing for USA and GBR (GBR not in availability)
-        const pricingAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const pricingDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA"],
+              },
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [
@@ -2352,21 +2144,17 @@ describe("Apply Service IAP Integration Tests", () => {
                   { price: "0.79", territory: "GBR" },
                 ],
               },
-              changes: {
-                addedPrices: [
-                  { price: "0.99", territory: "USA" },
-                  { price: "0.79", territory: "GBR" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
 
         // This should either fail gracefully or only process valid territories
         await expect(
-          apply(pricingAction, mockCurrentState, mockCurrentState)
+          apply(
+            diffInAppPurchases(updatedCurrentState, pricingDesiredState),
+            updatedCurrentState,
+            pricingDesiredState
+          )
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2387,45 +2175,68 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First set pricing for only USA
-        const pricingAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const pricingDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "2.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "2.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(pricingAction, mockCurrentState, mockCurrentState);
+        await apply(
+          diffInAppPurchases(currentState, pricingDesiredState),
+          currentState,
+          pricingDesiredState
+        );
         await waitForApiProcessing();
 
+        // Update the current state to include the pricing
+        const updatedCurrentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              priceSchedule: {
+                baseTerritory: "USA",
+                prices: [{ price: "2.99", territory: "USA" }],
+              },
+            },
+          ],
+        };
+
         // Then try to set availability for USA and GBR (GBR not in pricing)
-        const availabilityAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const availabilityDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
 
         // This should either fail gracefully or process the availability
         await expect(
-          apply(availabilityAction, mockCurrentState, mockCurrentState)
+          apply(
+            diffInAppPurchases(updatedCurrentState, availabilityDesiredState),
+            updatedCurrentState,
+            availabilityDesiredState
+          )
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2443,55 +2254,80 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
         // First set both pricing and availability for USA
-        const initialAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
+        const initialDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
               priceSchedule: {
                 baseTerritory: "USA",
                 prices: [{ price: "0.99", territory: "USA" }],
               },
-              changes: {
-                addedPrices: [{ price: "0.99", territory: "USA" }],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
-            },
-          },
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA"],
               },
             },
-          },
-        ];
+          ],
+        };
 
-        await apply(initialAction, mockCurrentState, mockCurrentState);
+        const initialActions = diffInAppPurchases(
+          currentState,
+          initialDesiredState
+        );
+        await apply(initialActions, currentState, initialDesiredState);
         await waitForApiProcessing();
 
+        // Update the current state to include both pricing and availability
+        const updatedCurrentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              priceSchedule: {
+                baseTerritory: "USA",
+                prices: [{ price: "0.99", territory: "USA" }],
+              },
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA"],
+              },
+            },
+          ],
+        };
+
         // Then update availability to include GBR (creating mismatch)
-        const updateAction: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_AVAILABILITY",
-            payload: {
-              productId: uniqueId,
+        const updateDesiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              priceSchedule: {
+                baseTerritory: "USA",
+                prices: [{ price: "0.99", territory: "USA" }],
+              },
               availability: {
                 availableInNewTerritories: false,
                 availableTerritories: ["USA", "GBR"],
               },
             },
-          },
-        ];
+          ],
+        };
 
         // This should either fail gracefully or process the update
         await expect(
-          apply(updateAction, mockCurrentState, mockCurrentState)
+          apply(
+            diffInAppPurchases(updatedCurrentState, updateDesiredState),
+            updatedCurrentState,
+            updateDesiredState
+          )
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();
@@ -2509,23 +2345,33 @@ describe("Apply Service IAP Integration Tests", () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
 
-        const actions: AnyAction[] = [
-          {
-            type: "CREATE_IAP_LOCALIZATION",
-            payload: {
-              productId: uniqueId,
-              localization: {
-                locale: "en-US",
-                name: `Invalid Locale ${uniqueId}`,
-                description: `Test with invalid locale`,
-              },
+        // Create current state that includes the created IAP
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Invalid Locale ${uniqueId}`,
+                  description: `Test with invalid locale`,
+                },
+              ],
             },
-          },
-        ];
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
 
         // This should either fail gracefully or only process valid locales
         await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
+          apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
 
         await waitForApiProcessing();

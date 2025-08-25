@@ -75,6 +75,28 @@ export function isRateLimitError(error: any): boolean {
   return false;
 }
 
+// Helper function to check if an error is a 401 NOT_AUTHORIZED error
+export function isNotAuthorizedError(error: any): boolean {
+  // Check for direct 401 status
+  if (error?.status === 401) {
+    return true;
+  }
+
+  // Check for 401 status in the errors array (Apple API format)
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.some(
+      (err: any) => err.status === 401 || err.status === "401"
+    );
+  }
+
+  // Check for NOT_AUTHORIZED code in Apple API format
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.some((err: any) => err.code === "NOT_AUTHORIZED");
+  }
+
+  return false;
+}
+
 // Helper function to extract error message from Apple API error
 export function extractErrorMessage(error: any): string {
   if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {

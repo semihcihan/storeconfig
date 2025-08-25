@@ -7,8 +7,8 @@ module.exports = {
   // E2E tests need even longer timeouts and info logging (no debug)
   testTimeout: 300000, // 5 minutes
   testEnvironmentOptions: {
-    LOG_LEVEL: "info"
+    LOG_LEVEL: "info",
   },
   // E2E tests should not be cached
-  cache: false
+  cache: false,
 };

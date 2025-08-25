@@ -9,6 +9,6 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   // Unit tests should have minimal logging - only errors
   testEnvironmentOptions: {
-    LOG_LEVEL: "error"
-  }
+    LOG_LEVEL: "error",
+  },
 };
