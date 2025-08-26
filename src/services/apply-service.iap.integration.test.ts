@@ -1,5 +1,4 @@
 import { apply } from "./apply-service";
-import { AnyAction } from "../models/diff-plan";
 import { AppStoreModel, InAppPurchaseSchema } from "../models/app-store";
 import { fetchAndMapInAppPurchases } from "./fetch-service";
 import { logger } from "../utils/logger";
@@ -570,6 +569,63 @@ describe("Apply Service IAP Integration Tests", () => {
           `   ✅ Documented Apple API behavior: priceSchedule=${
             createdIap?.priceSchedule ? "SET" : "NOT_SET"
           }, availability=${createdIap?.availability ? "SET" : "NOT_SET"}`
+        );
+      });
+
+      it("should create IAP with pricing for USA/GBR but availability only for USA (pricing territories as subset of availability)", async () => {
+        const uniqueId = generateConstantLengthTestIdentifier();
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              productId: uniqueId,
+              type: "CONSUMABLE",
+              referenceName: `${uniqueId}`,
+              familySharable: false,
+              priceSchedule: {
+                baseTerritory: "USA",
+                prices: [
+                  { price: "0.99", territory: "USA" },
+                  { price: "0.79", territory: "GBR" },
+                ],
+              },
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA"],
+              },
+            },
+          ],
+        };
+
+        const actions = diffInAppPurchases(mockCurrentState, desiredState);
+
+        await expect(
+          apply(actions, mockCurrentState, desiredState)
+        ).resolves.not.toThrow();
+
+        await waitForApiProcessing();
+        const createdIap = await verifyIapExists(uniqueId);
+
+        // Document the behavior when pricing territories are a subset of available territories
+        // This creates a mismatch where the IAP has pricing for more territories than it's available in
+        expect(createdIap?.priceSchedule).toBeDefined();
+        expect(createdIap?.priceSchedule?.prices).toHaveLength(2);
+        expect(createdIap?.availability).toBeDefined();
+        expect(createdIap?.availability?.availableTerritories).toHaveLength(1);
+
+        // Verify the specific territories
+        expect(createdIap?.priceSchedule?.prices).toContainEqual({
+          price: "0.99",
+          territory: "USA",
+        });
+        expect(createdIap?.priceSchedule?.prices).toContainEqual({
+          price: "0.79",
+          territory: "GBR",
+        });
+        expect(createdIap?.availability?.availableTerritories).toContain("USA");
+
+        logger.info(
+          `   ✅ Documented pricing territories as subset of availability: ${uniqueId} (2 pricing territories, 1 availability territory)`
         );
       });
     });
@@ -1176,6 +1232,61 @@ describe("Apply Service IAP Integration Tests", () => {
           `   ✅ Handled pricing with base territory match: ${uniqueId}`
         );
       });
+
+      it("should add availability to IAP that already has pricing", async () => {
+        const uniqueId = generateTestIdentifier();
+        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId, {
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [{ price: "0.99", territory: "USA" }],
+          },
+        });
+
+        // Create current state that includes the created IAP with pricing
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        // Verify pricing exists initially but no availability
+        expect(createdIap?.priceSchedule).toBeDefined();
+        expect(createdIap?.availability).toBeUndefined();
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA", "GBR", "DEU"],
+              },
+            },
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
+
+        await expect(
+          apply(actions, currentState, desiredState)
+        ).resolves.not.toThrow();
+
+        await waitForApiProcessing();
+        const updatedIap = await verifyIapExists(uniqueId);
+
+        // Verify both pricing and availability now exist
+        expect(updatedIap?.priceSchedule).toBeDefined();
+        expect(updatedIap?.priceSchedule?.prices).toHaveLength(1);
+        expect(updatedIap?.availability).toBeDefined();
+        expect(updatedIap?.availability?.availableTerritories).toHaveLength(3);
+        expect(updatedIap?.availability?.availableTerritories).toContain("USA");
+        expect(updatedIap?.availability?.availableTerritories).toContain("GBR");
+        expect(updatedIap?.availability?.availableTerritories).toContain("DEU");
+
+        logger.info(
+          `   ✅ Added availability to IAP that already had pricing: ${uniqueId}`
+        );
+      });
     });
   });
 
@@ -1353,6 +1464,74 @@ describe("Apply Service IAP Integration Tests", () => {
 
         logger.info(
           `   ✅ Handled availability with invalid territory codes: ${uniqueId}`
+        );
+      });
+
+      it("should add pricing to IAP that already has availability", async () => {
+        const uniqueId = generateTestIdentifier();
+        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId, {
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA", "GBR", "DEU"],
+          },
+        });
+
+        // Create current state that includes the created IAP with availability
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [createdIap!],
+        };
+
+        // Verify availability exists initially but no pricing
+        expect(createdIap?.availability).toBeDefined();
+        expect(createdIap?.priceSchedule).toBeUndefined();
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          inAppPurchases: [
+            {
+              ...createdIap!,
+              priceSchedule: {
+                baseTerritory: "USA",
+                prices: [
+                  { price: "2.99", territory: "USA" },
+                  { price: "2.49", territory: "GBR" },
+                  { price: "2.79", territory: "DEU" },
+                ],
+              },
+            },
+          ],
+        };
+
+        const actions = diffInAppPurchases(currentState, desiredState);
+
+        await expect(
+          apply(actions, currentState, desiredState)
+        ).resolves.not.toThrow();
+
+        await waitForApiProcessing();
+        const updatedIap = await verifyIapExists(uniqueId);
+
+        // Verify both availability and pricing now exist
+        expect(updatedIap?.availability).toBeDefined();
+        expect(updatedIap?.availability?.availableTerritories).toHaveLength(3);
+        expect(updatedIap?.priceSchedule).toBeDefined();
+        expect(updatedIap?.priceSchedule?.prices).toHaveLength(3);
+        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
+          price: "2.99",
+          territory: "USA",
+        });
+        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
+          price: "2.49",
+          territory: "GBR",
+        });
+        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
+          price: "2.79",
+          territory: "DEU",
+        });
+
+        logger.info(
+          `   ✅ Added pricing to IAP that already had availability: ${uniqueId}`
         );
       });
     });
