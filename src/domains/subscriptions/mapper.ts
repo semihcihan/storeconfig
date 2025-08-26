@@ -416,15 +416,13 @@ export async function mapSubscription(
   ]);
 
   const localizations = mapSubscriptionLocalizations(localizationsResponse);
-  const introductoryOffers = await mapIntroductoryOffers(
-    introductoryOffersResponse
-  );
-  const promotionalOffers = await mapPromotionalOffers(
-    promotionalOffersResponse
-  );
-  const availability = await mapSubscriptionAvailability(availabilityResponse);
-
-  const pricesResponse = await fetchSubscriptionPrices(subData.id);
+  const [introductoryOffers, promotionalOffers, availability, pricesResponse] =
+    await Promise.all([
+      mapIntroductoryOffers(introductoryOffersResponse),
+      mapPromotionalOffers(promotionalOffersResponse),
+      mapSubscriptionAvailability(availabilityResponse),
+      fetchSubscriptionPrices(subData.id),
+    ]);
   const prices = processSubscriptionPriceResponse(pricesResponse);
 
   const reviewNote = subData.attributes?.reviewNote;

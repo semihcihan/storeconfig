@@ -271,12 +271,13 @@ export async function mapInAppPurchase(
     includedById
   );
 
-  const priceSchedule = await fetchAndMapIAPPrices(
-    iap.relationships?.iapPriceSchedule?.data,
-    includedById
-  );
-
-  const availability = await mapInAppPurchaseAvailability(iap.id);
+  const [priceSchedule, availability] = await Promise.all([
+    fetchAndMapIAPPrices(
+      iap.relationships?.iapPriceSchedule?.data,
+      includedById
+    ),
+    mapInAppPurchaseAvailability(iap.id),
+  ]);
 
   const reviewNote = iap.attributes?.reviewNote;
   const mappedIAP = {

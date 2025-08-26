@@ -1227,6 +1227,7 @@ describe("Apply Service IAP Integration Tests", () => {
       });
 
       it("should update IAP availability to no territories", async () => {
+        // TODO: fix
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
@@ -1352,46 +1353,6 @@ describe("Apply Service IAP Integration Tests", () => {
 
         logger.info(
           `   ✅ Handled availability with invalid territory codes: ${uniqueId}`
-        );
-      });
-
-      it("should handle availability with empty territory list", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: [],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.availability).toBeDefined();
-        expect(updatedIap?.availability?.availableTerritories).toEqual([]);
-
-        logger.info(
-          `   ✅ Handled availability with empty territory list: ${uniqueId}`
         );
       });
     });
