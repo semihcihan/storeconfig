@@ -36,12 +36,7 @@
   at async apply (/Users/semihcihan/development/workspace/developer-tool/src/services/apply-service.ts:392:5)
   at async Object.handler (/Users/semihcihan/development/workspace/developer-tool/src/commands/apply.ts:120:7)
 
-- auth error, token expired
-  info: ✅ Selected: offer "FREE_TRIAL Introductory Offer"
-  warn: GET /v1/apps/{id}/subscriptionGroups failed with non-retryable error on attempt 1: {"errors":[{"code":"NOT_AUTHORIZED","detail":"Provide a properly configured and signed bearer token, and make sure that it has not expired. Learn more about Generating Tokens for API Requests https://developer.apple.com/go/?id=api-generating-tokens","status":"401","title":"Authentication credentials are missing or invalid."}]}
-  error: Interactive pricing failed {"errors":[{"code":"NOT_AUTHORIZED","detail":"Provide a properly configured and signed bearer token, and make sure that it has not expired. Learn more about Generating Tokens for API Requests https://developer.apple.com/go/?id=api-generating-tokens","status":"401","title":"Authentication credentials are missing or invalid."}]}
-  info: Restored file from memory backup
-  error: Set-price failed {"errors":[{"code":"NOT_AUTHORIZED","detail":"Provide a properly configured and signed bearer token, and make sure that it has not expired. Learn more about Generating Tokens for API Requests https://developer.apple.com/go/?id=api-generating-tokens","status":"401","title":"Authentication credentials are missing or invalid."}]}
+- use builtin mw instead of custom
 - retrylarda warn etme, o detayi gizlemis ol debug logla. zaten 3. de calismazsa patlicak
 
 # Notes for documentation

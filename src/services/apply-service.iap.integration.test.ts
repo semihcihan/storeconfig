@@ -1,6 +1,6 @@
 import { apply } from "./apply-service";
 import { AnyAction } from "../models/diff-plan";
-import { AppStoreModel } from "../models/app-store";
+import { AppStoreModel, InAppPurchaseSchema } from "../models/app-store";
 import { fetchAndMapInAppPurchases } from "./fetch-service";
 import { logger } from "../utils/logger";
 import {
@@ -10,6 +10,9 @@ import {
   TEST_APP_ID,
 } from "../test-utils/cleanup-helper";
 import { diffInAppPurchases } from "./diff-service";
+import { z } from "zod";
+
+type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 
 describe("Apply Service IAP Integration Tests", () => {
   // Integration tests with API calls need longer timeout
@@ -37,7 +40,8 @@ describe("Apply Service IAP Integration Tests", () => {
   // Helper function to create a minimal IAP for testing updates
   const createMinimalIap = async (
     type: "CONSUMABLE" | "NON_CONSUMABLE" | "NON_RENEWING_SUBSCRIPTION",
-    uniqueId: string
+    uniqueId: string,
+    inAppPurchase: Partial<InAppPurchase> = {}
   ) => {
     const desiredState: AppStoreModel = {
       ...mockCurrentState,
@@ -45,8 +49,9 @@ describe("Apply Service IAP Integration Tests", () => {
         {
           productId: uniqueId,
           type,
-          referenceName: `Test ${type} ${uniqueId}`,
+          referenceName: `${uniqueId}`,
           familySharable: false,
+          ...inAppPurchase,
         },
       ],
     };
@@ -68,7 +73,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Basic Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
             },
           ],
@@ -84,7 +89,7 @@ describe("Apply Service IAP Integration Tests", () => {
         const createdIap = await verifyIapExists(uniqueId);
 
         expect(createdIap?.type).toBe("CONSUMABLE");
-        expect(createdIap?.referenceName).toBe(`Basic Consumable ${uniqueId}`);
+        expect(createdIap?.referenceName).toBe(`${uniqueId}`);
         expect(createdIap?.familySharable).toBe(false);
 
         logger.info(`   ✅ Created basic consumable IAP: ${uniqueId}`);
@@ -99,7 +104,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Basic Non-Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
             },
           ],
@@ -129,7 +134,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `Basic Non-Renewing ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
             },
           ],
@@ -162,7 +167,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Priced Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -200,7 +205,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Multi-Priced Non-Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -242,7 +247,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `Tiered Non-Renewing ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -287,7 +292,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Available Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               availability: {
                 availableInNewTerritories: false,
@@ -325,7 +330,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Worldwide Non-Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
               availability: {
                 availableInNewTerritories: true,
@@ -363,7 +368,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `Territory List Non-Renewing ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               availability: {
                 availableInNewTerritories: false,
@@ -403,7 +408,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `USA Only Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -446,7 +451,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Mismatch Non-Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -483,50 +488,6 @@ describe("Apply Service IAP Integration Tests", () => {
         );
       });
 
-      it("should create a non-renewing subscription with pricing for USA/GBR/DEU and worldwide availability", async () => {
-        const uniqueId = generateTestIdentifier();
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              productId: uniqueId,
-              type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `Worldwide Non-Renewing ${uniqueId}`,
-              familySharable: false,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [
-                  { price: "4.99", territory: "USA" },
-                  { price: "3.99", territory: "GBR" },
-                  { price: "4.49", territory: "DEU" },
-                ],
-              },
-              availability: {
-                availableInNewTerritories: true,
-                availableTerritories: ["USA", "GBR", "DEU", "FRA", "ITA"],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(mockCurrentState, desiredState);
-
-        await expect(
-          apply(actions, mockCurrentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const createdIap = await verifyIapExists(uniqueId);
-
-        // Apple's API doesn't support setting pricing or availability during creation
-        expect(createdIap?.priceSchedule).toBeUndefined();
-        expect(createdIap?.availability).toBeUndefined();
-
-        logger.info(
-          `   ✅ Created worldwide non-renewing subscription IAP (pricing and availability not supported during creation): ${uniqueId}`
-        );
-      });
-
       it("should create a consumable IAP with pricing for USA/GBR but availability only for USA", async () => {
         const uniqueId = generateTestIdentifier();
         const desiredState: AppStoreModel = {
@@ -535,7 +496,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Pricing Mismatch Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -562,11 +523,13 @@ describe("Apply Service IAP Integration Tests", () => {
         const createdIap = await verifyIapExists(uniqueId);
 
         // Apple's API doesn't support setting pricing or availability during creation
-        expect(createdIap?.priceSchedule).toBeUndefined();
-        expect(createdIap?.availability).toBeUndefined();
+        expect(createdIap?.priceSchedule).toBeDefined();
+        expect(createdIap?.priceSchedule?.prices).toHaveLength(2);
+        expect(createdIap?.availability).toBeDefined();
+        expect(createdIap?.availability?.availableTerritories).toHaveLength(1);
 
         logger.info(
-          `   ✅ Created pricing mismatch consumable IAP (pricing and availability not supported during creation): ${uniqueId}`
+          `   ✅ Created pricing mismatch consumable IAP, availability as a subset of pricing: ${uniqueId}`
         );
       });
 
@@ -578,7 +541,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Mismatch Non-Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -620,7 +583,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Localized Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               localizations: [
                 {
@@ -663,7 +626,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `Multi-Localized ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: true,
               localizations: [
                 {
@@ -714,7 +677,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Reviewed Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               reviewNote: `This IAP provides temporary access to premium features for testing purposes`,
             },
@@ -748,7 +711,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `Full-Featured Consumable ${uniqueId}`,
+              referenceName: `${uniqueId}`,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -783,115 +746,17 @@ describe("Apply Service IAP Integration Tests", () => {
         const createdIap = await verifyIapExists(uniqueId);
 
         // Apple's API behavior: some fields work, others don't
-        expect(createdIap?.priceSchedule).toBeUndefined(); // Pricing not supported during creation
-        expect(createdIap?.localizations).toEqual([]); // Localizations return empty array
-        expect(createdIap?.reviewNote).toBeDefined(); // Review notes ARE supported during creation!
-        expect(createdIap?.availability).toBeUndefined(); // Availability not supported during creation
-
-        logger.info(
-          `   ✅ Documented Apple API behavior: review notes work during creation, others don't`
+        expect(createdIap?.priceSchedule).toBeDefined(); // Pricing not supported during creation
+        expect(createdIap?.priceSchedule?.prices).toHaveLength(2);
+        expect(createdIap?.localizations).toBeDefined();
+        expect(createdIap?.localizations?.length).toBe(1);
+        expect(createdIap?.reviewNote).toBe(
+          `This IAP provides temporary access to premium features`
         );
-      });
-
-      it("should create a non-consumable IAP with pricing, availability, and localizations", async () => {
-        const uniqueId = generateTestIdentifier();
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              productId: uniqueId,
-              type: "NON_CONSUMABLE",
-              referenceName: `Complex Non-Consumable ${uniqueId}`,
-              familySharable: true,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [
-                  { price: "2.99", territory: "USA" },
-                  { price: "2.49", territory: "GBR" },
-                  { price: "2.79", territory: "DEU" },
-                ],
-              },
-              localizations: [
-                {
-                  locale: "en-US",
-                  name: `Premium ${uniqueId.slice(-8)}`,
-                  description: `Unlock premium functionality`,
-                },
-                {
-                  locale: "es-ES",
-                  name: `Premium ${uniqueId.slice(-8)}`,
-                  description: `Unlock premium functionality`,
-                },
-              ],
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA", "GBR", "DEU"],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(mockCurrentState, desiredState);
-
-        await expect(
-          apply(actions, mockCurrentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const createdIap = await verifyIapExists(uniqueId);
-
-        // Apple's API behavior: some fields work, others don't
-        expect(createdIap?.priceSchedule).toBeUndefined(); // Pricing not supported during creation
-        expect(createdIap?.localizations).toEqual([]); // Localizations return empty array
-        expect(createdIap?.availability).toBeUndefined(); // Availability not supported during creation
+        expect(createdIap?.availability?.availableTerritories).toHaveLength(2);
 
         logger.info(
-          `   ✅ Documented Apple API behavior: localizations return empty array, pricing/availability don't work`
-        );
-      });
-
-      it("should create a non-renewing subscription with pricing, availability, and review note", async () => {
-        const uniqueId = generateTestIdentifier();
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              productId: uniqueId,
-              type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `Complex Non-Renewing ${uniqueId}`,
-              familySharable: false,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [
-                  { price: "4.99", territory: "USA" },
-                  { price: "3.99", territory: "GBR" },
-                ],
-              },
-              reviewNote: `This non-renewing subscription provides access to premium content`,
-              availability: {
-                availableInNewTerritories: true,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(mockCurrentState, desiredState);
-
-        await expect(
-          apply(actions, mockCurrentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const createdIap = await verifyIapExists(uniqueId);
-
-        // Apple's API behavior: some fields work, others don't
-        expect(createdIap?.priceSchedule).toBeUndefined(); // Pricing not supported during creation
-        expect(createdIap?.reviewNote).toBeDefined(); // Review notes ARE supported during creation!
-        expect(createdIap?.availability).toBeUndefined(); // Availability not supported during creation
-
-        logger.info(
-          `   ✅ Documented Apple API behavior: review notes work during creation, pricing/availability don't`
+          `   ✅ Documented Apple API behavior: all optional fields are supported during creation`
         );
       });
     });
@@ -909,7 +774,7 @@ describe("Apply Service IAP Integration Tests", () => {
           inAppPurchases: [createdIap!],
         };
 
-        const newReferenceName = `Updated Reference ${uniqueId}`;
+        const newReferenceName = `${uniqueId}`;
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
           inAppPurchases: [
@@ -1010,7 +875,7 @@ describe("Apply Service IAP Integration Tests", () => {
           inAppPurchases: [createdIap!],
         };
 
-        const newReferenceName = `Multi-Updated ${uniqueId}`;
+        const newReferenceName = `${uniqueId}`;
         const newReviewNote = `Multi-updated review note for ${uniqueId}`;
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
@@ -1268,7 +1133,7 @@ describe("Apply Service IAP Integration Tests", () => {
         );
       });
 
-      it("should handle pricing without base territory match", async () => {
+      it("should handle pricing with base territory match", async () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
@@ -1297,7 +1162,6 @@ describe("Apply Service IAP Integration Tests", () => {
 
         const actions = diffInAppPurchases(currentState, desiredState);
 
-        // This should either fail gracefully or process the territories
         await expect(
           apply(actions, currentState, desiredState)
         ).resolves.not.toThrow();
@@ -1305,11 +1169,11 @@ describe("Apply Service IAP Integration Tests", () => {
         await waitForApiProcessing();
         const updatedIap = await verifyIapExists(uniqueId);
 
-        // Verify that territories were processed despite base territory mismatch
         expect(updatedIap?.priceSchedule?.prices).toBeDefined();
+        expect(updatedIap?.priceSchedule?.prices).toHaveLength(3);
 
         logger.info(
-          `   ✅ Handled pricing without base territory match: ${uniqueId}`
+          `   ✅ Handled pricing with base territory match: ${uniqueId}`
         );
       });
     });
@@ -1362,7 +1226,7 @@ describe("Apply Service IAP Integration Tests", () => {
         );
       });
 
-      it("should update IAP availability to worldwide", async () => {
+      it("should update IAP availability to no territories", async () => {
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 
@@ -1395,14 +1259,21 @@ describe("Apply Service IAP Integration Tests", () => {
         const updatedIap = await verifyIapExists(uniqueId);
 
         expect(updatedIap?.availability).toBeDefined();
-        expect(updatedIap?.availability?.availableInNewTerritories).toBe(true);
+        expect(updatedIap?.availability?.availableTerritories).toHaveLength(0);
 
-        logger.info(`   ✅ Updated IAP availability to worldwide: ${uniqueId}`);
+        logger.info(
+          `   ✅ Updated IAP availability to no territories: ${uniqueId}`
+        );
       });
 
       it("should update IAP availability to allow new territories", async () => {
         const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
+        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId, {
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA", "GBR"],
+          },
+        });
 
         // Create current state that includes the created IAP
         const currentState: AppStoreModel = {
@@ -1417,7 +1288,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               ...createdIap!,
               availability: {
-                availableInNewTerritories: false,
+                availableInNewTerritories: true,
                 availableTerritories: ["USA", "GBR"],
               },
             },
@@ -1431,44 +1302,6 @@ describe("Apply Service IAP Integration Tests", () => {
         await apply(specificActions, currentState, specificDesiredState);
         await waitForApiProcessing();
 
-        // Update the current state to include the availability
-        const updatedCurrentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          ],
-        };
-
-        // Then change to allow new territories
-        const worldwideDesiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              availability: {
-                availableInNewTerritories: true,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          ],
-        };
-
-        const worldwideActions = diffInAppPurchases(
-          updatedCurrentState,
-          worldwideDesiredState
-        );
-
-        await expect(
-          apply(worldwideActions, updatedCurrentState, worldwideDesiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
         const updatedIap = await verifyIapExists(uniqueId);
 
         expect(updatedIap?.availability?.availableInNewTerritories).toBe(true);
@@ -1565,338 +1398,6 @@ describe("Apply Service IAP Integration Tests", () => {
   });
 
   describe("IAP Type-Specific Behavior Tests", () => {
-    describe("Consumable IAP Behavior", () => {
-      it("should verify consumable IAP can have pricing", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [{ price: "0.99", territory: "USA" }],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.priceSchedule).toBeDefined();
-        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
-          price: "0.99",
-          territory: "USA",
-        });
-
-        logger.info(
-          `   ✅ Verified consumable IAP can have pricing: ${uniqueId}`
-        );
-      });
-
-      it("should verify consumable IAP can have availability", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.availability).toBeDefined();
-        expect(updatedIap?.availability?.availableTerritories).toContain("USA");
-
-        logger.info(
-          `   ✅ Verified consumable IAP can have availability: ${uniqueId}`
-        );
-      });
-
-      it("should verify consumable IAP can have localizations", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              localizations: [
-                {
-                  locale: "en-US",
-                  name: `Consumable ${uniqueId.slice(-8)}`,
-                  description: `Temporary feature access`,
-                },
-              ],
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.localizations).toBeDefined();
-        expect(updatedIap?.localizations?.length).toBeGreaterThan(0);
-
-        logger.info(
-          `   ✅ Verified consumable IAP can have localizations: ${uniqueId}`
-        );
-      });
-
-      it("should verify consumable IAP can have review notes", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              reviewNote: `Consumable IAP review note for ${uniqueId}`,
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.reviewNote).toBe(
-          `Consumable IAP review note for ${uniqueId}`
-        );
-
-        logger.info(
-          `   ✅ Verified consumable IAP can have review notes: ${uniqueId}`
-        );
-      });
-    });
-
-    describe("Non-Consumable IAP Behavior", () => {
-      it("should verify non-consumable IAP can have pricing", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [{ price: "2.99", territory: "USA" }],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.priceSchedule).toBeDefined();
-        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
-          price: "2.99",
-          territory: "USA",
-        });
-
-        logger.info(
-          `   ✅ Verified non-consumable IAP can have pricing: ${uniqueId}`
-        );
-      });
-
-      it("should verify non-consumable IAP can have availability", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              availability: {
-                availableInNewTerritories: true,
-                availableTerritories: ["USA", "GBR", "DEU"],
-              },
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.availability).toBeDefined();
-        expect(updatedIap?.availability?.availableInNewTerritories).toBe(true);
-
-        logger.info(
-          `   ✅ Verified non-consumable IAP can have availability: ${uniqueId}`
-        );
-      });
-
-      it("should verify non-consumable IAP can have localizations", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              localizations: [
-                {
-                  locale: "en-US",
-                  name: `Non-Consumable ${uniqueId.slice(-8)}`,
-                  description: `Permanent feature access`,
-                },
-              ],
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.localizations).toBeDefined();
-        expect(updatedIap?.localizations?.length).toBeGreaterThan(0);
-
-        logger.info(
-          `   ✅ Verified non-consumable IAP can have localizations: ${uniqueId}`
-        );
-      });
-
-      it("should verify non-consumable IAP can have review notes", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        // Create current state that includes the created IAP
-        const currentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [createdIap!],
-        };
-
-        const desiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              reviewNote: `Non-consumable IAP review note for ${uniqueId}`,
-            },
-          ],
-        };
-
-        const actions = diffInAppPurchases(currentState, desiredState);
-
-        await expect(
-          apply(actions, currentState, desiredState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        expect(updatedIap?.reviewNote).toBe(
-          `Non-consumable IAP review note for ${uniqueId}`
-        );
-
-        logger.info(
-          `   ✅ Verified non-consumable IAP can have review notes: ${uniqueId}`
-        );
-      });
-    });
-
     describe("Non-Renewing Subscription IAP Behavior", () => {
       it("should verify non-renewing subscription IAP can have pricing", async () => {
         const uniqueId = generateTestIdentifier();
@@ -2252,7 +1753,16 @@ describe("Apply Service IAP Integration Tests", () => {
 
       it("should handle updating IAP to create pricing/availability mismatch", async () => {
         const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId);
+        const createdIap = await createMinimalIap("CONSUMABLE", uniqueId, {
+          priceSchedule: {
+            baseTerritory: "USA",
+            prices: [{ price: "0.99", territory: "USA" }],
+          },
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA"],
+          },
+        });
 
         // Create current state that includes the created IAP
         const currentState: AppStoreModel = {
@@ -2260,52 +1770,11 @@ describe("Apply Service IAP Integration Tests", () => {
           inAppPurchases: [createdIap!],
         };
 
-        // First set both pricing and availability for USA
-        const initialDesiredState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [{ price: "0.99", territory: "USA" }],
-              },
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA"],
-              },
-            },
-          ],
-        };
-
-        const initialActions = diffInAppPurchases(
-          currentState,
-          initialDesiredState
-        );
-        await apply(initialActions, currentState, initialDesiredState);
         await waitForApiProcessing();
-
-        // Update the current state to include both pricing and availability
-        const updatedCurrentState: AppStoreModel = {
-          ...mockCurrentState,
-          inAppPurchases: [
-            {
-              ...createdIap!,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [{ price: "0.99", territory: "USA" }],
-              },
-              availability: {
-                availableInNewTerritories: false,
-                availableTerritories: ["USA", "GBR"],
-              },
-            },
-          ],
-        };
 
         // Then update availability to include GBR (creating mismatch)
         const updateDesiredState: AppStoreModel = {
-          ...mockCurrentState,
+          ...currentState,
           inAppPurchases: [
             {
               ...createdIap!,
@@ -2324,8 +1793,8 @@ describe("Apply Service IAP Integration Tests", () => {
         // This should either fail gracefully or process the update
         await expect(
           apply(
-            diffInAppPurchases(updatedCurrentState, updateDesiredState),
-            updatedCurrentState,
+            diffInAppPurchases(currentState, updateDesiredState),
+            currentState,
             updateDesiredState
           )
         ).resolves.not.toThrow();
@@ -2334,7 +1803,13 @@ describe("Apply Service IAP Integration Tests", () => {
         const updatedIap = await verifyIapExists(uniqueId);
 
         // Verify that availability was updated
+        expect(updatedIap?.availability?.availableTerritories).toHaveLength(2);
         expect(updatedIap?.availability?.availableTerritories).toContain("GBR");
+        expect(updatedIap?.priceSchedule?.prices).toHaveLength(1);
+        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
+          price: "0.99",
+          territory: "USA",
+        });
 
         logger.info(
           `   ✅ Handled updating IAP to create pricing/availability mismatch: ${uniqueId}`
