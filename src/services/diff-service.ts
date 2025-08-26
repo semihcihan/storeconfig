@@ -282,10 +282,12 @@ export function diffInAppPurchases(
       // Handle availability changes first
       if (
         desiredIap.availability &&
-        !deepEqualUnordered(
+        (!deepEqualUnordered(
           currentIap.availability?.availableTerritories || [],
           desiredIap.availability.availableTerritories
-        )
+        ) ||
+          currentIap.availability?.availableInNewTerritories !==
+            desiredIap.availability.availableInNewTerritories)
       ) {
         actions.push({
           type: "UPDATE_IAP_AVAILABILITY",

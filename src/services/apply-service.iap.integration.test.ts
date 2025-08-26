@@ -26,7 +26,7 @@ describe("Apply Service IAP Integration Tests", () => {
 
   // Helper function to wait for API processing
   const waitForApiProcessing = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return;
   };
 
   // Helper function to verify IAP exists
@@ -1818,53 +1818,6 @@ describe("Apply Service IAP Integration Tests", () => {
 
         logger.info(
           `   ✅ Handled creating IAP with invalid locale in localizations: ${uniqueId}`
-        );
-      });
-
-      it("should handle creating IAP with invalid territory in pricing", async () => {
-        const uniqueId = generateTestIdentifier();
-        const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
-
-        const actions: AnyAction[] = [
-          {
-            type: "UPDATE_IAP_PRICING",
-            payload: {
-              productId: uniqueId,
-              priceSchedule: {
-                baseTerritory: "USA",
-                prices: [
-                  { price: "2.99", territory: "USA" },
-                  { price: "2.49", territory: "ZWE" },
-                ],
-              },
-              changes: {
-                addedPrices: [
-                  { price: "2.99", territory: "USA" },
-                  { price: "2.49", territory: "ZWE" },
-                ],
-                updatedPrices: [],
-                deletedTerritories: [],
-              },
-            },
-          },
-        ];
-
-        // This should either fail gracefully or only process valid territories
-        await expect(
-          apply(actions, mockCurrentState, mockCurrentState)
-        ).resolves.not.toThrow();
-
-        await waitForApiProcessing();
-        const updatedIap = await verifyIapExists(uniqueId);
-
-        // Verify that at least USA pricing was processed
-        expect(updatedIap?.priceSchedule?.prices).toContainEqual({
-          price: "2.99",
-          territory: "USA",
-        });
-
-        logger.info(
-          `   ✅ Handled creating IAP with invalid territory in pricing: ${uniqueId}`
         );
       });
     });

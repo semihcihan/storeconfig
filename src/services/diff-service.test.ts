@@ -440,7 +440,7 @@ describe("diff-service", () => {
             name: "New Subscription 2",
             description: "This is a new subscription",
           },
-        ],
+        ]!,
         availability: {
           availableInNewTerritories: true,
           availableTerritories: ["USA"],
@@ -475,7 +475,7 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_LOCALIZATION",
             payload: {
               subscriptionProductId: "sub2",
-              localization: newSubscription.localizations[0],
+              localization: newSubscription.localizations![0],
             },
           },
           {
@@ -816,6 +816,75 @@ describe("diff-service", () => {
       });
     });
 
+    it("should create a plan to update IAP availability when only availableInNewTerritories changes", () => {
+      const currentState = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false, // Changed from true to false
+              availableTerritories: ["USA"], // Same territories
+            },
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          availability: {
+            availableInNewTerritories: false,
+            availableTerritories: ["USA"],
+          },
+        },
+      });
+    });
+
+    it("should create a plan to update IAP availability when only availableInNewTerritories changes from false to true", () => {
+      const currentState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["USA"],
+            },
+          },
+        ],
+      };
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        inAppPurchases: [
+          {
+            ...MOCK_STATE_1.inAppPurchases![0],
+            availability: {
+              availableInNewTerritories: true, // Changed from false to true
+              availableTerritories: ["USA"], // Same territories
+            },
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+      expect(plan).toHaveLength(1);
+      expect(plan[0]).toEqual({
+        type: "UPDATE_IAP_AVAILABILITY",
+        payload: {
+          productId: MOCK_STATE_1.inAppPurchases![0].productId,
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        },
+      });
+    });
+
     it("should create a plan to update the availability of an IAP when it is not specified in current state", () => {
       const currentState: AppStoreModel = JSON.parse(
         JSON.stringify(MOCK_STATE_1)
@@ -1014,7 +1083,7 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_LOCALIZATION",
             payload: {
               subscriptionProductId: "sub2",
-              localization: newSubscription.localizations[0],
+              localization: newSubscription.localizations![0],
             },
           },
           {
@@ -1121,8 +1190,8 @@ describe("diff-service", () => {
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                 localizations: [
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                    .localizations,
+                  ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .localizations || []),
                   newLocalization,
                 ],
               },
@@ -1812,8 +1881,8 @@ describe("diff-service", () => {
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                 prices: [
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                    .prices,
+                  ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices || []),
                   { territory: "CAN", price: "12.99" },
                 ],
                 availability: {
@@ -1893,8 +1962,8 @@ describe("diff-service", () => {
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                 prices: [
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                    .prices,
+                  ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices || []),
                   newPrice,
                 ],
               },
@@ -1979,8 +2048,8 @@ describe("diff-service", () => {
               {
                 ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                 prices: [
-                  ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                    .prices,
+                  ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                    .prices || []),
                 ],
               },
             ],
@@ -2159,8 +2228,8 @@ describe("diff-service", () => {
                 {
                   ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                   prices: [
-                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                      .prices,
+                    ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices || []),
                     { territory: "CAN", price: "12.99" },
                   ],
                 },
@@ -2261,8 +2330,8 @@ describe("diff-service", () => {
                 {
                   ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                   prices: [
-                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                      .prices,
+                    ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices || []),
                   ],
                 },
               ],
@@ -2408,8 +2477,8 @@ describe("diff-service", () => {
                 {
                   ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
                   prices: [
-                    ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
-                      .prices,
+                    ...(MOCK_STATE_1.subscriptionGroups![0].subscriptions[0]
+                      .prices || []),
                     { territory: "CAN", price: "12.99" },
                   ],
                 },
@@ -2826,7 +2895,7 @@ describe("diff-service", () => {
         };
 
         const plan = diff(currentState, desiredState);
-        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY
+        expect(plan).toHaveLength(3); // CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_PRICE + UPDATE_SUBSCRIPTION_AVAILABILITY (no localization since empty)
         expect(plan).toEqual(
           expect.arrayContaining([
             {
@@ -2872,7 +2941,7 @@ describe("diff-service", () => {
               name: "Subscription 4",
               description: "This is Subscription 4",
             },
-          ],
+          ]!,
           availability: {
             availableInNewTerritories: true,
             availableTerritories: [], // No territories since no prices
@@ -2907,7 +2976,7 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_LOCALIZATION",
               payload: {
                 subscriptionProductId: "sub4",
-                localization: newSubscription.localizations[0],
+                localization: newSubscription.localizations![0],
               },
             },
             {
@@ -2936,7 +3005,7 @@ describe("diff-service", () => {
               name: "Subscription 5",
               description: "This is Subscription 5",
             },
-          ],
+          ]!,
           availability: {
             availableInNewTerritories: true,
             availableTerritories: ["USA"],
@@ -2971,7 +3040,7 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_LOCALIZATION",
               payload: {
                 subscriptionProductId: "sub5",
-                localization: newSubscription.localizations[0],
+                localization: newSubscription.localizations![0],
               },
             },
             {
@@ -3015,7 +3084,7 @@ describe("diff-service", () => {
               name: "Abonnement 6",
               description: "Dies ist Abonnement 6",
             },
-          ],
+          ]!,
           availability: {
             availableInNewTerritories: true,
             availableTerritories: ["USA"],
@@ -3050,14 +3119,14 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_LOCALIZATION",
               payload: {
                 subscriptionProductId: "sub6",
-                localization: newSubscription.localizations[0],
+                localization: newSubscription.localizations![0],
               },
             },
             {
               type: "CREATE_SUBSCRIPTION_LOCALIZATION",
               payload: {
                 subscriptionProductId: "sub6",
-                localization: newSubscription.localizations[1],
+                localization: newSubscription.localizations![1],
               },
             },
             {
@@ -3099,7 +3168,7 @@ describe("diff-service", () => {
               name: "Subscription 7",
               description: "This is Subscription 7",
             },
-          ],
+          ]!,
           availability: {
             availableInNewTerritories: true,
             availableTerritories: ["USA"],
@@ -3134,7 +3203,7 @@ describe("diff-service", () => {
               type: "CREATE_SUBSCRIPTION_LOCALIZATION",
               payload: {
                 subscriptionProductId: "sub7",
-                localization: newSubscription.localizations[0],
+                localization: newSubscription.localizations![0],
               },
             },
             {
@@ -3692,7 +3761,7 @@ describe("diff-service", () => {
             name: "Subscription 5b",
             description: "This is Subscription 5b",
           },
-        ],
+        ]!,
         availability: {
           availableInNewTerritories: true,
           availableTerritories: ["USA"],
@@ -3733,7 +3802,7 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_LOCALIZATION",
             payload: {
               subscriptionProductId: "sub5b",
-              localization: newSubscription.localizations[0],
+              localization: newSubscription.localizations![0],
             },
           },
           {
@@ -3772,7 +3841,7 @@ describe("diff-service", () => {
             name: "Subscription 5c",
             description: "This is Subscription 5c",
           },
-        ],
+        ]!,
         availability: {
           availableInNewTerritories: true,
           availableTerritories: [], // No territories since no prices
@@ -3807,7 +3876,7 @@ describe("diff-service", () => {
             type: "CREATE_SUBSCRIPTION_LOCALIZATION",
             payload: {
               subscriptionProductId: "sub5c",
-              localization: newSubscription.localizations[0],
+              localization: newSubscription.localizations![0],
             },
           },
           {

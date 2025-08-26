@@ -1,15 +1,17 @@
 ## IDEAS TODOs
 
 - test pricing
-  - fails on new iap
-  - try on new sub
-  - try on new intro
+
+  - try on new sub & intro offers
   - try on new app
-- start end dates, scheduling
+
+- start end dates, scheduling (must have at least on fetch)
+
 - improve logging on showAction by gathering
 
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
+
 - can't create new version
   warn: PATCH /v1/appStoreVersions/{id} failed with non-retryable error on attempt 1:
   {
@@ -37,6 +39,7 @@
   at async Object.handler (/Users/semihcihan/development/workspace/developer-tool/src/commands/apply.ts:120:7)
 
 - use builtin mw instead of custom
+
 - retrylarda warn etme, o detayi gizlemis ol debug logla. zaten 3. de calismazsa patlicak
 
 # Notes for documentation
@@ -46,7 +49,7 @@
 
 # V2
 
-- other platforms
+- start end dates, scheduling (must have at least on fetch)
 - promo offers
 - billing grace period
 - add new fields to support
@@ -54,3 +57,4 @@
   - app category
   - content rights
   - privacy questions (not available on app store connect api yet)
+- google play support
