@@ -8,6 +8,7 @@ import {
 } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
 import { WORLDWIDE_TERRITORY_CODE } from "../utils/shortcut-converter";
+import { logger } from "../utils/logger";
 
 export type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -77,11 +78,19 @@ export const AvailabilitySchema = z.object({
   availableTerritories: AvailableTerritoriesSchema,
 });
 
-export const SubscriptionGroupLocalizationSchema = z.object({
-  locale: LocaleCodeSchema,
-  name: z.string(),
-  customName: z.string().optional().nullable(),
-});
+export const SubscriptionGroupLocalizationSchema = z
+  .object({
+    locale: LocaleCodeSchema,
+    name: z.string(),
+    customName: z.string().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.customName && data.customName.length > 30) {
+      logger.warn(
+        `Warning: customName '${data.customName}' is ${data.customName.length} characters long, but should be at most 30 characters for optimal App Store display.`
+      );
+    }
+  });
 
 const IntroOfferPayAsYouGoSchema = z.object({
   type: z.literal("PAY_AS_YOU_GO"),
@@ -161,23 +170,36 @@ export const SubscriptionGroupSchema = z.object({
   subscriptions: z.array(SubscriptionSchema),
 });
 
-export const InAppPurchaseSchema = z.object({
-  productId: z.string().refine(isValidProductId, {
-    message:
-      "Product ID can only contain alphanumeric characters, underscores, and periods",
-  }),
-  type: z.enum([
-    "CONSUMABLE",
-    "NON_CONSUMABLE",
-    "NON_RENEWING_SUBSCRIPTION",
-  ] as const) satisfies z.ZodType<components["schemas"]["InAppPurchaseType"]>,
-  referenceName: z.string(),
-  familySharable: z.boolean(),
-  priceSchedule: PriceScheduleSchema.optional(),
-  localizations: z.array(LocalizationSchema).optional(),
-  reviewNote: z.string().optional(),
-  availability: AvailabilitySchema.optional(),
-});
+export const InAppPurchaseSchema = z
+  .object({
+    productId: z.string().refine(isValidProductId, {
+      message:
+        "Product ID can only contain alphanumeric characters, underscores, and periods",
+    }),
+    type: z.enum([
+      "CONSUMABLE",
+      "NON_CONSUMABLE",
+      "NON_RENEWING_SUBSCRIPTION",
+    ] as const) satisfies z.ZodType<components["schemas"]["InAppPurchaseType"]>,
+    referenceName: z.string(),
+    familySharable: z.boolean(),
+    priceSchedule: PriceScheduleSchema.optional(),
+    localizations: z.array(LocalizationSchema).optional(),
+    reviewNote: z.string().optional(),
+    availability: AvailabilitySchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.productId.length > 30) {
+      logger.warn(
+        `Warning: productId '${data.productId}' is ${data.productId.length} characters long, but should be at most 30 characters for optimal App Store display.`
+      );
+    }
+    if (data.referenceName.length > 60) {
+      logger.warn(
+        `Warning: referenceName '${data.referenceName}' is ${data.referenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+      );
+    }
+  });
 
 export const AppStoreVersionLocalizationSchema = z.object({
   description: z.string().optional(),

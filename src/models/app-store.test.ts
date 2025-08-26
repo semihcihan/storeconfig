@@ -3,6 +3,7 @@ import {
   SubscriptionSchema,
   InAppPurchaseSchema,
   AppStoreModelSchema,
+  SubscriptionGroupLocalizationSchema,
 } from "./app-store";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateAppStoreModel } from "../helpers/validation-model";
@@ -14,6 +15,79 @@ jest.mock("./territories", () => ({
 }));
 
 describe("AppStore Models", () => {
+  describe("SubscriptionGroupLocalizationSchema", () => {
+    it("should warn when customName exceeds 30 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longCustomName =
+          "This is a very long custom name that exceeds thirty characters limit";
+        const localization = {
+          locale: "en-US",
+          name: "Test Name",
+          customName: longCustomName,
+        };
+
+        const result =
+          SubscriptionGroupLocalizationSchema.safeParse(localization);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: customName '${longCustomName}' is ${longCustomName.length} characters long, but should be at most 30 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when customName is within 30 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortCustomName = "Short Name";
+        const localization = {
+          locale: "en-US",
+          name: "Test Name",
+          customName: shortCustomName,
+        };
+
+        const result =
+          SubscriptionGroupLocalizationSchema.safeParse(localization);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when customName is null or undefined", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const localizationWithoutCustomName = {
+          locale: "en-US",
+          name: "Test Name",
+        };
+
+        const result = SubscriptionGroupLocalizationSchema.safeParse(
+          localizationWithoutCustomName
+        );
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+  });
+
   describe("AppStoreModelSchema", () => {
     it("should accept minimal valid app store model", () => {
       const minimalModel = {
@@ -787,6 +861,108 @@ describe("AppStore Models", () => {
         expect(result.error.issues[0].message).toBe(
           "Product ID can only contain alphanumeric characters, underscores, and periods"
         );
+      }
+    });
+
+    it("should warn when productId exceeds 30 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longProductId =
+          "this.is.a.very.long.product.id.that.exceeds.thirty.characters.limit";
+        const iap = {
+          ...validInAppPurchaseData,
+          productId: longProductId,
+        };
+
+        const result = InAppPurchaseSchema.safeParse(iap);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longProductId}' is ${longProductId.length} characters long, but should be at most 30 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn when referenceName exceeds 60 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longReferenceName =
+          "This is a very long reference name that exceeds sixty characters limit and should trigger a warning message";
+        const iap = {
+          ...validInAppPurchaseData,
+          referenceName: longReferenceName,
+        };
+
+        const result = InAppPurchaseSchema.safeParse(iap);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn for both productId and referenceName when both exceed limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longProductId =
+          "this.is.a.very.long.product.id.that.exceeds.thirty.characters.limit";
+        const longReferenceName =
+          "This is a very long reference name that exceeds sixty characters limit and should trigger a warning message";
+        const iap = {
+          ...validInAppPurchaseData,
+          productId: longProductId,
+          referenceName: longReferenceName,
+        };
+
+        const result = InAppPurchaseSchema.safeParse(iap);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledTimes(2);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longProductId}' is ${longProductId.length} characters long, but should be at most 30 characters for optimal App Store display.`
+        );
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when both productId and referenceName are within limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortProductId = "short.product.id";
+        const shortReferenceName = "Short Reference Name";
+        const iap = {
+          ...validInAppPurchaseData,
+          productId: shortProductId,
+          referenceName: shortReferenceName,
+        };
+
+        const result = InAppPurchaseSchema.safeParse(iap);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
       }
     });
   });
