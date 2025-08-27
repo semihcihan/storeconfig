@@ -49,6 +49,7 @@
 
 # V2
 
+- submitting
 - start end dates, scheduling (must have at least on fetch)
 - promo offers
 - billing grace period

@@ -685,12 +685,14 @@ function diffSubscriptionGroupLocalizations(
         payload: { groupReferenceName, localization: desiredLoc },
       });
     } else {
-      const changes: { name?: string; customName?: string } = {};
+      const changes: { name?: string; customName?: string | null } = {};
       if (desiredLoc.name !== currentLoc.name) {
         changes.name = desiredLoc.name;
       }
+      // Note: Apple API doesn't support setting customAppName to null
+      // When customName is null, it will be ignored during the update
       if (desiredLoc.customName !== currentLoc.customName) {
-        changes.customName = desiredLoc.customName ?? undefined;
+        changes.customName = desiredLoc.customName;
       }
 
       if (Object.keys(changes).length > 0) {

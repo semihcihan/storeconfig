@@ -338,7 +338,10 @@ export async function mapSubscriptionAvailability(
 > {
   const availability = response.data;
 
-  if (!availability.id) {
+  if (!availability.id || availability.id === "") {
+    logger.debug(
+      `Subscription availability has no ID, returning undefined (newly created subscription)`
+    );
     return undefined;
   }
 

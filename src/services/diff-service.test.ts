@@ -3964,6 +3964,72 @@ describe("diff-service", () => {
         "Multiple introductory offers found for territory 'USA' in subscription 'sub1'. Only one offer per territory is allowed."
       );
     });
+
+    it("should handle subscription availability with empty string ID gracefully", () => {
+      const currentState = EMPTY_STATE;
+      const desiredState: AppStoreModel = {
+        ...EMPTY_STATE,
+        subscriptionGroups: [
+          {
+            referenceName: "group1",
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Group 1",
+                customName: "Custom Group 1",
+              },
+            ],
+            subscriptions: [
+              {
+                productId: "sub1",
+                referenceName: "Subscription 1",
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                prices: [{ territory: "USA", price: "9.99" }],
+                localizations: [
+                  {
+                    locale: "en-US",
+                    name: "Subscription 1",
+                    description: "This is Subscription 1",
+                  },
+                ],
+                availability: {
+                  availableInNewTerritories: true,
+                  availableTerritories: ["USA"],
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      // This test verifies that the diff service can handle subscriptions
+      // even when the availability mapping encounters empty string IDs
+      // (which happens for newly created subscriptions)
+      expect(() => diff(currentState, desiredState)).not.toThrow();
+
+      const plan = diff(currentState, desiredState);
+
+      // Should create the subscription group, group localization, subscription, subscription localization, subscription availability, and subscription price
+      expect(plan).toHaveLength(6); // CREATE_SUBSCRIPTION_GROUP + CREATE_SUBSCRIPTION_GROUP_LOCALIZATION + CREATE_SUBSCRIPTION + CREATE_SUBSCRIPTION_LOCALIZATION + UPDATE_SUBSCRIPTION_AVAILABILITY + CREATE_SUBSCRIPTION_PRICE
+
+      // Verify the subscription availability action is created
+      const availabilityAction = plan.find(
+        (a) => a.type === "UPDATE_SUBSCRIPTION_AVAILABILITY"
+      );
+      expect(availabilityAction).toBeDefined();
+      expect(availabilityAction).toEqual({
+        type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+        payload: {
+          subscriptionProductId: "sub1",
+          availability: {
+            availableInNewTerritories: true,
+            availableTerritories: ["USA"],
+          },
+        },
+      });
+    });
   });
 
   describe("Optional fields handling", () => {

@@ -190,3 +190,12 @@ export async function cleanupTestSubscriptionResources(
 
   logger.info("🧹 Subscription test cleanup completed!");
 }
+
+// Helper function to wait for API processing
+// Useful for integration tests to allow Apple's API to process changes
+export const waitForApiProcessing = async (timeoutMs: number = 0) => {
+  if (timeoutMs > 0) {
+    // Add a delay to allow Apple's API to process changes
+    await new Promise((resolve) => setTimeout(resolve, timeoutMs));
+  }
+};

@@ -11,6 +11,7 @@ import {
   generateConstantLengthTestIdentifier,
   cleanupTestSubscriptionResources,
   TEST_APP_ID,
+  waitForApiProcessing,
 } from "../test-utils/cleanup-helper";
 import { diffSubscriptionGroups } from "./diff-service";
 import { z } from "zod";
@@ -19,18 +20,10 @@ type SubscriptionGroup = z.infer<typeof SubscriptionGroupSchema>;
 type Subscription = z.infer<typeof SubscriptionSchema>;
 
 describe("Apply Service Subscription Integration Tests", () => {
-  // Integration tests with API calls need longer timeout
-  jest.setTimeout(120000); // 2 minutes for all tests in this suite
-
   const mockCurrentState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: TEST_APP_ID,
     primaryLocale: "en-US",
-  };
-
-  // Helper function to wait for API processing
-  const waitForApiProcessing = async () => {
-    return;
   };
 
   // Helper function to verify subscription group exists
@@ -78,7 +71,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
     const actions = diffSubscriptionGroups(mockCurrentState, desiredState);
     await apply(actions, mockCurrentState, desiredState);
-    await waitForApiProcessing();
+    await waitForApiProcessing(2000); // Need delay to allow API to process creation
     return await verifySubscriptionGroupExists(`INTEG_TEST_${uniqueId}`);
   };
 
@@ -295,23 +288,41 @@ describe("Apply Service Subscription Integration Tests", () => {
 
   describe("Subscription Group Update Tests", () => {
     describe("Basic Subscription Group Updates", () => {
-      it("should document that subscription group reference name cannot be changed after creation (Apple constraint)", async () => {
+      it("should verify that subscription group reference name cannot be changed after creation (Apple constraint)", async () => {
         const uniqueId = generateTestIdentifier();
 
-        // Create a subscription group to demonstrate the constraint
+        // Create a subscription group to test the constraint
         const createdGroup = await createMinimalSubscriptionGroup(
           uniqueId,
           {},
           false
         );
 
-        // Verify the group was created with the expected reference name
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        // Create current state that includes the created subscription group
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [createdGroup!],
+        };
 
-        // Document the Apple constraint: reference names cannot be changed after creation
-        // This is enforced by the App Store Connect API and our diff service
+        // Try to change the reference name (this should fail)
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [
+            {
+              ...createdGroup!,
+              referenceName: `CHANGED_${uniqueId}`,
+            },
+          ],
+        };
+
+        // Expect this to fail because Apple doesn't allow changing reference names after creation
+        // The diff service should catch this before we even try to apply
+        expect(() => {
+          diffSubscriptionGroups(currentState, desiredState);
+        }).toThrow();
+
         logger.info(
-          `   ✅ Documented Apple constraint: reference name cannot be changed after creation: ${uniqueId}`
+          `   ✅ Verified Apple constraint: reference name cannot be changed after creation: ${uniqueId}`
         );
       });
 
@@ -568,7 +579,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         );
       });
 
-      it("should verify custom name cannot be set to null (Apple constraint)", async () => {
+      it("should verify custom name cannot be set to null (Apple limitation)", async () => {
         const uniqueId = generateTestIdentifier();
 
         // First create a subscription group with custom name
@@ -592,7 +603,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           subscriptionGroups: [createdGroup!],
         };
 
-        // Try to set custom name to null (this should fail)
+        // Try to set custom name to null (this should not change the value due to Apple's limitation)
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
           subscriptionGroups: [
@@ -611,18 +622,19 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(currentState, desiredState);
 
-        // Expect this to fail because Apple doesn't allow setting custom names to null
-        try {
-          await apply(actions, currentState, desiredState);
-          throw new Error("Expected operation to fail but it succeeded");
-        } catch (error: any) {
-          expect(error).toBeDefined();
-          logger.info(
-            `   ✅ Documented Apple constraint: custom name cannot be set to null: ${uniqueId} (Error: ${
-              error.message || error.toString()
-            })`
-          );
-        }
+        // Apply the changes (this will attempt to set customName to null)
+        await apply(actions, currentState, desiredState);
+        await waitForApiProcessing();
+
+        // Verify the custom name was NOT changed because Apple doesn't support setting it to null
+        const updatedGroup = await verifySubscriptionGroupExists(
+          `INTEG_TEST_${uniqueId}`
+        );
+        expect(updatedGroup?.localizations?.[0]?.customName).toBe("Original");
+
+        logger.info(
+          `   ✅ Verified Apple limitation: custom name cannot be set to null: ${uniqueId}`
+        );
       });
     });
   });
@@ -671,7 +683,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         logger.info(`   ✅ Updated subscription reference name: ${uniqueId}`);
       });
 
-      it("should verify subscription group level cannot be changed after creation", async () => {
+      it("should verify subscription group level can be changed after creation", async () => {
         const uniqueId = generateTestIdentifier();
 
         // First create a subscription
@@ -683,7 +695,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           subscriptionGroups: [createdGroup!],
         };
 
-        // Try to update the group level (this should fail)
+        // Update the group level (this should succeed)
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
           subscriptionGroups: [
@@ -700,19 +712,17 @@ describe("Apply Service Subscription Integration Tests", () => {
         };
 
         const actions = diffSubscriptionGroups(currentState, desiredState);
+        await apply(actions, currentState, desiredState);
+        await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        // Expect this to fail because Apple doesn't allow changing group level after creation
-        try {
-          await apply(actions, currentState, desiredState);
-          throw new Error("Expected operation to fail but it succeeded");
-        } catch (error: any) {
-          expect(error).toBeDefined();
-          logger.info(
-            `   ✅ Documented Apple constraint: group level cannot be changed after creation: ${uniqueId} (Error: ${
-              error.message || error.toString()
-            })`
-          );
-        }
+        const updatedGroup = await verifySubscriptionGroupExists(
+          `INTEG_TEST_${uniqueId}`
+        );
+        expect(updatedGroup?.subscriptions?.[0]?.groupLevel).toBe(2);
+
+        logger.info(
+          `   ✅ Verified subscription group level can be changed after creation: ${uniqueId}`
+        );
       });
 
       it("should verify subscription period cannot be changed after creation", async () => {
@@ -1270,6 +1280,63 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         logger.info(
           `   ✅ Documented Apple constraint: territories cannot be removed from subscription pricing: ${uniqueId}`
+        );
+      });
+
+      it("should verify what happens when availability is removed from subscription with pricing", async () => {
+        const uniqueId = generateTestIdentifier();
+
+        // First create a subscription with pricing and availability
+        const createdGroup = await createMinimalSubscriptionGroup(uniqueId, {
+          subscriptions: [
+            {
+              productId: uniqueId,
+              referenceName: uniqueId,
+              groupLevel: 1,
+              subscriptionPeriod: "ONE_MONTH",
+              familySharable: false,
+              availability: {
+                availableInNewTerritories: false,
+                availableTerritories: ["USA", "GBR"],
+              },
+              prices: [
+                { price: "4.99", territory: "USA" },
+                { price: "3.99", territory: "GBR" },
+              ],
+            },
+          ],
+        });
+
+        // Create current state that includes the created subscription group
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [createdGroup!],
+        };
+
+        // Try to remove availability (this should fail)
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [
+            {
+              ...createdGroup!,
+              subscriptions: [
+                {
+                  ...createdGroup!.subscriptions[0],
+                  availability: undefined,
+                },
+              ],
+            },
+          ],
+        };
+
+        // Expect this to fail because Apple doesn't allow removing availability when pricing exists
+        // The diff service should catch this before we even try to apply
+        expect(() => {
+          diffSubscriptionGroups(currentState, desiredState);
+        }).toThrow();
+
+        logger.info(
+          `   ✅ Documented Apple constraint: availability cannot be removed when pricing exists: ${uniqueId}`
         );
       });
 
@@ -2316,7 +2383,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         );
       });
 
-      it("should verify group level cannot be changed after creation (Apple constraint)", async () => {
+      it("should verify subscription group level can be changed after creation", async () => {
         const uniqueId = generateTestIdentifier();
 
         // First create a subscription with group level 1
@@ -2328,7 +2395,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           subscriptionGroups: [createdGroup!],
         };
 
-        // Try to change group level to 2 (this should fail)
+        // Try to change group level to 2 (this should succeed)
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
           subscriptionGroups: [
@@ -2344,23 +2411,24 @@ describe("Apply Service Subscription Integration Tests", () => {
           ],
         };
 
-        // The diff service should create actions, but the apply should fail
+        // The diff service should create actions for the update
         const actions = diffSubscriptionGroups(currentState, desiredState);
         expect(actions).toBeDefined();
         expect(actions.length).toBeGreaterThan(0);
 
-        // Try to apply the change and expect it to fail at the API level
-        try {
-          await apply(actions, currentState, desiredState);
-          throw new Error("Expected operation to fail but it succeeded");
-        } catch (error: any) {
-          expect(error).toBeDefined();
-          logger.info(
-            `   ✅ Documented Apple constraint: group level cannot be changed after creation: ${uniqueId} (Error: ${
-              error.message || error.toString()
-            })`
-          );
-        }
+        // Apply the change and expect it to succeed
+        await apply(actions, currentState, desiredState);
+        await waitForApiProcessing(2000); // Need delay to allow API to process update
+
+        // Verify the change was applied
+        const updatedGroup = await verifySubscriptionGroupExists(
+          `INTEG_TEST_${uniqueId}`
+        );
+        expect(updatedGroup?.subscriptions?.[0]?.groupLevel).toBe(2);
+
+        logger.info(
+          `   ✅ Verified subscription group level can be changed after creation: ${uniqueId}`
+        );
       });
     });
   });
@@ -2405,7 +2473,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(mockCurrentState, desiredState);
         await apply(actions, mockCurrentState, desiredState);
-        await waitForApiProcessing();
+        await waitForApiProcessing(2000); // Need delay to allow API to process creation
 
         const createdGroup = await verifySubscriptionGroupExists(
           `INTEG_TEST_${uniqueId}`
@@ -2456,7 +2524,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(mockCurrentState, desiredState);
         await apply(actions, mockCurrentState, desiredState);
-        await waitForApiProcessing();
+        await waitForApiProcessing(2000); // Need delay to allow API to process creation
 
         const createdGroup = await verifySubscriptionGroupExists(
           `INTEG_TEST_${uniqueId}`
@@ -2661,7 +2729,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(currentState, desiredState);
         await apply(actions, currentState, desiredState);
-        await waitForApiProcessing();
+        await waitForApiProcessing(2000); // Need delay to allow API to process update
 
         const updatedGroup = await verifySubscriptionGroupExists(
           `INTEG_TEST_${uniqueId}`
@@ -2705,7 +2773,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(currentState, desiredState);
         await apply(actions, currentState, desiredState);
-        await waitForApiProcessing();
+        await waitForApiProcessing(2000); // Need delay to allow API to process update
 
         const updatedGroup = await verifySubscriptionGroupExists(
           `INTEG_TEST_${uniqueId}`
@@ -2753,27 +2821,11 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const actions = diffSubscriptionGroups(currentState, desiredState);
         await apply(actions, currentState, desiredState);
-        await waitForApiProcessing();
+        await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        // Add retry logic for verification to handle potential API rate limiting
-        let updatedGroup;
-        let retries = 0;
-        const maxRetries = 3;
-        
-        while (retries < maxRetries) {
-          try {
-            updatedGroup = await verifySubscriptionGroupExists(
-              `INTEG_TEST_${uniqueId}`
-            );
-            break;
-          } catch (error) {
-            retries++;
-            if (retries >= maxRetries) {
-              throw error;
-            }
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
-          }
-        }
+        const updatedGroup = await verifySubscriptionGroupExists(
+          `INTEG_TEST_${uniqueId}`
+        );
 
         expect(updatedGroup?.localizations?.[0]?.name).toBe(
           `Updated Group ${uniqueId}`

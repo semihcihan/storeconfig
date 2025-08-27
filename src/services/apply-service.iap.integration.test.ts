@@ -7,6 +7,7 @@ import {
   generateConstantLengthTestIdentifier,
   cleanupTestIAPResources,
   TEST_APP_ID,
+  waitForApiProcessing,
 } from "../test-utils/cleanup-helper";
 import { diffInAppPurchases } from "./diff-service";
 import { z } from "zod";
@@ -14,18 +15,10 @@ import { z } from "zod";
 type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 
 describe("Apply Service IAP Integration Tests", () => {
-  // Integration tests with API calls need longer timeout
-  jest.setTimeout(120000); // 2 minutes for all tests in this suite
-
   const mockCurrentState: AppStoreModel = {
     schemaVersion: "1.0.0",
     appId: TEST_APP_ID,
     primaryLocale: "en-US",
-  };
-
-  // Helper function to wait for API processing
-  const waitForApiProcessing = async () => {
-    return;
   };
 
   // Helper function to verify IAP exists

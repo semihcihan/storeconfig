@@ -300,6 +300,8 @@ export async function createSubscriptionGroupLocalization(
       attributes: {
         name: localization.name,
         locale: localization.locale,
+        // Note: Apple API doesn't support setting customAppName to null
+        // When customName is null, it's ignored (not included in the request)
         ...(localization.customName && {
           customAppName: localization.customName,
         }),
@@ -366,6 +368,8 @@ export async function updateSubscriptionGroupLocalization(
       id: localizationId,
       attributes: {
         ...(changes.name && { name: changes.name }),
+        // Note: Apple API doesn't support setting customAppName to null
+        // When customName is null, it's ignored (not included in the request)
         ...(changes.customName && { customAppName: changes.customName }),
       },
     },
