@@ -2,7 +2,6 @@
 
 - test pricing
 
-  - try on new sub & intro offers
   - try on new app
 
 - start end dates, scheduling (must have at least on fetch)
@@ -50,7 +49,7 @@
 # V2
 
 - submitting
-- start end dates, scheduling (must have at least on fetch)
+- start end dates, scheduling on apply too
 - promo offers
 - billing grace period
 - add new fields to support

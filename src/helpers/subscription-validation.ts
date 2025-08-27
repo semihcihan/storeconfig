@@ -16,6 +16,7 @@ export function validateSubscriptionTerritoryPricing(
 ): void {
   const subscriptionPrices = subscription.prices || [];
   const availability = subscription.availability;
+  const introductoryOffers = subscription.introductoryOffers || [];
 
   // If pricing exists but no availability, that's an error
   if (subscriptionPrices.length > 0 && !availability) {
@@ -23,6 +24,16 @@ export function validateSubscriptionTerritoryPricing(
       code: z.ZodIssueCode.custom,
       message: `Subscription '${subscription.productId}' has pricing defined but no availability. You need to set up availabilities first.`,
       path: ["availability"],
+    });
+    return;
+  }
+
+  // Apple's requirement: To have any kind of offers, subscription must have pricing defined
+  if (introductoryOffers.length > 0 && subscriptionPrices.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Subscription '${subscription.productId}' has introductory offers but no pricing defined. Apple requires subscription pricing to be set up before any introductory offers can be created.`,
+      path: ["prices"],
     });
     return;
   }

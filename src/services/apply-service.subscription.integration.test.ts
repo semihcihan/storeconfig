@@ -806,6 +806,64 @@ describe("Apply Service Subscription Integration Tests", () => {
         );
       });
 
+      it("should not allow familySharable to be updated to false once set to true", () => {
+        const uniqueId = generateTestIdentifier();
+
+        const currentState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [
+            {
+              referenceName: `INTEG_TEST_${uniqueId}`,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Group ${uniqueId}`,
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: uniqueId,
+                  referenceName: uniqueId,
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: true,
+                },
+              ],
+            },
+          ],
+        };
+
+        const desiredState: AppStoreModel = {
+          ...mockCurrentState,
+          subscriptionGroups: [
+            {
+              referenceName: `INTEG_TEST_${uniqueId}`,
+              localizations: [
+                {
+                  locale: "en-US",
+                  name: `Group ${uniqueId}`,
+                },
+              ],
+              subscriptions: [
+                {
+                  productId: uniqueId,
+                  referenceName: uniqueId,
+                  groupLevel: 1,
+                  subscriptionPeriod: "ONE_MONTH",
+                  familySharable: false,
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(() =>
+          diffSubscriptionGroups(currentState, desiredState)
+        ).toThrow(
+          `Family sharing cannot be turned off for subscription ${uniqueId} once it has been enabled.`
+        );
+      });
+
       it("should update subscription review note", async () => {
         const uniqueId = generateTestIdentifier();
 

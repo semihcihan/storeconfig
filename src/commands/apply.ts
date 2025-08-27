@@ -80,7 +80,9 @@ const command: CommandModule = {
 
     try {
       const desiredState = validateAppStoreModel(
-        removeShortcuts(readJsonFile(desiredStateFile))
+        removeShortcuts(readJsonFile(desiredStateFile)),
+        false,
+        "apply"
       );
 
       let currentState: AppStoreModel;

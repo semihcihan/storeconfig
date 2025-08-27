@@ -267,14 +267,14 @@ describe("Subscription Validation", () => {
       });
     });
 
-    it("should handle missing introductory offers gracefully", () => {
+    it("should handle missing introductoryOffers gracefully", () => {
       const subscription = {
         productId: "test_product",
         availability: {
           availableTerritories: ["USA"],
         },
         prices: [{ price: "4.99", territory: "USA" }],
-        introductoryOffers: undefined,
+        // Missing introductoryOffers
       };
 
       const mockCtx = {
@@ -285,7 +285,60 @@ describe("Subscription Validation", () => {
       expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
-    it("should handle missing prices in introductory offers gracefully", () => {
+    it("should fail validation when introductory offers exist but subscription has no pricing", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [], // No subscription pricing
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["USA"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).toHaveBeenCalledWith({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Subscription 'test_product' has introductory offers but no pricing defined. Apple requires subscription pricing to be set up before any introductory offers can be created.",
+        path: ["prices"],
+      });
+    });
+
+    it("should pass validation when subscription has pricing and FREE_TRIAL offer", () => {
+      const subscription = {
+        productId: "test_product",
+        availability: {
+          availableTerritories: ["USA"],
+        },
+        prices: [{ price: "4.99", territory: "USA" }],
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["USA"],
+          },
+        ],
+      };
+
+      const mockCtx = {
+        addIssue: jest.fn(),
+      } as any;
+
+      validateSubscriptionTerritoryPricing(subscription, mockCtx);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it("should pass validation when subscription has pricing and PAY_AS_YOU_GO offer with pricing", () => {
       const subscription = {
         productId: "test_product",
         availability: {
@@ -296,7 +349,7 @@ describe("Subscription Validation", () => {
           {
             type: "PAY_AS_YOU_GO",
             numberOfPeriods: 1,
-            prices: undefined,
+            prices: [{ price: "0.99", territory: "USA" }],
           },
         ],
       };

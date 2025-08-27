@@ -59,7 +59,7 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
       return true;
     return false;
   },
-  rateLimitDelayMs: [10000, 30000, 60000, 60000],
+  rateLimitDelayMs: [60000, 90000],
 };
 
 /**
