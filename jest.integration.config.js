@@ -9,6 +9,4 @@ module.exports = {
   testEnvironmentOptions: {
     LOG_LEVEL: "info",
   },
-  // Integration tests should not be cached as they depend on external state
-  cache: true,
 };

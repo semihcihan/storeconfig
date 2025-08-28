@@ -9,6 +9,4 @@ module.exports = {
   testEnvironmentOptions: {
     LOG_LEVEL: "info",
   },
-  // E2E tests should not be cached
-  cache: true,
 };

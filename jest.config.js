@@ -2,7 +2,7 @@ module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   testMatch: ["<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)"],
-  verbose: false,
+  verbose: true,
   silent: false,
   testLocationInResults: true,
   collectCoverage: false,
