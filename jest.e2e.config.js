@@ -10,5 +10,5 @@ module.exports = {
     LOG_LEVEL: "info",
   },
   // E2E tests should not be cached
-  cache: false,
+  cache: true,
 };

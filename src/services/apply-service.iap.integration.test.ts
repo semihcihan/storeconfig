@@ -1999,5 +1999,5 @@ describe("Apply Service IAP Integration Tests", () => {
   afterAll(async () => {
     // Use the common cleanup utility to find and delete all test resources
     await cleanupTestIAPResources(TEST_APP_ID);
-  });
+  }, 300000); // 5 minutes timeout for cleanup operations
 });

@@ -4,9 +4,7 @@
 
   - try on new app
 
-- start end dates, scheduling (must have at least on fetch)
-
-- improve logging on showAction by gathering
+- start end dates, scheduling (must have at least on fetch we should correctly fetch current pricing info and ignore future ones)
 
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
@@ -40,6 +38,8 @@
 - use builtin mw instead of custom
 
 - retrylarda warn etme, o detayi gizlemis ol debug logla. zaten 3. de calismazsa patlicak
+
+- improve logging on showAction by gathering
 
 # Notes for documentation
 

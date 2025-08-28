@@ -198,7 +198,6 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
         ],
       };
 
-      // This should fail because Apple requires both availability AND pricing before introductory offers can be created
       expect(() => {
         diffSubscriptionGroups(currentState, desiredState);
       }).toThrow();
@@ -702,10 +701,6 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
 
   // Cleanup after all tests
   afterAll(async () => {
-    // Use the common cleanup utility to find and delete all test resources
-    // NOTE: The cleanupTestSubscriptionResources function may need to be updated to also delete introductory offers
-    // since deleting subscription groups should cascade to delete their offers
-    // This is important for proper cleanup when testing introductory offers
     await cleanupTestSubscriptionResources(TEST_APP_ID);
-  });
+  }, 300000); // 5 minutes timeout for cleanup operations
 });

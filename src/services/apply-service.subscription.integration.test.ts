@@ -46,7 +46,7 @@ describe("Apply Service Subscription Integration Tests", () => {
       ...mockCurrentState,
       subscriptionGroups: [
         {
-          referenceName: `INTEG_TEST_${uniqueId}`,
+          referenceName: uniqueId,
           localizations: [
             {
               locale: "en-US",
@@ -72,7 +72,7 @@ describe("Apply Service Subscription Integration Tests", () => {
     const actions = diffSubscriptionGroups(mockCurrentState, desiredState);
     await apply(actions, mockCurrentState, desiredState);
     await waitForApiProcessing(2000); // Need delay to allow API to process creation
-    return await verifySubscriptionGroupExists(`INTEG_TEST_${uniqueId}`);
+    return await verifySubscriptionGroupExists(uniqueId);
   };
 
   describe("Subscription Group Creation Tests", () => {
@@ -86,7 +86,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           false
         );
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.localizations).toHaveLength(1);
         expect(createdGroup?.localizations?.[0]?.locale).toBe("en-US");
         expect(createdGroup?.localizations?.[0]?.name).toBe(
@@ -123,7 +123,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           false
         );
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.localizations).toHaveLength(3);
         expect(createdGroup?.localizations?.map((l) => l.locale)).toContain(
           "en-US"
@@ -162,7 +162,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           false
         );
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.localizations).toHaveLength(2);
         expect(createdGroup?.localizations?.[0]?.customName).toBe("Premium");
         expect(createdGroup?.localizations?.[1]?.customName).toBe("Premium");
@@ -179,7 +179,7 @@ describe("Apply Service Subscription Integration Tests", () => {
 
         const createdGroup = await createMinimalSubscriptionGroup(uniqueId);
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.subscriptions).toHaveLength(1);
         expect(createdGroup?.subscriptions?.[0]?.productId).toBe(uniqueId);
         expect(createdGroup?.subscriptions?.[0]?.subscriptionPeriod).toBe(
@@ -221,7 +221,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ],
         });
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.subscriptions).toHaveLength(3);
         expect(
           createdGroup?.subscriptions?.map((s) => s.subscriptionPeriod)
@@ -267,7 +267,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ],
         });
 
-        expect(createdGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`);
+        expect(createdGroup?.referenceName).toBe(uniqueId);
         expect(createdGroup?.subscriptions).toHaveLength(3);
         expect(createdGroup?.subscriptions?.map((s) => s.groupLevel)).toContain(
           1
@@ -362,9 +362,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations?.[0]?.name).toBe(
           `Updated Group ${uniqueId}`
         );
@@ -411,9 +409,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations).toHaveLength(2);
         expect(updatedGroup?.localizations?.map((l) => l.locale)).toContain(
           "en-US"
@@ -463,9 +459,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations).toHaveLength(1);
         expect(updatedGroup?.localizations?.[0]?.locale).toBe("en-US");
 
@@ -512,9 +506,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations?.[0]?.name).toBe(
           `Updated Name ${uniqueId}`
         );
@@ -569,9 +561,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations?.[0]?.customName).toBe("Updated");
 
         logger.info(
@@ -627,9 +617,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await waitForApiProcessing();
 
         // Verify the custom name was NOT changed because Apple doesn't support setting it to null
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.localizations?.[0]?.customName).toBe("Original");
 
         logger.info(
@@ -673,9 +661,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.referenceName).toBe(
           `${uniqueId}_updated`
         );
@@ -715,9 +701,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.groupLevel).toBe(2);
 
         logger.info(
@@ -796,9 +780,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.familySharable).toBe(true);
 
         logger.info(
@@ -813,7 +795,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ...mockCurrentState,
           subscriptionGroups: [
             {
-              referenceName: `INTEG_TEST_${uniqueId}`,
+              referenceName: uniqueId,
               localizations: [
                 {
                   locale: "en-US",
@@ -837,7 +819,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ...mockCurrentState,
           subscriptionGroups: [
             {
-              referenceName: `INTEG_TEST_${uniqueId}`,
+              referenceName: uniqueId,
               localizations: [
                 {
                   locale: "en-US",
@@ -896,9 +878,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.reviewNote).toBe(
           `Updated review note for ${uniqueId}`
         );
@@ -957,9 +937,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.prices).toBeDefined();
@@ -1129,9 +1107,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await waitForApiProcessing();
 
         // Verify both availability and pricing are set
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.availability).toBeDefined();
@@ -1199,9 +1175,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.prices).toContainEqual({
@@ -1268,9 +1242,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.prices).toHaveLength(2);
@@ -1451,9 +1423,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.prices).toHaveLength(2);
@@ -1501,9 +1471,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.availability).toBeDefined();
@@ -1565,9 +1533,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(
@@ -1631,9 +1597,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(
@@ -1694,9 +1658,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(
@@ -1757,9 +1719,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(
@@ -1819,9 +1779,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.localizations).toBeDefined();
@@ -1887,9 +1845,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.localizations?.[0]?.name).toBe(
@@ -1960,9 +1916,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.localizations).toHaveLength(2);
@@ -2038,9 +1992,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         expect(updatedSubscription?.localizations).toHaveLength(1);
@@ -2088,9 +2040,7 @@ describe("Apply Service Subscription Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTEG_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(updatedSubscription?.referenceName).toBe(`${uniqueId}_updated`);
@@ -2157,9 +2107,7 @@ describe("Apply Service Subscription Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTEG_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(
@@ -2218,9 +2166,7 @@ describe("Apply Service Subscription Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTEG_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(updatedSubscription?.availability).toBeDefined();
@@ -2241,7 +2187,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         ...mockCurrentState,
         subscriptionGroups: [
           {
-            referenceName: `INTEG_TEST_${uniqueId}`,
+            referenceName: uniqueId,
             localizations: [
               {
                 locale: "en-US",
@@ -2273,9 +2219,7 @@ describe("Apply Service Subscription Integration Tests", () => {
       await apply(actions, mockCurrentState, desiredState);
       await waitForApiProcessing();
 
-      const createdGroup = await verifySubscriptionGroupExists(
-        `INTEG_TEST_${uniqueId}`
-      );
+      const createdGroup = await verifySubscriptionGroupExists(uniqueId);
       const createdSubscription = createdGroup?.subscriptions?.[0];
 
       // Document the behavior when pricing territories are a subset of available territories
@@ -2479,9 +2423,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await waitForApiProcessing(2000); // Need delay to allow API to process update
 
         // Verify the change was applied
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.groupLevel).toBe(2);
 
         logger.info(
@@ -2501,7 +2443,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ...mockCurrentState,
           subscriptionGroups: [
             {
-              referenceName: `INTEG_TEST_${uniqueId}`,
+              referenceName: uniqueId,
               localizations: [
                 {
                   locale: "en-US",
@@ -2533,9 +2475,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, mockCurrentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process creation
 
-        const createdGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const createdGroup = await verifySubscriptionGroupExists(uniqueId);
         const createdSubscription = createdGroup?.subscriptions?.[0];
 
         // Document the behavior
@@ -2555,7 +2495,7 @@ describe("Apply Service Subscription Integration Tests", () => {
           ...mockCurrentState,
           subscriptionGroups: [
             {
-              referenceName: `INTEG_TEST_${uniqueId}`,
+              referenceName: uniqueId,
               localizations: [
                 {
                   locale: "en-US",
@@ -2584,9 +2524,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, mockCurrentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process creation
 
-        const createdGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const createdGroup = await verifySubscriptionGroupExists(uniqueId);
         const createdSubscription = createdGroup?.subscriptions?.[0];
 
         // Document the behavior
@@ -2651,9 +2589,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing();
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
         // Document the behavior
@@ -2789,9 +2725,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         // Check that the localization was updated (either en-US or es-ES could be first)
         const updatedName = updatedGroup?.localizations?.[0]?.name;
         expect(updatedName).toMatch(/Updated Group|Grupo Actualizado/);
@@ -2833,11 +2767,9 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
         expect(updatedGroup?.subscriptions?.[0]?.familySharable).toBe(true);
-        expect(updatedGroup?.referenceName).toBe(`INTEG_TEST_${uniqueId}`); // Group reference name unchanged
+        expect(updatedGroup?.referenceName).toBe(uniqueId); // Group reference name unchanged
 
         logger.info(
           `   ✅ Verified subscription updates don't affect subscription group: ${uniqueId}`
@@ -2881,9 +2813,7 @@ describe("Apply Service Subscription Integration Tests", () => {
         await apply(actions, currentState, desiredState);
         await waitForApiProcessing(2000); // Need delay to allow API to process update
 
-        const updatedGroup = await verifySubscriptionGroupExists(
-          `INTEG_TEST_${uniqueId}`
-        );
+        const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
 
         expect(updatedGroup?.localizations?.[0]?.name).toBe(
           `Updated Group ${uniqueId}`
@@ -2901,5 +2831,5 @@ describe("Apply Service Subscription Integration Tests", () => {
   afterAll(async () => {
     // Use the common cleanup utility to find and delete all test resources
     await cleanupTestSubscriptionResources(TEST_APP_ID);
-  });
+  }, 300000); // 5 minutes timeout for cleanup operations
 });
