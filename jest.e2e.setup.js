@@ -13,9 +13,6 @@ process.env.LOG_LEVEL = "info";
 // console.info = console.info;
 // console.debug = console.debug;
 
-// Set longer timeout for e2e tests
-jest.setTimeout(300000); // 5 minutes
-
 // If you need to see logger output in e2e tests:
 // import { setLogLevel } from '../src/utils/logger';
 // setLogLevel('info');

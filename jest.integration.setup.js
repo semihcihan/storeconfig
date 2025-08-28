@@ -13,9 +13,6 @@ process.env.LOG_LEVEL = "info";
 // console.info = console.info;
 // console.debug = console.debug;
 
-// Set longer timeout for integration tests
-jest.setTimeout(120000); // 2 minutes
-
 // If you need to see logger output in integration tests:
 // import { setLogLevel } from '../src/utils/logger';
 // setLogLevel('info');
