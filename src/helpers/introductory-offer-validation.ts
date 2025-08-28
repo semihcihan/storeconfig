@@ -192,3 +192,35 @@ export function validateIntroductoryOffers(
     }
   }
 }
+
+/**
+ * Validate Apple restrictions for introductory offers
+ * Apple requires that subscriptions have either availability or pricing before introductory offers can be created
+ * @param subscriptionProductId - The subscription product ID for error messages
+ * @param subscription - The subscription object to validate
+ * @param offers - Array of introductory offers to validate
+ * @throws Error if Apple restrictions are violated
+ */
+export function validateIntroductoryOfferAppleRestrictions(
+  subscriptionProductId: string,
+  subscription: any,
+  offers: IntroductoryOffer[]
+): void {
+  if (!offers || offers.length === 0) {
+    return;
+  }
+
+  const hasAvailability =
+    subscription.availability &&
+    subscription.availability.availableTerritories &&
+    subscription.availability.availableTerritories.length > 0;
+
+  const hasPricing = subscription.prices && subscription.prices.length > 0;
+
+  // Apple restriction: To create introductory offers, subscription must have both availability and pricing
+  if (!hasAvailability || !hasPricing) {
+    throw new Error(
+      `Cannot create introductory offers for subscription '${subscriptionProductId}'. Apple requires subscriptions to have both availability and pricing before introductory offers can be created.`
+    );
+  }
+}

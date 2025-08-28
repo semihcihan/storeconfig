@@ -41,7 +41,7 @@ describe("Apply Service IAP Integration Tests", () => {
         {
           productId: uniqueId,
           type,
-          referenceName: `${uniqueId}`,
+          referenceName: uniqueId,
           familySharable: false,
           ...inAppPurchase,
         },
@@ -65,7 +65,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
             },
           ],
@@ -81,7 +81,7 @@ describe("Apply Service IAP Integration Tests", () => {
         const createdIap = await verifyIapExists(uniqueId);
 
         expect(createdIap?.type).toBe("CONSUMABLE");
-        expect(createdIap?.referenceName).toBe(`${uniqueId}`);
+        expect(createdIap?.referenceName).toBe(uniqueId);
         expect(createdIap?.familySharable).toBe(false);
 
         logger.info(`   ✅ Created basic consumable IAP: ${uniqueId}`);
@@ -96,7 +96,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
             },
           ],
@@ -126,7 +126,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
             },
           ],
@@ -159,7 +159,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -197,7 +197,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -239,7 +239,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -284,7 +284,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               availability: {
                 availableInNewTerritories: false,
@@ -322,7 +322,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
               availability: {
                 availableInNewTerritories: true,
@@ -360,7 +360,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_RENEWING_SUBSCRIPTION",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               availability: {
                 availableInNewTerritories: false,
@@ -400,7 +400,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -443,7 +443,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -488,7 +488,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -533,7 +533,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -573,7 +573,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -632,7 +632,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               localizations: [
                 {
@@ -675,7 +675,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "NON_CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: true,
               localizations: [
                 {
@@ -726,7 +726,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               reviewNote: `This IAP provides temporary access to premium features for testing purposes`,
             },
@@ -760,7 +760,7 @@ describe("Apply Service IAP Integration Tests", () => {
             {
               productId: uniqueId,
               type: "CONSUMABLE",
-              referenceName: `${uniqueId}`,
+              referenceName: uniqueId,
               familySharable: false,
               priceSchedule: {
                 baseTerritory: "USA",
@@ -823,7 +823,7 @@ describe("Apply Service IAP Integration Tests", () => {
           inAppPurchases: [createdIap!],
         };
 
-        const newReferenceName = `${uniqueId}`;
+        const newReferenceName = uniqueId;
         const desiredState: AppStoreModel = {
           ...mockCurrentState,
           inAppPurchases: [
@@ -924,7 +924,7 @@ describe("Apply Service IAP Integration Tests", () => {
           inAppPurchases: [createdIap!],
         };
 
-        const newReferenceName = `${uniqueId}`;
+        const newReferenceName = uniqueId;
         const newReviewNote = `Multi-updated review note for ${uniqueId}`;
         const desiredState: AppStoreModel = {
           ...mockCurrentState,

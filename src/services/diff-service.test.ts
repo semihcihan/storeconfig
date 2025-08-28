@@ -1930,9 +1930,28 @@ describe("diff-service", () => {
       ) {
         delete (currentState.subscriptionGroups[0].subscriptions[0] as any)
           .availability;
+        delete (currentState.subscriptionGroups[0].subscriptions[0] as any)
+          .introductoryOffers;
+        delete (currentState.subscriptionGroups[0].subscriptions[0] as any)
+          .promotionalOffers;
       }
 
-      const desiredState: AppStoreModel = MOCK_STATE_1;
+      const desiredState: AppStoreModel = {
+        ...MOCK_STATE_1,
+        subscriptionGroups: [
+          {
+            ...MOCK_STATE_1.subscriptionGroups![0],
+            subscriptions: [
+              {
+                ...MOCK_STATE_1.subscriptionGroups![0].subscriptions[0],
+                // Remove introductory offers and promotional offers to avoid creation attempts
+                introductoryOffers: [],
+                promotionalOffers: [],
+              },
+            ],
+          },
+        ],
+      };
 
       const plan = diff(currentState, desiredState);
 
@@ -1946,6 +1965,122 @@ describe("diff-service", () => {
           subscriptionProductId: "sub1",
           availability:
             MOCK_STATE_1.subscriptionGroups![0].subscriptions[0].availability,
+        },
+      });
+    });
+
+    it("should create a plan to add a new subscription with all required fields including introductory offer", () => {
+      const currentState: AppStoreModel = {
+        ...EMPTY_STATE,
+        subscriptionGroups: [
+          {
+            referenceName: "group1",
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Group 1",
+                customName: "Custom Group 1",
+              },
+            ],
+            subscriptions: [],
+          },
+        ],
+      };
+
+      const newSubscription: Subscription = {
+        productId: "sub2",
+        referenceName: "Subscription 2",
+        groupLevel: 1,
+        subscriptionPeriod: "ONE_MONTH",
+        familySharable: false,
+        prices: [{ territory: "USA", price: "14.99" }],
+        localizations: [
+          {
+            locale: "en-US",
+            name: "Subscription 2",
+            description: "This is Subscription 2",
+          },
+        ],
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: ["USA"],
+          },
+        ],
+        availability: {
+          availableInNewTerritories: true,
+          availableTerritories: ["USA"],
+        },
+      };
+
+      const desiredState: AppStoreModel = {
+        ...EMPTY_STATE,
+        subscriptionGroups: [
+          {
+            referenceName: "group1",
+            localizations: [
+              {
+                locale: "en-US",
+                name: "Group 1",
+                customName: "Custom Group 1",
+              },
+            ],
+            subscriptions: [newSubscription],
+          },
+        ],
+      };
+
+      const plan = diff(currentState, desiredState);
+
+      expect(plan).toHaveLength(5);
+
+      // Verify the order of actions - subscription should be created first
+      expect(plan[0]).toEqual({
+        type: "CREATE_SUBSCRIPTION",
+        payload: {
+          groupReferenceName: "group1",
+          subscription: newSubscription,
+        },
+      });
+
+      // Then subscription localizations
+      expect(plan[1]).toEqual({
+        type: "CREATE_SUBSCRIPTION_LOCALIZATION",
+        payload: {
+          subscriptionProductId: "sub2",
+          localization: newSubscription.localizations![0],
+        },
+      });
+
+      // Then subscription availability (needed before creating offers)
+      expect(plan[2]).toEqual({
+        type: "UPDATE_SUBSCRIPTION_AVAILABILITY",
+        payload: {
+          subscriptionProductId: "sub2",
+          availability: newSubscription.availability,
+        },
+      });
+
+      // Then subscription prices
+      expect(plan[3]).toEqual({
+        type: "CREATE_SUBSCRIPTION_PRICE",
+        payload: {
+          subscriptionProductId: "sub2",
+          changes: {
+            addedPrices: newSubscription.prices,
+            updatedPrices: [],
+          },
+        },
+      });
+
+      // Finally, introductory offer (after availability and pricing are set)
+      expect(plan[4]).toEqual({
+        type: "CREATE_INTRODUCTORY_OFFER",
+        payload: {
+          subscriptionProductId: "sub2",
+          subscriptionPeriod: "ONE_MONTH",
+          offer: newSubscription.introductoryOffers![0],
         },
       });
     });

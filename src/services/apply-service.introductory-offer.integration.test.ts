@@ -1,23 +1,17 @@
 import { apply } from "./apply-service";
-import {
-  AppStoreModel,
-  SubscriptionGroupSchema,
-  SubscriptionSchema,
-} from "../models/app-store";
+import { AppStoreModel, SubscriptionGroupSchema } from "../models/app-store";
 import { fetchAndMapSubscriptionGroups } from "./fetch-service";
 import { logger } from "../utils/logger";
 import {
   generateTestIdentifier,
-  generateConstantLengthTestIdentifier,
-  cleanupTestSubscriptionResources,
   TEST_APP_ID,
   waitForApiProcessing,
+  cleanupTestSubscriptionResources,
 } from "../test-utils/cleanup-helper";
 import { diffSubscriptionGroups } from "./diff-service";
 import { z } from "zod";
 
 type SubscriptionGroup = z.infer<typeof SubscriptionGroupSchema>;
-type Subscription = z.infer<typeof SubscriptionSchema>;
 
 describe("Apply Service Introductory Offer Integration Tests", () => {
   const mockCurrentState: AppStoreModel = {
@@ -46,7 +40,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       ...mockCurrentState,
       subscriptionGroups: [
         {
-          referenceName: `INTRO_TEST_${uniqueId}`,
+          referenceName: uniqueId,
           localizations: [
             {
               locale: "en-US",
@@ -72,42 +66,63 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
     const actions = diffSubscriptionGroups(mockCurrentState, desiredState);
     await apply(actions, mockCurrentState, desiredState);
     await waitForApiProcessing(2000);
-    return await verifySubscriptionGroupExists(`INTRO_TEST_${uniqueId}`);
+    return await verifySubscriptionGroupExists(uniqueId);
   };
 
   describe("Introductory Offer Creation Before Subscription Setup", () => {
     it("should fail to create introductory offer when subscription has no availability (Apple restriction)", async () => {
       const uniqueId = generateTestIdentifier();
 
-      // Create a subscription group with a subscription that has no availability
-      const createdGroup = await createMinimalSubscriptionGroup(uniqueId, {
-        subscriptions: [
-          {
-            productId: uniqueId,
-            referenceName: uniqueId,
-            groupLevel: 1,
-            subscriptionPeriod: "ONE_MONTH",
-            familySharable: false,
-            // No availability set
-          },
-        ],
-      });
-
-      // Create current state that includes the created subscription group
+      // Test the validation logic directly by calling diffSubscriptionGroups
+      // with a desired state that has introductory offers but no availability
       const currentState: AppStoreModel = {
         ...mockCurrentState,
-        subscriptionGroups: [createdGroup!],
+        subscriptionGroups: [
+          {
+            referenceName: uniqueId,
+            localizations: [
+              {
+                locale: "en-US",
+                name: `Group ${uniqueId}`,
+              },
+            ],
+            subscriptions: [
+              {
+                productId: uniqueId,
+                referenceName: uniqueId,
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                // No availability set
+                availability: undefined,
+                prices: [],
+              },
+            ],
+          },
+        ],
       };
 
-      // Add an introductory offer to the subscription
       const desiredState: AppStoreModel = {
         ...mockCurrentState,
         subscriptionGroups: [
           {
-            ...createdGroup!,
+            referenceName: uniqueId,
+            localizations: [
+              {
+                locale: "en-US",
+                name: `Group ${uniqueId}`,
+              },
+            ],
             subscriptions: [
               {
-                ...createdGroup!.subscriptions[0],
+                productId: uniqueId,
+                referenceName: uniqueId,
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                // No availability set
+                availability: undefined,
+                prices: [],
                 introductoryOffers: [
                   {
                     type: "FREE_TRIAL",
@@ -121,8 +136,6 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
         ],
       };
 
-      const actions = diffSubscriptionGroups(currentState, desiredState);
-
       // The diff service should catch this before we even try to apply
       expect(() => {
         diffSubscriptionGroups(currentState, desiredState);
@@ -133,7 +146,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       );
     });
 
-    it("should create introductory offer when subscription has no pricing", async () => {
+    it("should fail to create introductory offer when subscription has no pricing (Apple restriction)", async () => {
       const uniqueId = generateTestIdentifier();
 
       // Create a subscription group with a subscription that has no pricing
@@ -185,67 +198,69 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
         ],
       };
 
-      const actions = diffSubscriptionGroups(currentState, desiredState);
-      await apply(actions, currentState, desiredState);
-      await waitForApiProcessing();
-
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTRO_TEST_${uniqueId}`
-      );
-      const updatedSubscription = updatedGroup?.subscriptions?.[0];
-
-      expect(updatedSubscription?.introductoryOffers).toBeDefined();
-      expect(updatedSubscription?.introductoryOffers).toHaveLength(1);
-      expect(updatedSubscription?.introductoryOffers?.[0]?.type).toBe(
-        "PAY_AS_YOU_GO"
-      );
-
-      // Type assertion to access numberOfPeriods property for PAY_AS_YOU_GO offers
-      const payAsYouGoOffer = updatedSubscription?.introductoryOffers?.[0];
-      if (payAsYouGoOffer?.type === "PAY_AS_YOU_GO") {
-        expect(payAsYouGoOffer.numberOfPeriods).toBe(1);
-        expect(payAsYouGoOffer.prices).toHaveLength(2);
-      } else {
-        throw new Error("Expected PAY_AS_YOU_GO offer type");
-      }
+      // This should fail because Apple requires both availability AND pricing before introductory offers can be created
+      expect(() => {
+        diffSubscriptionGroups(currentState, desiredState);
+      }).toThrow();
 
       logger.info(
-        `   ✅ Created introductory offer when subscription has no pricing: ${uniqueId}`
+        `   ✅ Correctly failed to create introductory offer when subscription has no pricing (Apple restriction enforced): ${uniqueId}`
       );
     });
 
     it("should fail to create introductory offer when subscription has neither availability nor pricing (Apple restriction)", async () => {
       const uniqueId = generateTestIdentifier();
 
-      // Create a subscription group with a subscription that has neither availability nor pricing
-      const createdGroup = await createMinimalSubscriptionGroup(uniqueId, {
-        subscriptions: [
-          {
-            productId: uniqueId,
-            referenceName: uniqueId,
-            groupLevel: 1,
-            subscriptionPeriod: "ONE_MONTH",
-            familySharable: false,
-            // No availability or pricing set
-          },
-        ],
-      });
-
-      // Create current state that includes the created subscription group
+      // Test the validation logic directly by calling diffSubscriptionGroups
+      // with a desired state that has introductory offers but neither availability nor pricing
       const currentState: AppStoreModel = {
         ...mockCurrentState,
-        subscriptionGroups: [createdGroup!],
+        subscriptionGroups: [
+          {
+            referenceName: uniqueId,
+            localizations: [
+              {
+                locale: "en-US",
+                name: `Group ${uniqueId}`,
+              },
+            ],
+            subscriptions: [
+              {
+                productId: uniqueId,
+                referenceName: uniqueId,
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                // No availability or pricing set
+                availability: undefined,
+                prices: [],
+              },
+            ],
+          },
+        ],
       };
 
-      // Add an introductory offer to the subscription
       const desiredState: AppStoreModel = {
         ...mockCurrentState,
         subscriptionGroups: [
           {
-            ...createdGroup!,
+            referenceName: uniqueId,
+            localizations: [
+              {
+                locale: "en-US",
+                name: `Group ${uniqueId}`,
+              },
+            ],
             subscriptions: [
               {
-                ...createdGroup!.subscriptions[0],
+                productId: uniqueId,
+                referenceName: uniqueId,
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                // No availability or pricing set
+                availability: undefined,
+                prices: [],
                 introductoryOffers: [
                   {
                     type: "PAY_UP_FRONT",
@@ -262,8 +277,6 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
         ],
       };
 
-      const actions = diffSubscriptionGroups(currentState, desiredState);
-
       // The diff service should catch this before we even try to apply
       expect(() => {
         diffSubscriptionGroups(currentState, desiredState);
@@ -279,7 +292,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
     it("should create introductory offer with pricing for territories not in subscription availability", async () => {
       const uniqueId = generateTestIdentifier();
 
-      // Create a subscription group with a subscription that has limited availability
+      // Create a subscription group with a subscription that has limited availability but includes pricing
       const createdGroup = await createMinimalSubscriptionGroup(uniqueId, {
         subscriptions: [
           {
@@ -292,7 +305,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
               availableInNewTerritories: false,
               availableTerritories: ["USA"], // Only available in USA
             },
-            // No pricing set
+            prices: [{ price: "4.99", territory: "USA" }],
           },
         ],
       });
@@ -333,9 +346,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTRO_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(updatedSubscription?.introductoryOffers).toBeDefined();
@@ -421,9 +432,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTRO_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(updatedSubscription?.introductoryOffers).toBeDefined();
@@ -507,9 +516,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTRO_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       expect(updatedSubscription?.introductoryOffers).toBeDefined();
@@ -552,11 +559,16 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
             groupLevel: 1,
             subscriptionPeriod: "ONE_MONTH",
             familySharable: false,
+            availability: {
+              availableInNewTerritories: false,
+              availableTerritories: ["USA"],
+            },
+            prices: [{ price: "4.99", territory: "USA" }],
             introductoryOffers: [
               {
                 type: "FREE_TRIAL",
                 duration: "ONE_WEEK",
-                availableTerritories: ["USA", "GBR"],
+                availableTerritories: ["USA"],
               },
             ],
           },
@@ -589,9 +601,7 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       await apply(actions, currentState, desiredState);
       await waitForApiProcessing();
 
-      const updatedGroup = await verifySubscriptionGroupExists(
-        `INTRO_TEST_${uniqueId}`
-      );
+      const updatedGroup = await verifySubscriptionGroupExists(uniqueId);
       const updatedSubscription = updatedGroup?.subscriptions?.[0];
 
       // Verify the offer was deleted
@@ -599,6 +609,94 @@ describe("Apply Service Introductory Offer Integration Tests", () => {
       expect(updatedSubscription?.introductoryOffers).toHaveLength(0);
 
       logger.info(`   ✅ Successfully deleted introductory offer: ${uniqueId}`);
+    });
+  });
+
+  describe("Creating New Subscription with Introductory Offer", () => {
+    it("should create subscription group with subscription and introductory offer from scratch", async () => {
+      const uniqueId = generateTestIdentifier();
+
+      // Current state has no subscription groups
+      const currentState: AppStoreModel = {
+        ...mockCurrentState,
+        subscriptionGroups: [],
+      };
+
+      // Desired state has a new subscription group with subscription and introductory offer
+      const desiredState: AppStoreModel = {
+        ...mockCurrentState,
+        subscriptionGroups: [
+          {
+            referenceName: uniqueId,
+            localizations: [
+              {
+                locale: "en-US",
+                name: `Group ${uniqueId}`,
+              },
+            ],
+            subscriptions: [
+              {
+                productId: uniqueId,
+                referenceName: uniqueId,
+                groupLevel: 1,
+                subscriptionPeriod: "ONE_MONTH",
+                familySharable: false,
+                availability: {
+                  availableInNewTerritories: false,
+                  availableTerritories: ["USA"],
+                },
+                prices: [{ price: "4.99", territory: "USA" }],
+                introductoryOffers: [
+                  {
+                    type: "FREE_TRIAL",
+                    duration: "ONE_WEEK",
+                    availableTerritories: ["USA"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const actions = diffSubscriptionGroups(currentState, desiredState);
+      await apply(actions, currentState, desiredState);
+      await waitForApiProcessing();
+
+      const createdGroup = await verifySubscriptionGroupExists(uniqueId);
+      const createdSubscription = createdGroup?.subscriptions?.[0];
+
+      // Verify the subscription group was created
+      expect(createdGroup).toBeDefined();
+      expect(createdGroup?.referenceName).toBe(uniqueId);
+
+      // Verify the subscription was created
+      expect(createdSubscription).toBeDefined();
+      expect(createdSubscription?.productId).toBe(uniqueId);
+      expect(createdSubscription?.availability?.availableTerritories).toContain(
+        "USA"
+      );
+      expect(createdSubscription?.prices).toHaveLength(1);
+
+      // Verify the introductory offer was created
+      expect(createdSubscription?.introductoryOffers).toBeDefined();
+      expect(createdSubscription?.introductoryOffers).toHaveLength(1);
+      expect(createdSubscription?.introductoryOffers?.[0]?.type).toBe(
+        "FREE_TRIAL"
+      );
+
+      // Type assertion to access duration and availableTerritories properties for FREE_TRIAL offers
+      const freeTrialOffer = createdSubscription?.introductoryOffers?.[0];
+      if (freeTrialOffer?.type === "FREE_TRIAL") {
+        expect(freeTrialOffer.duration).toBe("ONE_WEEK");
+        expect(freeTrialOffer.availableTerritories).toContain("USA");
+      } else {
+        throw new Error("Expected FREE_TRIAL offer type");
+      }
+
+      logger.info(
+        `   ✅ Successfully created subscription group with subscription and introductory offer from scratch: ${uniqueId}`
+      );
     });
   });
 

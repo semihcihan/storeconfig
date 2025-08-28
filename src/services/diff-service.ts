@@ -21,6 +21,7 @@ import { AnyAction, Plan } from "../models/diff-plan";
 import {
   validateIntroductoryOffers,
   getIntroductoryOfferGroupingKey,
+  validateIntroductoryOfferAppleRestrictions,
 } from "../helpers/introductory-offer-validation";
 import { deepEqualUnordered } from "../helpers/validation-helpers";
 
@@ -418,8 +419,16 @@ function diffIntroductoryOffers(
   subscriptionProductId: string,
   subscriptionPeriod: string,
   currentOffers: IntroductoryOffer[],
-  desiredOffers: IntroductoryOffer[]
+  desiredOffers: IntroductoryOffer[],
+  subscription: Subscription
 ): AnyAction[] {
+  // Validate Apple restrictions for introductory offers
+  validateIntroductoryOfferAppleRestrictions(
+    subscriptionProductId,
+    subscription,
+    desiredOffers
+  );
+
   // Validate that there's only one offer per territory per subscription and duration restrictions
   validateIntroductoryOffers(
     subscriptionProductId,
@@ -562,7 +571,8 @@ export function diffSubscriptions(
           productId,
           desiredSub.subscriptionPeriod,
           [],
-          desiredSub.introductoryOffers || []
+          desiredSub.introductoryOffers || [],
+          desiredSub
         )
       );
       actions.push(
@@ -648,7 +658,8 @@ export function diffSubscriptions(
           productId,
           currentSub.subscriptionPeriod,
           currentSub.introductoryOffers || [],
-          desiredSub.introductoryOffers || []
+          desiredSub.introductoryOffers || [],
+          currentSub
         )
       );
       actions.push(
