@@ -45,7 +45,7 @@ async function createAppAvailabilityForApp(
 
   for (let i = 0; i < territoryCodes.length; i++) {
     const territoryCode = territoryCodes[i];
-    const territoryAvailabilityId = `temp-territory-availability-${i}`;
+    const territoryAvailabilityId = `\${territory-availability-${territoryCode}-${i}}`;
     const available = availableTerritories.includes(territoryCode);
 
     territoryAvailabilityData.push({
