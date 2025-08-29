@@ -8,7 +8,10 @@ import {
   getIncludedResource,
   type IncludedByIdMap,
 } from "../../helpers/relationship-helpers";
-import { decodeTerritoryFromId } from "../../helpers/id-encoding-helpers";
+import {
+  decodeTerritoryFromId,
+  validateTerritoryCode,
+} from "../../helpers/id-encoding-helpers";
 import { isNotFoundError } from "../../helpers/error-handling-helpers";
 import {
   fetchBaseTerritory,
@@ -36,10 +39,83 @@ type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 export function processPriceResponse(
   response: InAppPurchasePricesResponse
 ): z.infer<typeof PriceSchema>[] {
+  logger.debug("Processing IAP price response:", {
+    hasResponse: !!response,
+    hasData: !!response?.data,
+    dataLength: response?.data?.length || 0,
+    hasIncluded: !!response?.included,
+    includedLength: response?.included?.length || 0,
+    includedTypes: response?.included?.map((item) => item.type) || [],
+  });
+
   if (!response || !response.included) {
+    logger.debug("No response or included data, returning empty array");
     return [];
   }
 
+  // Try the new relationship-based approach first
+  if (response.data && response.data.length > 0) {
+    logger.debug("Attempting relationship-based price processing");
+    const includedById = createIncludedByIdMap(response.included);
+
+    const prices: z.infer<typeof PriceSchema>[] = [];
+    for (const priceData of response.data) {
+      // Only log detailed info for the first few items to avoid spam
+      if (prices.length < 3) {
+        logger.debug("Processing price data:", {
+          priceDataId: priceData.id,
+          priceDataType: priceData.type,
+          hasRelationships: !!priceData.relationships,
+          relationships: priceData.relationships,
+          hasAttributes: !!priceData.attributes,
+          attributes: priceData.attributes,
+        });
+      }
+
+      const pricePointRel =
+        priceData.relationships?.inAppPurchasePricePoint?.data;
+      const territoryRel = priceData.relationships?.territory?.data;
+
+      if (pricePointRel && territoryRel) {
+        logger.debug(
+          "Found both price point and territory relationships, using relationship-based approach"
+        );
+
+        const pricePoint = getIncludedResource<
+          components["schemas"]["InAppPurchasePricePoint"]
+        >(includedById, pricePointRel.type, pricePointRel.id);
+        const territory = getIncludedResource<
+          components["schemas"]["Territory"]
+        >(includedById, territoryRel.type, territoryRel.id);
+
+        if (pricePoint && pricePoint.attributes && territory) {
+          const territoryCode = validateTerritoryCode(territory.id);
+          if (territoryCode && pricePoint.attributes.customerPrice) {
+            const priceEntry = {
+              price: pricePoint.attributes.customerPrice,
+              territory: territoryCode,
+            };
+            // logger.debug("Created price entry using relationships:", priceEntry);
+            prices.push(priceEntry);
+          }
+        }
+      } else {
+        logger.debug(
+          "Missing price point or territory relationship, skipping relationship-based approach"
+        );
+      }
+    }
+
+    if (prices.length > 0) {
+      logger.debug(
+        `Successfully processed ${prices.length} prices using relationship-based approach`
+      );
+      return prices;
+    }
+  }
+
+  // Fall back to the old ID decoding approach
+  logger.debug("Falling back to ID decoding approach");
   return (response.included as any[])
     .filter(
       (item): item is components["schemas"]["InAppPurchasePricePoint"] =>

@@ -86,11 +86,19 @@ export const API_FIELD_CONFIGS = {
   },
   manualPrices: {
     include: ["territory", "inAppPurchasePricePoint"],
-    fieldsInAppPurchasePrices: ["startDate", "territory"],
+    fieldsInAppPurchasePrices: [
+      "startDate",
+      "territory",
+      "inAppPurchasePricePoint",
+    ],
   },
   automaticPrices: {
     include: ["territory", "inAppPurchasePricePoint"],
-    fieldsInAppPurchasePrices: ["startDate", "territory"],
+    fieldsInAppPurchasePrices: [
+      "startDate",
+      "territory",
+      "inAppPurchasePricePoint",
+    ],
   },
   appAvailability: {
     fieldsAppAvailabilities: ["availableInNewTerritories"],
@@ -100,7 +108,13 @@ export const API_FIELD_CONFIGS = {
   },
   appPrices: {
     include: ["territory", "appPricePoint"],
-    fieldsAppPrices: ["startDate", "endDate", "manual", "territory"],
+    fieldsAppPrices: [
+      "startDate",
+      "endDate",
+      "manual",
+      "territory",
+      "appPricePoint",
+    ],
   },
   territories: {
     fieldsTerritories: ["currency"],

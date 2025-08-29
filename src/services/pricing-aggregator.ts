@@ -2,34 +2,40 @@ import { logger } from "../utils/logger";
 import { PriceScheduleSchema } from "../models/app-store";
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
-import { decodeTerritoryFromId } from "../helpers/id-encoding-helpers";
 
 import { getMostRecentActivePrice } from "../helpers/date-helpers";
+
 import type { components } from "../generated/app-store-connect-api";
 import {
   fetchAppManualPrices,
   fetchAppAutomaticPrices,
   fetchAppPriceScheduleBaseTerritory,
+  getAppPriceSchedule,
 } from "../domains/pricing/api-client";
 
 // Process app price response
 export function processAppPriceResponse(
   response: components["schemas"]["AppPricesV2Response"]
 ): z.infer<typeof PriceScheduleSchema>["prices"] {
-  if (!response || !response.included) {
+  if (!response?.data || !response?.included) {
     return [];
   }
 
-  logger.debug("Processing app price response:", response);
+  const territoryPriceMap = buildTerritoryPriceMap(response);
+  return buildFinalPriceResult(territoryPriceMap);
+}
 
-  // Use the new date-aware processing
-  // Handle cases where there's no data or included items
-  if (!response.data || response.data.length === 0 || !response.included) {
-    logger.debug("No data or included items found in response");
-    return [];
-  }
-
-  // Group prices by territory to handle multiple price entries per territory
+function buildTerritoryPriceMap(
+  response: components["schemas"]["AppPricesV2Response"]
+): Map<
+  string,
+  Array<{
+    price: string;
+    territory: string;
+    startDate?: string;
+    endDate?: string;
+  }>
+> {
   const territoryPriceMap = new Map<
     string,
     Array<{
@@ -40,75 +46,85 @@ export function processAppPriceResponse(
     }>
   >();
 
-  // Process the data array (AppPriceV2 objects) to get date information
-  response.data.forEach((appPrice) => {
-    if (appPrice.type !== "appPrices") return;
+  for (const appPrice of response.data) {
+    if (appPrice.type !== "appPrices") continue;
 
-    // Get territory ID from relationships
-    const territoryRelationshipId = appPrice.relationships?.territory?.data?.id;
-    if (!territoryRelationshipId) return;
+    const priceEntry = extractPriceEntry(appPrice, response.included);
+    if (!priceEntry) continue;
 
-    // Find the territory object in the included array
-    const territory = response.included?.find(
+    if (!territoryPriceMap.has(priceEntry.territory)) {
+      territoryPriceMap.set(priceEntry.territory, []);
+    }
+    territoryPriceMap.get(priceEntry.territory)!.push(priceEntry);
+  }
+
+  return territoryPriceMap;
+}
+
+function extractPriceEntry(
+  appPrice: components["schemas"]["AppPriceV2"],
+  included: components["schemas"]["AppPricesV2Response"]["included"]
+): {
+  price: string;
+  territory: string;
+  startDate?: string;
+  endDate?: string;
+} | null {
+  const territory = findTerritory(appPrice, included);
+  if (!territory) return null;
+
+  const pricePoint = findPricePoint(appPrice, included);
+  if (!pricePoint?.attributes?.customerPrice) return null;
+
+  return {
+    price: pricePoint.attributes.customerPrice,
+    territory: territory.id,
+    startDate: appPrice.attributes?.startDate,
+    endDate: appPrice.attributes?.endDate,
+  };
+}
+
+function findTerritory(
+  appPrice: components["schemas"]["AppPriceV2"],
+  included: components["schemas"]["AppPricesV2Response"]["included"]
+): components["schemas"]["Territory"] | null {
+  const territoryId = appPrice.relationships?.territory?.data?.id;
+  if (!territoryId) return null;
+
+  return (
+    included?.find(
       (item): item is components["schemas"]["Territory"] =>
-        item.type === "territories" && item.id === territoryRelationshipId
-    );
-    if (!territory) return;
+        item.type === "territories" && item.id === territoryId
+    ) || null
+  );
+}
 
-    // Try to get the price point ID from relationships first
-    let pricePointRelationshipId =
-      appPrice.relationships?.appPricePoint?.data?.id;
+function findPricePoint(
+  appPrice: components["schemas"]["AppPriceV2"],
+  included: components["schemas"]["AppPricesV2Response"]["included"]
+): components["schemas"]["AppPricePointV3"] | null {
+  const pricePointId = appPrice.relationships?.appPricePoint?.data?.id;
+  if (!pricePointId) return null;
 
-    // If appPricePoint relationship is missing, try to find the price point by matching territory
-    if (!pricePointRelationshipId) {
-      logger.debug(
-        `No price point relationship found for appPrice ${appPrice.id}, attempting to match by territory`
-      );
-
-      // Find price points that belong to the same territory by decoding their IDs
-      const matchingPricePoint = response.included?.find(
-        (item): item is components["schemas"]["AppPricePointV3"] => {
-          if (item.type !== "appPricePoints") return false;
-
-          try {
-            const pricePointTerritory = decodeTerritoryFromId(item.id);
-            return pricePointTerritory === territoryRelationshipId;
-          } catch {
-            // If decoding fails, skip this price point
-            return false;
-          }
-        }
-      );
-
-      if (matchingPricePoint) {
-        pricePointRelationshipId = matchingPricePoint.id;
-      }
-    }
-
-    if (!pricePointRelationshipId) return;
-
-    // Find the corresponding price point in the included array
-    const pricePoint = response.included?.find(
+  return (
+    included?.find(
       (item): item is components["schemas"]["AppPricePointV3"] =>
-        item.type === "appPricePoints" && item.id === pricePointRelationshipId
-    );
+        item.type === "appPricePoints" && item.id === pricePointId
+    ) || null
+  );
+}
 
-    if (!pricePoint?.attributes?.customerPrice) return;
-
-    const priceEntry = {
-      price: pricePoint.attributes.customerPrice,
-      territory: territory.id,
-      startDate: appPrice.attributes?.startDate,
-      endDate: appPrice.attributes?.endDate,
-    };
-
-    if (!territoryPriceMap.has(territory.id)) {
-      territoryPriceMap.set(territory.id, []);
-    }
-    territoryPriceMap.get(territory.id)!.push(priceEntry);
-  });
-
-  // For each territory, get the most recent active price
+function buildFinalPriceResult(
+  territoryPriceMap: Map<
+    string,
+    Array<{
+      price: string;
+      territory: string;
+      startDate?: string;
+      endDate?: string;
+    }>
+  >
+): z.infer<typeof PriceScheduleSchema>["prices"] {
   const result: z.infer<typeof PriceScheduleSchema>["prices"] = [];
 
   for (const [territory, prices] of territoryPriceMap) {
@@ -123,9 +139,6 @@ export function processAppPriceResponse(
     }
   }
 
-  logger.debug(
-    `Processed ${result.length} active prices from ${territoryPriceMap.size} territories with date filtering`
-  );
   return result;
 }
 
@@ -134,9 +147,24 @@ export async function mapAppPricing(
   appId: string
 ): Promise<z.infer<typeof PriceScheduleSchema> | undefined> {
   try {
-    // First, try to get the base territory from the price schedule
+    // First, get the app price schedule
+    const priceScheduleResponse = await getAppPriceSchedule(appId);
+
+    if (!priceScheduleResponse?.data) {
+      // No price schedule found - this means pricing was not created yet
+      logger.debug(`No app price schedule found for app ${appId}`);
+      return undefined;
+    }
+
+    const priceScheduleId = priceScheduleResponse.data.id;
+    if (!priceScheduleId) {
+      logger.warn(`Invalid price schedule ID:`, priceScheduleResponse);
+      return undefined;
+    }
+
+    // Get the base territory from the price schedule
     const baseTerritoryResponse = await fetchAppPriceScheduleBaseTerritory(
-      appId
+      priceScheduleId
     );
 
     if (!baseTerritoryResponse.data) {
@@ -151,8 +179,8 @@ export async function mapAppPricing(
     }
 
     const [manualPricesResponse, automaticPricesResponse] = await Promise.all([
-      fetchAppManualPrices(appId),
-      fetchAppAutomaticPrices(appId, baseTerritory),
+      fetchAppManualPrices(priceScheduleId),
+      fetchAppAutomaticPrices(priceScheduleId, baseTerritory),
     ]);
 
     const manualPrices = processAppPriceResponse(manualPricesResponse);
