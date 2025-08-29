@@ -1,10 +1,8 @@
 ## IDEAS TODOs
 
-- test pricing
-
-  - try on new app
-
 - start end dates, scheduling (must have at least on fetch we should correctly fetch current pricing info and ignore future ones)
+  start date beginning of the day
+  end date beginning of the day too (ending of the previous day), so it won't be in effect at the displayed end date
 
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
@@ -36,8 +34,6 @@
   at async Object.handler (/Users/semihcihan/development/workspace/developer-tool/src/commands/apply.ts:120:7)
 
 - use builtin mw instead of custom
-
-- retrylarda warn etme, o detayi gizlemis ol debug logla. zaten 3. de calismazsa patlicak
 
 - improve logging on showAction by gathering
 

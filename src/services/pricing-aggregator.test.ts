@@ -80,25 +80,77 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "encoded-usa-id",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
+          },
+          {
+            type: "appPrices",
+            id: "encoded-gbr-id",
+            attributes: { startDate: "2023-01-01", endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-gbr" },
+              },
+              territory: { data: { type: "territories", id: "GBR" } },
+            },
+          },
+        ],
         included: [
           {
+            type: "territories",
+            id: "USA",
+            attributes: { currency: "USD" },
+          },
+          {
+            type: "territories",
+            id: "GBR",
+            attributes: { currency: "GBP" },
+          },
+          {
             type: "appPricePoints",
-            id: "encoded-usa-id",
+            id: "price-point-usa",
             attributes: { customerPrice: "9.99" },
           },
           {
             type: "appPricePoints",
-            id: "encoded-gbr-id",
+            id: "price-point-gbr",
             attributes: { customerPrice: "7.99" },
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "encoded-can-id",
+            attributes: { startDate: "2023-01-01", endDate: "2025-12-31" },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-can" },
+              },
+              territory: { data: { type: "territories", id: "CAN" } },
+            },
+          },
+        ],
         included: [
           {
+            type: "territories",
+            id: "CAN",
+            attributes: { currency: "CAD" },
+          },
+          {
             type: "appPricePoints",
-            id: "encoded-can-id",
+            id: "price-point-can",
             attributes: { customerPrice: "12.99" },
           },
         ],
@@ -111,10 +163,6 @@ describe("pricing-aggregator", () => {
       MockFetchAppAutomaticPrices.mockResolvedValueOnce(
         automaticPricesResponse
       );
-
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA")
-        .mockReturnValueOnce("GBR")
-        .mockReturnValueOnce("CAN");
 
       const result = await mapAppPricing("test-app-id");
 
@@ -144,21 +192,35 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "valid-price-usa",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
+          },
+        ],
         included: [
           {
-            type: "appPricePoints",
-            id: "encoded-usa-id",
-            attributes: { customerPrice: "9.99" },
+            type: "territories",
+            id: "USA",
+            attributes: { currency: "USD" },
           },
           {
             type: "appPricePoints",
-            id: "encoded-invalid-id",
-            attributes: { customerPrice: "7.99" },
+            id: "price-point-usa",
+            attributes: { customerPrice: "9.99" },
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -169,10 +231,6 @@ describe("pricing-aggregator", () => {
       MockFetchAppAutomaticPrices.mockResolvedValueOnce(
         automaticPricesResponse
       );
-
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA").mockReturnValueOnce(
-        null
-      ); // Invalid territory
 
       const result = await mapAppPricing("test-app-id");
 
@@ -214,10 +272,12 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [],
         included: [],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -244,26 +304,56 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
-        included: [
+        data: [
           {
-            type: "appPricePoints",
-            id: "encoded-usa-id",
-            attributes: { customerPrice: "9.99" },
+            type: "appPrices",
+            id: "price-usa",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
           },
+          {
+            type: "appPrices",
+            id: "price-gbr",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-gbr" },
+              },
+              territory: { data: { type: "territories", id: "GBR" } },
+            },
+          },
+        ],
+        included: [
           {
             type: "territories",
             id: "USA",
-            attributes: { name: "United States" },
+            attributes: { currency: "USD" },
+          },
+          {
+            type: "territories",
+            id: "GBR",
+            attributes: { currency: "GBP" },
           },
           {
             type: "appPricePoints",
-            id: "encoded-gbr-id",
+            id: "price-point-usa",
+            attributes: { customerPrice: "9.99" },
+          },
+          {
+            type: "appPricePoints",
+            id: "price-point-gbr",
             attributes: { customerPrice: "7.99" },
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -273,10 +363,6 @@ describe("pricing-aggregator", () => {
       MockFetchAppManualPrices.mockResolvedValueOnce(manualPricesResponse);
       MockFetchAppAutomaticPrices.mockResolvedValueOnce(
         automaticPricesResponse
-      );
-
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA").mockReturnValueOnce(
-        "GBR"
       );
 
       const result = await mapAppPricing("test-app-id");
@@ -297,21 +383,56 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "price-usa",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
+          },
+          {
+            type: "appPrices",
+            id: "price-gbr",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-gbr" },
+              },
+              territory: { data: { type: "territories", id: "GBR" } },
+            },
+          },
+        ],
         included: [
           {
+            type: "territories",
+            id: "USA",
+            attributes: { currency: "USD" },
+          },
+          {
+            type: "territories",
+            id: "GBR",
+            attributes: { currency: "GBP" },
+          },
+          {
             type: "appPricePoints",
-            id: "encoded-usa-id",
+            id: "price-point-usa",
             attributes: {}, // No customerPrice
           },
           {
             type: "appPricePoints",
-            id: "encoded-gbr-id",
+            id: "price-point-gbr",
             attributes: {}, // No customerPrice
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -323,18 +444,11 @@ describe("pricing-aggregator", () => {
         automaticPricesResponse
       );
 
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA").mockReturnValueOnce(
-        "GBR"
-      );
-
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toEqual({
         baseTerritory: "USA",
-        prices: [
-          { price: "", territory: "USA" },
-          { price: "", territory: "GBR" },
-        ],
+        prices: [],
       });
     });
 
@@ -385,6 +499,7 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -408,6 +523,7 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -433,16 +549,35 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "price-usa",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
+          },
+        ],
         included: [
           {
+            type: "territories",
+            id: "USA",
+            attributes: { currency: "USD" },
+          },
+          {
             type: "appPricePoints",
-            id: "encoded-usa-id",
+            id: "price-point-usa",
             attributes: { customerPrice: null },
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -454,13 +589,11 @@ describe("pricing-aggregator", () => {
         automaticPricesResponse
       );
 
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA");
-
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toEqual({
         baseTerritory: "USA",
-        prices: [{ price: "", territory: "USA" }],
+        prices: [],
       });
     });
 
@@ -471,16 +604,35 @@ describe("pricing-aggregator", () => {
       };
 
       const manualPricesResponse = {
+        data: [
+          {
+            type: "appPrices",
+            id: "price-usa",
+            attributes: { startDate: undefined, endDate: undefined },
+            relationships: {
+              appPricePoint: {
+                data: { type: "appPricePoints", id: "price-point-usa" },
+              },
+              territory: { data: { type: "territories", id: "USA" } },
+            },
+          },
+        ],
         included: [
           {
+            type: "territories",
+            id: "USA",
+            attributes: { currency: "USD" },
+          },
+          {
             type: "appPricePoints",
-            id: "encoded-usa-id",
+            id: "price-point-usa",
             attributes: { customerPrice: undefined },
           },
         ],
       };
 
       const automaticPricesResponse = {
+        data: [],
         included: [],
       };
 
@@ -492,13 +644,11 @@ describe("pricing-aggregator", () => {
         automaticPricesResponse
       );
 
-      MockDecodeTerritoryFromId.mockReturnValueOnce("USA");
-
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toEqual({
         baseTerritory: "USA",
-        prices: [{ price: "", territory: "USA" }],
+        prices: [],
       });
     });
   });

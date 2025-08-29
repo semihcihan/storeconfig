@@ -88,7 +88,7 @@ async function waitForRateLimit(
   // Add jitter: random value between 0-10% of base delay
   const waitTime = calculateJitteredDelay(baseWaitTime);
 
-  logger.warn(
+  logger.debug(
     `Rate limit exceeded for ${method} ${endpoint}, waiting ${(
       waitTime / 1000
     ).toFixed(2)}s before retry (attempt ${attempt})`
@@ -114,7 +114,7 @@ async function waitForOtherErrors(
   // Add jitter: random value between 0-10% of base delay
   const delay = calculateJitteredDelay(baseDelay);
 
-  logger.warn(
+  logger.debug(
     `${method} ${endpoint} failed on attempt ${attempt}/${
       config.maxAttempts
     }. Retrying in ${Math.round(delay)}ms. Error:`,
@@ -184,7 +184,7 @@ function createRetryWrapper<T extends Record<string, any>>(
             continue;
           } else {
             // Non-retryable error in response - return the response with error
-            logger.warn(
+            logger.debug(
               `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
               response.error
             );
@@ -217,7 +217,7 @@ function createRetryWrapper<T extends Record<string, any>>(
 
         // Check if we should retry this error
         if (!config.shouldRetry(error)) {
-          logger.warn(
+          logger.debug(
             `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
             error
           );
