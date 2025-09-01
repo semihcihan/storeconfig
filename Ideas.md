@@ -1,7 +1,5 @@
 ## IDEAS TODOs
 
-- just worldwide not working
-
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
 

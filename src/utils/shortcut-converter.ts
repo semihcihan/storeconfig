@@ -7,6 +7,10 @@ function isWorldwideTerritory(territory: string): boolean {
   return territory.toLowerCase() === WORLDWIDE_TERRITORY_CODE.toLowerCase();
 }
 
+function isAllTerritories(territories: string[]): boolean {
+  return deepEqualUnordered(territories, territoryCodes);
+}
+
 export function useShortcuts(data: any): any {
   if (!data || typeof data !== "object") {
     return data;
@@ -14,26 +18,26 @@ export function useShortcuts(data: any): any {
 
   const converted = { ...data };
 
-  // Handle availableTerritories arrays
-  if (Array.isArray(converted.availableTerritories)) {
-    if (deepEqualUnordered(converted.availableTerritories, territoryCodes)) {
-      converted.availableTerritories = [WORLDWIDE_TERRITORY_CODE];
+  // Handle availableTerritories - can be array or string
+  if (converted.availableTerritories) {
+    if (Array.isArray(converted.availableTerritories)) {
+      if (isAllTerritories(converted.availableTerritories)) {
+        converted.availableTerritories = WORLDWIDE_TERRITORY_CODE;
+      }
     }
+    // If it's already a string (worldwide), leave it as is
   }
 
   // Handle availability objects
   if (converted.availability && typeof converted.availability === "object") {
-    if (Array.isArray(converted.availability.availableTerritories)) {
-      if (
-        deepEqualUnordered(
-          converted.availability.availableTerritories,
-          territoryCodes
-        )
-      ) {
-        converted.availability.availableTerritories = [
-          WORLDWIDE_TERRITORY_CODE,
-        ];
+    if (converted.availability.availableTerritories) {
+      if (Array.isArray(converted.availability.availableTerritories)) {
+        if (isAllTerritories(converted.availability.availableTerritories)) {
+          converted.availability.availableTerritories =
+            WORLDWIDE_TERRITORY_CODE;
+        }
       }
+      // If it's already a string (worldwide), leave it as is
     }
   }
 
@@ -45,16 +49,14 @@ export function useShortcuts(data: any): any {
 
         if (
           offer.type === "FREE_TRIAL" &&
-          Array.isArray(convertedOffer.availableTerritories)
+          convertedOffer.availableTerritories
         ) {
-          if (
-            deepEqualUnordered(
-              convertedOffer.availableTerritories,
-              territoryCodes
-            )
-          ) {
-            convertedOffer.availableTerritories = [WORLDWIDE_TERRITORY_CODE];
+          if (Array.isArray(convertedOffer.availableTerritories)) {
+            if (isAllTerritories(convertedOffer.availableTerritories)) {
+              convertedOffer.availableTerritories = WORLDWIDE_TERRITORY_CODE;
+            }
           }
+          // If it's already a string (worldwide), leave it as is
         }
         // PAY_AS_YOU_GO and PAY_UP_FRONT offers no longer have availableTerritories
         // so they don't participate in shortcut conversion
@@ -100,26 +102,28 @@ export function removeShortcuts(data: any): any {
 
   const converted = { ...data };
 
-  // Handle availableTerritories arrays
-  if (Array.isArray(converted.availableTerritories)) {
+  // Handle availableTerritories - can be array or string
+  if (converted.availableTerritories) {
     if (
-      converted.availableTerritories.length === 1 &&
-      isWorldwideTerritory(converted.availableTerritories[0])
+      typeof converted.availableTerritories === "string" &&
+      isWorldwideTerritory(converted.availableTerritories)
     ) {
       // Convert WW back to all territories for display
       converted.availableTerritories = [...territoryCodes];
     }
+    // If it's already an array, leave it as is
   }
 
   // Handle availability objects
   if (converted.availability && typeof converted.availability === "object") {
-    if (Array.isArray(converted.availability.availableTerritories)) {
+    if (converted.availability.availableTerritories) {
       if (
-        converted.availability.availableTerritories.length === 1 &&
-        isWorldwideTerritory(converted.availability.availableTerritories[0])
+        typeof converted.availability.availableTerritories === "string" &&
+        isWorldwideTerritory(converted.availability.availableTerritories)
       ) {
         converted.availability.availableTerritories = [...territoryCodes];
       }
+      // If it's already an array, leave it as is
     }
   }
 
@@ -131,14 +135,15 @@ export function removeShortcuts(data: any): any {
 
         if (
           offer.type === "FREE_TRIAL" &&
-          Array.isArray(convertedOffer.availableTerritories)
+          convertedOffer.availableTerritories
         ) {
           if (
-            convertedOffer.availableTerritories.length === 1 &&
-            isWorldwideTerritory(convertedOffer.availableTerritories[0])
+            typeof convertedOffer.availableTerritories === "string" &&
+            isWorldwideTerritory(convertedOffer.availableTerritories)
           ) {
             convertedOffer.availableTerritories = [...territoryCodes];
           }
+          // If it's already an array, leave it as is
         }
         // PAY_AS_YOU_GO and PAY_UP_FRONT offers no longer have availableTerritories
         // so they don't participate in shortcut conversion

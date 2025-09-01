@@ -28,7 +28,7 @@ describe("shortcut-converter", () => {
 
       const result = useShortcuts(input);
 
-      expect(result.availableTerritories).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
     });
 
     it("should not convert partial territories to WorldWide", () => {
@@ -48,7 +48,7 @@ describe("shortcut-converter", () => {
 
       const result = useShortcuts(input);
 
-      expect(result.availableTerritories).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
     });
 
     it("should handle introductoryOffers with all territories", () => {
@@ -64,9 +64,9 @@ describe("shortcut-converter", () => {
 
       const result = useShortcuts(input);
 
-      expect(result.introductoryOffers[0].availableTerritories).toEqual([
-        WORLDWIDE_TERRITORY_CODE,
-      ]);
+      expect(result.introductoryOffers[0].availableTerritories).toBe(
+        WORLDWIDE_TERRITORY_CODE
+      );
     });
 
     it("should handle introductoryOffers with partial territories", () => {
@@ -107,9 +107,9 @@ describe("shortcut-converter", () => {
 
       const result = useShortcuts(input);
 
-      expect(
-        result.inAppPurchases[0].availability.availableTerritories
-      ).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      expect(result.inAppPurchases[0].availability.availableTerritories).toBe(
+        WORLDWIDE_TERRITORY_CODE
+      );
     });
 
     it("should handle subscriptionGroups with all territories", () => {
@@ -142,7 +142,7 @@ describe("shortcut-converter", () => {
       expect(
         result.subscriptionGroups[0].subscriptions[0].availability
           .availableTerritories
-      ).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      ).toBe(WORLDWIDE_TERRITORY_CODE);
     });
 
     it("should handle nested structures recursively", () => {
@@ -182,11 +182,11 @@ describe("shortcut-converter", () => {
       expect(
         result.subscriptionGroups[0].subscriptions[0].availability
           .availableTerritories
-      ).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      ).toBe(WORLDWIDE_TERRITORY_CODE);
       expect(
         result.subscriptionGroups[0].subscriptions[0].introductoryOffers[0]
           .availableTerritories
-      ).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      ).toBe(WORLDWIDE_TERRITORY_CODE);
     });
 
     it("should preserve other properties unchanged", () => {
@@ -202,7 +202,7 @@ describe("shortcut-converter", () => {
       expect(result.appId).toBe("123456789");
       expect(result.schemaVersion).toBe("1.0.0");
       expect(result.someOtherProperty).toBe("should remain unchanged");
-      expect(result.availableTerritories).toEqual([WORLDWIDE_TERRITORY_CODE]);
+      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
     });
 
     it("should handle empty arrays", () => {
@@ -219,6 +219,16 @@ describe("shortcut-converter", () => {
       expect(result.introductoryOffers).toEqual([]);
       expect(result.inAppPurchases).toEqual([]);
       expect(result.subscriptionGroups).toEqual([]);
+    });
+
+    it("should preserve existing worldwide string", () => {
+      const input = {
+        availableTerritories: WORLDWIDE_TERRITORY_CODE,
+      };
+
+      const result = useShortcuts(input);
+
+      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
     });
   });
 
@@ -239,7 +249,7 @@ describe("shortcut-converter", () => {
 
     it("should convert WorldWide back to all territories in availableTerritories", () => {
       const input = {
-        availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+        availableTerritories: WORLDWIDE_TERRITORY_CODE,
       };
 
       const result = removeShortcuts(input);
@@ -249,7 +259,7 @@ describe("shortcut-converter", () => {
 
     it("should convert WorldWide case-insensitively", () => {
       const input = {
-        availableTerritories: ["Worldwide"],
+        availableTerritories: "Worldwide",
       };
 
       const result = removeShortcuts(input);
@@ -259,7 +269,7 @@ describe("shortcut-converter", () => {
 
     it("should convert WORLDWIDE case-insensitively", () => {
       const input = {
-        availableTerritories: ["WORLDWIDE"],
+        availableTerritories: "WORLDWIDE",
       };
 
       const result = removeShortcuts(input);
@@ -296,7 +306,7 @@ describe("shortcut-converter", () => {
           {
             type: "FREE_TRIAL",
             duration: "ONE_WEEK",
-            availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+            availableTerritories: WORLDWIDE_TERRITORY_CODE,
           },
         ],
       };
@@ -314,7 +324,7 @@ describe("shortcut-converter", () => {
           {
             type: "FREE_TRIAL",
             duration: "ONE_WEEK",
-            availableTerritories: ["Worldwide"],
+            availableTerritories: "Worldwide",
           },
         ],
       };
@@ -356,7 +366,7 @@ describe("shortcut-converter", () => {
             localizations: [],
             availability: {
               availableInNewTerritories: true,
-              availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+              availableTerritories: WORLDWIDE_TERRITORY_CODE,
             },
           },
         ],
@@ -380,7 +390,7 @@ describe("shortcut-converter", () => {
             localizations: [],
             availability: {
               availableInNewTerritories: true,
-              availableTerritories: ["Worldwide"],
+              availableTerritories: "Worldwide",
             },
           },
         ],
@@ -410,7 +420,7 @@ describe("shortcut-converter", () => {
                 localizations: [],
                 availability: {
                   availableInNewTerritories: true,
-                  availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
                 },
               },
             ],
@@ -443,7 +453,7 @@ describe("shortcut-converter", () => {
                 localizations: [],
                 availability: {
                   availableInNewTerritories: true,
-                  availableTerritories: ["Worldwide"],
+                  availableTerritories: "Worldwide",
                 },
               },
             ],
@@ -476,13 +486,13 @@ describe("shortcut-converter", () => {
                 localizations: [],
                 availability: {
                   availableInNewTerritories: true,
-                  availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
                 },
                 introductoryOffers: [
                   {
                     type: "FREE_TRIAL",
                     duration: "ONE_WEEK",
-                    availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+                    availableTerritories: WORLDWIDE_TERRITORY_CODE,
                   },
                 ],
               },
@@ -507,7 +517,7 @@ describe("shortcut-converter", () => {
       const input = {
         appId: "123456789",
         schemaVersion: "1.0.0",
-        availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+        availableTerritories: WORLDWIDE_TERRITORY_CODE,
         someOtherProperty: "should remain unchanged",
       };
 
@@ -537,7 +547,7 @@ describe("shortcut-converter", () => {
 
     it("should handle mixed WorldWide and non-WorldWide in different locations", () => {
       const input = {
-        availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+        availableTerritories: WORLDWIDE_TERRITORY_CODE,
         inAppPurchases: [
           {
             productId: "test_product",
@@ -566,7 +576,7 @@ describe("shortcut-converter", () => {
                 localizations: [],
                 availability: {
                   availableInNewTerritories: true,
-                  availableTerritories: [WORLDWIDE_TERRITORY_CODE],
+                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
                 },
               },
             ],
