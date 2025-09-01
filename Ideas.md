@@ -1,5 +1,9 @@
 ## IDEAS TODOs
 
+- error: Apply failed Failed to update app store version localization: App Description must be at least 10 characters in length.
+
+App Description must be at least 10 characters in length. and check the length too also
+
 - can't create new version
   warn: PATCH /v1/appStoreVersions/{id} failed with non-retryable error on attempt 1:
   {

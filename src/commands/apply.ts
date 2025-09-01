@@ -51,18 +51,6 @@ const command: CommandModule = {
       demandOption: true,
       type: "string",
     },
-    id: {
-      describe: "The App ID to apply changes to.",
-      demandOption: true,
-      type: "string",
-    },
-    current: {
-      alias: ["c", "current-state"],
-      describe:
-        "Path to the JSON file to use as the current (live) state. If not provided, the current state will be fetched from App Store Connect.",
-      type: "string",
-      hidden: process.env.NODE_ENV === "production",
-    },
     preview: {
       alias: "p",
       describe: "Show what changes would be made without applying them",
@@ -72,8 +60,6 @@ const command: CommandModule = {
   },
   handler: async (argv) => {
     const desiredStateFile = argv.file as string;
-    const currentStateFile = argv.current as string | undefined;
-    const appId = argv.id as string;
     const preview = argv.preview as boolean;
 
     logger.debug(`Processing desired state from ${desiredStateFile}...`);
@@ -85,17 +71,9 @@ const command: CommandModule = {
         "apply"
       );
 
-      let currentState: AppStoreModel;
-
-      if (currentStateFile) {
-        logger.info(`Using ${currentStateFile} as current state.`);
-        currentState = validateAppStoreModel(
-          removeShortcuts(readJsonFile(currentStateFile))
-        );
-      } else {
-        logger.info(`Fetching current state for app ID: ${appId}`);
-        currentState = removeShortcuts(await fetchAppStoreState(appId));
-      }
+      let currentState: AppStoreModel = await fetchAppStoreState(
+        desiredState.appId
+      );
 
       const plan = diff(currentState, desiredState);
       if (plan.length === 0) {
