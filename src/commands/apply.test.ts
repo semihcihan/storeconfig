@@ -53,8 +53,6 @@ import applyCommand from "./apply";
 describe("apply command", () => {
   const mockArgv = {
     file: "desired.json",
-    id: "123456789",
-    current: "current.json" as string | undefined,
     preview: false,
   };
 
@@ -102,20 +100,6 @@ describe("apply command", () => {
       expect(builder.file.type).toBe("string");
     });
 
-    it("should have id parameter with correct configuration", () => {
-      const builder = applyCommand.builder as any;
-      expect(builder.id).toBeDefined();
-      expect(builder.id.demandOption).toBe(true);
-      expect(builder.id.type).toBe("string");
-    });
-
-    it("should have current parameter with correct configuration", () => {
-      const builder = applyCommand.builder as any;
-      expect(builder.current).toBeDefined();
-      expect(builder.current.alias).toEqual(["c", "current-state"]);
-      expect(builder.current.type).toBe("string");
-    });
-
     it("should have preview parameter with correct configuration", () => {
       const builder = applyCommand.builder as any;
       expect(builder.preview).toBeDefined();
@@ -126,33 +110,11 @@ describe("apply command", () => {
   });
 
   describe("command execution", () => {
-    it("should execute successfully with current state file", async () => {
+    it("should execute successfully with changes", async () => {
       const mockData = { appId: "123456789" } as any;
       const mockPlan = [
         { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
       ] as any;
-
-      mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
-      mockRemoveShortcuts.mockReturnValue(mockData);
-      mockDiff.mockReturnValue(mockPlan);
-
-      await applyCommand.handler!(mockArgv as any);
-
-      expect(mockReadJsonFile).toHaveBeenCalledWith("desired.json");
-      expect(mockReadJsonFile).toHaveBeenCalledWith("current.json");
-      expect(mockValidateAppStoreModel).toHaveBeenCalledTimes(2);
-      expect(mockDiff).toHaveBeenCalledWith(mockData, mockData);
-      expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-    });
-
-    it("should execute successfully without current state file", async () => {
-      const mockData = { appId: "123456789" } as any;
-      const mockPlan = [
-        { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
-      ] as any;
-      const argvWithoutCurrent = { ...mockArgv };
-      argvWithoutCurrent.current = undefined;
 
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
@@ -160,10 +122,18 @@ describe("apply command", () => {
       mockFetchAppStoreState.mockResolvedValue(mockData);
       mockDiff.mockReturnValue(mockPlan);
 
-      await applyCommand.handler!(argvWithoutCurrent as any);
+      await applyCommand.handler!(mockArgv as any);
 
+      expect(mockReadJsonFile).toHaveBeenCalledWith("desired.json");
+      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
+        mockData,
+        false,
+        "apply"
+      );
       expect(mockFetchAppStoreState).toHaveBeenCalledWith("123456789");
       expect(mockDiff).toHaveBeenCalledWith(mockData, mockData);
+      expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
+      expect(mockApply).toHaveBeenCalledWith(mockPlan, mockData, mockData);
     });
 
     it("should handle no changes scenario", async () => {
@@ -172,6 +142,7 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
+      mockFetchAppStoreState.mockResolvedValue(mockData);
       mockDiff.mockReturnValue([]);
 
       await applyCommand.handler!(mockArgv as any);
@@ -193,6 +164,7 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
+      mockFetchAppStoreState.mockResolvedValue(mockData);
       mockDiff.mockReturnValue(mockPlan);
 
       await applyCommand.handler!(previewArgv as any);
@@ -220,22 +192,50 @@ describe("apply command", () => {
     });
 
     it("should handle fetch errors and exit", async () => {
-      const argvWithoutCurrent = { ...mockArgv };
-      argvWithoutCurrent.current = undefined;
+      const mockData = { appId: "123456789" } as any;
 
-      mockReadJsonFile.mockReturnValue({} as any);
-      mockValidateAppStoreModel.mockReturnValue({} as any);
-      mockRemoveShortcuts.mockReturnValue({} as any);
+      mockReadJsonFile.mockReturnValue(mockData);
+      mockValidateAppStoreModel.mockReturnValue(mockData);
+      mockRemoveShortcuts.mockReturnValue(mockData);
       mockFetchAppStoreState.mockRejectedValue(new Error("Fetch failed"));
 
-      await expect(
-        applyCommand.handler!(argvWithoutCurrent as any)
-      ).rejects.toThrow("process.exit called");
+      await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
+        "process.exit called"
+      );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Apply failed",
         expect.any(Error)
       );
+    });
+
+    it("should handle user cancellation", async () => {
+      const mockData = { appId: "123456789" } as any;
+      const mockPlan = [
+        { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
+      ] as any;
+
+      // Mock readline to return "n" (no)
+      const readline = require("readline");
+      readline.createInterface.mockReturnValue({
+        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
+          callback("n"); // User cancels
+        }),
+        close: jest.fn(),
+      });
+
+      mockReadJsonFile.mockReturnValue(mockData);
+      mockValidateAppStoreModel.mockReturnValue(mockData);
+      mockRemoveShortcuts.mockReturnValue(mockData);
+      mockFetchAppStoreState.mockResolvedValue(mockData);
+      mockDiff.mockReturnValue(mockPlan);
+
+      await applyCommand.handler!(mockArgv as any);
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "Operation cancelled by user"
+      );
+      expect(mockApply).not.toHaveBeenCalled();
     });
   });
 
@@ -246,45 +246,13 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
+      mockFetchAppStoreState.mockResolvedValue(mockData);
       mockDiff.mockReturnValue([]);
 
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
         "Processing desired state from desired.json..."
-      );
-    });
-
-    it("should log when using current state file", async () => {
-      const mockData = { appId: "123456789" } as any;
-
-      mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
-      mockRemoveShortcuts.mockReturnValue(mockData);
-      mockDiff.mockReturnValue([]);
-
-      await applyCommand.handler!(mockArgv as any);
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "Using current.json as current state."
-      );
-    });
-
-    it("should log when fetching current state", async () => {
-      const mockData = { appId: "123456789" } as any;
-      const argvWithoutCurrent = { ...mockArgv };
-      argvWithoutCurrent.current = undefined;
-
-      mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
-      mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue([]);
-
-      await applyCommand.handler!(argvWithoutCurrent as any);
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "Fetching current state for app ID: 123456789"
       );
     });
   });
