@@ -4,6 +4,7 @@ import {
   fetchAppManualPrices,
   fetchAppAutomaticPrices,
   fetchAppPriceScheduleBaseTerritory,
+  getAppPriceSchedule,
 } from "../domains/pricing/api-client";
 import { decodeTerritoryFromId } from "../helpers/id-encoding-helpers";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
@@ -19,6 +20,7 @@ const MockFetchAppManualPrices = fetchAppManualPrices as any;
 const MockFetchAppAutomaticPrices = fetchAppAutomaticPrices as any;
 const MockFetchAppPriceScheduleBaseTerritory =
   fetchAppPriceScheduleBaseTerritory as any;
+const MockGetAppPriceSchedule = getAppPriceSchedule as any;
 const MockDecodeTerritoryFromId = decodeTerritoryFromId as any;
 const MockIsNotFoundError = isNotFoundError as any;
 const MockLogger = logger as any;
@@ -26,11 +28,14 @@ const MockLogger = logger as any;
 describe("pricing-aggregator", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations to default values
+    MockIsNotFoundError.mockReset();
+    MockIsNotFoundError.mockImplementation(() => false);
   });
 
   describe("mapAppPricing", () => {
     it("should return undefined when base territory is not found", async () => {
-      MockFetchAppPriceScheduleBaseTerritory.mockResolvedValueOnce({
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
         data: null,
         error: null,
       });
@@ -38,13 +43,11 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockFetchAppPriceScheduleBaseTerritory).toHaveBeenCalledWith(
-        "test-app-id"
-      );
+      expect(MockGetAppPriceSchedule).toHaveBeenCalledWith("test-app-id");
     });
 
     it("should return undefined when base territory has no ID", async () => {
-      MockFetchAppPriceScheduleBaseTerritory.mockResolvedValueOnce({
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
         data: { id: null },
         error: null,
       });
@@ -52,14 +55,17 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.warn).toHaveBeenCalledWith("Invalid base territory:", {
-        data: { id: null },
-        error: null,
-      });
+      expect(MockLogger.warn).toHaveBeenCalledWith(
+        "Invalid price schedule ID:",
+        {
+          data: { id: null },
+          error: null,
+        }
+      );
     });
 
     it("should return undefined when base territory has empty ID", async () => {
-      MockFetchAppPriceScheduleBaseTerritory.mockResolvedValueOnce({
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
         data: { id: "" },
         error: null,
       });
@@ -67,10 +73,13 @@ describe("pricing-aggregator", () => {
       const result = await mapAppPricing("test-app-id");
 
       expect(result).toBeUndefined();
-      expect(MockLogger.warn).toHaveBeenCalledWith("Invalid base territory:", {
-        data: { id: "" },
-        error: null,
-      });
+      expect(MockLogger.warn).toHaveBeenCalledWith(
+        "Invalid price schedule ID:",
+        {
+          data: { id: "" },
+          error: null,
+        }
+      );
     });
 
     it("should map pricing successfully with manual and automatic prices", async () => {
@@ -156,6 +165,10 @@ describe("pricing-aggregator", () => {
         ],
       };
 
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
       MockFetchAppPriceScheduleBaseTerritory.mockResolvedValueOnce(
         baseTerritoryResponse
       );
@@ -176,16 +189,23 @@ describe("pricing-aggregator", () => {
       });
 
       expect(MockFetchAppPriceScheduleBaseTerritory).toHaveBeenCalledWith(
-        "test-app-id"
+        "price-schedule-id"
       );
-      expect(MockFetchAppManualPrices).toHaveBeenCalledWith("test-app-id");
+      expect(MockFetchAppManualPrices).toHaveBeenCalledWith(
+        "price-schedule-id"
+      );
       expect(MockFetchAppAutomaticPrices).toHaveBeenCalledWith(
-        "test-app-id",
+        "price-schedule-id",
         "USA"
       );
     });
 
     it("should filter out price points with invalid territory IDs", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -241,6 +261,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle response without included data", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -266,6 +291,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle response with empty included array", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -298,6 +328,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should filter out non-appPricePoints items", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -377,6 +412,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle price points without customerPrice", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -453,6 +493,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle 404 errors gracefully", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const error = new Error("Not found");
       MockFetchAppPriceScheduleBaseTerritory.mockRejectedValueOnce(error);
       MockIsNotFoundError.mockReturnValueOnce(true);
@@ -463,6 +508,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should re-throw non-404 errors", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const error = new Error("Authentication failed");
       MockFetchAppPriceScheduleBaseTerritory.mockRejectedValueOnce(error);
       MockIsNotFoundError.mockReturnValueOnce(false);
@@ -475,6 +525,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle 404 error in manual prices fetch", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -493,6 +548,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle 404 error in automatic prices fetch", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -517,6 +577,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle mixed 404 and non-404 errors", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -543,6 +608,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle price points with null customerPrice", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,
@@ -598,6 +668,11 @@ describe("pricing-aggregator", () => {
     });
 
     it("should handle price points with undefined customerPrice", async () => {
+      MockGetAppPriceSchedule.mockResolvedValueOnce({
+        data: { id: "price-schedule-id" },
+        error: null,
+      });
+
       const baseTerritoryResponse = {
         data: { id: "USA" },
         error: null,

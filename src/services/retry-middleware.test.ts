@@ -67,7 +67,7 @@ describe("RetryMiddleware", () => {
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3);
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
@@ -87,7 +87,7 @@ describe("RetryMiddleware", () => {
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
@@ -117,7 +117,7 @@ describe("RetryMiddleware", () => {
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
@@ -148,7 +148,7 @@ describe("RetryMiddleware", () => {
 
       expect(result).toBe(successResponse);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("Rate limit exceeded for GET /test/endpoint")
       );
     });
@@ -191,10 +191,10 @@ describe("RetryMiddleware", () => {
       expect(mockApiClient.GET).toHaveBeenCalledTimes(3);
 
       // Verify the warning messages show the correct wait times
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("waiting 0.01s before retry (attempt 1)")
       );
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining("waiting 0.03s before retry (attempt 2)")
       );
     });
