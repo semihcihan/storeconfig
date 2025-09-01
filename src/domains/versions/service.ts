@@ -7,6 +7,10 @@ import {
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
 import { logger } from "../../utils/logger";
+import {
+  ContextualError,
+  isVersionNotUpdatableError,
+} from "../../helpers/error-handling-helpers";
 import { AppStoreModelSchema } from "../../models/app-store";
 import { z } from "zod";
 
@@ -145,14 +149,32 @@ export class AppStoreVersionService {
       if (!latestVersion) {
         throw new Error("No valid version found to update");
       }
-      logger.debug(
-        `Updating version for app ${appId}: versionString = ${versionString}`
-      );
-      await this.updateVersion(
-        latestVersion.id,
-        versionString || latestVersion.attributes?.versionString || "",
-        copyright
-      );
+      try {
+        logger.debug(
+          `Attempting to update version for app ${appId}: versionString = ${versionString}`
+        );
+        await this.updateVersion(
+          latestVersion.id,
+          versionString || latestVersion.attributes?.versionString || "",
+          copyright
+        );
+      } catch (error) {
+        // Only fallback to creating a new version if the error indicates the version cannot be updated
+        if (isVersionNotUpdatableError(error)) {
+          logger.debug(
+            `Update failed for version ${latestVersion.id} due to invalid state, creating new version: ${error}`
+          );
+          if (!versionString) {
+            throw new Error(
+              "Version string is required when creating a new version after update failure"
+            );
+          }
+          await this.createVersion(appId, versionString, copyright);
+        } else {
+          // Re-throw other errors (network issues, auth problems, etc.)
+          throw error;
+        }
+      }
     }
   }
 }

@@ -101,6 +101,33 @@ export function isNotAuthorizedError(error: any): boolean {
   return false;
 }
 
+// Helper function to check if an error indicates that a version cannot be updated
+export function isVersionNotUpdatableError(error: any): boolean {
+  // Check for 409 status (Conflict) which often indicates invalid state
+  if (error?.status === 409 || error?.status === "409") {
+    return true;
+  }
+
+  // Check for specific Apple API error codes that indicate version cannot be updated
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.some((err: any) => {
+      // Check for status 409
+      if (err.status === 409 || err.status === "409") {
+        return true;
+      }
+
+      // Check for specific error codes that indicate version cannot be updated
+      if (err.code === "ENTITY_ERROR.ATTRIBUTE.INVALID.INVALID_STATE") {
+        return true;
+      }
+
+      return false;
+    });
+  }
+
+  return false;
+}
+
 // Helper function to extract error message from Apple API error
 export function extractErrorMessage(error: any): string {
   if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {

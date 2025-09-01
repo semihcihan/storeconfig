@@ -1095,12 +1095,12 @@ export function diff(
   const appDetailsActions = diffAppDetails(currentState, desiredState);
 
   const plan: Plan = [
-    ...iapActions,
-    ...subGroupActions,
-    ...appAvailabilityActions,
-    ...appPricingActions,
     ...versionMetadataActions,
     ...appDetailsActions,
+    ...appAvailabilityActions,
+    ...iapActions,
+    ...subGroupActions,
+    ...appPricingActions,
   ];
 
   logger.debug(`Diff completed. Plan contains ${plan.length} actions.`);

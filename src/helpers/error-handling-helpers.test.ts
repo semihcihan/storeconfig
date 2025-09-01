@@ -3,6 +3,7 @@ import {
   isNotFoundError,
   isRateLimitError,
   extractErrorMessage,
+  isVersionNotUpdatableError,
 } from "./error-handling-helpers";
 
 describe("ContextualError", () => {
@@ -205,5 +206,66 @@ describe("ContextualError", () => {
     expect(error.status).toBe(404);
     expect(error.response).toEqual({ status: 404 });
     expect(error.errors).toEqual([{ status: "404", detail: "Not found" }]);
+  });
+});
+
+describe("isVersionNotUpdatableError", () => {
+  it("should return true for 409 status errors", () => {
+    const error = { status: 409 };
+    expect(isVersionNotUpdatableError(error)).toBe(true);
+  });
+
+  it("should return true for string 409 status errors", () => {
+    const error = { status: "409" };
+    expect(isVersionNotUpdatableError(error)).toBe(true);
+  });
+
+  it("should return true for Apple API errors with 409 status", () => {
+    const error = {
+      errors: [
+        {
+          status: "409",
+          code: "SOME_ERROR_CODE",
+          detail: "Some error detail",
+        },
+      ],
+    };
+    expect(isVersionNotUpdatableError(error)).toBe(true);
+  });
+
+  it("should return true for Apple API errors with ENTITY_ERROR.ATTRIBUTE.INVALID.INVALID_STATE code", () => {
+    const error = {
+      errors: [
+        {
+          status: "400",
+          code: "ENTITY_ERROR.ATTRIBUTE.INVALID.INVALID_STATE",
+          detail: "The attribute 'versionString' can not be modified.",
+        },
+      ],
+    };
+    expect(isVersionNotUpdatableError(error)).toBe(true);
+  });
+
+  it("should return false for other error types", () => {
+    const error = { status: 500 };
+    expect(isVersionNotUpdatableError(error)).toBe(false);
+  });
+
+  it("should return false for Apple API errors with other codes", () => {
+    const error = {
+      errors: [
+        {
+          status: "400",
+          code: "SOME_OTHER_ERROR_CODE",
+          detail: "Some other error detail",
+        },
+      ],
+    };
+    expect(isVersionNotUpdatableError(error)).toBe(false);
+  });
+
+  it("should return false for null/undefined errors", () => {
+    expect(isVersionNotUpdatableError(null)).toBe(false);
+    expect(isVersionNotUpdatableError(undefined)).toBe(false);
   });
 });
