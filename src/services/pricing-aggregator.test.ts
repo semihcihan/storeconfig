@@ -6,7 +6,6 @@ import {
   fetchAppPriceScheduleBaseTerritory,
   getAppPriceSchedule,
 } from "../domains/pricing/api-client";
-import { decodeTerritoryFromId } from "../helpers/id-encoding-helpers";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
 import { logger } from "../utils/logger";
 
@@ -21,7 +20,6 @@ const MockFetchAppAutomaticPrices = fetchAppAutomaticPrices as any;
 const MockFetchAppPriceScheduleBaseTerritory =
   fetchAppPriceScheduleBaseTerritory as any;
 const MockGetAppPriceSchedule = getAppPriceSchedule as any;
-const MockDecodeTerritoryFromId = decodeTerritoryFromId as any;
 const MockIsNotFoundError = isNotFoundError as any;
 const MockLogger = logger as any;
 

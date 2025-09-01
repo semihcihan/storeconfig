@@ -8,10 +8,7 @@ import {
   getIncludedResource,
   type IncludedByIdMap,
 } from "../../helpers/relationship-helpers";
-import {
-  decodeTerritoryFromId,
-  validateTerritoryCode,
-} from "../../helpers/id-encoding-helpers";
+import { validateTerritoryCode } from "../../helpers/id-encoding-helpers";
 import { isNotFoundError } from "../../helpers/error-handling-helpers";
 import {
   fetchBaseTerritory,
@@ -39,39 +36,17 @@ type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 export function processPriceResponse(
   response: InAppPurchasePricesResponse
 ): z.infer<typeof PriceSchema>[] {
-  logger.debug("Processing IAP price response:", {
-    hasResponse: !!response,
-    hasData: !!response?.data,
-    dataLength: response?.data?.length || 0,
-    hasIncluded: !!response?.included,
-    includedLength: response?.included?.length || 0,
-    includedTypes: response?.included?.map((item) => item.type) || [],
-  });
-
   if (!response || !response.included) {
     logger.debug("No response or included data, returning empty array");
     return [];
   }
 
-  // Try the new relationship-based approach first
   if (response.data && response.data.length > 0) {
     logger.debug("Attempting relationship-based price processing");
     const includedById = createIncludedByIdMap(response.included);
 
     const prices: z.infer<typeof PriceSchema>[] = [];
     for (const priceData of response.data) {
-      // Only log detailed info for the first few items to avoid spam
-      if (prices.length < 3) {
-        logger.debug("Processing price data:", {
-          priceDataId: priceData.id,
-          priceDataType: priceData.type,
-          hasRelationships: !!priceData.relationships,
-          relationships: priceData.relationships,
-          hasAttributes: !!priceData.attributes,
-          attributes: priceData.attributes,
-        });
-      }
-
       const pricePointRel =
         priceData.relationships?.inAppPurchasePricePoint?.data;
       const territoryRel = priceData.relationships?.territory?.data;
@@ -114,23 +89,8 @@ export function processPriceResponse(
     }
   }
 
-  // Fall back to the old ID decoding approach
-  logger.debug("Falling back to ID decoding approach");
-  return (response.included as any[])
-    .filter(
-      (item): item is components["schemas"]["InAppPurchasePricePoint"] =>
-        item.type === "inAppPurchasePricePoints"
-    )
-    .map((pricePoint) => {
-      const territoryId = decodeTerritoryFromId(pricePoint.id);
-      if (!territoryId) return null;
-
-      return {
-        price: pricePoint.attributes?.customerPrice || "",
-        territory: territoryId,
-      };
-    })
-    .filter((p): p is NonNullable<typeof p> => p !== null);
+  logger.debug("No prices found, returning empty array");
+  return [];
 }
 
 // Map localizations for in-app purchases
