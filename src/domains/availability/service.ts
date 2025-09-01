@@ -8,7 +8,6 @@ import {
   getTerritoryAvailabilities,
   updateTerritoryAvailability,
 } from "../../domains/availability/api-client";
-import { decodeTerritoryAvailabilityId } from "../../helpers/id-encoding-helpers";
 import { territoryCodes } from "../../models/territories";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
@@ -21,11 +20,17 @@ async function getTerritoryAvailabilityMap(
 
   const territories = await getTerritoryAvailabilities(appAvailabilityId);
 
-  // Process territories and decode their IDs to get territory codes
+  // Process territories and read their codes from the relationship
   for (const territory of territories) {
-    const decoded = decodeTerritoryAvailabilityId(territory.id);
-    if (decoded) {
-      territoryMap.set(decoded.territoryCode, territory.id);
+    const territoryCode = territory.relationships?.territory?.data?.id as
+      | string
+      | undefined;
+    if (territoryCode) {
+      territoryMap.set(territoryCode, territory.id);
+    } else {
+      logger.warn("Missing territory relationship on territoryAvailability", {
+        territoryAvailabilityId: territory.id,
+      });
     }
   }
 

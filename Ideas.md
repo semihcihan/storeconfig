@@ -1,8 +1,6 @@
 ## IDEAS TODOs
 
-- start end dates, scheduling (must have at least on fetch we should correctly fetch current pricing info and ignore future ones)
-  start date beginning of the day
-  end date beginning of the day too (ending of the previous day), so it won't be in effect at the displayed end date
+- just worldwide not working
 
 - what's new is not shared from base
   we need to check whether it's specific to this or other stuff too like description etc
@@ -44,13 +42,13 @@
 
 # V2
 
-- submitting
-- start end dates, scheduling on apply too
-- promo offers
-- billing grace period
 - add new fields to support
   - age rating
   - app category
   - content rights
   - privacy questions (not available on app store connect api yet)
+- submitting, handling statuses
+- start end dates, scheduling on apply too
+- promo offers
+- billing grace period
 - google play support

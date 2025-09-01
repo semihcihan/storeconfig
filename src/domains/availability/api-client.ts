@@ -72,6 +72,7 @@ export async function fetchAppAvailability(
     "/v2/appAvailabilities/{id}/territoryAvailabilities",
     appAvailabilityId,
     {
+      include: API_FIELD_CONFIGS.territoryAvailabilities.include as any,
       "fields[territoryAvailabilities]": API_FIELD_CONFIGS
         .territoryAvailabilities.fieldsTerritoryAvailabilities as any,
     }
@@ -113,6 +114,7 @@ export async function getTerritoryAvailabilities(
     "/v2/appAvailabilities/{id}/territoryAvailabilities",
     appAvailabilityId,
     {
+      include: config.include as any,
       "fields[territoryAvailabilities]":
         config.fieldsTerritoryAvailabilities as any,
     },

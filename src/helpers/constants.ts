@@ -104,6 +104,7 @@ export const API_FIELD_CONFIGS = {
     fieldsAppAvailabilities: ["availableInNewTerritories"],
   },
   territoryAvailabilities: {
+    include: ["territory"],
     fieldsTerritoryAvailabilities: ["available", "territory"],
   },
   appPrices: {
