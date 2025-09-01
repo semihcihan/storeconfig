@@ -1,5 +1,8 @@
 import { territoryCodes } from "../models/territories";
 import { deepEqualUnordered } from "../helpers/validation-helpers";
+import { logger } from "./logger";
+import { AppStoreLocalizationSchema } from "../models/app-store";
+import { z } from "zod";
 
 export const WORLDWIDE_TERRITORY_CODE = "worldwide";
 
@@ -12,6 +15,20 @@ function isAllTerritories(territories: string[]): boolean {
 }
 
 export function useShortcuts(data: any): any {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  // Apply availability shortcuts first
+  let converted = useAvailabilityShortcuts(data);
+
+  // Then apply localization shortcuts
+  converted = useLocalizationShortcuts(converted);
+
+  return converted;
+}
+
+function useAvailabilityShortcuts(data: any): any {
   if (!data || typeof data !== "object") {
     return data;
   }
@@ -69,7 +86,7 @@ export function useShortcuts(data: any): any {
   // Handle inAppPurchases
   if (Array.isArray(converted.inAppPurchases)) {
     converted.inAppPurchases = converted.inAppPurchases.map((iap: any) => {
-      return useShortcuts(iap);
+      return useAvailabilityShortcuts(iap);
     });
   }
 
@@ -82,7 +99,7 @@ export function useShortcuts(data: any): any {
         if (Array.isArray(convertedGroup.subscriptions)) {
           convertedGroup.subscriptions = convertedGroup.subscriptions.map(
             (sub: any) => {
-              return useShortcuts(sub);
+              return useAvailabilityShortcuts(sub);
             }
           );
         }
@@ -95,7 +112,91 @@ export function useShortcuts(data: any): any {
   return converted;
 }
 
+function useLocalizationShortcuts(data: any): any {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  const converted = { ...data };
+
+  // Handle localizations optimization only at top level
+  if (Array.isArray(converted.localizations) && converted.primaryLocale) {
+    converted.localizations = optimizeLocalizationsByPrimaryLocale(
+      converted.localizations,
+      converted.primaryLocale
+    );
+  }
+
+  return converted;
+}
+
+function optimizeLocalizationsByPrimaryLocale(
+  localizations: z.infer<typeof AppStoreLocalizationSchema>[],
+  primaryLocale: string | undefined
+): z.infer<typeof AppStoreLocalizationSchema>[] {
+  // If we don't have a primary locale, return the original localizations
+  if (!primaryLocale) {
+    return localizations;
+  }
+
+  const primaryLocalization = localizations.find(
+    (loc) => loc.locale === primaryLocale
+  );
+
+  // If we don't have a primary localization, return the original localizations
+  if (!primaryLocalization) {
+    return localizations;
+  }
+
+  const optimizedResult = localizations.map((localization) => {
+    if (localization.locale === primaryLocale) {
+      return localization;
+    }
+
+    // Start with just the locale
+    const optimized: z.infer<typeof AppStoreLocalizationSchema> = {
+      locale: localization.locale,
+    };
+
+    // Get all keys from the localization object (excluding 'locale' which we already set)
+    const fieldsToCheck = Object.keys(localization).filter(
+      (key) => key !== "locale"
+    );
+
+    // Only include fields that differ from the primary locale
+    fieldsToCheck.forEach((field) => {
+      const fieldKey = field as keyof z.infer<
+        typeof AppStoreLocalizationSchema
+      >;
+      if (localization[fieldKey] !== primaryLocalization[fieldKey]) {
+        (optimized as any)[fieldKey] = localization[fieldKey];
+      }
+    });
+
+    return optimized;
+  });
+
+  logger.debug(
+    `Optimized ${localizations.length} localizations to avoid duplicates with primary locale: ${primaryLocale}`
+  );
+  return optimizedResult;
+}
+
 export function removeShortcuts(data: any): any {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  // Remove localization shortcuts first
+  let converted = removeLocalizationShortcuts(data);
+
+  // Then remove availability shortcuts
+  converted = removeAvailabilityShortcuts(converted);
+
+  return converted;
+}
+
+function removeAvailabilityShortcuts(data: any): any {
   if (!data || typeof data !== "object") {
     return data;
   }
@@ -156,7 +257,7 @@ export function removeShortcuts(data: any): any {
   // Handle inAppPurchases
   if (Array.isArray(converted.inAppPurchases)) {
     converted.inAppPurchases = converted.inAppPurchases.map((iap: any) => {
-      return removeShortcuts(iap);
+      return removeAvailabilityShortcuts(iap);
     });
   }
 
@@ -169,7 +270,7 @@ export function removeShortcuts(data: any): any {
         if (Array.isArray(convertedGroup.subscriptions)) {
           convertedGroup.subscriptions = convertedGroup.subscriptions.map(
             (sub: any) => {
-              return removeShortcuts(sub);
+              return removeAvailabilityShortcuts(sub);
             }
           );
         }
@@ -180,4 +281,70 @@ export function removeShortcuts(data: any): any {
   }
 
   return converted;
+}
+
+function removeLocalizationShortcuts(data: any): any {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  const converted = { ...data };
+
+  // Handle localizations de-optimization only at top level
+  if (Array.isArray(converted.localizations) && converted.primaryLocale) {
+    converted.localizations = deoptimizeLocalizationsByPrimaryLocale(
+      converted.localizations,
+      converted.primaryLocale
+    );
+  }
+
+  return converted;
+}
+
+function deoptimizeLocalizationsByPrimaryLocale(
+  localizations: z.infer<typeof AppStoreLocalizationSchema>[],
+  primaryLocale: string | undefined
+): z.infer<typeof AppStoreLocalizationSchema>[] {
+  // If we don't have a primary locale, return the original localizations
+  if (!primaryLocale) {
+    return localizations;
+  }
+
+  const primaryLocalization = localizations.find(
+    (loc) => loc.locale === primaryLocale
+  );
+
+  // If we don't have a primary localization, return the original localizations
+  if (!primaryLocalization) {
+    return localizations;
+  }
+
+  const deoptimizedResult = localizations.map((localization) => {
+    if (localization.locale === primaryLocale) {
+      return localization;
+    }
+
+    // Start with the primary localization as base
+    const deoptimized: z.infer<typeof AppStoreLocalizationSchema> = {
+      ...primaryLocalization,
+      locale: localization.locale,
+    };
+
+    // Override with any fields that are present in the optimized localization
+    Object.keys(localization).forEach((field) => {
+      if (field !== "locale") {
+        const fieldKey = field as keyof z.infer<
+          typeof AppStoreLocalizationSchema
+        >;
+        (deoptimized as any)[fieldKey] = (localization as any)[fieldKey];
+      }
+    });
+
+    return deoptimized;
+  });
+
+  logger.debug(
+    `Deoptimized ${localizations.length} localizations to restore full data with primary locale: ${primaryLocale}`
+  );
+  return deoptimizedResult;
 }

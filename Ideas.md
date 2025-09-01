@@ -1,8 +1,5 @@
 ## IDEAS TODOs
 
-- what's new is not shared from base
-  we need to check whether it's specific to this or other stuff too like description etc
-
 - can't create new version
   warn: PATCH /v1/appStoreVersions/{id} failed with non-retryable error on attempt 1:
   {
@@ -32,10 +29,11 @@
 - use builtin mw instead of custom
 
 - improve logging on showAction by gathering
+  improve error logging when thrown
 
 # Notes for documentation
 
-- No start date and end date support, will be overridden (TELL THIS TO USER)
+- No start date and end date support when applying, when fetching we only fetch the active ones
 - Worldwide
 
 # V2

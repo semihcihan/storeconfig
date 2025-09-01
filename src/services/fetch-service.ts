@@ -5,7 +5,7 @@ import {
 } from "../models/app-store";
 import { z } from "zod";
 import { isNotFoundError } from "../helpers/error-handling-helpers";
-import { optimizeLocalizationsByPrimaryLocale } from "../helpers/localization-helpers";
+
 import { validateAppStoreModel } from "../helpers/validation-model";
 
 // Import API clients
@@ -113,11 +113,6 @@ export async function fetchAppStoreState(
     | z.infer<typeof LocaleCodeSchema>
     | undefined;
 
-  const optimizedLocalizations = optimizeLocalizationsByPrimaryLocale(
-    localizations,
-    primaryLocale
-  );
-
   const result: AppStoreModel = {
     schemaVersion: APP_STORE_SCHEMA_VERSION,
     appId: appId,
@@ -127,8 +122,7 @@ export async function fetchAppStoreState(
     inAppPurchases: mappedIAPs,
     subscriptionGroups: mappedSubscriptionGroups,
     versionString: versionMetadata.versionString,
-    localizations:
-      optimizedLocalizations.length > 0 ? optimizedLocalizations : undefined,
+    localizations: localizations.length > 0 ? localizations : undefined,
   };
 
   const parsedData = validateAppStoreModel(result);

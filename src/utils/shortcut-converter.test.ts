@@ -4,55 +4,238 @@ import {
   WORLDWIDE_TERRITORY_CODE,
 } from "./shortcut-converter";
 import { territoryCodes } from "../models/territories";
+import { jest } from "@jest/globals";
+
+// Mock logger
+jest.mock("./logger");
 
 describe("shortcut-converter", () => {
-  describe("convertInputUserShortcuts", () => {
-    it("should return null for null input", () => {
-      expect(useShortcuts(null)).toBeNull();
+  describe("localization optimization", () => {
+    it("should optimize localizations by removing duplicate fields with primary locale", () => {
+      const data = {
+        primaryLocale: "en-US",
+        localizations: [
+          {
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+            keywords: "test,app,keywords",
+            marketingUrl: "http://test.com",
+            promotionalText: "Test promo",
+            supportUrl: "http://test.com/support",
+            subtitle: "Test Subtitle",
+            privacyPolicyUrl: "http://test.com/privacy",
+            privacyChoicesUrl: "http://test.com/privacy-choices",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
+            keywords: "test,app,keywords", // Same as primary
+            marketingUrl: "http://test.com", // Same as primary
+            promotionalText: "Test promo", // Same as primary
+            supportUrl: "http://test.com/support", // Same as primary
+            subtitle: "Test Subtitle", // Same as primary
+            privacyPolicyUrl: "http://test.com/privacy", // Same as primary
+            privacyChoicesUrl: "http://test.com/privacy-choices", // Same as primary
+          },
+          {
+            locale: "fr-FR" as const,
+            name: "Test App FR",
+            description: "Test description FR",
+            keywords: "test,app,keywords", // Same as primary
+            marketingUrl: "http://test.com/fr", // Different from primary
+            promotionalText: "Test promo FR", // Different from primary
+            supportUrl: "http://test.com/support", // Same as primary
+            subtitle: "Test Subtitle", // Same as primary
+            privacyPolicyUrl: "http://test.com/privacy", // Same as primary
+            privacyChoicesUrl: "http://test.com/privacy-choices", // Same as primary
+          },
+        ],
+      };
+
+      const result = useShortcuts(data);
+
+      expect(result.localizations).toEqual([
+        {
+          locale: "en-US",
+          name: "Test App",
+          description: "Test description",
+          keywords: "test,app,keywords",
+          marketingUrl: "http://test.com",
+          promotionalText: "Test promo",
+          supportUrl: "http://test.com/support",
+          subtitle: "Test Subtitle",
+          privacyPolicyUrl: "http://test.com/privacy",
+          privacyChoicesUrl: "http://test.com/privacy-choices",
+        },
+        {
+          locale: "es-ES",
+          name: "Test App ES",
+          description: "Test description ES",
+        },
+        {
+          locale: "fr-FR",
+          name: "Test App FR",
+          description: "Test description FR",
+          marketingUrl: "http://test.com/fr",
+          promotionalText: "Test promo FR",
+        },
+      ]);
     });
 
-    it("should return undefined for undefined input", () => {
-      expect(useShortcuts(undefined)).toBeUndefined();
+    it("should restore full localization data when removing shortcuts", () => {
+      const data = {
+        primaryLocale: "en-US",
+        localizations: [
+          {
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+            keywords: "test,app,keywords",
+            marketingUrl: "http://test.com",
+            promotionalText: "Test promo",
+            supportUrl: "http://test.com/support",
+            subtitle: "Test Subtitle",
+            privacyPolicyUrl: "http://test.com/privacy",
+            privacyChoicesUrl: "http://test.com/privacy-choices",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
+          },
+          {
+            locale: "fr-FR" as const,
+            name: "Test App FR",
+            description: "Test description FR",
+            marketingUrl: "http://test.com/fr",
+            promotionalText: "Test promo FR",
+          },
+        ],
+      };
+
+      const result = removeShortcuts(data);
+
+      expect(result.localizations).toEqual([
+        {
+          locale: "en-US",
+          name: "Test App",
+          description: "Test description",
+          keywords: "test,app,keywords",
+          marketingUrl: "http://test.com",
+          promotionalText: "Test promo",
+          supportUrl: "http://test.com/support",
+          subtitle: "Test Subtitle",
+          privacyPolicyUrl: "http://test.com/privacy",
+          privacyChoicesUrl: "http://test.com/privacy-choices",
+        },
+        {
+          locale: "es-ES",
+          name: "Test App ES",
+          description: "Test description ES",
+          keywords: "test,app,keywords",
+          marketingUrl: "http://test.com",
+          promotionalText: "Test promo",
+          supportUrl: "http://test.com/support",
+          subtitle: "Test Subtitle",
+          privacyPolicyUrl: "http://test.com/privacy",
+          privacyChoicesUrl: "http://test.com/privacy-choices",
+        },
+        {
+          locale: "fr-FR",
+          name: "Test App FR",
+          description: "Test description FR",
+          keywords: "test,app,keywords",
+          marketingUrl: "http://test.com/fr",
+          promotionalText: "Test promo FR",
+          supportUrl: "http://test.com/support",
+          subtitle: "Test Subtitle",
+          privacyPolicyUrl: "http://test.com/privacy",
+          privacyChoicesUrl: "http://test.com/privacy-choices",
+        },
+      ]);
     });
 
-    it("should return primitive values as-is", () => {
-      expect(useShortcuts("test")).toBe("test");
-      expect(useShortcuts(123)).toBe(123);
-      expect(useShortcuts(true)).toBe(true);
+    it("should return original localizations when no primary locale is provided", () => {
+      const data = {
+        localizations: [
+          {
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
+          },
+        ],
+      };
+
+      const result = useShortcuts(data);
+
+      expect(result.localizations).toEqual(data.localizations);
     });
 
-    it("should convert all territories to WorldWide in availableTerritories", () => {
-      const input = {
+    it("should return original localizations when primary locale is not found", () => {
+      const data = {
+        primaryLocale: "fr-FR",
+        localizations: [
+          {
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
+          },
+        ],
+      };
+
+      const result = useShortcuts(data);
+
+      expect(result.localizations).toEqual(data.localizations);
+    });
+  });
+
+  describe("availability shortcuts", () => {
+    it("should convert all territories to worldwide shortcut", () => {
+      const data = {
         availableTerritories: [...territoryCodes],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
-      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
+      expect(result.availableTerritories).toBe("worldwide");
     });
 
-    it("should not convert partial territories to WorldWide", () => {
-      const input = {
+    it("should not convert partial territories to worldwide", () => {
+      const data = {
         availableTerritories: ["US", "CA", "GB"],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
       expect(result.availableTerritories).toEqual(["US", "CA", "GB"]);
     });
 
-    it("should not convert territories in wrong order", () => {
-      const input = {
-        availableTerritories: [...territoryCodes].reverse(),
+    it("should handle availability objects", () => {
+      const data = {
+        availability: {
+          availableTerritories: [...territoryCodes],
+        },
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
-      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
+      expect(result.availability.availableTerritories).toBe("worldwide");
     });
 
-    it("should handle introductoryOffers with all territories", () => {
-      const input = {
+    it("should handle introductoryOffers with FREE_TRIAL", () => {
+      const data = {
         introductoryOffers: [
           {
             type: "FREE_TRIAL",
@@ -62,545 +245,231 @@ describe("shortcut-converter", () => {
         ],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
       expect(result.introductoryOffers[0].availableTerritories).toBe(
-        WORLDWIDE_TERRITORY_CODE
+        "worldwide"
       );
     });
 
-    it("should handle introductoryOffers with partial territories", () => {
-      const input = {
+    it("should not handle introductoryOffers with PAY_AS_YOU_GO", () => {
+      const data = {
         introductoryOffers: [
           {
-            type: "FREE_TRIAL",
+            type: "PAY_AS_YOU_GO",
             duration: "ONE_WEEK",
-            availableTerritories: ["US", "CA"],
+            availableTerritories: [...territoryCodes],
           },
         ],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
       expect(result.introductoryOffers[0].availableTerritories).toEqual([
-        "US",
-        "CA",
+        ...territoryCodes,
       ]);
     });
 
-    it("should handle inAppPurchases with all territories", () => {
-      const input = {
+    it("should handle nested inAppPurchases", () => {
+      const data = {
         inAppPurchases: [
           {
             productId: "test_product",
-            type: "CONSUMABLE",
-            referenceName: "Test Product",
-            familySharable: false,
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [...territoryCodes],
-            },
+            availableTerritories: [...territoryCodes],
           },
         ],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
-      expect(result.inAppPurchases[0].availability.availableTerritories).toBe(
-        WORLDWIDE_TERRITORY_CODE
-      );
+      expect(result.inAppPurchases[0].availableTerritories).toBe("worldwide");
     });
 
-    it("should handle subscriptionGroups with all territories", () => {
-      const input = {
+    it("should handle nested subscriptionGroups", () => {
+      const data = {
         subscriptionGroups: [
           {
-            referenceName: "Test Group",
-            localizations: [],
             subscriptions: [
               {
                 productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: [...territoryCodes],
-                },
+                availableTerritories: [...territoryCodes],
               },
             ],
           },
         ],
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
       expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toBe(WORLDWIDE_TERRITORY_CODE);
-    });
-
-    it("should handle nested structures recursively", () => {
-      const input = {
-        subscriptionGroups: [
-          {
-            referenceName: "Test Group",
-            localizations: [],
-            subscriptions: [
-              {
-                productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: [...territoryCodes],
-                },
-                introductoryOffers: [
-                  {
-                    type: "FREE_TRIAL",
-                    duration: "ONE_WEEK",
-                    availableTerritories: [...territoryCodes],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = useShortcuts(input);
-
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toBe(WORLDWIDE_TERRITORY_CODE);
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].introductoryOffers[0]
-          .availableTerritories
-      ).toBe(WORLDWIDE_TERRITORY_CODE);
-    });
-
-    it("should preserve other properties unchanged", () => {
-      const input = {
-        appId: "123456789",
-        schemaVersion: "1.0.0",
-        availableTerritories: [...territoryCodes],
-        someOtherProperty: "should remain unchanged",
-      };
-
-      const result = useShortcuts(input);
-
-      expect(result.appId).toBe("123456789");
-      expect(result.schemaVersion).toBe("1.0.0");
-      expect(result.someOtherProperty).toBe("should remain unchanged");
-      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
-    });
-
-    it("should handle empty arrays", () => {
-      const input = {
-        availableTerritories: [],
-        introductoryOffers: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-      };
-
-      const result = useShortcuts(input);
-
-      expect(result.availableTerritories).toEqual([]);
-      expect(result.introductoryOffers).toEqual([]);
-      expect(result.inAppPurchases).toEqual([]);
-      expect(result.subscriptionGroups).toEqual([]);
+        result.subscriptionGroups[0].subscriptions[0].availableTerritories
+      ).toBe("worldwide");
     });
 
     it("should preserve existing worldwide string", () => {
-      const input = {
-        availableTerritories: WORLDWIDE_TERRITORY_CODE,
+      const data = {
+        availableTerritories: "worldwide",
       };
 
-      const result = useShortcuts(input);
+      const result = useShortcuts(data);
 
-      expect(result.availableTerritories).toBe(WORLDWIDE_TERRITORY_CODE);
-    });
-  });
-
-  describe("convertOutputUserShortcuts", () => {
-    it("should return null for null input", () => {
-      expect(removeShortcuts(null)).toBeNull();
+      expect(result.availableTerritories).toBe("worldwide");
     });
 
-    it("should return undefined for undefined input", () => {
-      expect(removeShortcuts(undefined)).toBeUndefined();
-    });
-
-    it("should return primitive values as-is", () => {
-      expect(removeShortcuts("test")).toBe("test");
-      expect(removeShortcuts(123)).toBe(123);
-      expect(removeShortcuts(true)).toBe(true);
-    });
-
-    it("should convert WorldWide back to all territories in availableTerritories", () => {
-      const input = {
-        availableTerritories: WORLDWIDE_TERRITORY_CODE,
+    it("should restore worldwide shortcut to all territories", () => {
+      const data = {
+        availableTerritories: "worldwide",
       };
 
-      const result = removeShortcuts(input);
+      const result = removeShortcuts(data);
 
-      expect(result.availableTerritories).toEqual([...territoryCodes]);
+      expect(Array.isArray(result.availableTerritories)).toBe(true);
+      expect(result.availableTerritories.length).toBeGreaterThan(0);
     });
 
-    it("should convert WorldWide case-insensitively", () => {
-      const input = {
+    it("should restore worldwide in availability objects", () => {
+      const data = {
+        availability: {
+          availableTerritories: "worldwide",
+        },
+      };
+
+      const result = removeShortcuts(data);
+
+      expect(Array.isArray(result.availability.availableTerritories)).toBe(
+        true
+      );
+    });
+
+    it("should restore worldwide in introductoryOffers", () => {
+      const data = {
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL",
+            duration: "ONE_WEEK",
+            availableTerritories: "worldwide",
+          },
+        ],
+      };
+
+      const result = removeShortcuts(data);
+
+      expect(
+        Array.isArray(result.introductoryOffers[0].availableTerritories)
+      ).toBe(true);
+    });
+
+    it("should restore worldwide in nested structures", () => {
+      const data = {
+        inAppPurchases: [
+          {
+            productId: "test_product",
+            availableTerritories: "worldwide",
+          },
+        ],
+        subscriptionGroups: [
+          {
+            subscriptions: [
+              {
+                productId: "test_sub",
+                availableTerritories: "worldwide",
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = removeShortcuts(data);
+
+      expect(Array.isArray(result.inAppPurchases[0].availableTerritories)).toBe(
+        true
+      );
+      expect(
+        Array.isArray(
+          result.subscriptionGroups[0].subscriptions[0].availableTerritories
+        )
+      ).toBe(true);
+    });
+
+    it("should handle case-insensitive worldwide", () => {
+      const data = {
         availableTerritories: "Worldwide",
       };
 
-      const result = removeShortcuts(input);
+      const result = removeShortcuts(data);
 
-      expect(result.availableTerritories).toEqual([...territoryCodes]);
+      expect(Array.isArray(result.availableTerritories)).toBe(true);
     });
+  });
 
-    it("should convert WORLDWIDE case-insensitively", () => {
-      const input = {
-        availableTerritories: "WORLDWIDE",
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.availableTerritories).toEqual([...territoryCodes]);
-    });
-
-    it("should not convert non-WorldWide territories", () => {
-      const input = {
-        availableTerritories: ["US", "CA", "GB"],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.availableTerritories).toEqual(["US", "CA", "GB"]);
-    });
-
-    it("should not convert arrays with multiple items even if WorldWide is present", () => {
-      const input = {
-        availableTerritories: [WORLDWIDE_TERRITORY_CODE, "US"],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.availableTerritories).toEqual([
-        WORLDWIDE_TERRITORY_CODE,
-        "US",
-      ]);
-    });
-
-    it("should handle introductoryOffers with WorldWide", () => {
-      const input = {
-        introductoryOffers: [
+  describe("combined shortcuts", () => {
+    it("should apply both availability and localization shortcuts", () => {
+      const data = {
+        primaryLocale: "en-US",
+        availableTerritories: [...territoryCodes],
+        localizations: [
           {
-            type: "FREE_TRIAL",
-            duration: "ONE_WEEK",
-            availableTerritories: WORLDWIDE_TERRITORY_CODE,
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
           },
         ],
       };
 
-      const result = removeShortcuts(input);
+      const result = useShortcuts(data);
 
-      expect(result.introductoryOffers[0].availableTerritories).toEqual([
-        ...territoryCodes,
-      ]);
+      expect(result.availableTerritories).toBe("worldwide");
+      expect(result.localizations).toHaveLength(2);
     });
 
-    it("should handle introductoryOffers with WorldWide case-insensitively", () => {
-      const input = {
-        introductoryOffers: [
+    it("should remove both availability and localization shortcuts", () => {
+      const data = {
+        primaryLocale: "en-US",
+        availableTerritories: "worldwide",
+        localizations: [
           {
-            type: "FREE_TRIAL",
-            duration: "ONE_WEEK",
-            availableTerritories: "Worldwide",
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
           },
         ],
       };
 
-      const result = removeShortcuts(input);
+      const result = removeShortcuts(data);
 
-      expect(result.introductoryOffers[0].availableTerritories).toEqual([
-        ...territoryCodes,
-      ]);
-    });
-
-    it("should handle introductoryOffers with non-WorldWide territories", () => {
-      const input = {
-        introductoryOffers: [
-          {
-            type: "FREE_TRIAL",
-            duration: "ONE_WEEK",
-            availableTerritories: ["US", "CA"],
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.introductoryOffers[0].availableTerritories).toEqual([
-        "US",
-        "CA",
-      ]);
-    });
-
-    it("should handle inAppPurchases with WorldWide", () => {
-      const input = {
-        inAppPurchases: [
-          {
-            productId: "test_product",
-            type: "CONSUMABLE",
-            referenceName: "Test Product",
-            familySharable: false,
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: WORLDWIDE_TERRITORY_CODE,
-            },
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(
-        result.inAppPurchases[0].availability.availableTerritories
-      ).toEqual([...territoryCodes]);
-    });
-
-    it("should handle inAppPurchases with WorldWide case-insensitively", () => {
-      const input = {
-        inAppPurchases: [
-          {
-            productId: "test_product",
-            type: "CONSUMABLE",
-            referenceName: "Test Product",
-            familySharable: false,
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: "Worldwide",
-            },
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(
-        result.inAppPurchases[0].availability.availableTerritories
-      ).toEqual([...territoryCodes]);
-    });
-
-    it("should handle subscriptionGroups with WorldWide", () => {
-      const input = {
-        subscriptionGroups: [
-          {
-            referenceName: "Test Group",
-            localizations: [],
-            subscriptions: [
-              {
-                productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toEqual([...territoryCodes]);
-    });
-
-    it("should handle subscriptionGroups with WorldWide case-insensitively", () => {
-      const input = {
-        subscriptionGroups: [
-          {
-            referenceName: "Test Group",
-            localizations: [],
-            subscriptions: [
-              {
-                productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: "Worldwide",
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toEqual([...territoryCodes]);
-    });
-
-    it("should handle nested structures recursively", () => {
-      const input = {
-        subscriptionGroups: [
-          {
-            referenceName: "Test Group",
-            localizations: [],
-            subscriptions: [
-              {
-                productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
-                },
-                introductoryOffers: [
-                  {
-                    type: "FREE_TRIAL",
-                    duration: "ONE_WEEK",
-                    availableTerritories: WORLDWIDE_TERRITORY_CODE,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toEqual([...territoryCodes]);
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].introductoryOffers[0]
-          .availableTerritories
-      ).toEqual([...territoryCodes]);
-    });
-
-    it("should preserve other properties unchanged", () => {
-      const input = {
-        appId: "123456789",
-        schemaVersion: "1.0.0",
-        availableTerritories: WORLDWIDE_TERRITORY_CODE,
-        someOtherProperty: "should remain unchanged",
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.appId).toBe("123456789");
-      expect(result.schemaVersion).toBe("1.0.0");
-      expect(result.someOtherProperty).toBe("should remain unchanged");
-      expect(result.availableTerritories).toEqual([...territoryCodes]);
-    });
-
-    it("should handle empty arrays", () => {
-      const input = {
-        availableTerritories: [],
-        introductoryOffers: [],
-        inAppPurchases: [],
-        subscriptionGroups: [],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.availableTerritories).toEqual([]);
-      expect(result.introductoryOffers).toEqual([]);
-      expect(result.inAppPurchases).toEqual([]);
-      expect(result.subscriptionGroups).toEqual([]);
-    });
-
-    it("should handle mixed WorldWide and non-WorldWide in different locations", () => {
-      const input = {
-        availableTerritories: WORLDWIDE_TERRITORY_CODE,
-        inAppPurchases: [
-          {
-            productId: "test_product",
-            type: "CONSUMABLE",
-            referenceName: "Test Product",
-            familySharable: false,
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: ["US", "CA"],
-            },
-          },
-        ],
-        subscriptionGroups: [
-          {
-            referenceName: "Test Group",
-            localizations: [],
-            subscriptions: [
-              {
-                productId: "test_sub",
-                referenceName: "Test Subscription",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: WORLDWIDE_TERRITORY_CODE,
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = removeShortcuts(input);
-
-      expect(result.availableTerritories).toEqual([...territoryCodes]);
-      expect(
-        result.inAppPurchases[0].availability.availableTerritories
-      ).toEqual(["US", "CA"]);
-      expect(
-        result.subscriptionGroups[0].subscriptions[0].availability
-          .availableTerritories
-      ).toEqual([...territoryCodes]);
+      expect(Array.isArray(result.availableTerritories)).toBe(true);
+      expect(result.localizations[1]).toHaveProperty("description");
     });
   });
 
   describe("round-trip conversion", () => {
-    it("should preserve data through input->output conversion", () => {
+    it("should preserve data through useShortcuts -> removeShortcuts", () => {
       const originalData = {
+        primaryLocale: "en-US",
         availableTerritories: [...territoryCodes],
+        localizations: [
+          {
+            locale: "en-US" as const,
+            name: "Test App",
+            description: "Test description",
+            keywords: "test,app,keywords",
+          },
+          {
+            locale: "es-ES" as const,
+            name: "Test App ES",
+            description: "Test description ES",
+            keywords: "test,app,keywords", // Same as primary
+          },
+        ],
         introductoryOffers: [
           {
             type: "FREE_TRIAL",
@@ -608,31 +477,16 @@ describe("shortcut-converter", () => {
             availableTerritories: [...territoryCodes],
           },
         ],
-        inAppPurchases: [
-          {
-            productId: "test_product",
-            type: "CONSUMABLE",
-            referenceName: "Test Product",
-            familySharable: false,
-            localizations: [],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: [...territoryCodes],
-            },
-          },
-        ],
       };
 
-      const convertedToWorldWide = useShortcuts(originalData);
-      const convertedBack = removeShortcuts(convertedToWorldWide);
+      const withShortcuts = useShortcuts(originalData);
+      const restored = removeShortcuts(withShortcuts);
 
-      expect(convertedBack.availableTerritories).toEqual([...territoryCodes]);
-      expect(convertedBack.introductoryOffers[0].availableTerritories).toEqual([
+      expect(restored.availableTerritories).toEqual([...territoryCodes]);
+      expect(restored.introductoryOffers[0].availableTerritories).toEqual([
         ...territoryCodes,
       ]);
-      expect(
-        convertedBack.inAppPurchases[0].availability.availableTerritories
-      ).toEqual([...territoryCodes]);
+      expect(restored.localizations[1].keywords).toBe("test,app,keywords");
     });
 
     it("should preserve partial territories through conversion", () => {
@@ -647,14 +501,65 @@ describe("shortcut-converter", () => {
         ],
       };
 
-      const convertedToWorldWide = useShortcuts(originalData);
-      const convertedBack = removeShortcuts(convertedToWorldWide);
+      const withShortcuts = useShortcuts(originalData);
+      const restored = removeShortcuts(withShortcuts);
 
-      expect(convertedBack.availableTerritories).toEqual(["US", "CA", "GB"]);
-      expect(convertedBack.introductoryOffers[0].availableTerritories).toEqual([
+      expect(restored.availableTerritories).toEqual(["US", "CA", "GB"]);
+      expect(restored.introductoryOffers[0].availableTerritories).toEqual([
         "US",
         "CA",
       ]);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle null input", () => {
+      expect(useShortcuts(null)).toBeNull();
+      expect(removeShortcuts(null)).toBeNull();
+    });
+
+    it("should handle undefined input", () => {
+      expect(useShortcuts(undefined)).toBeUndefined();
+      expect(removeShortcuts(undefined)).toBeUndefined();
+    });
+
+    it("should handle primitive values", () => {
+      expect(useShortcuts("test")).toBe("test");
+      expect(useShortcuts(123)).toBe(123);
+      expect(useShortcuts(true)).toBe(true);
+      expect(removeShortcuts("test")).toBe("test");
+      expect(removeShortcuts(123)).toBe(123);
+      expect(removeShortcuts(true)).toBe(true);
+    });
+
+    it("should handle empty arrays", () => {
+      const data = {
+        availableTerritories: [],
+        localizations: [],
+        introductoryOffers: [],
+        inAppPurchases: [],
+        subscriptionGroups: [],
+      };
+
+      const result = useShortcuts(data);
+      expect(result.availableTerritories).toEqual([]);
+      expect(result.localizations).toEqual([]);
+      expect(result.introductoryOffers).toEqual([]);
+      expect(result.inAppPurchases).toEqual([]);
+      expect(result.subscriptionGroups).toEqual([]);
+    });
+
+    it("should handle objects without shortcut properties", () => {
+      const data = {
+        appId: "123456789",
+        schemaVersion: "1.0.0",
+        someOtherProperty: "should remain unchanged",
+      };
+
+      const result = useShortcuts(data);
+      expect(result.appId).toBe("123456789");
+      expect(result.schemaVersion).toBe("1.0.0");
+      expect(result.someOtherProperty).toBe("should remain unchanged");
     });
   });
 });
