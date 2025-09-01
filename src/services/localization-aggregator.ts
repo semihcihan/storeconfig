@@ -96,9 +96,8 @@ export class LocalizationAggregator {
 
     const selectedAppInfo = this.selectAppInfoByPriority(activeAppInfos);
 
-    logger.warn(
-      `Multiple active app infos found for app ${appId} (${activeAppInfos.length}). Selected: ${selectedAppInfo.id} (${selectedAppInfo.attributes?.state})
-      `,
+    logger.debug(
+      `Multiple active app infos found for app ${appId} (${activeAppInfos.length}). Selected: ${selectedAppInfo.id} (${selectedAppInfo.attributes?.state})`,
       activeAppInfos.map((info) => ({
         id: info.id,
         state: info.attributes?.state,

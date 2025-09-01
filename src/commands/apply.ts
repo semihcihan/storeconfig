@@ -18,8 +18,7 @@ const confirmChanges = async (): Promise<boolean> => {
   });
 
   return new Promise((resolve) => {
-    logger.warn(`
-⚠️ CRITICAL WARNING
+    logger.warn(`### CRITICAL WARNING ###
 You are about to apply changes directly to App Store Connect.
 
 These changes will take effect immediately and may impact your live app configuration.

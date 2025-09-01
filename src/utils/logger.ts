@@ -84,21 +84,6 @@ export function getLogLevel(): LogLevel {
   return winstonLogger.level as LogLevel;
 }
 
-// Log format configuration
-export interface LogConfig {
-  colors?: boolean;
-  timestamps?: boolean;
-  format?: (level: LogLevel, message: string, args: any[]) => string;
-}
-
-// Function to configure logging
-export function configureLogging(config: Partial<LogConfig>): void {
-  // Winston handles most of this automatically, but we can extend if needed
-  console.warn(
-    "configureLogging is deprecated - Winston handles configuration automatically"
-  );
-}
-
 // Logger interface with color support
 export interface Logger {
   debug: (...args: any[]) => void;

@@ -1,7 +1,5 @@
 ## IDEAS TODOs
 
-- use builtin mw instead of custom
-
 - improve logging on showAction by gathering
   improve error logging when thrown
 
