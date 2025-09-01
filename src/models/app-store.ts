@@ -201,22 +201,14 @@ export const InAppPurchaseSchema = z
     }
   });
 
-export const AppStoreVersionLocalizationSchema = z
-  .object({
-    description: z.string().optional(),
-    keywords: z.string().optional(),
-    marketingUrl: z.string().url().optional(),
-    promotionalText: z.string().optional(),
-    supportUrl: z.string().url().optional(),
-    whatsNew: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.description && data.description.length < 10) {
-      logger.warn(
-        `Warning: description '${data.description}' is ${data.description.length} characters long, but should be at least 10 characters.`
-      );
-    }
-  });
+export const AppStoreVersionLocalizationSchema = z.object({
+  description: z.string().optional(),
+  keywords: z.string().optional(),
+  marketingUrl: z.string().url().optional(),
+  promotionalText: z.string().optional(),
+  supportUrl: z.string().url().optional(),
+  whatsNew: z.string().optional(),
+});
 
 export const AppStoreAppInfoLocalizationSchema = z.object({
   name: z.string().optional(),
@@ -230,8 +222,14 @@ export const AppStoreLocalizationSchema = z
     locale: LocaleCodeSchema,
   })
   .and(AppStoreVersionLocalizationSchema)
-  .and(AppStoreAppInfoLocalizationSchema);
-
+  .and(AppStoreAppInfoLocalizationSchema)
+  .superRefine((data, ctx) => {
+    if (data.description && data.description.length < 10) {
+      logger.warn(
+        `Warning: description for locale '${data.locale}' is ${data.description.length} characters long, but should be at least 10 characters.`
+      );
+    }
+  });
 export const AppStoreModelSchema = z
   .object({
     schemaVersion: z.string(),
