@@ -19,36 +19,45 @@ function getInitialLogLevel(): LogLevel {
 
 // Winston logger configuration
 function createWinstonLogger(): winston.Logger {
-  const { combine, colorize, errors, printf, splat } = winston.format;
+  const { combine, printf } = winston.format;
+
+  const RESET = "\x1b[0m";
+  const GREEN = "\x1b[32m";
+  const YELLOW = "\x1b[33m";
+  const RED = "\x1b[31m";
 
   const consoleFormat = combine(
-    errors({ stack: true }),
-    splat(),
-    colorize({ all: true }),
     printf((info) => {
       const { level, message } = info as any;
-      const parts: string[] = [];
-
-      if ((info as any).stack) {
-        parts.push((info as any).stack);
+      let visiblePrefix: string;
+      let coloredPrefix: string;
+      switch (level) {
+        case "debug":
+          visiblePrefix = "d";
+          coloredPrefix = visiblePrefix;
+          break;
+        case "info":
+          visiblePrefix = "i";
+          coloredPrefix = `${GREEN}${visiblePrefix}${RESET}`;
+          break;
+        case "warn":
+          visiblePrefix = "warn";
+          coloredPrefix = `${YELLOW}${visiblePrefix}${RESET}`;
+          break;
+        case "error":
+          visiblePrefix = "error";
+          coloredPrefix = `${RED}${visiblePrefix}${RESET}`;
+          break;
+        default:
+          visiblePrefix = `${level}:`;
+          coloredPrefix = visiblePrefix;
       }
 
-      const splatSymbol = Symbol.for("splat");
-      const extras = (info as any)[splatSymbol] as unknown[] | undefined;
-      if (!parts.length && extras && extras.length > 0) {
-        const rendered = extras.length === 1 ? extras[0] : extras;
-        parts.push(
-          util.inspect(rendered, {
-            colors: true,
-            depth: null,
-            maxArrayLength: null,
-            maxStringLength: null,
-          })
-        );
-      }
+      const indent = " ".repeat(visiblePrefix.length + 1);
+      const content = String(message);
+      const indentedContent = String(content).replace(/\n/g, `\n${indent}`);
 
-      const suffix = parts.length > 0 ? `\n${parts.join("\n")}` : "";
-      return `${level}: ${message}${suffix}`;
+      return `${coloredPrefix} ${indentedContent}\n`;
     })
   );
 
@@ -101,26 +110,49 @@ class WinstonLogger implements Logger {
     this.winstonLogger = createWinstonLogger();
   }
 
-  debug(message: any, ...meta: any[]) {
-    this.winstonLogger.debug(message, ...meta);
-  }
+  private renderValue = (value: unknown): string => {
+    if (typeof value === "string") return value;
+    if (value instanceof Error) return value.stack || String(value);
+    try {
+      return util.inspect(value, {
+        colors: true,
+        depth: null,
+        compact: false,
+        maxArrayLength: null,
+        maxStringLength: null,
+      });
+    } catch {
+      return String(value);
+    }
+  };
 
-  info(message: any, ...meta: any[]) {
-    this.winstonLogger.info(message, ...meta);
-  }
+  private renderMessage = (message: any, extras: any[]): string => {
+    const renderedMain = this.renderValue(message);
+    if (!extras || extras.length === 0) return renderedMain;
+    const renderedExtras = extras.map((e) => this.renderValue(e)).join("\n");
+    return `${renderedMain}\n${renderedExtras}`;
+  };
 
-  warn(message: any, ...meta: any[]) {
-    this.winstonLogger.warn(message, ...meta);
-  }
+  debug = (message: any, ...meta: any[]) => {
+    this.winstonLogger.debug(this.renderMessage(message, meta));
+  };
 
-  error(message: any, ...meta: any[]) {
-    this.winstonLogger.error(message, ...meta);
-  }
+  info = (message: any, ...meta: any[]) => {
+    this.winstonLogger.info(this.renderMessage(message, meta));
+  };
 
-  prompt(message: string): string {
+  warn = (message: any, ...meta: any[]) => {
+    this.winstonLogger.warn(this.renderMessage(message, meta));
+  };
+
+  error = (message: any, ...meta: any[]) => {
+    this.winstonLogger.error(this.renderMessage(message, meta));
+  };
+
+  prompt = (message: string): string => {
     // Winston doesn't have a prompt method, so we'll use console for this
     return message;
-  }
+  };
 
   // Add method to update log level
   setLevel(level: LogLevel): void {
