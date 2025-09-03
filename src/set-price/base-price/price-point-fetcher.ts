@@ -100,7 +100,6 @@ async function fetchTerritoryPricePointsForInAppPurchase(
     if (!iapId) {
       throw new ContextualError(
         "The in-app purchase does not exist, please create it first.",
-        undefined,
         {
           appId,
           selectedItem,
@@ -154,7 +153,6 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
     if (!subscriptionId) {
       throw new ContextualError(
         "The subscription does not exist, please create it first.",
-        undefined,
         {
           appId: appStoreState.appId,
           selectedItem,

@@ -134,7 +134,6 @@ export function validateIntroductoryOffers(
         );
         throw new ContextualError(
           `Invalid duration '${offer.duration}' for ${offer.type} offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'.`,
-          undefined,
           {
             subscriptionProductId,
             subscriptionPeriod,
@@ -155,7 +154,6 @@ export function validateIntroductoryOffers(
         );
         throw new ContextualError(
           `Invalid numberOfPeriods '${offer.numberOfPeriods}' for PAY_AS_YOU_GO offer in subscription '${subscriptionProductId}' with period '${subscriptionPeriod}'.`,
-          undefined,
           {
             subscriptionProductId,
             subscriptionPeriod,

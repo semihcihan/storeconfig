@@ -129,7 +129,6 @@ export function parseOfferDuration(
 
   throw new ContextualError(
     `Unknown offer mode and duration: ${offerMode} ${duration} for subscription`,
-    undefined,
     {
       offerMode,
       duration,

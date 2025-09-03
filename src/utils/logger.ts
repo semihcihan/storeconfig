@@ -8,6 +8,10 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
 // Default log level
 export const DEFAULT_LOG_LEVEL: LogLevel = "info";
 
+// Log output modes
+export const LOG_OUTPUT_MODES = ["console", "file"] as const;
+export type LogOutputMode = (typeof LOG_OUTPUT_MODES)[number];
+
 // Get current log level from environment or default to 'info'
 function getInitialLogLevel(): LogLevel {
   const envLevel = process.env.LOG_LEVEL;
@@ -17,80 +21,105 @@ function getInitialLogLevel(): LogLevel {
   return DEFAULT_LOG_LEVEL;
 }
 
-// Winston logger configuration
-function createWinstonLogger(): winston.Logger {
-  const { combine, printf } = winston.format;
+// Get log output mode from environment or default to 'console'
+function getInitialOutputMode(): LogOutputMode {
+  const envMode = process.env.LOG_OUTPUT;
+  if (envMode && LOG_OUTPUT_MODES.includes(envMode as LogOutputMode)) {
+    return envMode as LogOutputMode;
+  }
+  return "console"; // Default is always console
+}
+
+// Create format for console (with colors) or file (with timestamp)
+function createFormat(isFile: boolean) {
+  const { combine, printf, timestamp } = winston.format;
 
   const RESET = "\x1b[0m";
   const GREEN = "\x1b[32m";
   const YELLOW = "\x1b[33m";
   const RED = "\x1b[31m";
 
-  const consoleFormat = combine(
-    printf((info) => {
-      const { level, message } = info as any;
-      let visiblePrefix: string;
-      let coloredPrefix: string;
-      switch (level) {
-        case "debug":
-          visiblePrefix = "d";
-          coloredPrefix = visiblePrefix;
-          break;
-        case "info":
-          visiblePrefix = "i";
-          coloredPrefix = `${GREEN}${visiblePrefix}${RESET}`;
-          break;
-        case "warn":
-          visiblePrefix = "warn";
-          coloredPrefix = `${YELLOW}${visiblePrefix}${RESET}`;
-          break;
-        case "error":
-          visiblePrefix = "error";
-          coloredPrefix = `${RED}${visiblePrefix}${RESET}`;
-          break;
-        default:
-          visiblePrefix = `${level}:`;
-          coloredPrefix = visiblePrefix;
-      }
+  const printfFormat = printf((info) => {
+    const { level, message, timestamp: ts } = info as any;
 
-      const indent = " ".repeat(visiblePrefix.length + 1);
-      const content = String(message);
-      const indentedContent = String(content).replace(/\n/g, `\n${indent}`);
+    let visiblePrefix: string;
+    let coloredPrefix: string;
+    switch (level) {
+      case "debug":
+        visiblePrefix = "d";
+        coloredPrefix = isFile ? visiblePrefix : visiblePrefix;
+        break;
+      case "info":
+        visiblePrefix = "i";
+        coloredPrefix = isFile
+          ? visiblePrefix
+          : `${GREEN}${visiblePrefix}${RESET}`;
+        break;
+      case "warn":
+        visiblePrefix = "warn";
+        coloredPrefix = isFile
+          ? visiblePrefix
+          : `${YELLOW}${visiblePrefix}${RESET}`;
+        break;
+      case "error":
+        visiblePrefix = "error";
+        coloredPrefix = isFile
+          ? visiblePrefix
+          : `${RED}${visiblePrefix}${RESET}`;
+        break;
+      default:
+        visiblePrefix = `${level}:`;
+        coloredPrefix = isFile ? visiblePrefix : visiblePrefix;
+    }
 
-      return `${coloredPrefix} ${indentedContent}\n`;
-    })
-  );
+    const indent = " ".repeat(visiblePrefix.length + 1);
+    const content = String(message);
+    const indentedContent = String(content).replace(/\n/g, `\n${indent}`);
+
+    if (isFile && ts) {
+      return `${ts} [${level.toUpperCase()}] ${indentedContent}\n`;
+    }
+
+    return `${coloredPrefix} ${indentedContent}\n`;
+  });
+
+  if (isFile) {
+    return combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), printfFormat);
+  }
+
+  return combine(printfFormat);
+}
+
+// Winston logger configuration
+function createWinstonLogger(): winston.Logger {
+  const outputMode = getInitialOutputMode();
+  const logFile = process.env.LOG_FILE;
+  const transports: winston.transport[] = [];
+
+  // Add transports based on output mode
+  if (outputMode === "console") {
+    transports.push(
+      new winston.transports.Console({ format: createFormat(false) })
+    );
+  }
+
+  if (outputMode === "file" && logFile) {
+    transports.push(
+      new winston.transports.File({
+        filename: logFile,
+        format: createFormat(true),
+        maxsize: 10 * 1024 * 1024, // 10MB
+        maxFiles: 5,
+        tailable: true,
+      })
+    );
+  }
 
   return winston.createLogger({
     exitOnError: true,
     level: getInitialLogLevel(),
-    format: consoleFormat,
-    transports: [new winston.transports.Console()],
+    transports,
   });
-}
-
-// Function to set log level
-export function setLogLevel(level: LogLevel): void {
-  if (LOG_LEVELS.includes(level)) {
-    winstonLogger.level = level;
-    // Also update the active logger instance
-    if (activeLogger instanceof WinstonLogger) {
-      activeLogger.setLevel(level);
-    }
-  } else {
-    winstonLogger.warn(
-      `Invalid log level: ${level}. Using '${DEFAULT_LOG_LEVEL}' as default.`
-    );
-    winstonLogger.level = DEFAULT_LOG_LEVEL;
-    if (activeLogger instanceof WinstonLogger) {
-      activeLogger.setLevel(DEFAULT_LOG_LEVEL);
-    }
-  }
-}
-
-// Function to get current log level
-export function getLogLevel(): LogLevel {
-  return winstonLogger.level as LogLevel;
 }
 
 // Logger interface with color support
@@ -100,7 +129,31 @@ export interface Logger {
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
   prompt: (message: string) => string;
+  setLevel: (level: LogLevel) => void;
+  getLevel: () => LogLevel;
+  setOutputMode: (mode: LogOutputMode, filename?: string) => void;
+  getOutputMode: () => LogOutputMode;
 }
+
+const renderValue = (value: unknown): string => {
+  try {
+    // For strings, return them as-is to preserve newlines
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return util.inspect(value, {
+      colors: false,
+      depth: null,
+      compact: false,
+      maxArrayLength: null,
+      maxStringLength: null,
+      customInspect: true,
+    });
+  } catch {
+    return String(value);
+  }
+};
 
 // Winston-based logger implementation
 class WinstonLogger implements Logger {
@@ -110,26 +163,10 @@ class WinstonLogger implements Logger {
     this.winstonLogger = createWinstonLogger();
   }
 
-  private renderValue = (value: unknown): string => {
-    if (typeof value === "string") return value;
-    if (value instanceof Error) return value.stack || String(value);
-    try {
-      return util.inspect(value, {
-        colors: true,
-        depth: null,
-        compact: false,
-        maxArrayLength: null,
-        maxStringLength: null,
-      });
-    } catch {
-      return String(value);
-    }
-  };
-
   private renderMessage = (message: any, extras: any[]): string => {
-    const renderedMain = this.renderValue(message);
+    const renderedMain = renderValue(message);
     if (!extras || extras.length === 0) return renderedMain;
-    const renderedExtras = extras.map((e) => this.renderValue(e)).join("\n");
+    const renderedExtras = extras.map((e) => renderValue(e)).join("\n");
     return `${renderedMain}\n${renderedExtras}`;
   };
 
@@ -155,30 +192,97 @@ class WinstonLogger implements Logger {
   };
 
   // Add method to update log level
-  setLevel(level: LogLevel): void {
+  setLevel = (level: LogLevel): void => {
     if (LOG_LEVELS.includes(level)) {
       this.winstonLogger.level = level;
+    } else {
+      this.winstonLogger.warn(
+        `Invalid log level: ${level}. Using '${DEFAULT_LOG_LEVEL}' as default.`
+      );
+      this.winstonLogger.level = DEFAULT_LOG_LEVEL;
     }
-  }
+  };
+
+  // Add method to get current log level
+  getLevel = (): LogLevel => {
+    return this.winstonLogger.level as LogLevel;
+  };
+
+  // Add method to update output mode
+  setOutputMode = (mode: LogOutputMode, filename?: string): void => {
+    if (!LOG_OUTPUT_MODES.includes(mode)) {
+      this.winstonLogger.warn(
+        `Invalid output mode: ${mode}. Using 'console' as default.`
+      );
+      mode = "console";
+    }
+
+    // Clear existing transports
+    this.winstonLogger.clear();
+
+    // Add transports based on mode
+    if (mode === "console") {
+      this.winstonLogger.add(
+        new winston.transports.Console({ format: createFormat(false) })
+      );
+    }
+
+    if (mode === "file" && filename) {
+      this.winstonLogger.add(
+        new winston.transports.File({
+          filename,
+          format: createFormat(true),
+          maxsize: 10 * 1024 * 1024, // 10MB
+          maxFiles: 5,
+          tailable: true,
+        })
+      );
+    }
+  };
+
+  // Add method to get current output mode
+  getOutputMode = (): LogOutputMode => {
+    const transports = this.winstonLogger.transports;
+    const hasFile = transports.some(
+      (t) => t instanceof winston.transports.File
+    );
+
+    if (hasFile) return "file";
+    return "console";
+  };
 }
 
-// Create the Winston logger instance
-let winstonLogger: winston.Logger = createWinstonLogger();
-
 // Default logger instance (used throughout the app)
-let activeLogger: WinstonLogger = new WinstonLogger();
+let activeLogger: Logger = new WinstonLogger();
 
 // Export the logger instance
 export const logger: Logger = activeLogger;
 
-// Allow overriding the logger (for DI/testing/advanced use)
-export function setLogger(newLogger: Logger) {
-  activeLogger = newLogger as WinstonLogger;
-  // Update the exported logger reference
-  (exports as any).logger = activeLogger;
+// Extend Error interface to include custom inspect method
+declare global {
+  interface Error {
+    [util.inspect.custom](): string;
+  }
 }
 
-// Get the current logger instance
-export function getLogger(): Logger {
-  return activeLogger;
-}
+// Custom inspect method for all Error objects to ensure proper formatting
+Error.prototype[util.inspect.custom] = function () {
+  const stack = this.stack || String(this);
+
+  // Get all enumerable properties (excluding the standard Error properties)
+  const enumerableProps = Object.keys(this).filter(
+    (key) => key !== "name" && key !== "message" && key !== "stack"
+  );
+
+  if (enumerableProps.length > 0) {
+    const propsObj: any = {};
+    enumerableProps.forEach((key) => {
+      propsObj[key] = (this as any)[key];
+    });
+
+    const propsStr = renderValue(propsObj);
+    return `${stack}\n${propsStr}`;
+  }
+
+  return stack;
+};

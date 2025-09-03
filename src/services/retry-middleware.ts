@@ -157,8 +157,8 @@ function createRetryWrapper<T extends Record<string, any>>(
             if (attempt === config.maxAttempts) {
               throw new ContextualError(
                 `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-                response.error,
                 {
+                  error: response.error,
                   method,
                   endpoint,
                   attempt,
@@ -205,8 +205,8 @@ function createRetryWrapper<T extends Record<string, any>>(
         if (attempt === config.maxAttempts) {
           throw new ContextualError(
             `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-            error,
             {
+              error,
               method,
               endpoint,
               attempt,

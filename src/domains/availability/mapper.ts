@@ -45,8 +45,8 @@ export async function mapAppAvailability(
       } catch (err) {
         throw new ContextualError(
           `Could not decode territory availability ID: ${territoryAvail.id}`,
-          err,
           {
+            err,
             territoryAvail,
           }
         );

@@ -114,7 +114,6 @@ export async function findSubscriptionPricePointId(
   if (!pricePointId) {
     throw new ContextualError(
       `No price point found for price ${price} in territory ${territory}`,
-      undefined,
       {
         price,
         territory,
@@ -260,7 +259,8 @@ export async function buildSubscriptionPricesWithEqualizations(
 
     return prices;
   } catch (error) {
-    throw new ContextualError(`Failed to fetch equalizations`, error, {
+    throw new ContextualError(`Failed to fetch equalizations`, {
+      error,
       pricePointId,
     });
   }

@@ -13,17 +13,15 @@ describe("ContextualError", () => {
 
       expect(error.message).toBe("Test error");
       expect(error.name).toBe("ContextualError");
-      expect(error.originalError).toBeUndefined();
       expect(error.context).toBeUndefined();
     });
 
     it("should create error with message and context", () => {
       const context = { userId: "123", operation: "fetch" };
-      const error = new ContextualError("Test error", undefined, context);
+      const error = new ContextualError("Test error", context);
 
       expect(error.message).toBe("Test error");
       expect(error.context).toEqual(context);
-      expect(error.originalError).toBeUndefined();
     });
 
     it("should create error with message and original error", () => {
@@ -33,42 +31,18 @@ describe("ContextualError", () => {
       const error = new ContextualError("Test error", originalError);
 
       expect(error.message).toBe("Test error");
-      expect(error.originalError).toBe(originalError);
-      expect(error.stack).toBe("Original stack trace");
-      expect(error.context).toBeUndefined();
+      expect(error.stack).not.toBe(originalError.stack);
+      expect(error.context).toBe(originalError);
     });
 
     it("should create error with message, original error, and context", () => {
       const originalError = new Error("Original error");
       const context = { userId: "123", operation: "fetch" };
 
-      const error = new ContextualError("Test error", originalError, context);
+      const error = new ContextualError("Test error", context);
 
       expect(error.message).toBe("Test error");
-      expect(error.originalError).toBe(originalError);
       expect(error.context).toEqual(context);
-    });
-
-    it("should preserve Apple API error properties", () => {
-      const appleError = {
-        status: 404,
-        response: { status: 404 },
-        errors: [{ status: "404", detail: "Not found" }],
-      };
-
-      const error = new ContextualError("Test error", appleError);
-
-      expect(error.status).toBe(404);
-      expect(error.response).toEqual({ status: 404 });
-      expect(error.errors).toEqual([{ status: "404", detail: "Not found" }]);
-    });
-
-    it("should handle non-Error objects as original error", () => {
-      const originalError = "String error";
-      const error = new ContextualError("Test error", originalError);
-
-      expect(error.originalError).toBeInstanceOf(Error);
-      expect(error.originalError?.message).toBe("String error");
     });
 
     it("should maintain proper prototype chain", () => {
@@ -181,31 +155,6 @@ describe("extractErrorMessage", () => {
     const error = { message: "Some error" };
 
     expect(extractErrorMessage(error)).toBe("Unknown error");
-  });
-});
-
-describe("ContextualError", () => {
-  it("should create contextual error with prefix and Apple API error", () => {
-    const appleError = {
-      errors: [{ detail: "API error message" }],
-    };
-
-    const error = new ContextualError("Operation failed", appleError);
-    expect(error.message).toBe("Operation failed");
-    expect(error.originalError).toBeDefined();
-  });
-
-  it("should preserve Apple API error properties", () => {
-    const appleError = {
-      status: 404,
-      response: { status: 404 },
-      errors: [{ status: "404", detail: "Not found" }],
-    };
-
-    const error = new ContextualError("Operation failed", appleError);
-    expect(error.status).toBe(404);
-    expect(error.response).toEqual({ status: 404 });
-    expect(error.errors).toEqual([{ status: "404", detail: "Not found" }]);
   });
 });
 

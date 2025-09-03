@@ -22,7 +22,6 @@ export function validateAppStoreModel(
               addIssue: (issue: any) => {
                 throw new ContextualError(
                   `Business rule validation failed: ${issue.message}`,
-                  null,
                   { issue, path: issue.path }
                 );
               },
@@ -41,8 +40,6 @@ export function validateAppStoreModel(
     }
     return result.data;
   } else {
-    throw new ContextualError(`❌ Validation failed!`, result.error, {
-      result,
-    });
+    throw new ContextualError(`❌ Validation failed!`, result);
   }
 }

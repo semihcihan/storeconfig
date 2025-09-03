@@ -55,14 +55,10 @@ export function readJsonFile(filePath: string): any {
   try {
     return JSON.parse(fileContent);
   } catch (jsonError) {
-    throw new ContextualError(
-      `❌ Invalid JSON format! ${filePath}`,
+    throw new ContextualError(`❌ Invalid JSON format! ${filePath}`, {
+      filePath,
       jsonError,
-      {
-        filePath,
-        jsonError,
-      }
-    );
+    });
   }
 }
 

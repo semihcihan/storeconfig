@@ -374,7 +374,6 @@ export async function findIAPPricePointId(
 
     throw new ContextualError(
       `No price point found for price ${price} in territory ${territory}`,
-      undefined,
       {
         price,
         territory,
@@ -404,15 +403,12 @@ export async function fetchIAPPricePoints(
   });
 
   if (response.error) {
-    throw new ContextualError(
-      "Failed to get IAP price points",
-      response.error,
-      {
-        iapId,
-        territory,
-        operation: "fetchIAPPricePoints",
-      }
-    );
+    throw new ContextualError("Failed to get IAP price points", {
+      error: response.error,
+      iapId,
+      territory,
+      operation: "fetchIAPPricePoints",
+    });
   }
 
   return response.data as InAppPurchasePricePointsResponse;

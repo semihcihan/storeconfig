@@ -13,7 +13,6 @@ const issuerId = process.env.ASC_ISSUER_ID;
 if (!privateKeyPath || !keyId || !issuerId) {
   throw new ContextualError(
     "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY_PATH, ASC_KEY_ID, and ASC_ISSUER_ID.",
-    undefined,
     {
       ASC_PRIVATE_KEY_PATH: privateKeyPath,
       ASC_KEY_ID: keyId,

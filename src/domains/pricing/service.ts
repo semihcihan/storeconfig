@@ -40,7 +40,6 @@ async function findAppPricePointId(
   if (!pricePoint) {
     throw new ContextualError(
       `No price point found for price ${price} in territory ${territory}`,
-      undefined,
       {
         price,
         territory,

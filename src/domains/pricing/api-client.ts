@@ -30,14 +30,11 @@ export async function getAppPriceSchedule(
       return null;
     }
 
-    throw new ContextualError(
-      "Failed to get app price schedule",
-      response.error,
-      {
-        appId,
-        operation: "getAppPriceSchedule",
-      }
-    );
+    throw new ContextualError("Failed to get app price schedule", {
+      error: response.error,
+      appId,
+      operation: "getAppPriceSchedule",
+    });
   }
 
   return response.data!;
@@ -63,15 +60,12 @@ export async function fetchAppPricePoints(
   });
 
   if (response.error) {
-    throw new ContextualError(
-      "Failed to get app price points",
-      response.error,
-      {
-        appId,
-        territory,
-        operation: "fetchAppPricePoints",
-      }
-    );
+    throw new ContextualError("Failed to get app price points", {
+      error: response.error,
+      appId,
+      territory,
+      operation: "fetchAppPricePoints",
+    });
   }
 
   return response.data as components["schemas"]["AppPricePointsV3Response"];
@@ -94,7 +88,8 @@ export async function fetchCurrentManualPrices(
   });
 
   if (response.error) {
-    throw new ContextualError("Failed to get manual prices", response.error, {
+    throw new ContextualError("Failed to get manual prices", {
+      error: response.error,
       priceScheduleId,
       operation: "fetchCurrentManualPrices",
     });
@@ -118,7 +113,8 @@ export async function fetchBaseTerritory(
   });
 
   if (response.error) {
-    throw new ContextualError("Failed to get base territory", response.error, {
+    throw new ContextualError("Failed to get base territory", {
+      error: response.error,
       priceScheduleId,
       operation: "fetchBaseTerritory",
     });
@@ -136,14 +132,11 @@ export async function createAppPriceSchedule(
   });
 
   if (response.error) {
-    throw new ContextualError(
-      "Failed to create app price schedule",
-      response.error,
-      {
-        createRequest,
-        operation: "createAppPriceSchedule",
-      }
-    );
+    throw new ContextualError("Failed to create app price schedule", {
+      error: response.error,
+      createRequest,
+      operation: "createAppPriceSchedule",
+    });
   }
 
   return response.data!;
@@ -167,14 +160,11 @@ export async function fetchAppManualPrices(
   });
 
   if (response.error) {
-    throw new ContextualError(
-      "Failed to fetch app manual prices",
-      response.error,
-      {
-        priceScheduleId,
-        operation: "fetchAppManualPrices",
-      }
-    );
+    throw new ContextualError("Failed to fetch app manual prices", {
+      error: response.error,
+      priceScheduleId,
+      operation: "fetchAppManualPrices",
+    });
   }
 
   return response.data!;
@@ -200,15 +190,12 @@ export async function fetchAppAutomaticPrices(
   });
 
   if (response.error) {
-    throw new ContextualError(
-      "Failed to fetch app automatic prices",
-      response.error,
-      {
-        priceScheduleId,
-        territoryId,
-        operation: "fetchAppAutomaticPrices",
-      }
-    );
+    throw new ContextualError("Failed to fetch app automatic prices", {
+      error: response.error,
+      priceScheduleId,
+      territoryId,
+      operation: "fetchAppAutomaticPrices",
+    });
   }
 
   return response.data!;
@@ -225,8 +212,8 @@ export async function fetchAppPriceScheduleBaseTerritory(
   if (response.error) {
     throw new ContextualError(
       "Failed to fetch app price schedule base territory",
-      response.error,
       {
+        error: response.error,
         priceScheduleId,
         operation: "fetchAppPriceScheduleBaseTerritory",
       }
