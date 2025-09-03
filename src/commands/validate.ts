@@ -1,7 +1,7 @@
 import { CommandModule } from "yargs";
 import { readJsonFile } from "../helpers/validation-helpers";
 import { logger } from "../utils/logger";
-import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
+import { removeShortcuts } from "../utils/shortcut-converter";
 import { validateAppStoreModel } from "../helpers/validation-model";
 
 const command: CommandModule = {

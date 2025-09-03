@@ -94,16 +94,24 @@ export function processSubscriptionPriceResponse(
 export function mapSubscriptionLocalizations(
   response: components["schemas"]["SubscriptionLocalizationsResponse"]
 ): Subscription["localizations"] {
-  return (response.data || []).map((loc) => {
-    const localeParseResult = LocaleCodeSchema.safeParse(
-      loc.attributes?.locale
-    );
-    return {
-      locale: localeParseResult.success ? localeParseResult.data : "en-US",
-      name: loc.attributes?.name || "",
-      description: loc.attributes?.description || "",
-    };
-  });
+  return (response.data || [])
+    .map((loc) => {
+      const localeParseResult = LocaleCodeSchema.safeParse(
+        loc.attributes?.locale
+      );
+      if (!localeParseResult.success) {
+        logger.warn(
+          `Invalid locale code: ${loc.attributes?.locale}. Skipping.`
+        );
+        return null;
+      }
+      return {
+        locale: localeParseResult.success ? localeParseResult.data : "en-US",
+        name: loc.attributes?.name || "",
+        description: loc.attributes?.description || "",
+      };
+    })
+    .filter((l): l is NonNullable<typeof l> => l !== null);
 }
 
 // Parse offer duration

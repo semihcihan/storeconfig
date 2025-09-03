@@ -2,6 +2,7 @@ import {
   ContextualError,
   isNotFoundError,
   isRateLimitError,
+  isNotAuthorizedError,
   extractErrorMessage,
   isVersionNotUpdatableError,
 } from "./error-handling-helpers";
@@ -126,6 +127,68 @@ describe("isRateLimitError", () => {
   });
 });
 
+describe("isNotAuthorizedError", () => {
+  it("should return true for 401 status in errors array", () => {
+    const error = {
+      errors: [{ status: "401", detail: "Not authorized" }],
+    };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+
+  it("should return true for numeric 401 status in errors array", () => {
+    const error = {
+      errors: [{ status: 401, detail: "Not authorized" }],
+    };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+
+  it("should return true for direct 401 status", () => {
+    const error = { status: 401 };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+
+  it("should return true for direct string 401 status", () => {
+    const error = { status: "401" };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+
+  it("should return true for NOT_AUTHORIZED code in errors array", () => {
+    const error = {
+      errors: [{ code: "NOT_AUTHORIZED", detail: "Not authorized" }],
+    };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+
+  it("should return false for non-401 errors", () => {
+    const error = { status: 500 };
+
+    expect(isNotAuthorizedError(error)).toBe(false);
+  });
+
+  it("should return false for errors without status or code", () => {
+    const error = { message: "Some error" };
+
+    expect(isNotAuthorizedError(error)).toBe(false);
+  });
+
+  it("should find ErrorResponse in nested objects", () => {
+    const error = {
+      response: {
+        data: {
+          errors: [{ status: "401", detail: "Not authorized" }],
+        },
+      },
+    };
+
+    expect(isNotAuthorizedError(error)).toBe(true);
+  });
+});
+
 describe("extractErrorMessage", () => {
   it("should extract message from Apple API error format", () => {
     const error = {
@@ -155,6 +218,18 @@ describe("extractErrorMessage", () => {
     const error = { message: "Some error" };
 
     expect(extractErrorMessage(error)).toBe("Unknown error");
+  });
+
+  it("should extract message from nested ErrorResponse", () => {
+    const error = {
+      response: {
+        data: {
+          errors: [{ detail: "Nested error message" }],
+        },
+      },
+    };
+
+    expect(extractErrorMessage(error)).toBe("Nested error message");
   });
 });
 
