@@ -338,9 +338,7 @@ export async function getIAPPriceScheduleId(
   });
 
   if (response.error) {
-    const is404Error = response.error.errors?.some(
-      (err: any) => err.status === "404" || err.status === 404
-    );
+    const is404Error = isNotFoundError(response.error);
     if (is404Error) {
       return null;
     }

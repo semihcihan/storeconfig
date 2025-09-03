@@ -1,6 +1,9 @@
 import { api } from "../../services/api";
 import { API_FIELD_CONFIGS } from "../../helpers/constants";
-import { ContextualError } from "../../helpers/error-handling-helpers";
+import {
+  ContextualError,
+  isNotFoundError,
+} from "../../helpers/error-handling-helpers";
 import type { components } from "../../generated/app-store-connect-api";
 
 type AppPriceScheduleResponse =
@@ -22,9 +25,7 @@ export async function getAppPriceSchedule(
 
   if (response.error) {
     // Check if it's a 404 error (no price schedule exists)
-    const is404Error = response.error.errors?.some(
-      (err: any) => err.status === "404" || err.status === 404
-    );
+    const is404Error = isNotFoundError(response.error);
 
     if (is404Error) {
       return null;
