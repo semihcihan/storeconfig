@@ -86,14 +86,12 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
         const content = fs.readFileSync(currenciesPath, "utf8");
         this.currencies = JSON.parse(content);
       } else {
-        throw new ContextualError("Currencies file not found", {
+        throw new ContextualError("Currencies file not found", undefined, {
           currenciesPath,
         });
       }
     } catch (error) {
-      throw new ContextualError("Failed to load currencies", error, {
-        error,
-      });
+      throw new ContextualError("Failed to load currencies", error);
     }
   }
 
@@ -112,7 +110,7 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     const basePriceNumber = parseFloat(basePricePoint.price);
     const minPriceNumber = minimumPrice ? parseFloat(minimumPrice) : 0;
     if (isNaN(basePriceNumber)) {
-      throw new ContextualError("Invalid base price format", {
+      throw new ContextualError("Invalid base price format", undefined, {
         basePrice: basePricePoint.price,
       });
     }
@@ -205,7 +203,7 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
 
     // If the target currency doesn't have a USD conversion rate, we can't calculate the price
     if (!targetCurrencyTerritory || !targetCurrencyTerritory.usdRate) {
-      throw new ContextualError("Cannot calculate price", territory);
+      throw new ContextualError("Cannot calculate price", undefined, territory);
     }
 
     return this.resultConverter(fairPriceUSD * targetCurrencyTerritory.usdRate);
