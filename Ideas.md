@@ -1,8 +1,5 @@
 ## IDEAS TODOs
 
-- warn Warning: productId 'com.lagotgames.texaslottery.FormulaLarge' is 40 characters long, but should be at most 30 characters for optimal App Store display.
-  iap ref name 64 product id 100
-
 - set-price cagrildiginda subscription vs yoksa henuz, once yarat bi tane
 - app pricing gozuksun her zaman
 

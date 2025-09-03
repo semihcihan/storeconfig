@@ -4,6 +4,9 @@ import {
   InAppPurchaseSchema,
   AppStoreModelSchema,
   SubscriptionGroupLocalizationSchema,
+  PromotionalOfferSchema,
+  SubscriptionGroupSchema,
+  AppStoreLocalizationSchema,
 } from "./app-store";
 import { isValidProductId } from "../helpers/validation-helpers";
 import { validateAppStoreModel } from "../helpers/validation-model";
@@ -791,6 +794,108 @@ describe("AppStore Models", () => {
         mockLogger.logger.info = originalInfo;
       }
     });
+
+    it("should warn when productId exceeds 100 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longProductId =
+          "this.is.a.very.long.product.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.subscription.validation";
+        const subscription = {
+          ...validSubscriptionData,
+          productId: longProductId,
+        };
+
+        const result = SubscriptionSchema.safeParse(subscription);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longProductId}' is ${longProductId.length} characters long, but should be at most 100 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn when referenceName exceeds 64 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longReferenceName =
+          "This is a very long reference name that exceeds sixty four characters limit and should trigger a warning message";
+        const subscription = {
+          ...validSubscriptionData,
+          referenceName: longReferenceName,
+        };
+
+        const result = SubscriptionSchema.safeParse(subscription);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn for both productId and referenceName when both exceed limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longProductId =
+          "this.is.a.very.long.product.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.subscription.validation";
+        const longReferenceName =
+          "This is a very long reference name that exceeds sixty four characters limit and should trigger a warning message";
+        const subscription = {
+          ...validSubscriptionData,
+          productId: longProductId,
+          referenceName: longReferenceName,
+        };
+
+        const result = SubscriptionSchema.safeParse(subscription);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledTimes(2);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longProductId}' is ${longProductId.length} characters long, but should be at most 100 characters for optimal App Store display.`
+        );
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when both productId and referenceName are within limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortProductId = "short.product.id";
+        const shortReferenceName = "Short Reference Name";
+        const subscription = {
+          ...validSubscriptionData,
+          productId: shortProductId,
+          referenceName: shortReferenceName,
+        };
+
+        const result = SubscriptionSchema.safeParse(subscription);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
   });
 
   describe("InAppPurchaseSchema", () => {
@@ -864,7 +969,7 @@ describe("AppStore Models", () => {
       }
     });
 
-    it("should warn when productId exceeds 30 characters", () => {
+    it("should warn when productId exceeds 100 characters", () => {
       const mockLogger = require("../utils/logger");
       const originalWarn = mockLogger.logger.warn;
       const mockWarn = jest.fn();
@@ -872,7 +977,7 @@ describe("AppStore Models", () => {
 
       try {
         const longProductId =
-          "this.is.a.very.long.product.id.that.exceeds.thirty.characters.limit";
+          "this.is.a.very.long.product.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.iap.validation";
         const iap = {
           ...validInAppPurchaseData,
           productId: longProductId,
@@ -888,7 +993,7 @@ describe("AppStore Models", () => {
       }
     });
 
-    it("should warn when referenceName exceeds 60 characters", () => {
+    it("should warn when referenceName exceeds 64 characters", () => {
       const mockLogger = require("../utils/logger");
       const originalWarn = mockLogger.logger.warn;
       const mockWarn = jest.fn();
@@ -896,7 +1001,7 @@ describe("AppStore Models", () => {
 
       try {
         const longReferenceName =
-          "This is a very long reference name that exceeds sixty characters limit and should trigger a warning message";
+          "This is a very long reference name that exceeds sixty four characters limit and should trigger a warning message";
         const iap = {
           ...validInAppPurchaseData,
           referenceName: longReferenceName,
@@ -920,9 +1025,9 @@ describe("AppStore Models", () => {
 
       try {
         const longProductId =
-          "this.is.a.very.long.product.id.that.exceeds.thirty.characters.limit";
+          "this.is.a.very.long.product.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.iap.validation";
         const longReferenceName =
-          "This is a very long reference name that exceeds sixty characters limit and should trigger a warning message";
+          "This is a very long reference name that exceeds sixty four characters limit and should trigger a warning message";
         const iap = {
           ...validInAppPurchaseData,
           productId: longProductId,
@@ -966,280 +1071,547 @@ describe("AppStore Models", () => {
       }
     });
   });
-});
 
-describe("Introductory Offers Grouping Validation", () => {
-  const baseSubscription = {
-    productId: "test_product",
-    referenceName: "Test Subscription",
-    groupLevel: 1,
-    subscriptionPeriod: "ONE_MONTH" as const,
-    familySharable: false,
-    prices: [{ price: "4.99", territory: "USA" }],
-    localizations: [
-      { locale: "en-US", name: "Test", description: "Test description" },
-    ],
-    availability: {
-      availableInNewTerritories: true,
-      availableTerritories: ["USA"],
-    },
-  };
+  describe("PromotionalOfferSchema", () => {
+    const validPromoOfferData = {
+      id: "promo.offer.id",
+      referenceName: "Promotional Offer",
+      type: "PAY_AS_YOU_GO" as const,
+      numberOfPeriods: 1,
+      prices: [{ territory: "USA", price: "0.99" }],
+    };
 
-  it("should allow valid introductory offers with unique groupings", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
+    it("should warn when id exceeds 100 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longId =
+          "this.is.a.very.long.promotional.offer.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.promo.validation";
+        const promoOffer = {
+          ...validPromoOfferData,
+          id: longId,
+        };
+
+        const result = PromotionalOfferSchema.safeParse(promoOffer);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longId}' is ${longId.length} characters long, but should be at most 100 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn when referenceName exceeds 64 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longReferenceName =
+          "This is a very long promotional offer reference name that exceeds sixty four characters limit and should trigger a warning message";
+        const promoOffer = {
+          ...validPromoOfferData,
+          referenceName: longReferenceName,
+        };
+
+        const result = PromotionalOfferSchema.safeParse(promoOffer);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should warn for both id and referenceName when both exceed limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longId =
+          "this.is.a.very.long.promotional.offer.id.that.exceeds.one.hundred.characters.limit.and.should.trigger.a.warning.message.for.promo.validation";
+        const longReferenceName =
+          "This is a very long promotional offer reference name that exceeds sixty four characters limit and should trigger a warning message";
+        const promoOffer = {
+          ...validPromoOfferData,
+          id: longId,
+          referenceName: longReferenceName,
+        };
+
+        const result = PromotionalOfferSchema.safeParse(promoOffer);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledTimes(2);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: productId '${longId}' is ${longId.length} characters long, but should be at most 100 characters for optimal App Store display.`
+        );
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when both id and referenceName are within limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortId = "short.promo.id";
+        const shortReferenceName = "Short Promo Name";
+        const promoOffer = {
+          ...validPromoOfferData,
+          id: shortId,
+          referenceName: shortReferenceName,
+        };
+
+        const result = PromotionalOfferSchema.safeParse(promoOffer);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should work with PAY_UP_FRONT type", () => {
+      const promoOffer = {
+        id: "promo.upfront",
+        referenceName: "Upfront Promo",
+        type: "PAY_UP_FRONT" as const,
+        duration: "ONE_MONTH" as const,
+        prices: [{ territory: "USA", price: "2.99" }],
+      };
+
+      const result = PromotionalOfferSchema.safeParse(promoOffer);
+      expect(result.success).toBe(true);
+    });
+
+    it("should work with FREE_TRIAL type", () => {
+      const promoOffer = {
+        id: "promo.free",
+        referenceName: "Free Trial Promo",
+        type: "FREE_TRIAL" as const,
+        duration: "ONE_WEEK" as const,
+      };
+
+      const result = PromotionalOfferSchema.safeParse(promoOffer);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("SubscriptionGroupSchema", () => {
+    const validSubscriptionGroupData = {
+      referenceName: "Test Subscription Group",
+      localizations: [
         {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 1,
-          prices: [{ price: "0.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "ONE_MONTH" as const,
-          prices: [{ price: "2.99", territory: "CAN" }],
-          availableTerritories: ["CAN"],
-        },
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "ONE_WEEK" as const,
-          availableTerritories: ["GBR"],
+          locale: "en-US",
+          name: "Test Group",
         },
       ],
+      subscriptions: [],
     };
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
+    it("should warn when referenceName exceeds 64 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const longReferenceName =
+          "This is a very long subscription group reference name that exceeds sixty four characters limit and should trigger a warning message";
+        const subscriptionGroup = {
+          ...validSubscriptionGroupData,
+          referenceName: longReferenceName,
+        };
+
+        const result = SubscriptionGroupSchema.safeParse(subscriptionGroup);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: referenceName '${longReferenceName}' is ${longReferenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when referenceName is within limits", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortReferenceName = "Short Group Name";
+        const subscriptionGroup = {
+          ...validSubscriptionGroupData,
+          referenceName: shortReferenceName,
+        };
+
+        const result = SubscriptionGroupSchema.safeParse(subscriptionGroup);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
   });
 
-  it("should reject duplicate PAY_AS_YOU_GO with same numberOfPeriods", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 1,
-          prices: [{ price: "0.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 1,
-          prices: [{ price: "1.99", territory: "GBR" }],
-          availableTerritories: ["GBR"],
-        },
+  describe("AppStoreLocalizationSchema", () => {
+    const validLocalizationData = {
+      locale: "en-US",
+      description:
+        "This is a valid description that meets the minimum length requirement",
+    };
+
+    it("should warn when description is less than 10 characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const shortDescription = "Short";
+        const localization = {
+          ...validLocalizationData,
+          description: shortDescription,
+        };
+
+        const result = AppStoreLocalizationSchema.safeParse(localization);
+        expect(result.success).toBe(true);
+        expect(mockWarn).toHaveBeenCalledWith(
+          `Warning: description for locale '${localization.locale}' is ${shortDescription.length} characters long, but should be at least 10 characters.`
+        );
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when description is 10 or more characters", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const validDescription = "Valid description";
+        const localization = {
+          ...validLocalizationData,
+          description: validDescription,
+        };
+
+        const result = AppStoreLocalizationSchema.safeParse(localization);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+
+    it("should not warn when description is undefined", () => {
+      const mockLogger = require("../utils/logger");
+      const originalWarn = mockLogger.logger.warn;
+      const mockWarn = jest.fn();
+      mockLogger.logger.warn = mockWarn;
+
+      try {
+        const localization = {
+          locale: "en-US",
+          // description is undefined
+        };
+
+        const result = AppStoreLocalizationSchema.safeParse(localization);
+        expect(result.success).toBe(true);
+        expect(mockWarn).not.toHaveBeenCalled();
+      } finally {
+        mockLogger.logger.warn = originalWarn;
+      }
+    });
+  });
+
+  describe("Introductory Offers Grouping Validation", () => {
+    const baseSubscription = {
+      productId: "test_product",
+      referenceName: "Test Subscription",
+      groupLevel: 1,
+      subscriptionPeriod: "ONE_MONTH" as const,
+      familySharable: false,
+      prices: [{ price: "4.99", territory: "USA" }],
+      localizations: [
+        { locale: "en-US", name: "Test", description: "Test description" },
       ],
+      availability: {
+        availableInNewTerritories: true,
+        availableTerritories: ["USA"],
+      },
     };
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain(
-        "Duplicate introductory offers found"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "type 'PAY_AS_YOU_GO' with numberOfPeriods '1'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "in subscription 'test_product'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "Items at indices 0 and 1"
-      );
-    }
-  });
+    it("should allow valid introductory offers with unique groupings", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "ONE_MONTH" as const,
+            prices: [{ price: "2.99", territory: "CAN" }],
+            availableTerritories: ["CAN"],
+          },
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "ONE_WEEK" as const,
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should reject duplicate PAY_UP_FRONT with same duration", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "ONE_MONTH" as const,
-          prices: [{ price: "2.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "ONE_MONTH" as const,
-          prices: [{ price: "3.99", territory: "GBR" }],
-          availableTerritories: ["GBR"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain(
-        "Duplicate introductory offers found"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "type 'PAY_UP_FRONT' with duration 'ONE_MONTH'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "in subscription 'test_product'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "Items at indices 0 and 1"
-      );
-    }
-  });
+    it("should reject duplicate PAY_AS_YOU_GO with same numberOfPeriods", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 1,
+            prices: [{ price: "1.99", territory: "GBR" }],
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should reject duplicate FREE_TRIAL with same duration", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "ONE_WEEK" as const,
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "ONE_WEEK" as const,
-          availableTerritories: ["GBR"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain(
+          "Duplicate introductory offers found"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "type 'PAY_AS_YOU_GO' with numberOfPeriods '1'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "in subscription 'test_product'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "Items at indices 0 and 1"
+        );
+      }
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain(
-        "Duplicate introductory offers found"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "type 'FREE_TRIAL' with duration 'ONE_WEEK'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "in subscription 'test_product'"
-      );
-      expect(result.error.issues[0].message).toContain(
-        "Items at indices 0 and 1"
-      );
-    }
-  });
+    it("should reject duplicate PAY_UP_FRONT with same duration", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "ONE_MONTH" as const,
+            prices: [{ price: "2.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "ONE_MONTH" as const,
+            prices: [{ price: "3.99", territory: "GBR" }],
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should allow different PAY_AS_YOU_GO with different numberOfPeriods", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 1,
-          prices: [{ price: "0.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 2,
-          prices: [{ price: "1.99", territory: "GBR" }],
-          availableTerritories: ["GBR"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain(
+          "Duplicate introductory offers found"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "type 'PAY_UP_FRONT' with duration 'ONE_MONTH'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "in subscription 'test_product'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "Items at indices 0 and 1"
+        );
+      }
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
-  });
+    it("should reject duplicate FREE_TRIAL with same duration", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "ONE_WEEK" as const,
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "ONE_WEEK" as const,
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should allow different PAY_UP_FRONT with different durations", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "ONE_MONTH" as const,
-          prices: [{ price: "2.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "THREE_MONTHS" as const,
-          prices: [{ price: "7.99", territory: "GBR" }],
-          availableTerritories: ["GBR"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain(
+          "Duplicate introductory offers found"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "type 'FREE_TRIAL' with duration 'ONE_WEEK'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "in subscription 'test_product'"
+        );
+        expect(result.error.issues[0].message).toContain(
+          "Items at indices 0 and 1"
+        );
+      }
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
-  });
+    it("should allow different PAY_AS_YOU_GO with different numberOfPeriods", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 2,
+            prices: [{ price: "1.99", territory: "GBR" }],
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should allow different FREE_TRIAL with different durations", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "ONE_WEEK" as const,
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "TWO_WEEKS" as const,
-          availableTerritories: ["GBR"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
-  });
+    it("should allow different PAY_UP_FRONT with different durations", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "ONE_MONTH" as const,
+            prices: [{ price: "2.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "THREE_MONTHS" as const,
+            prices: [{ price: "7.99", territory: "GBR" }],
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should allow empty introductory offers array", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
-  });
+    it("should allow different FREE_TRIAL with different durations", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "ONE_WEEK" as const,
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "TWO_WEEKS" as const,
+            availableTerritories: ["GBR"],
+          },
+        ],
+      };
 
-  it("should allow undefined introductory offers", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: undefined,
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
-  });
+    it("should allow empty introductory offers array", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [],
+      };
 
-  it("should allow mixed types with unique groupings", () => {
-    const subscription = {
-      ...baseSubscription,
-      introductoryOffers: [
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 1,
-          prices: [{ price: "0.99", territory: "USA" }],
-          availableTerritories: ["USA"],
-        },
-        {
-          type: "PAY_AS_YOU_GO" as const,
-          numberOfPeriods: 2,
-          prices: [{ price: "1.99", territory: "GBR" }],
-          availableTerritories: ["GBR"],
-        },
-        {
-          type: "PAY_UP_FRONT" as const,
-          duration: "ONE_MONTH" as const,
-          prices: [{ price: "2.99", territory: "CAN" }],
-          availableTerritories: ["CAN"],
-        },
-        {
-          type: "FREE_TRIAL" as const,
-          duration: "ONE_WEEK" as const,
-          availableTerritories: ["AUS"],
-        },
-      ],
-    };
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
 
-    const result = SubscriptionSchema.safeParse(subscription);
-    expect(result.success).toBe(true);
+    it("should allow undefined introductory offers", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: undefined,
+      };
+
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
+
+    it("should allow mixed types with unique groupings", () => {
+      const subscription = {
+        ...baseSubscription,
+        introductoryOffers: [
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 1,
+            prices: [{ price: "0.99", territory: "USA" }],
+            availableTerritories: ["USA"],
+          },
+          {
+            type: "PAY_AS_YOU_GO" as const,
+            numberOfPeriods: 2,
+            prices: [{ price: "1.99", territory: "GBR" }],
+            availableTerritories: ["GBR"],
+          },
+          {
+            type: "PAY_UP_FRONT" as const,
+            duration: "ONE_MONTH" as const,
+            prices: [{ price: "2.99", territory: "CAN" }],
+            availableTerritories: ["CAN"],
+          },
+          {
+            type: "FREE_TRIAL" as const,
+            duration: "ONE_WEEK" as const,
+            availableTerritories: ["AUS"],
+          },
+        ],
+      };
+
+      const result = SubscriptionSchema.safeParse(subscription);
+      expect(result.success).toBe(true);
+    });
   });
 });

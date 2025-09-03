@@ -12,6 +12,9 @@ import { logger } from "../utils/logger";
 
 export type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
+const MAX_NAME_LENGTH = 64;
+const MAX_PRODUCT_ID_LENGTH = 100;
+
 export const APP_STORE_SCHEMA_VERSION = "1.0.0";
 
 type SubscriptionPeriodType = NonNullable<
@@ -85,7 +88,7 @@ export const SubscriptionGroupLocalizationSchema = z
     customName: z.string().optional().nullable(),
   })
   .superRefine((data, ctx) => {
-    if (data.customName && data.customName.length > 30) {
+    if (data.customName && data.customName.length > MAX_NAME_LENGTH) {
       logger.warn(
         `Warning: customName '${data.customName}' is ${data.customName.length} characters long, but should be at most 30 characters for optimal App Store display.`
       );
@@ -139,11 +142,24 @@ const PromoOfferFreeSchema = z.object({
   duration: SubscriptionOfferDurationSchema,
 });
 
-export const PromotionalOfferSchema = z.discriminatedUnion("type", [
-  PromoOfferPayAsYouGoSchema,
-  PromoOfferPayUpFrontSchema,
-  PromoOfferFreeSchema,
-]);
+export const PromotionalOfferSchema = z
+  .discriminatedUnion("type", [
+    PromoOfferPayAsYouGoSchema,
+    PromoOfferPayUpFrontSchema,
+    PromoOfferFreeSchema,
+  ])
+  .superRefine((data, ctx) => {
+    if (data.referenceName.length > MAX_NAME_LENGTH) {
+      logger.warn(
+        `Warning: referenceName '${data.referenceName}' is ${data.referenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+      );
+    }
+    if (data.id.length > MAX_PRODUCT_ID_LENGTH) {
+      logger.warn(
+        `Warning: productId '${data.id}' is ${data.id.length} characters long, but should be at most 100 characters for optimal App Store display.`
+      );
+    }
+  });
 
 export const SubscriptionSchema = z
   .object({
@@ -162,13 +178,33 @@ export const SubscriptionSchema = z
     reviewNote: z.string().optional(),
     availability: AvailabilitySchema.optional(),
   })
+  .superRefine((data, ctx) => {
+    if (data.productId.length > MAX_PRODUCT_ID_LENGTH) {
+      logger.warn(
+        `Warning: productId '${data.productId}' is ${data.productId.length} characters long, but should be at most 100 characters for optimal App Store display.`
+      );
+    }
+    if (data.referenceName.length > MAX_NAME_LENGTH) {
+      logger.warn(
+        `Warning: referenceName '${data.referenceName}' is ${data.referenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+      );
+    }
+  })
   .superRefine(validateSubscription);
 
-export const SubscriptionGroupSchema = z.object({
-  referenceName: z.string(),
-  localizations: z.array(SubscriptionGroupLocalizationSchema),
-  subscriptions: z.array(SubscriptionSchema),
-});
+export const SubscriptionGroupSchema = z
+  .object({
+    referenceName: z.string(),
+    localizations: z.array(SubscriptionGroupLocalizationSchema),
+    subscriptions: z.array(SubscriptionSchema),
+  })
+  .superRefine((data, ctx) => {
+    if (data.referenceName.length > MAX_NAME_LENGTH) {
+      logger.warn(
+        `Warning: referenceName '${data.referenceName}' is ${data.referenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
+      );
+    }
+  });
 
 export const InAppPurchaseSchema = z
   .object({
@@ -189,12 +225,12 @@ export const InAppPurchaseSchema = z
     availability: AvailabilitySchema.optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.productId.length > 30) {
+    if (data.productId.length > MAX_PRODUCT_ID_LENGTH) {
       logger.warn(
         `Warning: productId '${data.productId}' is ${data.productId.length} characters long, but should be at most 30 characters for optimal App Store display.`
       );
     }
-    if (data.referenceName.length > 60) {
+    if (data.referenceName.length > MAX_NAME_LENGTH) {
       logger.warn(
         `Warning: referenceName '${data.referenceName}' is ${data.referenceName.length} characters long, but should be at most 60 characters for optimal App Store display.`
       );
