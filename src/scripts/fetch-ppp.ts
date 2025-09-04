@@ -118,6 +118,10 @@ export async function updateCurrenciesWithPPP(
     const matchingPPP = pppData.find((ppp) => ppp.territory === territory.id);
 
     if (matchingPPP) {
+      if (territory.id === "YEM") {
+        // YEM has a special case and don't result in a fair price
+        matchingPPP.value = null;
+      }
       territory.value = matchingPPP.value;
 
       if (matchingPPP.value === null) {
