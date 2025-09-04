@@ -99,11 +99,11 @@ async function fetchTerritoryPricePointsForInAppPurchase(
     iapId = iapData?.id || "";
     if (!iapId) {
       throw new ContextualError(
-        "The in-app purchase does not exist, please create it first.",
+        `The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
+        You can do so by only providing the required fields which don't include prices.`,
         {
           appId,
           selectedItem,
-          territoryId,
         }
       );
     }
@@ -152,11 +152,11 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
 
     if (!subscriptionId) {
       throw new ContextualError(
-        "The subscription does not exist, please create it first.",
+        `The selected subscription is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
+        You can do so by only providing the required fields which don't include prices.`,
         {
           appId: appStoreState.appId,
           selectedItem,
-          territoryId,
         }
       );
     }
