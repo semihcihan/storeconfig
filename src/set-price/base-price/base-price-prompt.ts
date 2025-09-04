@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import type { AppStoreModel } from "../../models/app-store";
 import { fetchTerritoryPricePointsForSelectedItem } from "./price-point-fetcher";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
+import { BASE_TERRITORY } from "../../services/pricing-strategy";
 
 function parsePriceInputToNumber(input: string): number | null {
   const trimmed = input.trim();
@@ -37,7 +38,7 @@ export async function promptForBasePricePoint(
   const availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
     selectedItem,
     appStoreState,
-    "USA"
+    BASE_TERRITORY
   );
 
   // Normalize available price points to two decimals for robust comparison (e.g., "4.0" → "4.00")

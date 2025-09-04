@@ -137,7 +137,7 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
     )?.id as string | undefined;
 
     if (!subscriptionId && selectedItem.type === "offer") {
-      // For promotional offers, search owning subscription
+      // For promotional offers, search owning subscription. For intro offers we already have the subscription id on selectedItem.id.
       for (const sub of subs) {
         const offers = sub.relationships?.promotionalOffers?.data;
         if (
