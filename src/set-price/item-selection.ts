@@ -8,13 +8,11 @@ export function collectPricingItems(
 ): PricingItem[] {
   const items: PricingItem[] = [];
 
-  if (appStoreState.pricing) {
-    items.push({
-      type: "app",
-      id: appStoreState.appId,
-      name: "App",
-    });
-  }
+  items.push({
+    type: "app",
+    id: appStoreState.appId,
+    name: "App",
+  });
 
   if (appStoreState.inAppPurchases) {
     appStoreState.inAppPurchases.forEach((iap) => {
