@@ -513,3 +513,28 @@ export async function deleteSubscriptionGroup(groupId: string): Promise<void> {
     throw response.error;
   }
 }
+
+// Fetch subscription price point equalizations
+export async function fetchSubscriptionPricePointEqualizations(
+  pricePointId: string
+): Promise<SubscriptionPricePointsResponse> {
+  const response = await api.GET(
+    "/v1/subscriptionPricePoints/{id}/equalizations",
+    {
+      params: {
+        path: { id: pricePointId },
+        query: {
+          "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
+          include: ["territory"],
+          limit: 8000,
+        },
+      },
+    }
+  );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return response.data as SubscriptionPricePointsResponse;
+}

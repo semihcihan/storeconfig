@@ -4,10 +4,10 @@ import { z } from "zod";
 import {
   fetchAllSubscriptionPricePoints,
   createSubscriptionPrice,
+  fetchSubscriptionPricePointEqualizations,
 } from "./api-client";
 import type { components } from "../../generated/app-store-connect-api";
 import { ContextualError } from "../../helpers/error-handling-helpers";
-import { api } from "../../services/api";
 
 type SubscriptionPriceCreateRequest =
   components["schemas"]["SubscriptionPriceCreateRequest"];
@@ -211,33 +211,10 @@ export async function buildSubscriptionPricesWithEqualizations(
   pricePointId: string
 ): Promise<Price[]> {
   try {
-    const equalizationsResponse = await api.GET(
-      "/v1/subscriptionPricePoints/{id}/equalizations",
-      {
-        params: {
-          path: { id: pricePointId },
-          query: {
-            "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
-            include: ["territory"],
-            limit: 8000,
-          },
-        },
-      }
-    );
+    const equalizationsResponse =
+      await fetchSubscriptionPricePointEqualizations(pricePointId);
 
-    if (equalizationsResponse.error) {
-      throw equalizationsResponse.error;
-    }
-
-    // Type guard for equalizations response
-    if (
-      !equalizationsResponse.data ||
-      typeof equalizationsResponse.data === "string"
-    ) {
-      throw new Error("Invalid response structure from equalizations API");
-    }
-
-    const equalizationsData = equalizationsResponse.data.data;
+    const equalizationsData = equalizationsResponse.data;
     if (!Array.isArray(equalizationsData)) {
       throw new Error("Equalizations response data is not an array");
     }
