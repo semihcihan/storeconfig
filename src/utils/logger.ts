@@ -140,6 +140,7 @@ export interface Logger {
   info: (...args: any[]) => void;
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
+  std: (message: any) => any;
   prompt: (message: string) => string;
   setLevel: (level: LogLevel) => void;
   getLevel: () => LogLevel;
@@ -260,6 +261,14 @@ class WinstonLogger implements Logger {
   error = (message: any, ...meta: any[]) => {
     // Pass raw message and metadata to Winston - let format functions handle error stack display
     this.winstonLogger.error(message, ...meta);
+  };
+
+  std = (message: any) => {
+    if (typeof message === "object") {
+      console.log(JSON.stringify(message, null, 2));
+    } else {
+      console.log(message);
+    }
   };
 
   prompt = (message: string): string => {

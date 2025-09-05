@@ -1,5 +1,9 @@
 ## IDEAS TODOs
 
+- examples
+- what's new failure on initial
+- handle iap and sub pricing for non existing on set-price
+
 # Notes for documentation
 
 - No start date and end date support when applying, when fetching we only fetch the active ones
