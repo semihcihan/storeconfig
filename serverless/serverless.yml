@@ -1,6 +1,9 @@
 service: store-config
 frameworkVersion: '3'
 
+plugins:
+  - serverless-plugin-typescript
+
 provider:
   name: aws
   stage: dev
@@ -26,6 +29,9 @@ provider:
           Resource:
             - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/store-config-table-${self:provider.stage}"
             - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/store-config-table-${self:provider.stage}/index/*"
+
+package:
+  individually: true
 
 functions:
   apply:

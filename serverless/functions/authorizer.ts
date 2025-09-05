@@ -1,4 +1,4 @@
-import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult } from 'aws-lambda';
+import { APIGatewayRequestAuthorizerEvent, APIGatewayAuthorizerResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -10,13 +10,13 @@ const tableName = process.env.STORE_CONFIG_TABLE_NAME || 'store-config-table-dev
  * Checks for API key in the X-StoreConfig-ApiKey header and validates it against DynamoDB
  */
 export const handler = async (
-  event: APIGatewayTokenAuthorizerEvent
+  event: APIGatewayRequestAuthorizerEvent
 ): Promise<APIGatewayAuthorizerResult> => {
   console.log('Authorizer event:', JSON.stringify(event, null, 2));
 
   try {
     // Extract the API key from the X-StoreConfig-ApiKey header
-    const apiKey = event.authorizationToken;
+    const apiKey = event.headers?.['X-StoreConfig-ApiKey'];
     
     if (!apiKey) {
       console.log('No API key provided');

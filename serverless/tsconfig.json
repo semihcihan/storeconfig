@@ -1,36 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2022", "DOM"],
-    "types": ["node"],
-    "outDir": "./dist",
-    "rootDir": "./",
+    "lib": ["ES2020"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
+    "declaration": false,
+    "removeComments": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["../src/*"]
-    }
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["aws-lambda", "node"]
   },
   "include": [
-    "functions/**/*",
-    "../src/**/*"
+    "functions/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "../node_modules",
-    "../dist"
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }
