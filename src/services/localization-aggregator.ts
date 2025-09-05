@@ -34,17 +34,21 @@ export class LocalizationAggregator {
     this.versionService = new AppStoreVersionService();
   }
 
-  private async getCurrentVersion(
+  private async getVersionsForApp(
     appId: string
-  ): Promise<components["schemas"]["AppStoreVersionResponse"]["data"] | null> {
+  ): Promise<components["schemas"]["AppStoreVersionResponse"]["data"][]> {
+    return await this.versionService.getVersionsForApp(appId);
+  }
+
+  private getCurrentVersion(
+    versions: components["schemas"]["AppStoreVersionResponse"]["data"][]
+  ): components["schemas"]["AppStoreVersionResponse"]["data"] | null {
     // Check cache first
     if (this.cachedVersionId) {
       return {
         id: this.cachedVersionId,
       } as components["schemas"]["AppStoreVersionResponse"]["data"];
     }
-
-    const versions = await this.versionService.getVersionsForApp(appId);
 
     // Find the most recent version that's not in a terminal state
     const currentVersion = versions.find(
@@ -184,7 +188,8 @@ export class LocalizationAggregator {
     };
 
     // Get version context for version localization
-    const version = await this.getCurrentVersion(appId);
+    const versions = await this.getVersionsForApp(appId);
+    const version = this.getCurrentVersion(versions);
     if (!version) {
       throw new Error(`No version found for app ${appId}`);
     }
@@ -305,9 +310,17 @@ export class LocalizationAggregator {
     // Handle version localization changes first
     if (Object.keys(versionChanges).length > 0) {
       // Get version context just for version localization
-      const version = await this.getCurrentVersion(appId);
+      const versions = await this.getVersionsForApp(appId);
+      const version = this.getCurrentVersion(versions);
       if (!version) {
         throw new Error(`No version found for app ${appId}`);
+      }
+
+      if (versions.length == 1 && versionChanges.whatsNew !== undefined) {
+        logger.warn(
+          `The "What's New" field cannot be set for the first version of a new app. Removing whatsNew from versionChanges and continuing...`
+        );
+        versionChanges.whatsNew = undefined;
       }
 
       // Check if version localization exists
@@ -393,7 +406,8 @@ export class LocalizationAggregator {
     logger.debug(`Deleting app localization for locale: ${locale}`);
 
     // Delete version localization first
-    const version = await this.getCurrentVersion(appId);
+    const versions = await this.getVersionsForApp(appId);
+    const version = this.getCurrentVersion(versions);
     if (version) {
       const existingVersionLocalization =
         await this.versionLocalizationService.findLocalizationByLocale(
@@ -452,7 +466,8 @@ export class LocalizationAggregator {
     logger.debug(`Fetching all localizations for app: ${appId}`);
 
     // Get the current version for the app
-    const version = await this.getCurrentVersion(appId);
+    const versions = await this.getVersionsForApp(appId);
+    const version = this.getCurrentVersion(versions);
     if (!version) {
       logger.warn(
         `No version found for app ${appId}, returning empty localizations`

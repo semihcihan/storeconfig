@@ -1,7 +1,5 @@
 ## IDEAS TODOs
 
-- examples
-- what's new failure on initial
 - handle iap and sub pricing for non existing on set-price
 
 # Notes for documentation
