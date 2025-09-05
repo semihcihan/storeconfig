@@ -1,11 +1,14 @@
 import 'source-map-support/register';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { Paddle, EventName } from '@paddle/paddle-node-sdk';
+import { Paddle, EventName, Environment } from '@paddle/paddle-node-sdk';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 
-const paddle = new Paddle(process.env.PADDLE_API_KEY || '');
+const paddle = new Paddle(process.env.PADDLE_API_KEY || '', {
+  environment: Environment.sandbox
+});
+
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
@@ -23,6 +26,7 @@ async function handleSubscriptionCreated(eventData: any): Promise<void> {
     // Fetch customer details from Paddle API
     const customer = await paddle.customers.get(customerId);
     const email = customer.email;
+    const name = customer.name;
 
     // Generate user identifiers
     const userId = uuidv4();
@@ -32,7 +36,7 @@ async function handleSubscriptionCreated(eventData: any): Promise<void> {
     const userRecord = {
       userId,
       email,
-      name: email, // Using email as name as specified
+      name,
       apiKey,
       isActive: true, // User becomes active when subscription is created
       pCustomerId: customerId,
