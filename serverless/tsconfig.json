@@ -9,15 +9,18 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": false,
-    "removeComments": true,
+    "removeComments": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
     "noEmitOnError": true,
     "moduleResolution": "node",
     "typeRoots": ["./node_modules/@types"],
-    "types": ["aws-lambda", "node"]
+    "types": ["aws-lambda", "node"],
+    "outDir": "./dist"
   },
   "include": [
     "functions/**/*"
