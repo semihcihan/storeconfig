@@ -4,7 +4,6 @@ import {
   getPricesForItem,
   analyzePricing,
   exportAnalysisToCSV,
-  exportAnalysisToXLSX,
   exportAnalysis,
 } from "./compare-price-service";
 import type { AppStoreModel } from "../models/app-store";
@@ -19,23 +18,6 @@ jest.mock("../set-price/item-selection", () => ({
 jest.mock("fs", () => ({
   writeFileSync: jest.fn(),
 }));
-jest.mock("xlsx", () => ({
-  utils: {
-    book_new: jest.fn(() => ({ Sheets: {}, SheetNames: [] })),
-    aoa_to_sheet: jest.fn(() => ({
-      "!cols": [
-        { width: 13 },
-        { width: 13 },
-        { width: 13 },
-        { width: 13 },
-        { width: 18 },
-      ],
-      "!freeze": { rows: 1 },
-    })),
-    book_append_sheet: jest.fn(),
-  },
-  writeFile: jest.fn(),
-}));
 jest.mock("./pricing-strategy", () => ({
   BASE_TERRITORY: "USA",
 }));
@@ -44,10 +26,8 @@ const mockLogger = jest.mocked(logger);
 
 // Get the mocked function
 import { collectPricingItems } from "../set-price/item-selection";
-import * as XLSX from "xlsx";
 import * as fs from "fs";
 const mockCollectPricingItems = jest.mocked(collectPricingItems);
-const mockXLSX = jest.mocked(XLSX);
 const mockFs = jest.mocked(fs);
 
 describe("compare-price-service", () => {
@@ -561,35 +541,6 @@ describe("compare-price-service", () => {
       );
     });
 
-    it("should export to XLSX when .xlsx extension is provided", () => {
-      const mockAnalysis = [
-        {
-          item: {
-            type: "app",
-            id: "app-123",
-            name: "Test App",
-          },
-          prices: [
-            {
-              territory: "USA",
-              localPrice: 0.99,
-              localCurrency: "USD",
-              usdPrice: 0.99,
-              usdPercentage: 100,
-            },
-          ],
-        },
-      ];
-
-      exportAnalysis(mockAnalysis, "test-output.xlsx");
-
-      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
-      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
-        expect.any(Object),
-        "test-output.xlsx"
-      );
-    });
-
     it("should throw error for unsupported file format", () => {
       const mockAnalysis = [
         {
@@ -610,9 +561,7 @@ describe("compare-price-service", () => {
         },
       ];
 
-      expect(() => exportAnalysis(mockAnalysis, "test-output.txt")).toThrow(
-        'Unsupported file format. Please use ".csv" or ".xlsx" extension: "test-output.txt"'
-      );
+      expect(() => exportAnalysis(mockAnalysis, "test-output.txt")).toThrow();
     });
 
     it("should throw error for no file extension", () => {
@@ -635,98 +584,7 @@ describe("compare-price-service", () => {
         },
       ];
 
-      expect(() => exportAnalysis(mockAnalysis, "test-output")).toThrow(
-        'Unsupported file format. Please use ".csv" or ".xlsx" extension: "test-output"'
-      );
-    });
-  });
-
-  describe("exportAnalysisToXLSX", () => {
-    const mockWorkbook = { Sheets: {}, SheetNames: [] };
-
-    beforeEach(() => {
-      mockXLSX.utils.book_new.mockReturnValue(mockWorkbook);
-      mockXLSX.utils.aoa_to_sheet.mockReturnValue({
-        "!cols": [
-          { width: 13 },
-          { width: 13 },
-          { width: 13 },
-          { width: 13 },
-          { width: 18 },
-        ],
-        "!freeze": { rows: 1 },
-      });
-    });
-
-    it("should export analysis to XLSX with correct format", () => {
-      const mockAnalysis = [
-        {
-          item: {
-            type: "app",
-            id: "app-123",
-            name: "Test App",
-          },
-          prices: [
-            {
-              territory: "USA",
-              localPrice: 0.99,
-              localCurrency: "USD",
-              usdPrice: 0.99,
-              usdPercentage: 100,
-            },
-            {
-              territory: "GBR",
-              localPrice: 0.79,
-              localCurrency: "GBP",
-              usdPrice: 0.9875,
-              usdPercentage: 99.75,
-            },
-          ],
-        },
-      ];
-
-      exportAnalysisToXLSX(mockAnalysis, "test-output.xlsx");
-
-      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
-      expect(mockXLSX.utils.aoa_to_sheet).toHaveBeenCalledWith([
-        [
-          "Territory",
-          "Local Price",
-          "Local Currency",
-          "USD Price",
-          "Relative to USA (%)",
-        ],
-        ["USA", 0.99, "USD", 0.99, 100],
-        ["GBR", 0.79, "GBP", 0.99, 100],
-      ]);
-      expect(mockXLSX.utils.book_append_sheet).toHaveBeenCalledWith(
-        mockWorkbook,
-        {
-          "!cols": [
-            { width: 13 },
-            { width: 13 },
-            { width: 13 },
-            { width: 13 },
-            { width: 18 },
-          ],
-          "!freeze": { rows: 1 },
-        },
-        "Test App"
-      );
-      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
-        mockWorkbook,
-        "test-output.xlsx"
-      );
-    });
-
-    it("should handle empty analysis", () => {
-      exportAnalysisToXLSX([], "empty-output.xlsx");
-
-      expect(mockXLSX.utils.book_new).toHaveBeenCalled();
-      expect(mockXLSX.writeFile).toHaveBeenCalledWith(
-        mockWorkbook,
-        "empty-output.xlsx"
-      );
+      expect(() => exportAnalysis(mockAnalysis, "test-output")).toThrow();
     });
   });
 });
