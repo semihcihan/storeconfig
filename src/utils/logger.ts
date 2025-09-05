@@ -8,30 +8,22 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
 // Default log level
 export const DEFAULT_LOG_LEVEL: LogLevel = "info";
 
-// Log output modes
-export const LOG_OUTPUT_MODES = ["console", "file"] as const;
-export type LogOutputMode = (typeof LOG_OUTPUT_MODES)[number];
-
-// Get current log level from environment or default to 'info'
-function getInitialLogLevel(): LogLevel {
-  const envLevel = process.env.LOG_LEVEL;
-  if (envLevel && LOG_LEVELS.includes(envLevel as LogLevel)) {
-    return envLevel as LogLevel;
-  }
-  return DEFAULT_LOG_LEVEL;
+// Log output mode configuration
+export interface LogOutputConfig {
+  mode: "console" | "file";
+  showErrorStack: boolean;
 }
 
-// Get log output mode from environment or default to 'console'
-function getInitialOutputMode(): LogOutputMode {
-  const envMode = process.env.LOG_OUTPUT;
-  if (envMode && LOG_OUTPUT_MODES.includes(envMode as LogOutputMode)) {
-    return envMode as LogOutputMode;
-  }
-  return "console"; // Default is always console
+// Support for multiple output modes
+export type LogOutputModes = LogOutputConfig[];
+
+// Get log output modes - always use console
+function getInitialOutputModes(): LogOutputModes {
+  return [{ mode: "console", showErrorStack: true }];
 }
 
 // Create format for console (with colors) or file (with timestamp)
-function createFormat(isFile: boolean) {
+function createFormat(isFile: boolean, showErrorStack: boolean) {
   const { combine, printf, timestamp } = winston.format;
 
   const RESET = "\x1b[0m";
@@ -40,7 +32,7 @@ function createFormat(isFile: boolean) {
   const RED = "\x1b[31m";
 
   const printfFormat = printf((info) => {
-    const { level, message, timestamp: ts } = info as any;
+    const { level, message, timestamp: ts, ...meta } = info as any;
 
     let visiblePrefix: string;
     let coloredPrefix: string;
@@ -73,8 +65,23 @@ function createFormat(isFile: boolean) {
     }
 
     const indent = " ".repeat(visiblePrefix.length + 1);
-    const content = String(message);
-    const indentedContent = String(content).replace(/\n/g, `\n${indent}`);
+
+    // Process the main message with error stack handling
+    const processedMessage = renderValue(message, showErrorStack);
+
+    // Process metadata (extras) with error stack handling
+    // Winston puts additional arguments in the Symbol(splat) property
+    const splat = meta[Symbol.for("splat")] || [];
+    let metaContent = "";
+    if (splat.length > 0) {
+      const processedMeta = splat
+        .map((value: any) => renderValue(value, showErrorStack))
+        .join("\n");
+      metaContent = `\n${processedMeta}`;
+    }
+
+    const fullContent = processedMessage + metaContent;
+    const indentedContent = String(fullContent).replace(/\n/g, `\n${indent}`);
 
     if (isFile && ts) {
       return `${ts} [${level.toUpperCase()}] ${indentedContent}\n`;
@@ -90,36 +97,41 @@ function createFormat(isFile: boolean) {
   return combine(printfFormat);
 }
 
-// Winston logger configuration
-function createWinstonLogger(): winston.Logger {
-  const outputMode = getInitialOutputMode();
-  const logFile = process.env.LOG_FILE;
+// Create transports based on output modes
+function createTransports(
+  outputModes: LogOutputModes,
+  filename?: string
+): winston.transport[] {
   const transports: winston.transport[] = [];
 
-  // Add transports based on output mode
-  if (outputMode === "console") {
-    transports.push(
-      new winston.transports.Console({ format: createFormat(false) })
-    );
+  // Add transports based on output modes
+  for (const config of outputModes) {
+    if (config.mode === "console") {
+      transports.push(
+        new winston.transports.Console({
+          format: createFormat(false, config.showErrorStack),
+        })
+      );
+    } else if (config.mode === "file") {
+      if (!filename) {
+        console.warn(
+          `File output mode requested but no filename provided. Skipping file transport.`
+        );
+      } else {
+        transports.push(
+          new winston.transports.File({
+            filename,
+            format: createFormat(true, config.showErrorStack),
+            maxsize: 10 * 1024 * 1024, // 10MB
+            maxFiles: 5,
+            tailable: true,
+          })
+        );
+      }
+    }
   }
 
-  if (outputMode === "file" && logFile) {
-    transports.push(
-      new winston.transports.File({
-        filename: logFile,
-        format: createFormat(true),
-        maxsize: 10 * 1024 * 1024, // 10MB
-        maxFiles: 5,
-        tailable: true,
-      })
-    );
-  }
-
-  return winston.createLogger({
-    exitOnError: true,
-    level: getInitialLogLevel(),
-    transports,
-  });
+  return transports;
 }
 
 // Logger interface with color support
@@ -131,18 +143,70 @@ export interface Logger {
   prompt: (message: string) => string;
   setLevel: (level: LogLevel) => void;
   getLevel: () => LogLevel;
-  setOutputMode: (mode: LogOutputMode, filename?: string) => void;
-  getOutputMode: () => LogOutputMode;
+  setOutputModes: (modes: LogOutputModes, filename?: string) => void;
+  getOutputModes: () => LogOutputModes;
+  addOutputMode: (config: LogOutputConfig, filename?: string) => void;
+  removeOutputMode: (mode: "console" | "file") => void;
 }
 
-const renderValue = (value: unknown): string => {
+// Recursively process nested objects to remove error stacks
+const processNestedErrors = (obj: any, showErrorStack: boolean): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (obj instanceof Error) {
+    if (!showErrorStack) {
+      // Create a copy of the error without the stack but with message
+      const errorCopy = Object.create(Object.getPrototypeOf(obj));
+      Object.assign(errorCopy, obj);
+      delete errorCopy.stack;
+
+      // Set the name to just "Error" and ensure the message is preserved
+      errorCopy.name = "Error";
+      if (!errorCopy.message) {
+        errorCopy.message = obj.message || obj.name || "Error";
+      }
+
+      // Also process the context property if it exists
+      if (errorCopy.context) {
+        errorCopy.context = processNestedErrors(
+          errorCopy.context,
+          showErrorStack
+        );
+      }
+
+      return errorCopy;
+    }
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => processNestedErrors(item, showErrorStack));
+  }
+
+  if (typeof obj === "object") {
+    const processed: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      processed[key] = processNestedErrors(value, showErrorStack);
+    }
+    return processed;
+  }
+
+  return obj;
+};
+
+const renderValue = (value: unknown, showErrorStack: boolean): string => {
   try {
     // For strings, return them as-is to preserve newlines
     if (typeof value === "string") {
       return value;
     }
 
-    return util.inspect(value, {
+    // Process the value to remove error stacks from nested objects
+    const processedValue = processNestedErrors(value, showErrorStack);
+
+    return util.inspect(processedValue, {
       colors: false,
       depth: null,
       compact: false,
@@ -158,32 +222,44 @@ const renderValue = (value: unknown): string => {
 // Winston-based logger implementation
 class WinstonLogger implements Logger {
   private winstonLogger: winston.Logger;
+  private currentConfig: LogOutputModes = [];
 
   constructor() {
-    this.winstonLogger = createWinstonLogger();
+    this.currentConfig = getInitialOutputModes();
+    this.winstonLogger = WinstonLogger.createWinstonLogger(this.currentConfig);
   }
 
-  private renderMessage = (message: any, extras: any[]): string => {
-    const renderedMain = renderValue(message);
-    if (!extras || extras.length === 0) return renderedMain;
-    const renderedExtras = extras.map((e) => renderValue(e)).join("\n");
-    return `${renderedMain}\n${renderedExtras}`;
-  };
+  // Static method to create winston logger
+  private static createWinstonLogger(
+    currentConfig: LogOutputModes
+  ): winston.Logger {
+    const transports = createTransports(currentConfig);
+
+    return winston.createLogger({
+      exitOnError: true,
+      level: DEFAULT_LOG_LEVEL,
+      transports,
+    });
+  }
 
   debug = (message: any, ...meta: any[]) => {
-    this.winstonLogger.debug(this.renderMessage(message, meta));
+    // Pass raw message and metadata to Winston - let format functions handle error stack display
+    this.winstonLogger.debug(message, ...meta);
   };
 
   info = (message: any, ...meta: any[]) => {
-    this.winstonLogger.info(this.renderMessage(message, meta));
+    // Pass raw message and metadata to Winston - let format functions handle error stack display
+    this.winstonLogger.info(message, ...meta);
   };
 
   warn = (message: any, ...meta: any[]) => {
-    this.winstonLogger.warn(this.renderMessage(message, meta));
+    // Pass raw message and metadata to Winston - let format functions handle error stack display
+    this.winstonLogger.warn(message, ...meta);
   };
 
   error = (message: any, ...meta: any[]) => {
-    this.winstonLogger.error(this.renderMessage(message, meta));
+    // Pass raw message and metadata to Winston - let format functions handle error stack display
+    this.winstonLogger.error(message, ...meta);
   };
 
   prompt = (message: string): string => {
@@ -208,47 +284,97 @@ class WinstonLogger implements Logger {
     return this.winstonLogger.level as LogLevel;
   };
 
-  // Add method to update output mode
-  setOutputMode = (mode: LogOutputMode, filename?: string): void => {
-    if (!LOG_OUTPUT_MODES.includes(mode)) {
-      this.winstonLogger.warn(
-        `Invalid output mode: ${mode}. Using 'console' as default.`
-      );
-      mode = "console";
+  // Add method to update output modes
+  setOutputModes = (modes: LogOutputModes, filename?: string): void => {
+    const validModes = modes.filter(
+      (config) => config.mode === "console" || config.mode === "file"
+    );
+
+    if (validModes.length === 0) {
+      this.winstonLogger.warn(`No valid output modes provided.`);
     }
+
+    // Store current configuration
+    this.currentConfig = validModes;
 
     // Clear existing transports
     this.winstonLogger.clear();
 
-    // Add transports based on mode
-    if (mode === "console") {
-      this.winstonLogger.add(
-        new winston.transports.Console({ format: createFormat(false) })
-      );
-    }
-
-    if (mode === "file" && filename) {
-      this.winstonLogger.add(
-        new winston.transports.File({
-          filename,
-          format: createFormat(true),
-          maxsize: 10 * 1024 * 1024, // 10MB
-          maxFiles: 5,
-          tailable: true,
-        })
-      );
-    }
+    // Use shared transport creation logic
+    const transports = createTransports(validModes, filename);
+    transports.forEach((transport) => this.winstonLogger.add(transport));
   };
 
-  // Add method to get current output mode
-  getOutputMode = (): LogOutputMode => {
-    const transports = this.winstonLogger.transports;
-    const hasFile = transports.some(
-      (t) => t instanceof winston.transports.File
+  // Add method to get current output modes
+  getOutputModes = (): LogOutputModes => {
+    // Return the actual current configuration
+    return this.currentConfig;
+  };
+
+  // Add method to add a single output mode
+  addOutputMode = (config: LogOutputConfig, filename?: string): void => {
+    if (config.mode !== "console" && config.mode !== "file") {
+      this.winstonLogger.warn(`Invalid output mode: ${config.mode}. Skipping.`);
+      return;
+    }
+
+    const currentModes = this.getOutputModes();
+    if (currentModes.some((m) => m.mode === config.mode)) {
+      this.winstonLogger.warn(
+        `Output mode '${config.mode}' is already active. Skipping.`
+      );
+      return;
+    }
+
+    // Update current configuration
+    this.currentConfig.push(config);
+
+    // Use shared transport creation logic for the new mode
+    const transports = createTransports([config], filename);
+    transports.forEach((transport) => this.winstonLogger.add(transport));
+  };
+
+  // Add method to remove a single output mode
+  removeOutputMode = (mode: "console" | "file"): void => {
+    if (mode !== "console" && mode !== "file") {
+      this.winstonLogger.warn(`Invalid output mode: ${mode}. Skipping.`);
+      return;
+    }
+
+    const currentModes = this.getOutputModes();
+    if (!currentModes.some((m) => m.mode === mode)) {
+      this.winstonLogger.warn(`Output mode '${mode}' is not active. Skipping.`);
+      return;
+    }
+
+    // If this is the only mode, don't remove it
+    if (currentModes.length === 1) {
+      this.winstonLogger.warn(
+        `Cannot remove the last output mode '${mode}'. At least one output mode must remain.`
+      );
+      return;
+    }
+
+    // Update current configuration
+    this.currentConfig = this.currentConfig.filter(
+      (config) => config.mode !== mode
     );
 
-    if (hasFile) return "file";
-    return "console";
+    // Remove the transport
+    const transports = this.winstonLogger.transports;
+    const transportToRemove = transports.find((t) => {
+      if (mode === "console" && t instanceof winston.transports.Console) {
+        return true;
+      }
+      if (mode === "file" && t instanceof winston.transports.File) {
+        return true;
+      }
+      return false;
+    });
+
+    if (transportToRemove) {
+      this.winstonLogger.remove(transportToRemove);
+    }
   };
 }
 
@@ -280,7 +406,7 @@ Error.prototype[util.inspect.custom] = function () {
       propsObj[key] = (this as any)[key];
     });
 
-    const propsStr = renderValue(propsObj);
+    const propsStr = renderValue(propsObj, true);
     return `${stack}\n${propsStr}`;
   }
 

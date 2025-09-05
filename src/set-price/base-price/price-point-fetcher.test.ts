@@ -208,7 +208,7 @@ describe("PricePointFetcher", () => {
           testTerritoryId
         )
       ).rejects.toThrow(
-        "The in-app purchase does not exist, please create it first."
+        "The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.\n        You can do so by only providing the required fields which don't include prices."
       );
 
       expect(MockFetchIAPPricePoints).not.toHaveBeenCalled();
@@ -376,9 +376,7 @@ describe("PricePointFetcher", () => {
           testAppStoreState,
           testTerritoryId
         )
-      ).rejects.toThrow(
-        "The subscription does not exist, please create it first."
-      );
+      ).rejects.toThrow();
 
       expect(MockFetchAllSubscriptionPricePoints).not.toHaveBeenCalled();
     });

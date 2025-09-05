@@ -9,6 +9,7 @@ import {
 import {
   fetchAllSubscriptionPricePoints,
   createSubscriptionPrice,
+  fetchSubscriptionPricePointEqualizations,
 } from "./api-client";
 import { api } from "../../services/api";
 import { ContextualError } from "../../helpers/error-handling-helpers";
@@ -27,6 +28,10 @@ const MockFetchAllSubscriptionPricePoints =
 const MockCreateSubscriptionPrice =
   createSubscriptionPrice as jest.MockedFunction<
     typeof createSubscriptionPrice
+  >;
+const MockFetchSubscriptionPricePointEqualizations =
+  fetchSubscriptionPricePointEqualizations as jest.MockedFunction<
+    typeof fetchSubscriptionPricePointEqualizations
   >;
 const MockApi = api as jest.Mocked<typeof api>;
 const MockContextualError = ContextualError as jest.MockedClass<
@@ -230,21 +235,30 @@ describe("SubscriptionPricingService", () => {
   describe("buildSubscriptionPricesWithEqualizations", () => {
     it("should fetch equalizations and return prices", async () => {
       const mockEqualizationsResponse = {
-        data: {
-          data: [
-            {
-              attributes: { customerPrice: "3.99" },
-              relationships: { territory: { data: { id: "USA" } } },
+        data: [
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp1",
+            attributes: { customerPrice: "3.99" },
+            relationships: {
+              territory: { data: { type: "territories" as const, id: "USA" } },
             },
-            {
-              attributes: { customerPrice: "4.99" },
-              relationships: { territory: { data: { id: "GBR" } } },
+          },
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp2",
+            attributes: { customerPrice: "4.99" },
+            relationships: {
+              territory: { data: { type: "territories" as const, id: "GBR" } },
             },
-          ],
-        },
+          },
+        ],
+        links: { self: "" },
       };
 
-      (MockApi.GET as any).mockResolvedValue(mockEqualizationsResponse);
+      MockFetchSubscriptionPricePointEqualizations.mockResolvedValue(
+        mockEqualizationsResponse
+      );
 
       const result = await buildSubscriptionPricesWithEqualizations(
         testPricePointId
@@ -255,46 +269,51 @@ describe("SubscriptionPricingService", () => {
         { price: "4.99", territory: "GBR" },
       ]);
 
-      expect(MockApi.GET).toHaveBeenCalledWith(
-        "/v1/subscriptionPricePoints/{id}/equalizations",
-        {
-          params: {
-            path: { id: testPricePointId },
-            query: {
-              "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
-              include: ["territory"],
-              limit: 8000,
-            },
-          },
-        }
+      expect(MockFetchSubscriptionPricePointEqualizations).toHaveBeenCalledWith(
+        testPricePointId
       );
     });
 
     it("should filter out items without required attributes", async () => {
       const mockEqualizationsResponse = {
-        data: {
-          data: [
-            {
-              attributes: { customerPrice: "3.99" },
-              relationships: { territory: { data: { id: "USA" } } },
+        data: [
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp1",
+            attributes: { customerPrice: "3.99" },
+            relationships: {
+              territory: { data: { type: "territories" as const, id: "USA" } },
             },
-            {
-              attributes: {}, // Missing customerPrice
-              relationships: { territory: { data: { id: "GBR" } } },
+          },
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp2",
+            attributes: {}, // Missing customerPrice
+            relationships: {
+              territory: { data: { type: "territories" as const, id: "GBR" } },
             },
-            {
-              attributes: { customerPrice: "4.99" },
-              relationships: {}, // Missing territory
+          },
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp3",
+            attributes: { customerPrice: "4.99" },
+            relationships: {}, // Missing territory
+          },
+          {
+            type: "subscriptionPricePoints" as const,
+            id: "pp4",
+            attributes: { customerPrice: "5.99" },
+            relationships: {
+              territory: { data: { type: "territories" as const, id: "DEU" } },
             },
-            {
-              attributes: { customerPrice: "5.99" },
-              relationships: { territory: { data: { id: "DEU" } } },
-            },
-          ],
-        },
+          },
+        ],
+        links: { self: "" },
       };
 
-      (MockApi.GET as any).mockResolvedValue(mockEqualizationsResponse);
+      MockFetchSubscriptionPricePointEqualizations.mockResolvedValue(
+        mockEqualizationsResponse
+      );
 
       const result = await buildSubscriptionPricesWithEqualizations(
         testPricePointId

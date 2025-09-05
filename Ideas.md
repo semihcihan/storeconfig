@@ -1,8 +1,5 @@
 ## IDEAS TODOs
 
-- set-price cagrildiginda subscription vs yoksa henuz, once yarat bi tane
-- app pricing gozuksun her zaman
-
 # Notes for documentation
 
 - No start date and end date support when applying, when fetching we only fetch the active ones

@@ -506,7 +506,7 @@ describe("set-price-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["1", "0.99", "2"]; // select iap, base price, strategy=PurchasingPower
+      const answers = ["2", "0.99", "2"]; // select iap (now 2nd item), base price, strategy=PurchasingPower
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);
@@ -575,7 +575,7 @@ describe("set-price-service", () => {
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
-      const answers = ["2", "0.99", "1"]; // select offer, base price, strategy=Apple
+      const answers = ["3", "0.99", "1"]; // select offer (now 3rd item), base price, strategy=Apple
       mockRl.question.mockImplementation((prompt: any, callback: any) => {
         const next = answers.shift();
         callback(next);
@@ -594,23 +594,31 @@ describe("set-price-service", () => {
       });
     });
 
-    it("should throw error when no items are available for pricing", async () => {
+    it("should handle app selection when no other items are available for pricing", async () => {
       const appState: AppStoreModel = {
         schemaVersion: "1.0.0",
         appId: "123456789",
-        // No pricing, no IAPs, no subscriptions
+        // No pricing, no IAPs, no subscriptions - only app will be available
       };
 
       mockFs.readFileSync.mockReturnValue(JSON.stringify(appState));
+      const answers = ["1", "0.99", "1"]; // select app (1st item), base price, strategy=Apple
+      mockRl.question.mockImplementation((prompt: any, callback: any) => {
+        const next = answers.shift();
+        callback(next);
+      });
 
-      await expect(
-        startInteractivePricing({
-          inputFile: testInputFile,
-          appStoreState: appState,
-        })
-      ).rejects.toThrow(
-        "No items available for pricing. Please ensure the app contains items with pricing information (app, in-app purchase, or subscription)."
-      );
+      const result = await startInteractivePricing({
+        inputFile: testInputFile,
+        appStoreState: appState,
+      });
+
+      expect(result.selectedItem).toEqual({
+        type: "app",
+        id: "123456789",
+        name: "App",
+        offerType: undefined,
+      });
     });
 
     it("should restore file from backup on error", async () => {
