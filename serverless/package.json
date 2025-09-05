@@ -1,0 +1,24 @@
+{
+  "name": "store-config",
+  "version": "1.0.0",
+  "description": "Serverless functions for Store Config API",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f apply",
+    "logs:authorizer": "serverless logs -f authorizer"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "osls": "^3.53.0",
+    "typescript": "^5.3.3"
+  }
+}
