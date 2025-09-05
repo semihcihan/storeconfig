@@ -1,5 +1,6 @@
 service: store-config
 frameworkVersion: '3'
+useDotenv: true
 
 plugins:
   - serverless-plugin-typescript
@@ -59,6 +60,10 @@ functions:
     description: Paddle payment webhook handler
     timeout: 15
     memorySize: 512
+    environment:
+      PADDLE_WEBHOOK_SECRET_KEY: ${env:PADDLE_WEBHOOK_SECRET_KEY}
+      PADDLE_API_KEY: ${env:PADDLE_API_KEY}
+      STORE_CONFIG_TABLE_NAME: store-config-table-${self:provider.stage}
     events:
       - http:
           path: payment-webhook
