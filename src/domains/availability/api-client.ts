@@ -73,7 +73,7 @@ export async function fetchAppAvailability(
       params: {
         path: { id: appAvailabilityId },
         query: {
-          limit: API_LIMITS.DEFAULT_LIMIT_v2,
+          limit: API_LIMITS.DEFAULT_LIMIT_v1,
           include: API_FIELD_CONFIGS.territoryAvailabilities.include as any,
           "fields[territoryAvailabilities]": API_FIELD_CONFIGS
             .territoryAvailabilities.fieldsTerritoryAvailabilities as any,

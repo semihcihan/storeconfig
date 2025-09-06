@@ -220,7 +220,7 @@ describe("pagination-helpers", () => {
         params: {
           path: { id: "test-id" },
           query: {
-            limit: 200, // Default limit from constants
+            limit: 8000, // Default limit from constants
           },
         },
       });
