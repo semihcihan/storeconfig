@@ -98,21 +98,26 @@ async function fetchTerritoryPricePointsForInAppPurchase(
     );
     iapId = iapData?.id || "";
     if (!iapId) {
-      throw new ContextualError(
-        `The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
-        You can do so by only providing the required fields which don't include prices.`,
-        {
-          appId,
-          selectedItem,
-        }
-      );
+      const fallbackIapId = process.env.FALLBACK_IAP_APPLE_ID;
+      if (fallbackIapId) {
+        iapId = fallbackIapId;
+      } else {
+        throw new ContextualError(
+          `The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
+          You can do so by only providing the required fields which don't include prices.`,
+          {
+            appId,
+            selectedItem,
+          }
+        );
+      }
     }
     iapIdCache.set(idCacheKey, iapId);
   }
   const cacheKey = `iap:${iapId}:${territoryId}`;
   const cached = pricePointsCache.get(cacheKey);
   if (cached) return cached;
-  const resp = await fetchIAPPricePoints(iapId, territoryId);
+  const resp = await fetchIAPPricePoints(iapId, territoryId); // TODO: we may call this with a backup data
   const points = extractPricePointInfoFromResponse(resp);
   pricePointsCache.set(cacheKey, points);
   return points;
@@ -151,14 +156,19 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
     }
 
     if (!subscriptionId) {
-      throw new ContextualError(
-        `The selected subscription is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
-        You can do so by only providing the required fields which don't include prices.`,
-        {
-          appId: appStoreState.appId,
-          selectedItem,
-        }
-      );
+      const fallbackSubscriptionId = process.env.FALLBACK_SUBSCRIPTION_APPLE_ID;
+      if (fallbackSubscriptionId) {
+        subscriptionId = fallbackSubscriptionId;
+      } else {
+        throw new ContextualError(
+          `The selected subscription is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
+          You can do so by only providing the required fields which don't include prices.`,
+          {
+            appId: appStoreState.appId,
+            selectedItem,
+          }
+        );
+      }
     }
     subscriptionIdCache.set(idCacheKey, subscriptionId);
   }
@@ -167,6 +177,7 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
   const cached = pricePointsCache.get(cacheKey);
   if (cached) return cached;
   const resp = await fetchAllSubscriptionPricePoints(
+    // TODO: we may call this with a backup data
     subscriptionId,
     territoryId
   );

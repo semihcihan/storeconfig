@@ -1331,7 +1331,6 @@ describe("Apply Service IAP Integration Tests", () => {
       });
 
       it("should update IAP availability to no territories", async () => {
-        // TODO: fix
         const uniqueId = generateTestIdentifier();
         const createdIap = await createMinimalIap("NON_CONSUMABLE", uniqueId);
 

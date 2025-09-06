@@ -1,6 +1,7 @@
 ## IDEAS TODOs
 
 - handle iap and sub pricing for non existing on set-price
+- test retry mw
 
 # Notes for documentation
 

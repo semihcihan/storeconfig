@@ -12,6 +12,8 @@ import setPriceCmd from "./commands/set-price";
 import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
 
+process.env.DOTENV_CONFIG_SILENT = "true";
+dotenv.config({ path: ".env.internal" });
 dotenv.config();
 
 yargs(hideBin(process.argv))
