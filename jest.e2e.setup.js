@@ -1,10 +1,14 @@
-// E2E test setup - allows info logging and longer timeouts
+import dotenv from "dotenv";
+// Integration test setup - allows info logging and longer timeouts
 
 // Set environment variable to suppress dotenv logging
 process.env.DOTENV_CONFIG_SILENT = "true";
 
-// Set log level to info for e2e tests (no debug)
+// Set log level to info for integration tests (no debug)
 process.env.LOG_LEVEL = "info";
+
+process.env.DOTENV_CONFIG_SILENT = "true";
+dotenv.config({ path: ".env.test" });
 
 // Allow all console output for e2e tests
 // console.log = console.log;
