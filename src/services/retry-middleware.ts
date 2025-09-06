@@ -132,6 +132,50 @@ async function waitForOtherErrors(
 }
 
 /**
+ * Handle a single retry attempt for either error responses or thrown exceptions
+ */
+async function handleRetryAttempt(
+  error: any,
+  method: string,
+  endpoint: string,
+  attempt: number,
+  config: RetryConfig
+): Promise<{ shouldContinue: boolean; shouldReturn?: any }> {
+  // Don't retry if this is the last attempt
+  if (attempt === config.maxAttempts) {
+    throw new ContextualError(
+      `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
+      {
+        error,
+        method,
+        endpoint,
+        attempt,
+        config,
+      }
+    );
+  }
+
+  // Check if we should retry this error
+  if (!config.shouldRetry(error)) {
+    logger.debug(
+      `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
+      error
+    );
+    return { shouldContinue: false, shouldReturn: error };
+  }
+
+  // Handle rate limit errors
+  if (isRateLimitError(error)) {
+    await waitForRateLimit(endpoint, method, attempt, config);
+    return { shouldContinue: true };
+  }
+
+  // Handle other retryable errors
+  await waitForOtherErrors(error, endpoint, method, attempt, config);
+  return { shouldContinue: true };
+}
+
+/**
  * Create a retry wrapper for a single API method
  */
 function createRetryWrapper<T extends Record<string, any>>(
@@ -161,45 +205,20 @@ function createRetryWrapper<T extends Record<string, any>>(
           response.error
         ) {
           // This is an error response from openapi-fetch
-          if (config.shouldRetry(response.error)) {
+          const result = await handleRetryAttempt(
+            response.error,
+            method,
+            endpoint,
+            attempt,
+            config
+          );
+
+          if (result.shouldContinue) {
             lastError = response.error;
-
-            // Don't retry if this is the last attempt
-            if (attempt === config.maxAttempts) {
-              throw new ContextualError(
-                `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-                {
-                  error: response.error,
-                  method,
-                  endpoint,
-                  attempt,
-                  config,
-                }
-              );
-            }
-
-            // Handle rate limit errors
-            if (isRateLimitError(response.error)) {
-              await waitForRateLimit(endpoint, method, attempt, config);
-              continue;
-            }
-
-            // Handle other retryable errors
-            await waitForOtherErrors(
-              response.error,
-              endpoint,
-              method,
-              attempt,
-              config
-            );
             continue;
-          } else {
+          } else if (result.shouldReturn !== undefined) {
             // Non-retryable error in response - return the response with error
-            logger.debug(
-              `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
-              response.error
-            );
-            return response; // Return the response with error property
+            return response;
           }
         }
 
@@ -212,37 +231,19 @@ function createRetryWrapper<T extends Record<string, any>>(
       } catch (error) {
         lastError = error;
 
-        // Don't retry if this is the last attempt
-        if (attempt === config.maxAttempts) {
-          throw new ContextualError(
-            `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-            {
-              error,
-              method,
-              endpoint,
-              attempt,
-              config,
-            }
-          );
-        }
+        const result = await handleRetryAttempt(
+          error,
+          method,
+          endpoint,
+          attempt,
+          config
+        );
 
-        // Check if we should retry this error
-        if (!config.shouldRetry(error)) {
-          logger.debug(
-            `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
-            error
-          );
+        if (result.shouldContinue) {
+          continue;
+        } else {
           throw error;
         }
-
-        // Handle rate limit errors
-        if (isRateLimitError(error)) {
-          await waitForRateLimit(endpoint, method, attempt, config);
-          continue;
-        }
-
-        // Handle other retryable errors
-        await waitForOtherErrors(error, endpoint, method, attempt, config);
       }
     }
 
