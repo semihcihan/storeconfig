@@ -350,7 +350,7 @@ describe("PaginationWrapper", () => {
           meta: { paging: { limit: 8000, nextCursor: "cursor1" } },
         },
       };
-      const networkError = new Error("Network Error");
+      const networkError = new Error("Network Error") as any;
       networkError.code = "ECONNRESET";
 
       mockApiClient.GET.mockResolvedValueOnce(

@@ -191,7 +191,7 @@ describe("Pagination + Retry Integration", () => {
         },
       };
 
-      const networkError = new Error("Network Error");
+      const networkError = new Error("Network Error") as any;
       networkError.code = "ECONNRESET";
 
       // First page succeeds, second page fails with network error then succeeds
