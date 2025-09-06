@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 import type { paths } from "../generated/app-store-connect-api";
 import { createRetryMiddleware } from "./retry-middleware";
-import { getAuthToken, forceTokenRefresh } from "./auth-context";
+import { createPaginationWrapper } from "./pagination-wrapper";
 
 /**
  * Creates an API client with custom auth functions
@@ -47,5 +47,11 @@ export function createApiClient(
   });
 
   // Wrap the API client with retry middleware
-  return createRetryMiddleware(baseApi, { getAuthToken, forceTokenRefresh });
+  const retryWrappedApi = createRetryMiddleware(baseApi, {
+    getAuthToken,
+    forceTokenRefresh,
+  });
+
+  // Add pagination wrapper for automatic v1/v2 pagination
+  return createPaginationWrapper(retryWrappedApi);
 }

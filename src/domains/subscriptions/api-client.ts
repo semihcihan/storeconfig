@@ -1,5 +1,5 @@
 import { api } from "../../services/api";
-import { API_FIELD_CONFIGS } from "../../helpers/constants";
+import { API_FIELD_CONFIGS, API_LIMITS } from "../../helpers/constants";
 import { isNotFoundError } from "../../helpers/error-handling-helpers";
 import { logger } from "../../utils/logger";
 import type { components } from "../../generated/app-store-connect-api";
@@ -32,7 +32,7 @@ export async function fetchSubscriptionGroups(
     params: {
       path: { id: appId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
         "fields[subscriptions]": config.fieldsSubscriptions as any,
         "fields[subscriptionGroupLocalizations]":
@@ -63,7 +63,10 @@ export async function fetchSubscriptionLocalizations(
   const response = await api.GET(
     "/v1/subscriptions/{id}/subscriptionLocalizations",
     {
-      params: { path: { id: subscriptionId }, query: { limit: 200 } },
+      params: {
+        path: { id: subscriptionId },
+        query: { limit: API_LIMITS.DEFAULT_LIMIT_v1 },
+      },
     }
   );
 
@@ -84,7 +87,7 @@ export async function fetchSubscriptionIntroductoryOffers(
     params: {
       path: { id: subscriptionId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
       },
     },
@@ -102,7 +105,10 @@ export async function fetchSubscriptionPromotionalOffers(
   subscriptionId: string
 ): Promise<SubscriptionPromotionalOffersResponse> {
   const response = await api.GET("/v1/subscriptions/{id}/promotionalOffers", {
-    params: { path: { id: subscriptionId }, query: { limit: 200 } },
+    params: {
+      path: { id: subscriptionId },
+      query: { limit: API_LIMITS.DEFAULT_LIMIT_v1 },
+    },
   });
 
   if (response.error) {
@@ -153,7 +159,10 @@ export async function fetchSubscriptionAvailabilityTerritories(
   const response = await api.GET(
     "/v1/subscriptionAvailabilities/{id}/availableTerritories",
     {
-      params: { path: { id: availabilityId }, query: { limit: 200 } },
+      params: {
+        path: { id: availabilityId },
+        query: { limit: API_LIMITS.DEFAULT_LIMIT_v1 },
+      },
     }
   );
 
@@ -174,7 +183,7 @@ export async function fetchSubscriptionPrices(
     params: {
       path: { id: subscriptionId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
       },
     },
@@ -199,7 +208,7 @@ export async function fetchPromotionalOfferPrices(
       params: {
         path: { id: offerId },
         query: {
-          limit: 200,
+          limit: API_LIMITS.DEFAULT_LIMIT_v1,
           include: config.include as any,
         },
       },
@@ -422,7 +431,7 @@ export async function fetchAllSubscriptionPricePoints(
   territory?: string
 ): Promise<SubscriptionPricePointsResponse> {
   const queryParams: any = {
-    limit: 8000, // Maximum allowed limit
+    limit: API_LIMITS.DEFAULT_LIMIT_v2,
     include: ["territory"],
     "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
     "fields[territories]": API_FIELD_CONFIGS.territories
@@ -526,7 +535,7 @@ export async function fetchSubscriptionPricePointEqualizations(
         query: {
           "fields[subscriptionPricePoints]": ["customerPrice", "territory"],
           include: ["territory"],
-          limit: 8000,
+          limit: API_LIMITS.DEFAULT_LIMIT_v2,
         },
       },
     }

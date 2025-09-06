@@ -124,6 +124,6 @@ export const API_FIELD_CONFIGS = {
 
 // API limits
 export const API_LIMITS = {
-  DEFAULT_LIMIT: 200,
-  TERRITORY_AVAILABILITY_LIMIT: 50,
+  DEFAULT_LIMIT_v1: 200,
+  DEFAULT_LIMIT_v2: 8000,
 } as const;

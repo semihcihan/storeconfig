@@ -1,5 +1,5 @@
 import { api } from "../../services/api";
-import { API_FIELD_CONFIGS } from "../../helpers/constants";
+import { API_FIELD_CONFIGS, API_LIMITS } from "../../helpers/constants";
 import {
   isNotFoundError,
   ContextualError,
@@ -35,7 +35,7 @@ export async function fetchInAppPurchases(
   const config = API_FIELD_CONFIGS.inAppPurchases;
 
   const queryParams = {
-    limit: 200,
+    limit: API_LIMITS.DEFAULT_LIMIT_v1,
     include: ["inAppPurchaseLocalizations", "iapPriceSchedule"],
     "fields[inAppPurchaseLocalizations]":
       config.fieldsInAppPurchaseLocalizations as any,
@@ -110,7 +110,10 @@ export async function fetchInAppPurchaseAvailabilityTerritories(
   const response = await api.GET(
     "/v1/inAppPurchaseAvailabilities/{id}/availableTerritories",
     {
-      params: { path: { id: availabilityId }, query: { limit: 200 } },
+      params: {
+        path: { id: availabilityId },
+        query: { limit: API_LIMITS.DEFAULT_LIMIT_v1 },
+      },
     }
   );
 
@@ -151,7 +154,7 @@ export async function fetchManualPrices(
       params: {
         path: { id: priceScheduleId },
         query: {
-          limit: 200,
+          limit: API_LIMITS.DEFAULT_LIMIT_v1,
           include: config.include as any,
           "fields[inAppPurchasePrices]":
             config.fieldsInAppPurchasePrices as any,
@@ -393,7 +396,7 @@ export async function fetchIAPPricePoints(
     params: {
       path: { id: iapId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: ["territory"],
         "filter[territory]": [territory],
       },

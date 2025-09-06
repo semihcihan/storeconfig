@@ -3,12 +3,18 @@ import { logger } from "../utils/logger";
 import { API_LIMITS } from "./constants";
 import { ContextualError } from "./error-handling-helpers";
 
+/**
+ * NOTE: As of the latest update, v1 and v2 endpoints are automatically paginated
+ * by the pagination wrapper in the API factory. These helper functions are kept
+ * for backward compatibility and special cases where manual pagination is needed.
+ */
+
 // Generic pagination helper for v2 endpoints with cursor-based pagination
 export async function paginateV2<T>(
   endpoint: string,
   pathId: string,
   params: Record<string, any> = {},
-  limit: number = API_LIMITS.DEFAULT_LIMIT
+  limit: number = API_LIMITS.DEFAULT_LIMIT_v2
 ): Promise<T[]> {
   const allData: T[] = [];
   let cursor: string | undefined;
@@ -49,7 +55,7 @@ export async function paginateV1<T>(
   endpoint: string,
   pathId: string,
   params: Record<string, any> = {},
-  limit: number = API_LIMITS.DEFAULT_LIMIT
+  limit: number = API_LIMITS.DEFAULT_LIMIT_v1
 ): Promise<T[]> {
   const allData: T[] = [];
   let offset = 0;
