@@ -1,12 +1,11 @@
 import * as jwt from "jsonwebtoken";
-import * as fs from "fs";
 import { logger } from "../utils/logger";
 import { ContextualError } from "../helpers/error-handling-helpers";
 
 export type AuthContext = "default" | "fallback";
 
 export interface AuthCredentials {
-  privateKeyPath: string;
+  privateKey: string;
   keyId: string;
   issuerId: string;
 }
@@ -30,15 +29,15 @@ class AuthContextManager {
   }
 
   private initializeDefaultCredentials(): void {
-    const privateKeyPath = process.env.ASC_PRIVATE_KEY_PATH;
+    const privateKey = process.env.ASC_PRIVATE_KEY;
     const keyId = process.env.ASC_KEY_ID;
     const issuerId = process.env.ASC_ISSUER_ID;
 
-    if (!privateKeyPath || !keyId || !issuerId) {
+    if (!privateKey || !keyId || !issuerId) {
       throw new ContextualError(
-        "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY_PATH, ASC_KEY_ID, and ASC_ISSUER_ID.",
+        "Missing App Store Connect API credentials. Please check your .env file for ASC_PRIVATE_KEY, ASC_KEY_ID, and ASC_ISSUER_ID.",
         {
-          ASC_PRIVATE_KEY_PATH: privateKeyPath,
+          ASC_PRIVATE_KEY: privateKey,
           ASC_KEY_ID: keyId,
           ASC_ISSUER_ID: issuerId,
         }
@@ -46,20 +45,20 @@ class AuthContextManager {
     }
 
     this.credentials.set("default", {
-      privateKeyPath,
+      privateKey,
       keyId,
       issuerId,
     });
   }
 
   private initializeFallbackCredentials(): void {
-    const fallbackPrivateKeyPath = process.env.FALLBACK_ASC_PRIVATE_KEY_PATH;
+    const fallbackPrivateKey = process.env.FALLBACK_ASC_PRIVATE_KEY;
     const fallbackKeyId = process.env.FALLBACK_ASC_KEY_ID;
     const fallbackIssuerId = process.env.FALLBACK_ASC_ISSUER_ID;
 
-    if (fallbackPrivateKeyPath && fallbackKeyId && fallbackIssuerId) {
+    if (fallbackPrivateKey && fallbackKeyId && fallbackIssuerId) {
       this.credentials.set("fallback", {
-        privateKeyPath: fallbackPrivateKeyPath,
+        privateKey: fallbackPrivateKey,
         keyId: fallbackKeyId,
         issuerId: fallbackIssuerId,
       });
@@ -83,16 +82,20 @@ class AuthContextManager {
       });
     }
 
-    try {
-      const privateKey = fs.readFileSync(credentials.privateKeyPath, "utf8");
-      this.privateKeys.set(context, privateKey);
-      return privateKey;
-    } catch (error) {
+    // Always read from environment variable
+    const envVarName =
+      context === "default" ? "ASC_PRIVATE_KEY" : "FALLBACK_ASC_PRIVATE_KEY";
+    const privateKeyFromEnv = process.env[envVarName];
+
+    if (!privateKeyFromEnv) {
       throw new ContextualError(
-        `Failed to read private key for context '${context}'`,
-        { context, privateKeyPath: credentials.privateKeyPath, error }
+        `Private key not found in environment variable '${envVarName}' for context '${context}'`,
+        { context, envVarName, privateKey: credentials.privateKey }
       );
     }
+
+    this.privateKeys.set(context, privateKeyFromEnv);
+    return privateKeyFromEnv;
   }
 
   private generateNewAuthToken(context: AuthContext): string {
