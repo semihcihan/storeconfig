@@ -1,6 +1,7 @@
 ## IDEAS TODOs
 
-- handle iap and sub pricing for non existing on set-price
+- write tests for new client stuff and fallback
+- closest prices not shown correctly on set-price
 - test retry mw
 
 # Notes for documentation

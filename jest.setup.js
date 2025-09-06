@@ -6,6 +6,16 @@ process.env.DOTENV_CONFIG_SILENT = "true";
 // Set log level to error only for tests (suppresses debug, info, warn)
 process.env.LOG_LEVEL = "error";
 
+// Mock App Store Connect API credentials for tests
+process.env.ASC_PRIVATE_KEY_PATH = "test-key.p8";
+process.env.ASC_KEY_ID = "test-key-id";
+process.env.ASC_ISSUER_ID = "test-issuer-id";
+
+// Mock fallback credentials for tests
+process.env.FALLBACK_ASC_PRIVATE_KEY_PATH = "test-fallback-key.p8";
+process.env.FALLBACK_ASC_KEY_ID = "test-fallback-key-id";
+process.env.FALLBACK_ASC_ISSUER_ID = "test-fallback-issuer-id";
+
 // Suppress console output immediately (before any modules load)
 console.log = () => {};
 console.warn = () => {};
