@@ -1,41 +1,25 @@
-import createClient from "openapi-fetch";
-import type { paths } from "../generated/app-store-connect-api";
-import { getAuthToken } from "./auth";
-import { createRetryMiddleware } from "./retry-middleware";
+import { createApiClient } from "./api-factory";
+import { getAuthToken, forceTokenRefresh } from "./auth-context";
 
-const baseApi = createClient<paths>({
-  baseUrl: "https://api.appstoreconnect.apple.com",
-  // Remove static headers - we'll use middleware instead
-  querySerializer: (params) => {
-    const search = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (Array.isArray(value)) {
-        search.append(key, value.join(","));
-      } else if (value !== undefined && value !== null) {
-        search.append(key, String(value));
-      }
-    }
-    return search.toString();
-  },
-});
+// Create both API clients
+const defaultApi = createApiClient(
+  () => getAuthToken("default"),
+  () => forceTokenRefresh("default")
+);
 
-// Add middleware to inject fresh token on every request
-baseApi.use({
-  onRequest: (options) => {
-    // getAuthToken() will automatically use cached token or refresh if needed
-    const token = getAuthToken();
+const fallbackApi = createApiClient(
+  () => getAuthToken("fallback"),
+  () => forceTokenRefresh("fallback")
+);
 
-    // Create new request with fresh Authorization header
-    const newRequest = new Request(options.request, {
-      headers: {
-        ...Object.fromEntries(options.request.headers.entries()),
-        Authorization: `Bearer ${token}`,
-      },
-    });
+let currentApi = defaultApi;
 
-    return newRequest;
-  },
-});
+export function switchApiContext(context: "default" | "fallback"): void {
+  currentApi = context === "default" ? defaultApi : fallbackApi;
+}
 
-// Wrap the API client with retry middleware
-export const api = createRetryMiddleware(baseApi);
+export function getCurrentApiContext(): "default" | "fallback" {
+  return currentApi === defaultApi ? "default" : "fallback";
+}
+
+export { currentApi as api };

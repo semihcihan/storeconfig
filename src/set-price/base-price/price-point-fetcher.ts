@@ -7,10 +7,12 @@ import {
   fetchAllSubscriptionPricePoints,
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
+import { switchApiContext } from "../../services/api";
 import type { AppStoreModel } from "../../models/app-store";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 import type { components } from "../../generated/app-store-connect-api";
 import { ContextualError } from "../../helpers/error-handling-helpers";
+import { logger } from "../../utils/logger";
 
 // Simple caches to avoid refetching/resolving per territory
 const iapIdCache = new Map<string, string>(); // key: `${appId}:${productId}` → iapId
@@ -101,6 +103,8 @@ async function fetchTerritoryPricePointsForInAppPurchase(
       const fallbackIapId = process.env.FALLBACK_IAP_APPLE_ID;
       if (fallbackIapId) {
         iapId = fallbackIapId;
+        logger.debug("Using fallback IAP ID", iapId);
+        switchApiContext("fallback");
       } else {
         throw new ContextualError(
           `The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
@@ -114,10 +118,13 @@ async function fetchTerritoryPricePointsForInAppPurchase(
     }
     iapIdCache.set(idCacheKey, iapId);
   }
+
   const cacheKey = `iap:${iapId}:${territoryId}`;
   const cached = pricePointsCache.get(cacheKey);
   if (cached) return cached;
-  const resp = await fetchIAPPricePoints(iapId, territoryId); // TODO: we may call this with a backup data
+
+  const resp = await fetchIAPPricePoints(iapId, territoryId);
+  switchApiContext("default");
   const points = extractPricePointInfoFromResponse(resp);
   pricePointsCache.set(cacheKey, points);
   return points;
@@ -131,6 +138,7 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
   const selectedKey = `${selectedItem.id}:${selectedItem.offerType || ""}`;
   const idCacheKey = `${appStoreState.appId}:${selectedKey}`;
   let subscriptionId = subscriptionIdCache.get(idCacheKey);
+
   if (!subscriptionId) {
     const groups = await fetchSubscriptionGroups(appStoreState.appId);
     const included = groups.included || [];
@@ -159,6 +167,8 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
       const fallbackSubscriptionId = process.env.FALLBACK_SUBSCRIPTION_APPLE_ID;
       if (fallbackSubscriptionId) {
         subscriptionId = fallbackSubscriptionId;
+        logger.debug("Using fallback subscription ID", subscriptionId);
+        switchApiContext("fallback");
       } else {
         throw new ContextualError(
           `The selected subscription is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
@@ -176,11 +186,12 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
   const cacheKey = `sub:${subscriptionId}:${territoryId}`;
   const cached = pricePointsCache.get(cacheKey);
   if (cached) return cached;
+
   const resp = await fetchAllSubscriptionPricePoints(
-    // TODO: we may call this with a backup data
     subscriptionId,
     territoryId
   );
+  switchApiContext("default");
   const points = extractPricePointInfoFromResponse(resp);
   pricePointsCache.set(cacheKey, points);
   return points;

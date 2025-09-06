@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
+process.env.DOTENV_CONFIG_SILENT = "true";
+dotenv.config({ path: ".env.internal" });
+dotenv.config();
+
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { logger, LOG_LEVELS, DEFAULT_LOG_LEVEL } from "./utils/logger";
@@ -11,10 +15,6 @@ import fetchCmd from "./commands/fetch";
 import setPriceCmd from "./commands/set-price";
 import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
-
-process.env.DOTENV_CONFIG_SILENT = "true";
-dotenv.config({ path: ".env.internal" });
-dotenv.config();
 
 yargs(hideBin(process.argv))
   .option("log-level", {

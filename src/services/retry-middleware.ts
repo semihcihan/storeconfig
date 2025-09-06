@@ -11,9 +11,15 @@ export interface RetryOptions {
   delayMs?: number;
   shouldRetry?: (error: any) => boolean;
   rateLimitDelayMs?: number[]; // Array of wait times for rate limit retries
+  getAuthToken: () => string;
+  forceTokenRefresh: () => void;
 }
 
-const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+type RetryConfig = Required<
+  Omit<RetryOptions, "getAuthToken" | "forceTokenRefresh">
+>;
+
+const DEFAULT_RETRY_OPTIONS: RetryConfig = {
   maxAttempts: 3, // Retry twice (total 3 attempts)
   delayMs: 1000, // 1 second initial delay
   shouldRetry: (error: any) => {
@@ -77,7 +83,7 @@ async function waitForRateLimit(
   endpoint: string,
   method: string,
   attempt: number,
-  config: Required<RetryOptions>
+  config: RetryConfig
 ): Promise<void> {
   // Use the delay from the array, fallback to last value if attempt exceeds array length
   const baseWaitTime =
@@ -106,7 +112,7 @@ async function waitForOtherErrors(
   endpoint: string,
   method: string,
   attempt: number,
-  config: Required<RetryOptions>
+  config: RetryConfig
 ): Promise<void> {
   const backoffMultiplier = 2; // Exponential backoff
   const baseDelay = config.delayMs * Math.pow(backoffMultiplier, attempt - 1);
@@ -131,7 +137,7 @@ async function waitForOtherErrors(
 function createRetryWrapper<T extends Record<string, any>>(
   method: string,
   handler: Function,
-  config: Required<RetryOptions>
+  config: RetryConfig & Pick<RetryOptions, "getAuthToken" | "forceTokenRefresh">
 ): Function {
   return async (...args: any[]) => {
     const endpoint = args[0] as string;
@@ -140,7 +146,12 @@ function createRetryWrapper<T extends Record<string, any>>(
     for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
       try {
         // Make the actual API call with auth retry for 401 errors
-        const response = await withAuthRetry(() => handler(...args));
+        const response = await withAuthRetry(
+          () => handler(...args),
+          0,
+          config.getAuthToken,
+          config.forceTokenRefresh
+        );
 
         // Check if the response contains an error (openapi-fetch pattern)
         if (
@@ -248,9 +259,10 @@ function createRetryWrapper<T extends Record<string, any>>(
  */
 export function createRetryMiddleware<T extends Record<string, any>>(
   apiClient: T,
-  options: RetryOptions = {}
+  options: RetryOptions
 ): T {
-  const config = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  const config = { ...DEFAULT_RETRY_OPTIONS, ...options } as RetryConfig &
+    Pick<RetryOptions, "getAuthToken" | "forceTokenRefresh">;
   const middleware = {} as T;
 
   for (const [method, handler] of Object.entries(apiClient)) {
