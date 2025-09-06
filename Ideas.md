@@ -1,6 +1,5 @@
 ## IDEAS TODOs
 
-- closest prices not shown correctly on set-price
 - get active price for subscriptions and iaps and apps
 - test retry mw, check what happens when auth error
 

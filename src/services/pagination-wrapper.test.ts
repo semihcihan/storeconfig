@@ -239,7 +239,7 @@ describe("PaginationWrapper", () => {
 
       expect(result._isPaginated).toBe(true);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(11); // 1 initial + 10 max pages
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         "Hit max pages limit (10), stopping pagination"
       );
     });
@@ -270,7 +270,7 @@ describe("PaginationWrapper", () => {
       expect(result.data.data).toEqual([{ id: 1 }, { id: 2 }]);
       expect(mockApiClient.GET).toHaveBeenCalledTimes(2);
       // The pagination stops because nextCursor is null, not because of missing pagination info
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         "Page 1: 1 items, hasMore: false"
       );
     });

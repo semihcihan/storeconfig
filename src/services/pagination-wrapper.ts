@@ -134,7 +134,7 @@ class PaginationHandler {
   ): Promise<any> {
     const limit = response.data.meta.paging.limit;
 
-    logger.warn(`Auto-paginating ${endpoint} with limit ${limit}`);
+    logger.debug(`Auto-paginating ${endpoint} with limit ${limit}`);
 
     const state = this.initializeState(response);
 
@@ -157,7 +157,7 @@ class PaginationHandler {
 
       this.updateState(state, nextResponse);
 
-      logger.warn(
+      logger.debug(
         `Page ${state.pageCount}: ${
           nextResponse.data?.data?.length || 0
         } items, hasMore: ${state.hasMore}`
@@ -165,12 +165,12 @@ class PaginationHandler {
     }
 
     if (state.pageCount >= this.maxPages) {
-      logger.warn(
+      logger.debug(
         `Hit max pages limit (${this.maxPages}), stopping pagination`
       );
     }
 
-    logger.warn(`Pagination complete: ${state.allData.length} total items`);
+    logger.debug(`Pagination complete: ${state.allData.length} total items`);
     return this.createPaginatedResponse(response, state);
   }
 }
