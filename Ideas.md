@@ -1,6 +1,5 @@
 ## IDEAS TODOs
 
-- set-price alters apply format (uses no shortcuts)
 - get active price for subscriptions and iaps and apps
 
 # Notes for documentation
