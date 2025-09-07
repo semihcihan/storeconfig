@@ -5,7 +5,6 @@ import { readJsonFile } from "../helpers/validation-helpers";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import {
   startInteractivePricing,
-  pricingItemsExist,
   applyPricing,
 } from "../services/set-price-service";
 import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
@@ -32,8 +31,6 @@ const setPriceCommand: CommandModule = {
       const appStoreState = validateAppStoreModel(
         removeShortcuts(readJsonFile(inputFile))
       );
-
-      pricingItemsExist(appStoreState);
 
       logger.debug(
         "✅ File validation passed! Ready to proceed with interactive prompts."

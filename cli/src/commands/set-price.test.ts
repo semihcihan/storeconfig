@@ -22,7 +22,6 @@ jest.mock("../helpers/validation-helpers");
 jest.mock("../helpers/validation-model");
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
-  pricingItemsExist: jest.fn(),
   applyPricing: jest.fn((state: any) => state),
 }));
 jest.mock("../utils/shortcut-converter");
@@ -35,14 +34,10 @@ const mockFs = jest.mocked(fs);
 
 // Import the command after mocking
 import setPriceCommand from "./set-price";
-import {
-  startInteractivePricing,
-  pricingItemsExist,
-} from "../services/set-price-service";
+import { startInteractivePricing } from "../services/set-price-service";
 import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
 
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);
-const mockPricingItemsExist = jest.mocked(pricingItemsExist);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockUseShortcuts = jest.mocked(useShortcuts);
 
@@ -65,7 +60,6 @@ describe("set-price command", () => {
       basePricePoint: { id: "price-1", price: "0.00" },
       pricingStrategy: "apple",
     });
-    mockPricingItemsExist.mockReturnValue(undefined);
     mockRemoveShortcuts.mockReturnValue({} as any);
     mockUseShortcuts.mockReturnValue({} as any);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
@@ -117,33 +111,11 @@ describe("set-price command", () => {
       expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
         mockDataWithoutShortcuts
       );
-      expect(mockPricingItemsExist).toHaveBeenCalledWith(
-        mockDataWithoutShortcuts
-      );
       expect(mockStartInteractivePricing).toHaveBeenCalledWith({
         inputFile: "test-file.json",
         appStoreState: mockDataWithoutShortcuts,
       });
       expect(mockFs.writeFileSync).toHaveBeenCalled();
-    });
-
-    it("should handle validation errors and exit", async () => {
-      const mockData = { inAppPurchases: [{ id: "test" }] } as any;
-
-      mockReadJsonFile.mockReturnValue(mockData);
-      mockValidateAppStoreModel.mockReturnValue(mockData);
-      mockPricingItemsExist.mockImplementation(() => {
-        throw new Error("Validation failed");
-      });
-
-      await expect(setPriceCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Set-price failed",
-        expect.any(Error)
-      );
     });
 
     it("should handle file read errors and exit", async () => {
