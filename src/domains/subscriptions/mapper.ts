@@ -19,6 +19,7 @@ import {
   SUBSCRIPTION_PERIOD_MAPPING,
   DURATION_MAPPING,
 } from "../../helpers/constants";
+import { getMostRecentActivePrice } from "../../helpers/date-helpers";
 import {
   fetchSubscriptionLocalizations,
   fetchSubscriptionIntroductoryOffers,
@@ -47,47 +48,160 @@ type APISubscriptionPricePoint =
   components["schemas"]["SubscriptionPricePoint"];
 type APISubscriptionPricesResponse =
   components["schemas"]["SubscriptionPricesResponse"];
+type APISubscriptionPromotionalOfferPricesResponse =
+  components["schemas"]["SubscriptionPromotionalOfferPricesResponse"];
 
 // Process subscription price response
 export function processSubscriptionPriceResponse(
   response:
     | APISubscriptionPricesResponse
-    | components["schemas"]["SubscriptionPromotionalOfferPricesResponse"]
+    | APISubscriptionPromotionalOfferPricesResponse
 ): z.infer<typeof PriceSchema>[] {
-  if (!response || !response.included) {
+  if (!response?.data || !response?.included) {
     return [];
   }
 
+  const territoryPriceMap = buildTerritoryPriceMap(response);
+  return buildFinalPriceResult(territoryPriceMap);
+}
+
+function buildTerritoryPriceMap(
+  response:
+    | APISubscriptionPricesResponse
+    | APISubscriptionPromotionalOfferPricesResponse
+): Map<
+  string,
+  Array<{
+    price: string;
+    territory: string;
+    startDate?: string;
+    endDate?: string;
+  }>
+> {
+  const territoryPriceMap = new Map<
+    string,
+    Array<{
+      price: string;
+      territory: string;
+      startDate?: string;
+      endDate?: string;
+    }>
+  >();
+
   const includedById = createIncludedByIdMap(response.included);
 
-  const prices: z.infer<typeof PriceSchema>[] = [];
   for (const priceData of response.data) {
-    const priceRel = priceData.relationships?.subscriptionPricePoint?.data;
-    const territoryRel = priceData.relationships?.territory?.data;
-    if (priceRel && territoryRel) {
-      const pricePoint = getIncludedResource<APISubscriptionPricePoint>(
-        includedById,
-        priceRel.type,
-        priceRel.id
-      );
-      const territory = getIncludedResource<components["schemas"]["Territory"]>(
-        includedById,
-        territoryRel.type,
-        territoryRel.id
-      );
+    const priceEntry = extractPriceEntry(priceData, includedById);
+    if (!priceEntry) continue;
 
-      if (pricePoint && pricePoint.attributes && territory) {
-        const territoryCode = validateTerritoryCode(territory.id);
-        if (territoryCode && pricePoint.attributes.customerPrice) {
-          prices.push({
-            price: pricePoint.attributes.customerPrice,
-            territory: territoryCode,
-          });
-        }
-      }
+    if (!territoryPriceMap.has(priceEntry.territory)) {
+      territoryPriceMap.set(priceEntry.territory, []);
+    }
+    territoryPriceMap.get(priceEntry.territory)!.push(priceEntry);
+  }
+
+  return territoryPriceMap;
+}
+
+function extractPriceEntry(
+  priceData:
+    | components["schemas"]["SubscriptionPrice"]
+    | components["schemas"]["SubscriptionPromotionalOfferPrice"],
+  includedById: IncludedByIdMap
+): {
+  price: string;
+  territory: string;
+  startDate?: string;
+  endDate?: string;
+} | null {
+  const territory = findTerritory(priceData, includedById);
+  if (!territory) return null;
+
+  const pricePoint = findPricePoint(priceData, includedById);
+  if (!pricePoint?.attributes?.customerPrice) return null;
+
+  const territoryCode = validateTerritoryCode(territory.id);
+  if (!territoryCode) return null;
+
+  // Only SubscriptionPrice has attributes with startDate, not SubscriptionPromotionalOfferPrice
+  const startDate =
+    priceData.type === "subscriptionPrices"
+      ? (priceData as components["schemas"]["SubscriptionPrice"]).attributes
+          ?.startDate
+      : undefined;
+  // SubscriptionPrice doesn't have endDate field
+  const endDate = undefined;
+
+  return {
+    price: pricePoint.attributes.customerPrice,
+    territory: territoryCode,
+    startDate,
+    endDate,
+  };
+}
+
+function findTerritory(
+  priceData:
+    | components["schemas"]["SubscriptionPrice"]
+    | components["schemas"]["SubscriptionPromotionalOfferPrice"],
+  includedById: IncludedByIdMap
+): components["schemas"]["Territory"] | null {
+  const territoryRel = priceData.relationships?.territory?.data;
+  if (!territoryRel) return null;
+
+  return (
+    getIncludedResource<components["schemas"]["Territory"]>(
+      includedById,
+      territoryRel.type,
+      territoryRel.id
+    ) || null
+  );
+}
+
+function findPricePoint(
+  priceData:
+    | components["schemas"]["SubscriptionPrice"]
+    | components["schemas"]["SubscriptionPromotionalOfferPrice"],
+  includedById: IncludedByIdMap
+): APISubscriptionPricePoint | null {
+  const pricePointRel = priceData.relationships?.subscriptionPricePoint?.data;
+  if (!pricePointRel) return null;
+
+  return (
+    getIncludedResource<APISubscriptionPricePoint>(
+      includedById,
+      pricePointRel.type,
+      pricePointRel.id
+    ) || null
+  );
+}
+
+function buildFinalPriceResult(
+  territoryPriceMap: Map<
+    string,
+    Array<{
+      price: string;
+      territory: string;
+      startDate?: string;
+      endDate?: string;
+    }>
+  >
+): z.infer<typeof PriceSchema>[] {
+  const result: z.infer<typeof PriceSchema>[] = [];
+
+  for (const [territory, prices] of territoryPriceMap) {
+    const activePrice = getMostRecentActivePrice(prices);
+    if (activePrice) {
+      result.push({
+        price: activePrice.price,
+        territory: activePrice.territory as z.infer<
+          typeof PriceSchema
+        >["territory"],
+      });
     }
   }
-  return prices;
+
+  return result;
 }
 
 // Map subscription localizations
@@ -206,6 +320,8 @@ export async function mapIntroductoryOffers(
           offer.prices.push({
             price: pricePoint.attributes.customerPrice,
             territory: territory,
+            startDate: offerData.attributes.startDate,
+            endDate: offerData.attributes.endDate,
           });
         }
       }
@@ -235,6 +351,8 @@ export async function mapIntroductoryOffers(
           offer.prices.push({
             price: pricePoint.attributes.customerPrice,
             territory: territory,
+            startDate: offerData.attributes.startDate,
+            endDate: offerData.attributes.endDate,
           });
         }
       }
@@ -255,6 +373,43 @@ export async function mapIntroductoryOffers(
       if (offer.availableTerritories) {
         offer.availableTerritories.push(territory);
       }
+    }
+  }
+
+  // Apply getMostRecentActivePrice to each offer's prices
+  for (const offer of Object.values(groupedOffers)) {
+    if ("prices" in offer && offer.prices && offer.prices.length > 0) {
+      const territoryPriceMap = new Map<
+        string,
+        Array<{
+          price: string;
+          territory: string;
+          startDate?: string;
+          endDate?: string;
+        }>
+      >();
+
+      // Group prices by territory
+      for (const price of offer.prices) {
+        if (!territoryPriceMap.has(price.territory)) {
+          territoryPriceMap.set(price.territory, []);
+        }
+        territoryPriceMap.get(price.territory)!.push(price);
+      }
+
+      // Apply getMostRecentActivePrice to each territory
+      const filteredPrices: Array<{ price: string; territory: string }> = [];
+      for (const [territory, prices] of territoryPriceMap) {
+        const activePrice = getMostRecentActivePrice(prices);
+        if (activePrice) {
+          filteredPrices.push({
+            price: activePrice.price,
+            territory: activePrice.territory as any,
+          });
+        }
+      }
+
+      offer.prices = filteredPrices as any;
     }
   }
 

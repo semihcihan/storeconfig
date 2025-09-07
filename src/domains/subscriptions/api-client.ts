@@ -200,7 +200,8 @@ export async function fetchSubscriptionPrices(
 export async function fetchPromotionalOfferPrices(
   offerId: string
 ): Promise<SubscriptionPromotionalOfferPricesResponse> {
-  const config = API_FIELD_CONFIGS.subscriptionPrices;
+  const includeConfig = API_FIELD_CONFIGS.subscriptionPrices;
+  const fieldConfig = API_FIELD_CONFIGS.subscriptionOfferPrices;
 
   const response = await api.GET(
     "/v1/subscriptionPromotionalOffers/{id}/prices",
@@ -209,7 +210,9 @@ export async function fetchPromotionalOfferPrices(
         path: { id: offerId },
         query: {
           limit: API_LIMITS.DEFAULT_LIMIT_v1,
-          include: config.include as any,
+          include: includeConfig.include as any,
+          "fields[subscriptionPromotionalOfferPrices]":
+            fieldConfig.include as any,
         },
       },
     }

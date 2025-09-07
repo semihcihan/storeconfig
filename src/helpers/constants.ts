@@ -84,6 +84,9 @@ export const API_FIELD_CONFIGS = {
   subscriptionPrices: {
     include: ["territory", "subscriptionPricePoint"],
   },
+  subscriptionOfferPrices: {
+    include: ["territory", "subscriptionPricePoint", "startDate", "endDate"],
+  },
   manualPrices: {
     include: ["territory", "inAppPurchasePricePoint"],
     fieldsInAppPurchasePrices: [
