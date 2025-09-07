@@ -21,7 +21,7 @@
     "split-openapi": "npx redocly split openapi.json --outDir=openapi",
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
-    "fetch": "npx ts-node src/cli.ts fetch --id 6566170641 --f fetch.json",
+    "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --f fetch.json",
     "apply": "npx ts-node src/cli.ts apply --f apply.json",
     "plan": "npx ts-node src/cli.ts plan --f apply.json",
     "validate": "npx ts-node src/cli.ts validate-format --f apply.json",

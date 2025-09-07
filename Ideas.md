@@ -1,7 +1,5 @@
 ## IDEAS TODOs
 
-- get active price for subscriptions and iaps and apps
-
 # Notes for documentation
 
 - No start date and end date support when applying, when fetching we only fetch the active ones
