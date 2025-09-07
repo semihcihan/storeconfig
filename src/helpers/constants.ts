@@ -88,6 +88,7 @@ export const API_FIELD_CONFIGS = {
     include: ["territory", "inAppPurchasePricePoint"],
     fieldsInAppPurchasePrices: [
       "startDate",
+      "endDate",
       "territory",
       "inAppPurchasePricePoint",
     ],
