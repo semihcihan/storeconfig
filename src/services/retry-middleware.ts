@@ -11,9 +11,15 @@ export interface RetryOptions {
   delayMs?: number;
   shouldRetry?: (error: any) => boolean;
   rateLimitDelayMs?: number[]; // Array of wait times for rate limit retries
+  getAuthToken: () => string;
+  forceTokenRefresh: () => void;
 }
 
-const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+type RetryConfig = Required<
+  Omit<RetryOptions, "getAuthToken" | "forceTokenRefresh">
+>;
+
+const DEFAULT_RETRY_OPTIONS: RetryConfig = {
   maxAttempts: 3, // Retry twice (total 3 attempts)
   delayMs: 1000, // 1 second initial delay
   shouldRetry: (error: any) => {
@@ -77,7 +83,7 @@ async function waitForRateLimit(
   endpoint: string,
   method: string,
   attempt: number,
-  config: Required<RetryOptions>
+  config: RetryConfig
 ): Promise<void> {
   // Use the delay from the array, fallback to last value if attempt exceeds array length
   const baseWaitTime =
@@ -106,7 +112,7 @@ async function waitForOtherErrors(
   endpoint: string,
   method: string,
   attempt: number,
-  config: Required<RetryOptions>
+  config: RetryConfig
 ): Promise<void> {
   const backoffMultiplier = 2; // Exponential backoff
   const baseDelay = config.delayMs * Math.pow(backoffMultiplier, attempt - 1);
@@ -126,12 +132,56 @@ async function waitForOtherErrors(
 }
 
 /**
+ * Handle a single retry attempt for either error responses or thrown exceptions
+ */
+async function handleRetryAttempt(
+  error: any,
+  method: string,
+  endpoint: string,
+  attempt: number,
+  config: RetryConfig
+): Promise<{ shouldContinue: boolean; shouldReturn?: any }> {
+  // Don't retry if this is the last attempt
+  if (attempt === config.maxAttempts) {
+    throw new ContextualError(
+      `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
+      {
+        error,
+        method,
+        endpoint,
+        attempt,
+        config,
+      }
+    );
+  }
+
+  // Check if we should retry this error
+  if (!config.shouldRetry(error)) {
+    logger.debug(
+      `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
+      error
+    );
+    return { shouldContinue: false, shouldReturn: error };
+  }
+
+  // Handle rate limit errors
+  if (isRateLimitError(error)) {
+    await waitForRateLimit(endpoint, method, attempt, config);
+    return { shouldContinue: true };
+  }
+
+  // Handle other retryable errors
+  await waitForOtherErrors(error, endpoint, method, attempt, config);
+  return { shouldContinue: true };
+}
+
+/**
  * Create a retry wrapper for a single API method
  */
 function createRetryWrapper<T extends Record<string, any>>(
   method: string,
   handler: Function,
-  config: Required<RetryOptions>
+  config: RetryConfig & Pick<RetryOptions, "getAuthToken" | "forceTokenRefresh">
 ): Function {
   return async (...args: any[]) => {
     const endpoint = args[0] as string;
@@ -140,7 +190,12 @@ function createRetryWrapper<T extends Record<string, any>>(
     for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
       try {
         // Make the actual API call with auth retry for 401 errors
-        const response = await withAuthRetry(() => handler(...args));
+        const response = await withAuthRetry(
+          () => handler(...args),
+          0,
+          config.getAuthToken,
+          config.forceTokenRefresh
+        );
 
         // Check if the response contains an error (openapi-fetch pattern)
         if (
@@ -150,45 +205,20 @@ function createRetryWrapper<T extends Record<string, any>>(
           response.error
         ) {
           // This is an error response from openapi-fetch
-          if (config.shouldRetry(response.error)) {
+          const result = await handleRetryAttempt(
+            response.error,
+            method,
+            endpoint,
+            attempt,
+            config
+          );
+
+          if (result.shouldContinue) {
             lastError = response.error;
-
-            // Don't retry if this is the last attempt
-            if (attempt === config.maxAttempts) {
-              throw new ContextualError(
-                `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-                {
-                  error: response.error,
-                  method,
-                  endpoint,
-                  attempt,
-                  config,
-                }
-              );
-            }
-
-            // Handle rate limit errors
-            if (isRateLimitError(response.error)) {
-              await waitForRateLimit(endpoint, method, attempt, config);
-              continue;
-            }
-
-            // Handle other retryable errors
-            await waitForOtherErrors(
-              response.error,
-              endpoint,
-              method,
-              attempt,
-              config
-            );
             continue;
-          } else {
+          } else if (result.shouldReturn !== undefined) {
             // Non-retryable error in response - return the response with error
-            logger.debug(
-              `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
-              response.error
-            );
-            return response; // Return the response with error property
+            return response;
           }
         }
 
@@ -201,37 +231,19 @@ function createRetryWrapper<T extends Record<string, any>>(
       } catch (error) {
         lastError = error;
 
-        // Don't retry if this is the last attempt
-        if (attempt === config.maxAttempts) {
-          throw new ContextualError(
-            `${method} ${endpoint} failed after ${config.maxAttempts} attempts. Last error:`,
-            {
-              error,
-              method,
-              endpoint,
-              attempt,
-              config,
-            }
-          );
-        }
+        const result = await handleRetryAttempt(
+          error,
+          method,
+          endpoint,
+          attempt,
+          config
+        );
 
-        // Check if we should retry this error
-        if (!config.shouldRetry(error)) {
-          logger.debug(
-            `${method} ${endpoint} failed with non-retryable error on attempt ${attempt}:`,
-            error
-          );
+        if (result.shouldContinue) {
+          continue;
+        } else {
           throw error;
         }
-
-        // Handle rate limit errors
-        if (isRateLimitError(error)) {
-          await waitForRateLimit(endpoint, method, attempt, config);
-          continue;
-        }
-
-        // Handle other retryable errors
-        await waitForOtherErrors(error, endpoint, method, attempt, config);
       }
     }
 
@@ -248,9 +260,10 @@ function createRetryWrapper<T extends Record<string, any>>(
  */
 export function createRetryMiddleware<T extends Record<string, any>>(
   apiClient: T,
-  options: RetryOptions = {}
+  options: RetryOptions
 ): T {
-  const config = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  const config = { ...DEFAULT_RETRY_OPTIONS, ...options } as RetryConfig &
+    Pick<RetryOptions, "getAuthToken" | "forceTokenRefresh">;
   const middleware = {} as T;
 
   for (const [method, handler] of Object.entries(apiClient)) {

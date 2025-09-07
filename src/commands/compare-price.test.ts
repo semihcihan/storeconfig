@@ -170,24 +170,6 @@ describe("compare-price command", () => {
       );
     });
 
-    it("should handle output file with .xlsx extension", async () => {
-      const mockArgvWithXlsx = {
-        ...mockArgv,
-        output: "test-output.xlsx",
-      };
-
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
-
-      await comparePriceCommand.handler(mockArgvWithXlsx);
-
-      expect(mockExportAnalysis).toHaveBeenCalledWith(
-        mockAnalysis,
-        "test-output.xlsx"
-      );
-    });
-
     it("should handle input file read error", async () => {
       const error = new Error("File not found");
       mockFs.readFileSync.mockImplementation(() => {

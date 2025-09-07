@@ -8,7 +8,7 @@ import {
   pricingItemsExist,
   applyPricing,
 } from "../services/set-price-service";
-import { removeShortcuts } from "../utils/shortcut-converter";
+import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
 
 const setPriceCommand: CommandModule = {
   command: "set-price",
@@ -46,7 +46,9 @@ const setPriceCommand: CommandModule = {
 
       logger.debug("Pricing data:", pricingRequest);
 
-      const updatedState = await applyPricing(appStoreState, pricingRequest);
+      const updatedState = useShortcuts(
+        await applyPricing(appStoreState, pricingRequest)
+      );
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
       logger.info(`✅ Updated ${inputFile} with pricing changes.`);
     } catch (error) {

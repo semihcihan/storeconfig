@@ -1,5 +1,5 @@
 import { api } from "../../services/api";
-import { API_FIELD_CONFIGS } from "../../helpers/constants";
+import { API_FIELD_CONFIGS, API_LIMITS } from "../../helpers/constants";
 import {
   ContextualError,
   isNotFoundError,
@@ -50,7 +50,7 @@ export async function fetchAppPricePoints(
     params: {
       path: { id: appId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: ["territory"],
         "fields[appPricePoints]": ["customerPrice", "territory"],
         "fields[territories]": API_FIELD_CONFIGS.territories
@@ -82,7 +82,7 @@ export async function fetchCurrentManualPrices(
     params: {
       path: { id: priceScheduleId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
       },
     },
@@ -153,7 +153,7 @@ export async function fetchAppManualPrices(
     params: {
       path: { id: priceScheduleId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
         "fields[appPrices]": config.fieldsAppPrices as any,
       },
@@ -182,7 +182,7 @@ export async function fetchAppAutomaticPrices(
     params: {
       path: { id: priceScheduleId },
       query: {
-        limit: 200,
+        limit: API_LIMITS.DEFAULT_LIMIT_v1,
         include: config.include as any,
         "fields[appPrices]": config.fieldsAppPrices as any,
         "filter[territory]": [territoryId],

@@ -18,8 +18,7 @@ const comparePriceCommand: CommandModule = {
     },
     output: {
       alias: "o",
-      describe:
-        "Path to the output file for price comparison analysis (.csv or .xlsx)",
+      describe: "Path to the output file for price comparison analysis (.csv)",
       demandOption: true,
       type: "string",
     },

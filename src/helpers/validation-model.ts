@@ -40,6 +40,9 @@ export function validateAppStoreModel(
     }
     return result.data;
   } else {
-    throw new ContextualError(`❌ Validation failed!`, result.error);
+    throw new ContextualError(
+      `❌ Validation failed for '${context}'!`,
+      result.error
+    );
   }
 }

@@ -1,10 +1,9 @@
 import { api } from "../../services/api";
-import { API_FIELD_CONFIGS } from "../../helpers/constants";
+import { API_FIELD_CONFIGS, API_LIMITS } from "../../helpers/constants";
 import {
   ContextualError,
   isNotFoundError,
 } from "../../helpers/error-handling-helpers";
-import { paginateV2 } from "../../helpers/pagination-helpers";
 import { logger } from "../../utils/logger";
 import type { components } from "../../generated/app-store-connect-api";
 
@@ -67,21 +66,33 @@ export async function fetchAppAvailability(
     return null;
   }
 
-  // Now fetch all territory availabilities using the v2 endpoint with proper pagination
-  const allTerritoryAvailabilities = await paginateV2(
+  // Now fetch all territory availabilities using the v2 endpoint (automatic pagination)
+  const territoryAvailabilitiesResponse = await api.GET(
     "/v2/appAvailabilities/{id}/territoryAvailabilities",
-    appAvailabilityId,
     {
-      include: API_FIELD_CONFIGS.territoryAvailabilities.include as any,
-      "fields[territoryAvailabilities]": API_FIELD_CONFIGS
-        .territoryAvailabilities.fieldsTerritoryAvailabilities as any,
+      params: {
+        path: { id: appAvailabilityId },
+        query: {
+          limit: API_LIMITS.DEFAULT_LIMIT_v1,
+          include: API_FIELD_CONFIGS.territoryAvailabilities.include as any,
+          "fields[territoryAvailabilities]": API_FIELD_CONFIGS
+            .territoryAvailabilities.fieldsTerritoryAvailabilities as any,
+        },
+      },
     }
   );
+
+  if (territoryAvailabilitiesResponse.error) {
+    throw new ContextualError(
+      "Failed to fetch territory availabilities",
+      territoryAvailabilitiesResponse.error
+    );
+  }
 
   // Combine the results to match the expected structure
   return {
     data: appAvailabilityResponse.data.data,
-    included: allTerritoryAvailabilities as any,
+    included: territoryAvailabilitiesResponse.data?.data || [],
     links: appAvailabilityResponse.data.links,
   };
 }
@@ -110,16 +121,29 @@ export async function getTerritoryAvailabilities(
 ): Promise<components["schemas"]["TerritoryAvailability"][]> {
   const config = API_FIELD_CONFIGS.territoryAvailabilities;
 
-  return await paginateV2(
+  const response = await api.GET(
     "/v2/appAvailabilities/{id}/territoryAvailabilities",
-    appAvailabilityId,
     {
-      include: config.include as any,
-      "fields[territoryAvailabilities]":
-        config.fieldsTerritoryAvailabilities as any,
-    },
-    50 // Use smaller limit for territory availabilities
+      params: {
+        path: { id: appAvailabilityId },
+        query: {
+          limit: API_LIMITS.DEFAULT_LIMIT_v2,
+          include: config.include as any,
+          "fields[territoryAvailabilities]":
+            config.fieldsTerritoryAvailabilities as any,
+        },
+      },
+    }
   );
+
+  if (response.error) {
+    throw new ContextualError(
+      "Failed to fetch territory availabilities",
+      response.error
+    );
+  }
+
+  return response.data?.data || [];
 }
 
 // Update a territory's availability

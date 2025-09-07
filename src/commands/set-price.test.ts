@@ -39,11 +39,12 @@ import {
   startInteractivePricing,
   pricingItemsExist,
 } from "../services/set-price-service";
-import { removeShortcuts } from "../utils/shortcut-converter";
+import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
 
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);
 const mockPricingItemsExist = jest.mocked(pricingItemsExist);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
+const mockUseShortcuts = jest.mocked(useShortcuts);
 
 describe("set-price command", () => {
   const mockArgv = {
@@ -66,6 +67,7 @@ describe("set-price command", () => {
     });
     mockPricingItemsExist.mockReturnValue(undefined);
     mockRemoveShortcuts.mockReturnValue({} as any);
+    mockUseShortcuts.mockReturnValue({} as any);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
   });
 
@@ -172,6 +174,96 @@ describe("set-price command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Setting prices using file: test-file.json"
       );
+    });
+  });
+
+  describe("shortcut handling", () => {
+    it("should remove shortcuts at start and apply them back at end", async () => {
+      const mockDataWithShortcuts = {
+        inAppPurchases: [{ id: "test" }],
+        availableTerritories: "worldwide",
+        localizations: [
+          { locale: "en-US", name: "Test App" },
+          { locale: "tr-TR" }, // Shortcut: only locale, other fields inherited
+        ],
+      } as any;
+
+      const mockDataWithoutShortcuts = {
+        inAppPurchases: [{ id: "test" }],
+        availableTerritories: ["US", "TR", "GB"], // Expanded from "worldwide"
+        localizations: [
+          { locale: "en-US", name: "Test App" },
+          { locale: "tr-TR", name: "Test App" }, // Deoptimized: full data
+        ],
+      } as any;
+
+      const mockUpdatedState = {
+        inAppPurchases: [{ id: "test", price: "0.99" }],
+        availableTerritories: ["US", "TR", "GB"],
+        localizations: [
+          { locale: "en-US", name: "Test App" },
+          { locale: "tr-TR", name: "Test App" },
+        ],
+      } as any;
+
+      const mockFinalStateWithShortcuts = {
+        inAppPurchases: [{ id: "test", price: "0.99" }],
+        availableTerritories: "worldwide", // Converted back to shortcut
+        localizations: [
+          { locale: "en-US", name: "Test App" },
+          { locale: "tr-TR" }, // Optimized back to shortcut
+        ],
+      } as any;
+
+      mockReadJsonFile.mockReturnValue(mockDataWithShortcuts);
+      mockRemoveShortcuts.mockReturnValue(mockDataWithoutShortcuts);
+      mockValidateAppStoreModel.mockReturnValue(mockDataWithoutShortcuts);
+      mockUseShortcuts.mockReturnValue(mockFinalStateWithShortcuts);
+
+      // Mock applyPricing to return the updated state
+      const { applyPricing } = require("../services/set-price-service");
+      const mockApplyPricing = jest.mocked(applyPricing);
+      mockApplyPricing.mockResolvedValue(mockUpdatedState);
+
+      await setPriceCommand.handler!(mockArgv as any);
+
+      // Verify shortcuts are removed at the start
+      expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockDataWithShortcuts);
+      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
+        mockDataWithoutShortcuts
+      );
+
+      // Verify shortcuts are applied back at the end
+      expect(mockUseShortcuts).toHaveBeenCalledWith(mockUpdatedState);
+
+      // Verify the final file is written with shortcuts applied
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "test-file.json",
+        JSON.stringify(mockFinalStateWithShortcuts, null, 2) + "\n"
+      );
+    });
+
+    it("should handle case where shortcuts are not present", async () => {
+      const mockData = {
+        inAppPurchases: [{ id: "test" }],
+        availableTerritories: ["US", "TR"], // No shortcuts
+      } as any;
+
+      mockReadJsonFile.mockReturnValue(mockData);
+      mockRemoveShortcuts.mockReturnValue(mockData); // No change
+      mockValidateAppStoreModel.mockReturnValue(mockData);
+      mockUseShortcuts.mockReturnValue(mockData); // No change
+
+      // Mock applyPricing to return the same state
+      const { applyPricing } = require("../services/set-price-service");
+      const mockApplyPricing = jest.mocked(applyPricing);
+      mockApplyPricing.mockResolvedValue(mockData);
+
+      await setPriceCommand.handler!(mockArgv as any);
+
+      // Verify both functions are still called
+      expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockData);
+      expect(mockUseShortcuts).toHaveBeenCalledWith(mockData);
     });
   });
 });

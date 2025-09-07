@@ -19,14 +19,15 @@
     "prepublishOnly": "npm run build",
     "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
     "split-openapi": "npx redocly split openapi.json --outDir=openapi",
-    "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --f fetch.json",
-    "apply": "npx ts-node src/cli.ts apply --f apply.json",
-    "plan-file": "npx ts-node src/cli.ts plan --f apply.json",
-    "validate-file": "npx ts-node src/cli.ts validate-format --f apply.json",
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
+    "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --f fetch.json",
+    "apply": "npx ts-node src/cli.ts apply --f apply.json",
+    "plan": "npx ts-node src/cli.ts plan --f apply.json",
+    "validate": "npx ts-node src/cli.ts validate-format --f apply.json",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",
-    "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.xlsx"
+    "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.csv",
+    "example": "npx ts-node src/cli.ts example --t full"
   },
   "keywords": [],
   "author": "Semih Cihan",
@@ -38,11 +39,10 @@
   "dependencies": {
     "@types/lodash": "^4.17.20",
     "axios": "^1.10.0",
-    "dotenv": "^17.0.1",
+    "dotenv": "^16.6.1",
     "jsonwebtoken": "^9.0.2",
     "openapi-fetch": "^0.14.0",
     "winston": "^3.17.0",
-    "xlsx": "^0.18.5",
     "yargs": "^17.7.2",
     "zod": "^3.25.74"
   },

@@ -99,13 +99,10 @@ describe("LocalizationAggregator", () => {
         mockVersions as any
       );
 
-      const result = await (aggregator as any).getCurrentVersion(testAppId);
+      const result = await (aggregator as any).getCurrentVersion(mockVersions);
 
       expect(result).toEqual(mockVersions[1]);
       expect((aggregator as any).cachedVersionId).toBe(testVersionId);
-      expect(mockVersionService.getVersionsForApp).toHaveBeenCalledWith(
-        testAppId
-      );
     });
 
     it("should return null if no active version found", async () => {
@@ -124,7 +121,7 @@ describe("LocalizationAggregator", () => {
         mockVersions as any
       );
 
-      const result = await (aggregator as any).getCurrentVersion(testAppId);
+      const result = await (aggregator as any).getCurrentVersion(mockVersions);
 
       expect(result).toBeNull();
       expect((aggregator as any).cachedVersionId).toBeNull();
@@ -143,7 +140,7 @@ describe("LocalizationAggregator", () => {
         mockVersions as any
       );
 
-      const result = await (aggregator as any).getCurrentVersion(testAppId);
+      const result = await (aggregator as any).getCurrentVersion(mockVersions);
 
       expect(result).toEqual(mockVersions[1]);
     });
@@ -692,6 +689,81 @@ describe("LocalizationAggregator", () => {
         mockAppInfoLocalizationService.findLocalizationByLocale
       ).not.toHaveBeenCalled();
     });
+
+    it("should include whatsNew field in version localization data", async () => {
+      const localizationWithWhatsNew = {
+        ...testLocalization,
+        whatsNew: "What's new in this version",
+      };
+
+      mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+        null
+      );
+      mockVersionLocalizationService.createLocalization.mockResolvedValue({
+        id: "new-version-loc",
+      } as any);
+      mockAppInfoLocalizationService.findLocalizationByLocale.mockResolvedValue(
+        null
+      );
+      mockAppInfoLocalizationService.createLocalization.mockResolvedValue({
+        id: "new-app-info-loc",
+      } as any);
+
+      await aggregator.createAppLocalization(
+        testAppId,
+        testLocale,
+        localizationWithWhatsNew
+      );
+
+      expect(
+        mockVersionLocalizationService.createLocalization
+      ).toHaveBeenCalledWith(testVersionId, testLocale, {
+        description: testLocalization.description,
+        keywords: testLocalization.keywords,
+        marketingUrl: testLocalization.marketingUrl,
+        promotionalText: testLocalization.promotionalText,
+        supportUrl: testLocalization.supportUrl,
+        whatsNew: "What's new in this version",
+      });
+    });
+
+    it("should handle whatsNew field when updating existing version localization", async () => {
+      const localizationWithWhatsNew = {
+        ...testLocalization,
+        whatsNew: "What's new in this version",
+      };
+
+      const existingVersionLoc = { id: "existing-version-loc" };
+      mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+        existingVersionLoc as any
+      );
+      mockVersionLocalizationService.updateLocalization.mockResolvedValue({
+        id: "updated-version-loc",
+      } as any);
+      mockAppInfoLocalizationService.findLocalizationByLocale.mockResolvedValue(
+        null
+      );
+      mockAppInfoLocalizationService.createLocalization.mockResolvedValue({
+        id: "new-app-info-loc",
+      } as any);
+
+      await aggregator.createAppLocalization(
+        testAppId,
+        testLocale,
+        localizationWithWhatsNew
+      );
+
+      expect(
+        mockVersionLocalizationService.updateLocalization
+      ).toHaveBeenCalledWith(existingVersionLoc.id, {
+        description: testLocalization.description,
+        keywords: testLocalization.keywords,
+        marketingUrl: testLocalization.marketingUrl,
+        promotionalText: testLocalization.promotionalText,
+        supportUrl: testLocalization.supportUrl,
+        whatsNew: "What's new in this version",
+      });
+    });
   });
 
   describe("updateAppLocalization", () => {
@@ -829,6 +901,275 @@ describe("LocalizationAggregator", () => {
       expect(
         mockAppInfoLocalizationService.findLocalizationByLocale
       ).not.toHaveBeenCalled();
+    });
+
+    describe("whatsNew field handling", () => {
+      it("should remove whatsNew field and log warning for first version of new app", async () => {
+        // Mock single version (first version of new app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithWhatsNew = {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        };
+
+        const existingVersionLoc = { id: "existing-version-loc" };
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          existingVersionLoc as any
+        );
+        mockVersionLocalizationService.updateLocalization.mockResolvedValue({
+          id: "updated-version-loc",
+        } as any);
+
+        const result = await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithWhatsNew,
+          {}
+        );
+
+        // Verify warning was logged
+        expect(MockLogger.warn).toHaveBeenCalledWith(
+          `The "What's New" field cannot be set for the first version of a new app. Removing whatsNew from versionChanges and continuing...`
+        );
+
+        // Verify whatsNew was removed from the changes
+        expect(
+          mockVersionLocalizationService.updateLocalization
+        ).toHaveBeenCalledWith(existingVersionLoc.id, {
+          description: "Updated description",
+          whatsNew: undefined,
+        });
+
+        expect(result.versionLocalization).toBeDefined();
+      });
+
+      it("should allow whatsNew field for apps with multiple versions", async () => {
+        // Mock multiple versions (existing app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: "old-version-id",
+            attributes: { appVersionState: "REPLACED_WITH_NEW_VERSION" },
+          },
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithWhatsNew = {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        };
+
+        const existingVersionLoc = { id: "existing-version-loc" };
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          existingVersionLoc as any
+        );
+        mockVersionLocalizationService.updateLocalization.mockResolvedValue({
+          id: "updated-version-loc",
+        } as any);
+
+        const result = await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithWhatsNew,
+          {}
+        );
+
+        // Verify no warning was logged
+        expect(MockLogger.warn).not.toHaveBeenCalledWith(
+          expect.stringContaining("What's New")
+        );
+
+        // Verify whatsNew was preserved in the changes
+        expect(
+          mockVersionLocalizationService.updateLocalization
+        ).toHaveBeenCalledWith(existingVersionLoc.id, {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        });
+
+        expect(result.versionLocalization).toBeDefined();
+      });
+
+      it("should handle whatsNew field when creating new version localization", async () => {
+        // Mock multiple versions (existing app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: "old-version-id",
+            attributes: { appVersionState: "REPLACED_WITH_NEW_VERSION" },
+          },
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithWhatsNew = {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        };
+
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          null
+        );
+        mockVersionLocalizationService.createLocalization.mockResolvedValue({
+          id: "new-version-loc",
+        } as any);
+
+        const result = await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithWhatsNew,
+          {}
+        );
+
+        // Verify whatsNew was preserved in the creation
+        expect(
+          mockVersionLocalizationService.createLocalization
+        ).toHaveBeenCalledWith(testVersionId, testLocale, {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        });
+
+        expect(result.versionLocalization).toBeDefined();
+      });
+
+      it("should handle whatsNew field removal for first version when creating new localization", async () => {
+        // Mock single version (first version of new app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithWhatsNew = {
+          description: "Updated description",
+          whatsNew: "What's new in this version",
+        };
+
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          null
+        );
+        mockVersionLocalizationService.createLocalization.mockResolvedValue({
+          id: "new-version-loc",
+        } as any);
+
+        const result = await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithWhatsNew,
+          {}
+        );
+
+        // Verify warning was logged
+        expect(MockLogger.warn).toHaveBeenCalledWith(
+          `The "What's New" field cannot be set for the first version of a new app. Removing whatsNew from versionChanges and continuing...`
+        );
+
+        // Verify whatsNew was removed from the creation
+        expect(
+          mockVersionLocalizationService.createLocalization
+        ).toHaveBeenCalledWith(testVersionId, testLocale, {
+          description: "Updated description",
+          whatsNew: undefined,
+        });
+
+        expect(result.versionLocalization).toBeDefined();
+      });
+
+      it("should not log warning when whatsNew is not provided", async () => {
+        // Mock single version (first version of new app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithoutWhatsNew = {
+          description: "Updated description",
+          keywords: "updated,keywords",
+        };
+
+        const existingVersionLoc = { id: "existing-version-loc" };
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          existingVersionLoc as any
+        );
+        mockVersionLocalizationService.updateLocalization.mockResolvedValue({
+          id: "updated-version-loc",
+        } as any);
+
+        await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithoutWhatsNew,
+          {}
+        );
+
+        // Verify no warning was logged
+        expect(MockLogger.warn).not.toHaveBeenCalledWith(
+          expect.stringContaining("What's New")
+        );
+
+        // Verify changes were passed as-is
+        expect(
+          mockVersionLocalizationService.updateLocalization
+        ).toHaveBeenCalledWith(existingVersionLoc.id, {
+          description: "Updated description",
+          keywords: "updated,keywords",
+        });
+      });
+
+      it("should handle edge case with exactly one version but whatsNew undefined", async () => {
+        // Mock single version (first version of new app)
+        mockVersionService.getVersionsForApp.mockResolvedValue([
+          {
+            id: testVersionId,
+            attributes: { appVersionState: "PENDING_DEVELOPER_RELEASE" },
+          },
+        ] as any);
+
+        const versionChangesWithUndefinedWhatsNew = {
+          description: "Updated description",
+          whatsNew: undefined,
+        };
+
+        const existingVersionLoc = { id: "existing-version-loc" };
+        mockVersionLocalizationService.findLocalizationByLocale.mockResolvedValue(
+          existingVersionLoc as any
+        );
+        mockVersionLocalizationService.updateLocalization.mockResolvedValue({
+          id: "updated-version-loc",
+        } as any);
+
+        await aggregator.updateAppLocalization(
+          testAppId,
+          testLocale,
+          versionChangesWithUndefinedWhatsNew,
+          {}
+        );
+
+        // Verify no warning was logged since whatsNew is undefined
+        expect(MockLogger.warn).not.toHaveBeenCalledWith(
+          expect.stringContaining("What's New")
+        );
+
+        // Verify changes were passed as-is
+        expect(
+          mockVersionLocalizationService.updateLocalization
+        ).toHaveBeenCalledWith(existingVersionLoc.id, {
+          description: "Updated description",
+          whatsNew: undefined,
+        });
+      });
     });
   });
 
@@ -1108,6 +1449,205 @@ describe("LocalizationAggregator", () => {
       const result = await aggregator.fetchAllLocalizations(testAppId);
 
       expect(result).toEqual([]);
+    });
+
+    it("should include whatsNew field in fetched localizations", async () => {
+      const versionLocalizations = [
+        {
+          id: "version-loc-1",
+          attributes: {
+            locale: "en-US",
+            description: "Version description",
+            keywords: "version,keywords",
+            whatsNew: "What's new in this version",
+          },
+        },
+        {
+          id: "version-loc-2",
+          attributes: {
+            locale: "fr-FR",
+            description: "French version description",
+            keywords: "french,version",
+            whatsNew: "Nouveautés de cette version",
+          },
+        },
+      ];
+
+      const appInfoLocalizations = [
+        {
+          id: "app-info-loc-1",
+          attributes: {
+            locale: "en-US",
+            name: "App Name",
+            subtitle: "App Subtitle",
+          },
+        },
+        {
+          id: "app-info-loc-2",
+          attributes: {
+            locale: "fr-FR",
+            name: "French App Name",
+            subtitle: "French App Subtitle",
+          },
+        },
+      ];
+
+      mockVersionLocalizationService.getLocalizationsForVersion.mockResolvedValue(
+        versionLocalizations as any
+      );
+      mockAppInfoLocalizationService.getLocalizationsForAppInfo.mockResolvedValue(
+        appInfoLocalizations as any
+      );
+
+      const result = await aggregator.fetchAllLocalizations(testAppId);
+
+      expect(result).toHaveLength(2);
+
+      const enUSLocalization = result.find((loc) => loc.locale === "en-US");
+      expect(enUSLocalization).toEqual({
+        locale: "en-US",
+        description: "Version description",
+        keywords: "version,keywords",
+        whatsNew: "What's new in this version",
+        name: "App Name",
+        subtitle: "App Subtitle",
+      });
+
+      const frFRLocalization = result.find((loc) => loc.locale === "fr-FR");
+      expect(frFRLocalization).toEqual({
+        locale: "fr-FR",
+        description: "French version description",
+        keywords: "french,version",
+        whatsNew: "Nouveautés de cette version",
+        name: "French App Name",
+        subtitle: "French App Subtitle",
+      });
+    });
+
+    it("should handle version localizations without whatsNew field", async () => {
+      const versionLocalizations = [
+        {
+          id: "version-loc-1",
+          attributes: {
+            locale: "en-US",
+            description: "Version description",
+            keywords: "version,keywords",
+            // whatsNew field is missing
+          },
+        },
+      ];
+
+      const appInfoLocalizations = [
+        {
+          id: "app-info-loc-1",
+          attributes: {
+            locale: "en-US",
+            name: "App Name",
+          },
+        },
+      ];
+
+      mockVersionLocalizationService.getLocalizationsForVersion.mockResolvedValue(
+        versionLocalizations as any
+      );
+      mockAppInfoLocalizationService.getLocalizationsForAppInfo.mockResolvedValue(
+        appInfoLocalizations as any
+      );
+
+      const result = await aggregator.fetchAllLocalizations(testAppId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        locale: "en-US",
+        description: "Version description",
+        keywords: "version,keywords",
+        whatsNew: undefined,
+        name: "App Name",
+      });
+    });
+
+    it("should handle version localizations with null whatsNew field", async () => {
+      const versionLocalizations = [
+        {
+          id: "version-loc-1",
+          attributes: {
+            locale: "en-US",
+            description: "Version description",
+            keywords: "version,keywords",
+            whatsNew: null,
+          },
+        },
+      ];
+
+      const appInfoLocalizations = [
+        {
+          id: "app-info-loc-1",
+          attributes: {
+            locale: "en-US",
+            name: "App Name",
+          },
+        },
+      ];
+
+      mockVersionLocalizationService.getLocalizationsForVersion.mockResolvedValue(
+        versionLocalizations as any
+      );
+      mockAppInfoLocalizationService.getLocalizationsForAppInfo.mockResolvedValue(
+        appInfoLocalizations as any
+      );
+
+      const result = await aggregator.fetchAllLocalizations(testAppId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        locale: "en-US",
+        description: "Version description",
+        keywords: "version,keywords",
+        whatsNew: undefined,
+        name: "App Name",
+      });
+    });
+
+    it("should handle version localizations with empty string whatsNew field", async () => {
+      const versionLocalizations = [
+        {
+          id: "version-loc-1",
+          attributes: {
+            locale: "en-US",
+            description: "Version description",
+            keywords: "version,keywords",
+            whatsNew: "",
+          },
+        },
+      ];
+
+      const appInfoLocalizations = [
+        {
+          id: "app-info-loc-1",
+          attributes: {
+            locale: "en-US",
+            name: "App Name",
+          },
+        },
+      ];
+
+      mockVersionLocalizationService.getLocalizationsForVersion.mockResolvedValue(
+        versionLocalizations as any
+      );
+      mockAppInfoLocalizationService.getLocalizationsForAppInfo.mockResolvedValue(
+        appInfoLocalizations as any
+      );
+
+      const result = await aggregator.fetchAllLocalizations(testAppId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        locale: "en-US",
+        description: "Version description",
+        keywords: "version,keywords",
+        whatsNew: undefined, // Empty string gets converted to undefined by || undefined
+        name: "App Name",
+      });
     });
   });
 });

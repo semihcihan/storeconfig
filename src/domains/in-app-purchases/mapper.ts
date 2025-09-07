@@ -10,6 +10,7 @@ import {
 } from "../../helpers/relationship-helpers";
 import { validateTerritoryCode } from "../../helpers/id-encoding-helpers";
 import { isNotFoundError } from "../../helpers/error-handling-helpers";
+import { getMostRecentActivePrice } from "../../helpers/date-helpers";
 import {
   fetchBaseTerritory,
   fetchManualPrices,
@@ -36,61 +37,132 @@ type InAppPurchase = z.infer<typeof InAppPurchaseSchema>;
 export function processPriceResponse(
   response: InAppPurchasePricesResponse
 ): z.infer<typeof PriceSchema>[] {
-  if (!response || !response.included) {
-    logger.debug("No response or included data, returning empty array");
+  if (!response?.data || !response?.included) {
     return [];
   }
 
-  if (response.data && response.data.length > 0) {
-    logger.debug("Attempting relationship-based price processing");
-    const includedById = createIncludedByIdMap(response.included);
+  const territoryPriceMap = buildTerritoryPriceMap(response);
+  return buildFinalPriceResult(territoryPriceMap);
+}
 
-    const prices: z.infer<typeof PriceSchema>[] = [];
-    for (const priceData of response.data) {
-      const pricePointRel =
-        priceData.relationships?.inAppPurchasePricePoint?.data;
-      const territoryRel = priceData.relationships?.territory?.data;
+function buildTerritoryPriceMap(response: InAppPurchasePricesResponse): Map<
+  string,
+  Array<{
+    price: string;
+    territory: string;
+    startDate?: string;
+    endDate?: string;
+  }>
+> {
+  const territoryPriceMap = new Map<
+    string,
+    Array<{
+      price: string;
+      territory: string;
+      startDate?: string;
+      endDate?: string;
+    }>
+  >();
 
-      if (pricePointRel && territoryRel) {
-        logger.debug(
-          "Found both price point and territory relationships, using relationship-based approach"
-        );
+  const includedById = createIncludedByIdMap(response.included);
 
-        const pricePoint = getIncludedResource<
-          components["schemas"]["InAppPurchasePricePoint"]
-        >(includedById, pricePointRel.type, pricePointRel.id);
-        const territory = getIncludedResource<
-          components["schemas"]["Territory"]
-        >(includedById, territoryRel.type, territoryRel.id);
+  for (const priceData of response.data) {
+    const priceEntry = extractPriceEntry(priceData, includedById);
+    if (!priceEntry) continue;
 
-        if (pricePoint && pricePoint.attributes && territory) {
-          const territoryCode = validateTerritoryCode(territory.id);
-          if (territoryCode && pricePoint.attributes.customerPrice) {
-            const priceEntry = {
-              price: pricePoint.attributes.customerPrice,
-              territory: territoryCode,
-            };
-            // logger.debug("Created price entry using relationships:", priceEntry);
-            prices.push(priceEntry);
-          }
-        }
-      } else {
-        logger.debug(
-          "Missing price point or territory relationship, skipping relationship-based approach"
-        );
-      }
+    if (!territoryPriceMap.has(priceEntry.territory)) {
+      territoryPriceMap.set(priceEntry.territory, []);
     }
+    territoryPriceMap.get(priceEntry.territory)!.push(priceEntry);
+  }
 
-    if (prices.length > 0) {
-      logger.debug(
-        `Successfully processed ${prices.length} prices using relationship-based approach`
-      );
-      return prices;
+  return territoryPriceMap;
+}
+
+function extractPriceEntry(
+  priceData: components["schemas"]["InAppPurchasePrice"],
+  includedById: IncludedByIdMap
+): {
+  price: string;
+  territory: string;
+  startDate?: string;
+  endDate?: string;
+} | null {
+  const territory = findTerritory(priceData, includedById);
+  if (!territory) return null;
+
+  const pricePoint = findPricePoint(priceData, includedById);
+  if (!pricePoint?.attributes?.customerPrice) return null;
+
+  const territoryCode = validateTerritoryCode(territory.id);
+  if (!territoryCode) return null;
+
+  return {
+    price: pricePoint.attributes.customerPrice,
+    territory: territoryCode,
+    startDate: priceData.attributes?.startDate,
+    endDate: priceData.attributes?.endDate,
+  };
+}
+
+function findTerritory(
+  priceData: components["schemas"]["InAppPurchasePrice"],
+  includedById: IncludedByIdMap
+): components["schemas"]["Territory"] | null {
+  const territoryRel = priceData.relationships?.territory?.data;
+  if (!territoryRel) return null;
+
+  return (
+    getIncludedResource<components["schemas"]["Territory"]>(
+      includedById,
+      territoryRel.type,
+      territoryRel.id
+    ) || null
+  );
+}
+
+function findPricePoint(
+  priceData: components["schemas"]["InAppPurchasePrice"],
+  includedById: IncludedByIdMap
+): components["schemas"]["InAppPurchasePricePoint"] | null {
+  const pricePointRel = priceData.relationships?.inAppPurchasePricePoint?.data;
+  if (!pricePointRel) return null;
+
+  return (
+    getIncludedResource<components["schemas"]["InAppPurchasePricePoint"]>(
+      includedById,
+      pricePointRel.type,
+      pricePointRel.id
+    ) || null
+  );
+}
+
+function buildFinalPriceResult(
+  territoryPriceMap: Map<
+    string,
+    Array<{
+      price: string;
+      territory: string;
+      startDate?: string;
+      endDate?: string;
+    }>
+  >
+): z.infer<typeof PriceSchema>[] {
+  const result: z.infer<typeof PriceSchema>[] = [];
+
+  for (const [territory, prices] of territoryPriceMap) {
+    const activePrice = getMostRecentActivePrice(prices);
+    if (activePrice) {
+      result.push({
+        price: activePrice.price,
+        territory: activePrice.territory as z.infer<
+          typeof PriceSchema
+        >["territory"],
+      });
     }
   }
 
-  logger.debug("No prices found, returning empty array");
-  return [];
+  return result;
 }
 
 // Map localizations for in-app purchases

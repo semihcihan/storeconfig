@@ -28,7 +28,7 @@ The tool is configured using a `.env` file in the project root:
 # App Store Connect API Credentials
 ASC_ISSUER_ID=your-issuer-id-goes-here
 ASC_KEY_ID=your-key-id-goes-here
-ASC_PRIVATE_KEY_PATH=/path/to/your/AuthKey_YOUR_KEY_ID.p8
+ASC_PRIVATE_KEY=Content-of-the-dot-p8
 ```
 
 ## Pricing Model

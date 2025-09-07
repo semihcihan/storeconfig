@@ -208,7 +208,7 @@ describe("PricePointFetcher", () => {
           testTerritoryId
         )
       ).rejects.toThrow(
-        "The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.\n        You can do so by only providing the required fields which don't include prices."
+        "The selected in-app purchase is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.\n          You can do so by only providing the required fields which don't include prices."
       );
 
       expect(MockFetchIAPPricePoints).not.toHaveBeenCalled();

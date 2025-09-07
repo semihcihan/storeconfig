@@ -1,26 +1,31 @@
 import { withAuthRetry } from "./auth-interceptor";
-import { forceTokenRefresh } from "./auth";
 import { logger } from "../utils/logger";
 
-// Mock the auth module
-jest.mock("./auth");
+// Mock the logger
 jest.mock("../utils/logger");
 
-const mockForceTokenRefresh = forceTokenRefresh as jest.MockedFunction<
-  typeof forceTokenRefresh
->;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
 describe("Auth Interceptor", () => {
+  const mockGetAuthToken = jest.fn();
+  const mockForceTokenRefresh = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockLogger.warn = jest.fn();
+    mockGetAuthToken.mockReturnValue("mock-token");
+    mockForceTokenRefresh.mockReturnValue("refreshed-token");
   });
 
   it("should return successful result without retry", async () => {
     const apiCall = jest.fn().mockResolvedValue("success");
 
-    const result = await withAuthRetry(apiCall);
+    const result = await withAuthRetry(
+      apiCall,
+      0,
+      mockGetAuthToken,
+      mockForceTokenRefresh
+    );
 
     expect(result).toBe("success");
     expect(apiCall).toHaveBeenCalledTimes(1);
@@ -36,7 +41,12 @@ describe("Auth Interceptor", () => {
       })
       .mockResolvedValueOnce("success");
 
-    const result = await withAuthRetry(apiCall);
+    const result = await withAuthRetry(
+      apiCall,
+      0,
+      mockGetAuthToken,
+      mockForceTokenRefresh
+    );
 
     expect(result).toBe("success");
     expect(apiCall).toHaveBeenCalledTimes(2);
@@ -53,7 +63,7 @@ describe("Auth Interceptor", () => {
     });
 
     try {
-      await withAuthRetry(apiCall);
+      await withAuthRetry(apiCall, 0, mockGetAuthToken, mockForceTokenRefresh);
       fail("Expected function to throw");
     } catch (error) {
       expect(error).toEqual({
@@ -73,7 +83,7 @@ describe("Auth Interceptor", () => {
     });
 
     try {
-      await withAuthRetry(apiCall);
+      await withAuthRetry(apiCall, 0, mockGetAuthToken, mockForceTokenRefresh);
       fail("Expected function to throw");
     } catch (error) {
       expect(error).toEqual({

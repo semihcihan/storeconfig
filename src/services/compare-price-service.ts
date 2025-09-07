@@ -6,7 +6,6 @@ import type { TerritoryData } from "./pricing-strategy";
 import type { z } from "zod";
 import { BASE_TERRITORY } from "./pricing-strategy";
 import { collectPricingItems } from "../set-price/item-selection";
-import * as XLSX from "xlsx";
 import * as fs from "fs";
 
 export interface PriceComparison {
@@ -203,52 +202,11 @@ export function exportAnalysis(
 ): void {
   const fileExtension = outputPath.toLowerCase().split(".").pop();
 
-  if (!fileExtension || (fileExtension !== "csv" && fileExtension !== "xlsx")) {
+  if (!fileExtension || fileExtension !== "csv") {
     throw new Error(
-      `Unsupported file format. Please use ".csv" or ".xlsx" extension: "${outputPath}"`
+      `Unsupported file format. Please use ".csv" extension: "${outputPath}"`
     );
   }
 
-  if (fileExtension === "csv") {
-    exportAnalysisToCSV(analysis, outputPath);
-  } else {
-    exportAnalysisToXLSX(analysis, outputPath);
-  }
-}
-
-export function exportAnalysisToXLSX(
-  analysis: PricingAnalysis[],
-  outputPath: string
-): void {
-  const workbook = XLSX.utils.book_new();
-
-  analysis.forEach((item) => {
-    const name = sheetName(item);
-
-    const rows = item.prices.map((price) => [
-      price.territory,
-      price.localPrice,
-      price.localCurrency,
-      parseFloat(price.usdPrice.toFixed(2)),
-      parseFloat(price.usdPercentage.toFixed(0)),
-    ]);
-
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-    // Set column widths to approximately 2x default (default is ~8-10 characters)
-    worksheet["!cols"] = [
-      { width: 13 }, // Territory
-      { width: 13 }, // Local Price
-      { width: 13 }, // Local Currency
-      { width: 13 }, // USD Price
-      { width: 18 }, // Relative to USA (%)
-    ];
-
-    // Freeze the first row (headers) so they stay visible when sorting
-    worksheet["!freeze"] = { rows: 1 };
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, name);
-  });
-
-  XLSX.writeFile(workbook, outputPath);
+  exportAnalysisToCSV(analysis, outputPath);
 }

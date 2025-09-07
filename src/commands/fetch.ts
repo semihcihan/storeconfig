@@ -6,8 +6,7 @@ import { useShortcuts } from "../utils/shortcut-converter";
 
 const fetchCommand: CommandModule = {
   command: "fetch",
-  describe:
-    "Fetches IAPs and subscriptions from App Store Connect for a specific app.",
+  describe: "Fetches the app from App Store Connect.",
   builder: {
     id: {
       describe: "The App ID to fetch details for.",
