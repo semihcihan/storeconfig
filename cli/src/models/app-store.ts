@@ -7,9 +7,9 @@ import {
   validateAppStoreModelData,
 } from "../helpers/validation-helpers";
 import { validateSubscription } from "../helpers/subscription-validation";
-import { WORLDWIDE_TERRITORY_CODE } from "../utils/shortcut-converter";
 import { logger } from "../utils/logger";
 
+export const WORLDWIDE_TERRITORY_CODE = "worldwide";
 export type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
 const MAX_NAME_LENGTH = 64;

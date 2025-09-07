@@ -1,10 +1,11 @@
 import { territoryCodes } from "../models/territories";
 import { deepEqualUnordered } from "../helpers/validation-helpers";
 import { logger } from "./logger";
-import { AppStoreLocalizationSchema } from "../models/app-store";
+import {
+  AppStoreLocalizationSchema,
+  WORLDWIDE_TERRITORY_CODE,
+} from "../models/app-store";
 import { z } from "zod";
-
-export const WORLDWIDE_TERRITORY_CODE = "worldwide";
 
 function isWorldwideTerritory(territory: string): boolean {
   return territory.toLowerCase() === WORLDWIDE_TERRITORY_CODE.toLowerCase();
