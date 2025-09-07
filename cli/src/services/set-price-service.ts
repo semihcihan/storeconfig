@@ -28,20 +28,6 @@ export interface InteractivePricingOptions {
 
 import type { PricingRequest } from "../models/pricing-request";
 
-export function pricingItemsExist(appStoreState: AppStoreModel): void {
-  // Check if file contains at least one item
-  const hasItems =
-    (appStoreState.inAppPurchases && appStoreState.inAppPurchases.length > 0) ||
-    (appStoreState.subscriptionGroups &&
-      appStoreState.subscriptionGroups.length > 0);
-
-  if (!hasItems) {
-    throw new Error(
-      "Input file must contain at least one item (app, in-app purchase, or subscription)"
-    );
-  }
-}
-
 export async function startInteractivePricing(
   options: InteractivePricingOptions
 ): Promise<PricingRequest> {

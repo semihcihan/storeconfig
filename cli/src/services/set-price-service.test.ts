@@ -36,11 +36,7 @@ const mockReadline = jest.mocked(readline);
 const mockLogger = jest.mocked(logger);
 
 // Import the service after mocking
-import {
-  pricingItemsExist,
-  startInteractivePricing,
-  applyPricing,
-} from "./set-price-service";
+import { startInteractivePricing, applyPricing } from "./set-price-service";
 import { collectPricingItems } from "../set-price/item-selection";
 import { fetchAppPricePoints } from "../domains/pricing/api-client";
 import {
@@ -364,89 +360,6 @@ describe("set-price-service", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe("pricingItemsExist", () => {
-    it("should throw error when no items exist", () => {
-      const emptyState: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "123456789",
-      };
-
-      expect(() => pricingItemsExist(emptyState)).toThrow(
-        "Input file must contain at least one item (app, in-app purchase, or subscription)"
-      );
-    });
-
-    it("should not throw when in-app purchases exist", () => {
-      const stateWithIAP: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "123456789",
-        inAppPurchases: [
-          {
-            productId: "com.example.premium",
-            type: "NON_CONSUMABLE",
-            referenceName: "Premium Feature",
-            familySharable: false,
-            localizations: [
-              {
-                locale: "en-US",
-                name: "Premium Feature",
-                description: "Premium feature description",
-              },
-            ],
-            availability: {
-              availableInNewTerritories: true,
-              availableTerritories: "worldwide",
-            },
-          },
-        ],
-      };
-
-      expect(() => pricingItemsExist(stateWithIAP)).not.toThrow();
-    });
-
-    it("should not throw when subscription groups exist", () => {
-      const stateWithSubscriptions: AppStoreModel = {
-        schemaVersion: "1.0.0",
-        appId: "123456789",
-        subscriptionGroups: [
-          {
-            referenceName: "Premium Subscription",
-            localizations: [
-              {
-                locale: "en-US",
-                name: "Premium Subscription",
-                customName: null,
-              },
-            ],
-            subscriptions: [
-              {
-                productId: "com.example.monthly",
-                referenceName: "Monthly Plan",
-                groupLevel: 1,
-                subscriptionPeriod: "ONE_MONTH",
-                familySharable: false,
-                prices: [],
-                localizations: [
-                  {
-                    locale: "en-US",
-                    name: "Monthly Plan",
-                    description: "Monthly subscription plan",
-                  },
-                ],
-                availability: {
-                  availableInNewTerritories: true,
-                  availableTerritories: "worldwide",
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      expect(() => pricingItemsExist(stateWithSubscriptions)).not.toThrow();
-    });
   });
 
   describe("startInteractivePricing", () => {
