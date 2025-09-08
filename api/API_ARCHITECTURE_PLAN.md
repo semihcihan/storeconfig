@@ -141,7 +141,12 @@ This document outlines a simplified plan to add an HTTP API layer to the existin
 - ✅ Tested validation scenarios (missing appId, empty appId, invalid appId)
 - ✅ Tested health check and 404 handling
 
-### Step 5: Next Steps
+### Step 5: Use the new HTTP API on the related command
+
+- Within the fetch cli command, instead of using the internal servers, we should now use the fetch http api
+- "const appStoreState = useShortcuts(await fetchAppStoreState(appId));" this line will now get the appStoreState through the API
+
+### Step 6: Next Steps
 
 - ✅ **COMPLETED**: Basic API implementation with fetch endpoint
 - **Next**: Add remaining API endpoints (apply, set-price, compare-price, validate-format)

@@ -17,8 +17,6 @@ router.post("/fetch", async (req: Request, res: Response) => {
     // Validate request body
     const { appId } = FetchRequestSchema.parse(req.body);
 
-    logger.info(`API: Fetching details for app ID: ${appId}`);
-
     // Fetch app store state
     const appStoreState = useShortcuts(await fetchAppStoreState(appId));
 
@@ -27,8 +25,6 @@ router.post("/fetch", async (req: Request, res: Response) => {
       success: true,
       data: appStoreState,
     });
-
-    logger.info(`API: Successfully fetched app data for ID: ${appId}`);
   } catch (error) {
     logger.error("API: Fetch failed", error);
 

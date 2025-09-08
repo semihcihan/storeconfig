@@ -1,8 +1,7 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import * as fs from "fs";
-import { fetchAppStoreState } from "../services/fetch-service";
-import { useShortcuts } from "../utils/shortcut-converter";
+import axios from "axios";
 
 const fetchCommand: CommandModule = {
   command: "fetch",
@@ -23,13 +22,23 @@ const fetchCommand: CommandModule = {
   handler: async (argv) => {
     const appId = argv.id as string;
     const outputFile = argv.file as string;
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     logger.info(
       `Fetching details for app ID: ${appId} and writing to ${outputFile}`
     );
 
     try {
-      const appStoreState = useShortcuts(await fetchAppStoreState(appId));
+      // Call the HTTP API instead of the internal service
+      const response = await axios.post(`${apiBaseUrl}/api/v1/fetch`, {
+        appId: appId,
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "API request failed");
+      }
+
+      const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
       logger.info(`Successfully fetched app and wrote to ${outputFile}`);
     } catch (error) {
