@@ -9,6 +9,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { logger } from "./utils/logger";
 import fetchRouter from "./routes/fetch";
+import comparePriceRouter from "./routes/compare-price";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +32,7 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/api/v1", fetchRouter);
+app.use("/api/v1", comparePriceRouter);
 
 // Error handling middleware
 app.use(
