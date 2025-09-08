@@ -174,14 +174,21 @@ class AuthContextManager {
   }
 }
 
-// Export a singleton instance
-export const authContextManager = new AuthContextManager();
+// Lazy-loaded singleton instance
+let _authContextManager: AuthContextManager | null = null;
+
+function getAuthContextManager(): AuthContextManager {
+  if (!_authContextManager) {
+    _authContextManager = new AuthContextManager();
+  }
+  return _authContextManager;
+}
 
 // Export convenience functions for backward compatibility
 export function getAuthToken(context?: AuthContext): string {
-  return authContextManager.getAuthToken(context);
+  return getAuthContextManager().getAuthToken(context);
 }
 
 export function forceTokenRefresh(context?: AuthContext): string {
-  return authContextManager.forceTokenRefresh(context);
+  return getAuthContextManager().forceTokenRefresh(context);
 }
