@@ -132,15 +132,15 @@ async function fetchTerritoryPricePointsForInAppPurchase(
 
 async function fetchTerritoryPricePointsForSubscriptionOrOffer(
   selectedItem: PricingItem,
-  appStoreState: AppStoreModel,
+  appId: string,
   territoryId: string
 ): Promise<PricePointInfo[]> {
   const selectedKey = `${selectedItem.id}:${selectedItem.offerType || ""}`;
-  const idCacheKey = `${appStoreState.appId}:${selectedKey}`;
+  const idCacheKey = `${appId}:${selectedKey}`;
   let subscriptionId = subscriptionIdCache.get(idCacheKey);
 
   if (!subscriptionId) {
-    const groups = await fetchSubscriptionGroups(appStoreState.appId);
+    const groups = await fetchSubscriptionGroups(appId);
     const included = groups.included || [];
     const subs = included.filter(isAPISubscription);
 
@@ -174,7 +174,7 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
           `The selected subscription is available locally but not created on App Store Connect yet. For pricing to work, it needs to be created first.
           You can do so by only providing the required fields which don't include prices.`,
           {
-            appId: appStoreState.appId,
+            appId: appId,
             selectedItem,
           }
         );
@@ -199,24 +199,24 @@ async function fetchTerritoryPricePointsForSubscriptionOrOffer(
 
 export async function fetchTerritoryPricePointsForSelectedItem(
   selectedItem: PricingItem,
-  appStoreState: AppStoreModel,
+  appId: string,
   territoryId: string
 ): Promise<PricePointInfo[]> {
   if (selectedItem.type === "app") {
-    return fetchTerritoryPricePointsForApp(appStoreState.appId, territoryId);
+    return fetchTerritoryPricePointsForApp(appId, territoryId);
   }
 
   if (selectedItem.type === "inAppPurchase") {
     return fetchTerritoryPricePointsForInAppPurchase(
       selectedItem,
-      appStoreState.appId,
+      appId,
       territoryId
     );
   }
 
   return fetchTerritoryPricePointsForSubscriptionOrOffer(
     selectedItem,
-    appStoreState,
+    appId,
     territoryId
   );
 }

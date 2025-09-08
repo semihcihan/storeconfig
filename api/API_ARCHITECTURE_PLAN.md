@@ -148,7 +148,7 @@ This document outlines a simplified plan to add an HTTP API layer to the existin
 
 ### Step 6: Next Steps
 
-- ✅ **COMPLETED**: Basic API implementation with fetch endpoint
-- **Next**: Add remaining API endpoints (apply, set-price, compare-price, validate-format)
+- ✅ **COMPLETED**: Basic API implementation with fetch, compare-price, apply endpoints
+- **Next**: Add remaining API endpoints (set-price, validate-format)
 - **Future**: Add authentication middleware, rate limiting, API documentation
 - **Future**: Add monitoring, logging, and deployment configuration

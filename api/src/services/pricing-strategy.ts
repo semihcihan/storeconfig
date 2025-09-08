@@ -261,7 +261,7 @@ export class PurchasingPowerPricingStrategy implements PricingStrategy {
     try {
       const pricePoints = await fetchTerritoryPricePointsForSelectedItem(
         request.selectedItem,
-        appStoreState,
+        appStoreState.appId,
         territoryId
       );
       if (!pricePoints || pricePoints.length === 0) {

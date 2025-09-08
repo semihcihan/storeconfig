@@ -29,15 +29,22 @@ function findNearestPrices(
 
 export async function promptForBasePricePoint(
   selectedItem: PricingItem,
-  appStoreState: AppStoreModel
+  appStoreState: AppStoreModel,
+  fetchTerritoryPricePointsForSelectedItem: (
+    selectedItem: PricingItem,
+    appId: string,
+    territoryId: string
+  ) => Promise<PricePointInfo[]>
 ): Promise<PricePointInfo> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
-  const availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
+  let availablePricePoints: PricePointInfo[];
+
+  availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
     selectedItem,
-    appStoreState,
+    appStoreState.appId,
     BASE_TERRITORY
   );
 
@@ -45,11 +52,20 @@ export async function promptForBasePricePoint(
   const normalizedAvailablePricePoints = Array.from(
     new Set(
       (availablePricePoints || [])
-        .map((p) => ({ id: p.id, price: Number(p.price) }))
-        .filter((p) => Number.isFinite(p.price) && p.price >= 0)
-        .map((p) => ({ id: p.id, price: p.price.toFixed(2) }))
+        .map((p: PricePointInfo) => ({ id: p.id, price: Number(p.price) }))
+        .filter(
+          (p: { id: string; price: number }) =>
+            Number.isFinite(p.price) && p.price >= 0
+        )
+        .map((p: { id: string; price: number }) => ({
+          id: p.id,
+          price: p.price.toFixed(2),
+        }))
     )
-  ).sort((a, b) => Number(a.price) - Number(b.price));
+  ).sort(
+    (a: { id: string; price: string }, b: { id: string; price: string }) =>
+      Number(a.price) - Number(b.price)
+  );
 
   if (!availablePricePoints.length) {
     throw new Error(
@@ -78,7 +94,9 @@ export async function promptForBasePricePoint(
           ) {
             const nearest = findNearestPrices(
               parsed,
-              normalizedAvailablePricePoints.map((p) => p.price),
+              normalizedAvailablePricePoints.map(
+                (p: { id: string; price: string }) => p.price
+              ),
               20
             );
             logger.error(
@@ -93,9 +111,11 @@ export async function promptForBasePricePoint(
 
           rl.close();
           const selectedNormalizedPricePoint =
-            normalizedAvailablePricePoints.find((p) => p.price === canonical);
+            normalizedAvailablePricePoints.find(
+              (p: { id: string; price: string }) => p.price === canonical
+            );
           const selectedPricePoint = availablePricePoints.find(
-            (p) => p.id === selectedNormalizedPricePoint?.id
+            (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
           );
           if (selectedPricePoint) {
             resolve(selectedPricePoint);

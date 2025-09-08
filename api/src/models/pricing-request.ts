@@ -1,22 +1,39 @@
-export type PricingStrategy = "apple" | "purchasingPower";
+import { z } from "zod";
 
-export interface PricePointInfo {
-  id: string;
-  price: string;
-}
+// Zod schemas as the source of truth
+const PricingStrategySchema = z.enum(["apple", "purchasingPower"]);
 
-export interface PricingItem {
-  type: "app" | "inAppPurchase" | "subscription" | "offer";
-  id: string;
-  name: string;
-  offerType?: string;
-  parentName?: string;
-}
+const PricePointInfoSchema = z.object({
+  id: z.string(),
+  price: z.string(),
+});
 
-export interface PricingRequest {
-  appId: string;
-  selectedItem: PricingItem;
-  basePricePoint: PricePointInfo;
-  pricingStrategy: PricingStrategy;
-  minimumPrice?: string;
-}
+const PricingItemSchema = z.object({
+  type: z.enum(["app", "inAppPurchase", "subscription", "offer"]),
+  id: z.string(),
+  name: z.string(),
+  offerType: z.string().optional(),
+  parentName: z.string().optional(),
+});
+
+const PricingRequestSchema = z.object({
+  appId: z.string(),
+  selectedItem: PricingItemSchema,
+  basePricePoint: PricePointInfoSchema,
+  pricingStrategy: PricingStrategySchema,
+  minimumPrice: z.string().optional(),
+});
+
+// Export the schemas for use in validation
+export {
+  PricingStrategySchema,
+  PricePointInfoSchema,
+  PricingItemSchema,
+  PricingRequestSchema,
+};
+
+// Derive TypeScript types from Zod schemas (keeping existing exports unchanged)
+export type PricingStrategy = z.infer<typeof PricingStrategySchema>;
+export type PricePointInfo = z.infer<typeof PricePointInfoSchema>;
+export type PricingItem = z.infer<typeof PricingItemSchema>;
+export type PricingRequest = z.infer<typeof PricingRequestSchema>;

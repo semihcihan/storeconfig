@@ -1,13 +1,11 @@
 import { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
-import { fetchAppStoreState } from "../services/fetch-service";
-import { diff } from "../services/diff-service";
-import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "../helpers/validation-helpers";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
+import axios from "axios";
 
 import type { AppStoreModel } from "../models/app-store";
 
@@ -60,6 +58,7 @@ const command: CommandModule = {
   handler: async (argv) => {
     const desiredStateFile = argv.file as string;
     const preview = argv.preview as boolean;
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     logger.debug(`Processing desired state from ${desiredStateFile}...`);
 
@@ -70,11 +69,18 @@ const command: CommandModule = {
         "apply"
       );
 
-      let currentState: AppStoreModel = await fetchAppStoreState(
-        desiredState.appId
-      );
+      // Generate diff plan using the API (which will fetch current state internally)
+      const diffResponse = await axios.post(`${apiBaseUrl}/api/v1/diff`, {
+        desiredState: desiredState,
+      });
 
-      const plan = diff(currentState, desiredState);
+      if (!diffResponse.data.success) {
+        throw new Error(
+          diffResponse.data.error || "Failed to generate diff plan"
+        );
+      }
+
+      const { plan, currentState } = diffResponse.data.data;
       if (plan.length === 0) {
         logger.info("No changes to apply. Exiting...");
         return;
@@ -93,7 +99,17 @@ const command: CommandModule = {
         return;
       }
 
-      await apply(plan, currentState, desiredState);
+      // Apply the plan using the API
+      const applyResponse = await axios.post(`${apiBaseUrl}/api/v1/apply`, {
+        plan: plan,
+        currentState: currentState,
+        desiredState: desiredState,
+      });
+
+      if (!applyResponse.data.success) {
+        throw new Error(applyResponse.data.error || "Failed to apply changes");
+      }
+
       logger.info("Changes applied successfully");
     } catch (error) {
       logger.error(`Apply failed`, error);

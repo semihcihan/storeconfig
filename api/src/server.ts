@@ -10,6 +10,10 @@ import morgan from "morgan";
 import { logger } from "./utils/logger";
 import fetchRouter from "./routes/fetch";
 import comparePriceRouter from "./routes/compare-price";
+import diffRouter from "./routes/diff";
+import applyRouter from "./routes/apply";
+import pricePointsRouter from "./routes/price-points";
+import applyPricingRouter from "./routes/apply-pricing";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +37,10 @@ app.get("/health", (req, res) => {
 // API routes
 app.use("/api/v1", fetchRouter);
 app.use("/api/v1", comparePriceRouter);
+app.use("/api/v1", diffRouter);
+app.use("/api/v1", applyRouter);
+app.use("/api/v1", pricePointsRouter);
+app.use("/api/v1", applyPricingRouter);
 
 // Error handling middleware
 app.use(

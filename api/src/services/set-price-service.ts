@@ -22,18 +22,24 @@ type PromotionalOffer = z.infer<typeof PromotionalOfferSchema>;
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 
 export interface InteractivePricingOptions {
-  inputFile: string;
   appStoreState: AppStoreModel;
+  fetchTerritoryPricePointsForSelectedItem: (
+    selectedItem: PricingItem,
+    appId: string,
+    territoryId: string
+  ) => Promise<PricePointInfo[]>;
 }
 
-import type { PricingRequest } from "../models/pricing-request";
+import type {
+  PricingRequest,
+  PricePointInfo,
+  PricingItem,
+} from "../models/pricing-request";
 
 export async function startInteractivePricing(
   options: InteractivePricingOptions
 ): Promise<PricingRequest> {
-  const { inputFile, appStoreState } = options;
-
-  const originalContent = fs.readFileSync(inputFile, "utf-8");
+  const { appStoreState, fetchTerritoryPricePointsForSelectedItem } = options;
 
   try {
     const selectedItem = await selectPricingItem(appStoreState);
@@ -42,7 +48,8 @@ export async function startInteractivePricing(
 
     const basePricePoint = await promptForBasePricePoint(
       selectedItem,
-      appStoreState
+      appStoreState,
+      fetchTerritoryPricePointsForSelectedItem
     );
     const pricingStrategy = await promptForPricingStrategy();
     const minimumPrice = await promptForMinimumPrice(
@@ -64,13 +71,6 @@ export async function startInteractivePricing(
     };
   } catch (error) {
     logger.error(`Interactive pricing failed`, error);
-
-    try {
-      fs.writeFileSync(inputFile, originalContent);
-      logger.info("Restored file from memory backup");
-    } catch (restoreError) {
-      logger.error(`Failed to restore from memory backup: ${restoreError}`);
-    }
 
     throw error;
   }
