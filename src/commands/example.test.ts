@@ -7,25 +7,28 @@ import {
   afterEach,
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
-import { validateAppStoreModel } from "../helpers/validation-model";
-import {
-  AppStoreModelSchema,
-  SubscriptionSchema,
-  SubscriptionGroupSchema,
-  InAppPurchaseSchema,
-} from "@semihcihan/shared";
+import { validateAppStoreModel } from "@semihcihan/shared";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
   throw new Error("process.exit called");
 });
 
-// Mock dependencies
-jest.mock("../utils/logger");
-jest.mock("../helpers/validation-model");
+// Mock only the logger, let everything else through for real validation
+jest.mock("@semihcihan/shared", () => {
+  const actual = jest.requireActual("@semihcihan/shared");
+  return Object.assign({}, actual, {
+    logger: {
+      std: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    },
+  });
+});
 
 const mockLogger = jest.mocked(logger);
-const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 
 // Import the command after mocking
 import exampleCommand from "./example";
@@ -35,7 +38,6 @@ describe("example command", () => {
     jest.clearAllMocks();
     mockLogger.std.mockReturnValue(undefined);
     mockLogger.error.mockReturnValue(undefined);
-    mockValidateAppStoreModel.mockImplementation((data) => data);
   });
 
   afterEach(() => {
@@ -132,27 +134,24 @@ describe("example command", () => {
   });
 
   describe("example data validation", () => {
-    it("should generate valid minimal app example that passes schema validation", async () => {
+    it("should generate valid minimal app example that passes validation", async () => {
       const mockArgv = { type: "minimal" };
 
       await exampleCommand.handler!(mockArgv as any);
 
       const output = mockLogger.std.mock.calls[0][0];
-      const validationResult = AppStoreModelSchema.safeParse(output);
-      expect(validationResult.success).toBe(true);
+      // Use real validation instead of mocked schema
+      expect(() => validateAppStoreModel(output, false, "fetch")).not.toThrow();
     });
 
-    it("should generate valid full app example that passes schema validation", async () => {
+    it("should generate valid full app example that passes validation", async () => {
       const mockArgv = { type: "full" };
 
       await exampleCommand.handler!(mockArgv as any);
 
       const output = mockLogger.std.mock.calls[0][0];
-      const validationResult = AppStoreModelSchema.safeParse(output);
-      if (!validationResult.success) {
-        console.log("Validation errors:", validationResult.error.issues);
-      }
-      expect(validationResult.success).toBe(true);
+      // Use real validation instead of mocked schema
+      expect(() => validateAppStoreModel(output, false, "fetch")).not.toThrow();
     });
   });
 

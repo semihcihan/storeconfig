@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
 import * as fs from "fs";
+import axios from "axios";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -15,8 +16,16 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 });
 
 // Mock dependencies
-jest.mock("../utils/logger");
+jest.mock("@semihcihan/shared", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
 jest.mock("fs");
+jest.mock("axios");
 
 // Mock the entire compare-price-service module
 const mockAnalyzePricing = jest.fn();
@@ -28,6 +37,7 @@ jest.mock("../services/compare-price-service", () => ({
 
 const mockLogger = jest.mocked(logger);
 const mockFs = jest.mocked(fs);
+const mockAxios = jest.mocked(axios);
 
 // Import the command after mocking
 import comparePriceCommand from "./compare-price";
@@ -86,11 +96,19 @@ describe("compare-price command", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockLogger.error.mockReturnValue(undefined);
-    mockAnalyzePricing.mockReturnValue(mockAnalysis);
+    mockLogger.info.mockReturnValue(undefined);
     mockExportAnalysis.mockReturnValue(undefined);
     mockFs.readFileSync.mockReturnValue("" as any);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
     mockFs.existsSync.mockReturnValue(true);
+
+    // Mock axios response
+    mockAxios.post.mockResolvedValue({
+      data: {
+        success: true,
+        data: mockAnalysis,
+      },
+    });
   });
 
   afterEach(() => {
@@ -130,37 +148,31 @@ describe("compare-price command", () => {
   });
 
   describe("handler", () => {
-    it("should read input file and currencies file successfully", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
+    it("should read input file and call API successfully", async () => {
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
 
       await comparePriceCommand.handler(mockArgv);
 
       expect(mockFs.readFileSync).toHaveBeenCalledWith(mockArgv.input, "utf8");
-      expect(mockFs.readFileSync).toHaveBeenCalledWith(
-        "src/data/currencies.json",
-        "utf8"
+      expect(mockAxios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/v1/compare-price",
+        { appStoreData: mockAppStoreData }
       );
     });
 
-    it("should call analyzePricing with correct parameters", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
+    it("should call API with correct parameters", async () => {
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
 
       await comparePriceCommand.handler(mockArgv);
 
-      expect(mockAnalyzePricing).toHaveBeenCalledWith(
-        mockAppStoreData,
-        mockCurrenciesData
+      expect(mockAxios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/v1/compare-price",
+        { appStoreData: mockAppStoreData }
       );
     });
 
     it("should write analysis to output file", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
 
       await comparePriceCommand.handler(mockArgv);
 
@@ -186,12 +198,9 @@ describe("compare-price command", () => {
       );
     });
 
-    it("should handle currencies file read error", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockImplementation(() => {
-          throw new Error("Currencies file not found");
-        });
+    it("should handle API error", async () => {
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
+      mockAxios.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
@@ -216,10 +225,14 @@ describe("compare-price command", () => {
       );
     });
 
-    it("should handle invalid JSON in currencies file", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce("invalid json" as any);
+    it("should handle API response error", async () => {
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error: "API error",
+        },
+      });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
@@ -231,12 +244,10 @@ describe("compare-price command", () => {
       );
     });
 
-    it("should handle analyzePricing error", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
-      mockAnalyzePricing.mockImplementation(() => {
-        throw new Error("Analysis failed");
+    it("should handle export error", async () => {
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
+      mockExportAnalysis.mockImplementation(() => {
+        throw new Error("Export failed");
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
@@ -250,9 +261,7 @@ describe("compare-price command", () => {
     });
 
     it("should handle write file error", async () => {
-      mockFs.readFileSync
-        .mockReturnValueOnce(JSON.stringify(mockAppStoreData))
-        .mockReturnValueOnce(JSON.stringify(mockCurrenciesData));
+      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
       mockExportAnalysis.mockImplementation(() => {
         throw new Error("Export failed");
       });

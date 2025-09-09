@@ -8,7 +8,11 @@ import {
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
 import { readJsonFile } from "@semihcihan/shared";
-import { validateAppStoreModel } from "../helpers/validation-model";
+import {
+  validateAppStoreModel,
+  removeShortcuts,
+  useShortcuts,
+} from "@semihcihan/shared";
 import * as fs from "fs";
 
 // Mock process.exit before importing the command
@@ -17,14 +21,22 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 });
 
 // Mock dependencies
-jest.mock("../utils/logger");
-jest.mock("../helpers/validation-helpers");
-jest.mock("../helpers/validation-model");
+jest.mock("@semihcihan/shared", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+  readJsonFile: jest.fn(),
+  validateAppStoreModel: jest.fn(),
+  removeShortcuts: jest.fn(),
+  useShortcuts: jest.fn(),
+}));
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
-  applyPricing: jest.fn((state: any) => state),
 }));
-jest.mock("../utils/shortcut-converter");
+jest.mock("axios");
 jest.mock("fs");
 
 const mockLogger = jest.mocked(logger);
@@ -35,11 +47,12 @@ const mockFs = jest.mocked(fs);
 // Import the command after mocking
 import setPriceCommand from "./set-price";
 import { startInteractivePricing } from "../services/set-price-service";
-import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
+import axios from "axios";
 
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockUseShortcuts = jest.mocked(useShortcuts);
+const mockAxios = jest.mocked(axios);
 
 describe("set-price command", () => {
   const mockArgv = {
@@ -66,7 +79,17 @@ describe("set-price command", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    // Only clear some mocks, not axios
+    mockLogger.info.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.debug.mockClear();
+    mockReadJsonFile.mockClear();
+    mockValidateAppStoreModel.mockClear();
+    mockRemoveShortcuts.mockClear();
+    mockUseShortcuts.mockClear();
+    mockStartInteractivePricing.mockClear();
+    mockFs.writeFileSync.mockClear();
   });
 
   describe("command structure", () => {
@@ -104,17 +127,30 @@ describe("set-price command", () => {
       mockRemoveShortcuts.mockReturnValue(mockDataWithoutShortcuts);
       mockValidateAppStoreModel.mockReturnValue(mockDataWithoutShortcuts);
 
+      // Mock axios response - only apply pricing is called
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            updatedState: {},
+          },
+        },
+      });
+
       await setPriceCommand.handler!(mockArgv as any);
 
       expect(mockReadJsonFile).toHaveBeenCalledWith("test-file.json");
       expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockData);
       expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
-        mockDataWithoutShortcuts
+        mockDataWithoutShortcuts,
+        false,
+        "apply"
       );
       expect(mockStartInteractivePricing).toHaveBeenCalledWith({
-        inputFile: "test-file.json",
         appStoreState: mockDataWithoutShortcuts,
+        fetchTerritoryPricePointsForSelectedItem: expect.any(Function),
       });
+      expect(mockAxios.post).toHaveBeenCalled(); // API call for apply pricing
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
@@ -140,6 +176,16 @@ describe("set-price command", () => {
 
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
+
+      // Mock axios response - only apply pricing is called
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            updatedState: {},
+          },
+        },
+      });
 
       await setPriceCommand.handler!(mockArgv as any);
 
@@ -192,17 +238,24 @@ describe("set-price command", () => {
       mockValidateAppStoreModel.mockReturnValue(mockDataWithoutShortcuts);
       mockUseShortcuts.mockReturnValue(mockFinalStateWithShortcuts);
 
-      // Mock applyPricing to return the updated state
-      const { applyPricing } = require("../services/set-price-service");
-      const mockApplyPricing = jest.mocked(applyPricing);
-      mockApplyPricing.mockResolvedValue(mockUpdatedState);
+      // Mock axios response - only apply pricing is called
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            updatedState: mockUpdatedState,
+          },
+        },
+      });
 
       await setPriceCommand.handler!(mockArgv as any);
 
       // Verify shortcuts are removed at the start
       expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockDataWithShortcuts);
       expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
-        mockDataWithoutShortcuts
+        mockDataWithoutShortcuts,
+        false,
+        "apply"
       );
 
       // Verify shortcuts are applied back at the end
@@ -226,10 +279,15 @@ describe("set-price command", () => {
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockUseShortcuts.mockReturnValue(mockData); // No change
 
-      // Mock applyPricing to return the same state
-      const { applyPricing } = require("../services/set-price-service");
-      const mockApplyPricing = jest.mocked(applyPricing);
-      mockApplyPricing.mockResolvedValue(mockData);
+      // Mock axios response - only apply pricing is called
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            updatedState: mockData,
+          },
+        },
+      });
 
       await setPriceCommand.handler!(mockArgv as any);
 

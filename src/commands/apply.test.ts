@@ -7,13 +7,13 @@ import {
   afterEach,
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
-import { fetchAppStoreState } from "../services/fetch-service";
-import { diff } from "../services/diff-service";
-import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
-import { readJsonFile } from "@semihcihan/shared";
-import { validateAppStoreModel } from "../helpers/validation-model";
-import { removeShortcuts } from "../utils/shortcut-converter";
+import {
+  readJsonFile,
+  validateAppStoreModel,
+  removeShortcuts,
+} from "@semihcihan/shared";
+import axios from "axios";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -21,14 +21,20 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 });
 
 // Mock dependencies
-jest.mock("../utils/logger");
-jest.mock("../services/fetch-service");
-jest.mock("../services/diff-service");
-jest.mock("../services/apply-service");
+jest.mock("@semihcihan/shared", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    prompt: jest.fn(),
+  },
+  readJsonFile: jest.fn(),
+  validateAppStoreModel: jest.fn(),
+  removeShortcuts: jest.fn(),
+}));
 jest.mock("../services/plan-service");
-jest.mock("../helpers/validation-helpers");
-jest.mock("../helpers/validation-model");
-jest.mock("../utils/shortcut-converter");
+jest.mock("axios");
 jest.mock("readline", () => ({
   createInterface: jest.fn().mockReturnValue({
     question: jest.fn().mockImplementation((prompt: any, callback: any) => {
@@ -39,13 +45,11 @@ jest.mock("readline", () => ({
 }));
 
 const mockLogger = jest.mocked(logger);
-const mockFetchAppStoreState = jest.mocked(fetchAppStoreState);
-const mockDiff = jest.mocked(diff);
-const mockApply = jest.mocked(apply);
 const mockShowPlan = jest.mocked(showPlan);
 const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
+const mockAxios = jest.mocked(axios);
 
 // Import the command after mocking
 import applyCommand from "./apply";
@@ -67,10 +71,18 @@ describe("apply command", () => {
     mockReadJsonFile.mockReturnValue(mockData);
     mockValidateAppStoreModel.mockReturnValue(mockData);
     mockRemoveShortcuts.mockReturnValue(mockData);
-    mockFetchAppStoreState.mockResolvedValue(mockData);
-    mockDiff.mockReturnValue([]);
     mockShowPlan.mockResolvedValue(undefined);
-    mockApply.mockResolvedValue(undefined);
+
+    // Mock axios responses
+    mockAxios.post.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          plan: [],
+          currentState: mockData,
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -119,8 +131,24 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue(mockPlan);
+
+      // Mock diff API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: mockPlan,
+            currentState: mockData,
+          },
+        },
+      });
+
+      // Mock apply API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+        },
+      });
 
       await applyCommand.handler!(mockArgv as any);
 
@@ -130,10 +158,8 @@ describe("apply command", () => {
         false,
         "apply"
       );
-      expect(mockFetchAppStoreState).toHaveBeenCalledWith("123456789");
-      expect(mockDiff).toHaveBeenCalledWith(mockData, mockData);
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockApply).toHaveBeenCalledWith(mockPlan, mockData, mockData);
+      expect(mockAxios.post).toHaveBeenCalledTimes(2); // diff + apply calls
     });
 
     it("should handle no changes scenario", async () => {
@@ -142,8 +168,17 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue([]);
+
+      // Mock diff API call with empty plan
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: [],
+            currentState: mockData,
+          },
+        },
+      });
 
       await applyCommand.handler!(mockArgv as any);
 
@@ -151,7 +186,7 @@ describe("apply command", () => {
         "No changes to apply. Exiting..."
       );
       expect(mockShowPlan).not.toHaveBeenCalled();
-      expect(mockApply).not.toHaveBeenCalled();
+      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
     it("should handle preview mode", async () => {
@@ -164,8 +199,17 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue(mockPlan);
+
+      // Mock diff API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: mockPlan,
+            currentState: mockData,
+          },
+        },
+      });
 
       await applyCommand.handler!(previewArgv as any);
 
@@ -173,7 +217,7 @@ describe("apply command", () => {
         "Preview mode - no changes will be applied"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockApply).not.toHaveBeenCalled();
+      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
     it("should handle validation errors and exit", async () => {
@@ -191,13 +235,15 @@ describe("apply command", () => {
       );
     });
 
-    it("should handle fetch errors and exit", async () => {
+    it("should handle API errors and exit", async () => {
       const mockData = { appId: "123456789" } as any;
 
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockRejectedValue(new Error("Fetch failed"));
+
+      // Mock diff API call failure
+      mockAxios.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
         "process.exit called"
@@ -227,15 +273,24 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue(mockPlan);
+
+      // Mock diff API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: mockPlan,
+            currentState: mockData,
+          },
+        },
+      });
 
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         "Operation cancelled by user"
       );
-      expect(mockApply).not.toHaveBeenCalled();
+      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
     });
   });
 
@@ -246,8 +301,17 @@ describe("apply command", () => {
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
-      mockFetchAppStoreState.mockResolvedValue(mockData);
-      mockDiff.mockReturnValue([]);
+
+      // Mock diff API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: [],
+            currentState: mockData,
+          },
+        },
+      });
 
       await applyCommand.handler!(mockArgv as any);
 

@@ -3,20 +3,28 @@ import * as readline from "node:readline";
 import { logger } from "@semihcihan/shared";
 import { promptForBasePricePoint } from "./base-price-prompt";
 import type { AppStoreModel } from "@semihcihan/shared";
-import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
+import type { PricingItem, PricePointInfo } from "@semihcihan/shared";
 
 // Mock dependencies
-jest.mock("../../utils/logger");
-jest.mock("node:readline");
-jest.mock("./price-point-fetcher", () => ({
-  fetchTerritoryPricePointsForSelectedItem: jest.fn(),
+jest.mock("@semihcihan/shared", () => ({
+  logger: {
+    prompt: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
 }));
+jest.mock("node:readline");
 
 const mockLogger = jest.mocked(logger);
 const mockReadline = jest.mocked(readline);
-const mockFetchTerritoryPricePointsForSelectedItem = jest.mocked(
-  require("./price-point-fetcher").fetchTerritoryPricePointsForSelectedItem
-);
+const mockFetchTerritoryPricePointsForSelectedItem =
+  jest.fn() as jest.MockedFunction<
+    (
+      selectedItem: PricingItem,
+      appId: string,
+      territoryId: string
+    ) => Promise<PricePointInfo[]>
+  >;
 
 describe("base-price-prompt", () => {
   let mockRl: any;
@@ -62,7 +70,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -90,7 +99,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -118,7 +128,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -147,7 +158,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -174,7 +186,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -201,7 +214,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"
@@ -244,7 +258,8 @@ describe("base-price-prompt", () => {
 
       const promise = promptForBasePricePoint(
         mockSelectedItem,
-        mockAppStoreState
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
       );
 
       // Simulate user entering "3"

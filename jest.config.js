@@ -1,18 +1,34 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  roots: ["<rootDir>/src"],
-  testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+  testMatch: ["<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)"],
+  verbose: true,
+  silent: false,
+  testLocationInResults: true,
+  collectCoverage: false,
+  coverageReporters: ["text"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  // Add Jest caching for better performance
+  cache: true,
+  cacheDirectory: ".jest-cache",
+  // Use modern transform syntax instead of deprecated globals
   transform: {
-    "^.+\\.ts$": "ts-jest",
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        useESM: false,
+      },
+    ],
   },
   collectCoverageFrom: [
-    "src/**/*.ts",
-    "!src/**/*.d.ts",
-    "!src/**/*.test.ts",
-    "!src/**/*.spec.ts",
+    "src/**/*.{js,ts}",
+    "!src/**/*.test.{js,ts}",
+    "!src/**/*.spec.{js,ts}",
+    "!src/**/*.integration.test.{js,ts}",
+    "!src/**/*.e2e.test.{js,ts}",
+    "!src/generated/**/*",
+    "!**/node_modules/**",
+    "!**/dist/**",
+    "!**/build/**",
   ],
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
 };

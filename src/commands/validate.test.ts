@@ -8,8 +8,7 @@ import {
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
 import { readJsonFile } from "@semihcihan/shared";
-import { validateAppStoreModel } from "../helpers/validation-model";
-import { removeShortcuts } from "../utils/shortcut-converter";
+import { validateAppStoreModel, removeShortcuts } from "@semihcihan/shared";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -17,10 +16,17 @@ const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
 });
 
 // Mock dependencies
-jest.mock("../utils/logger");
-jest.mock("../helpers/validation-helpers");
-jest.mock("../helpers/validation-model");
-jest.mock("../utils/shortcut-converter");
+jest.mock("@semihcihan/shared", () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+  readJsonFile: jest.fn(),
+  validateAppStoreModel: jest.fn(),
+  removeShortcuts: jest.fn(),
+}));
 
 const mockLogger = jest.mocked(logger);
 const mockReadJsonFile = jest.mocked(readJsonFile);
@@ -85,7 +91,11 @@ describe("validate command", () => {
 
       expect(mockReadJsonFile).toHaveBeenCalledWith("test.json");
       expect(mockRemoveShortcuts).toHaveBeenCalledWith(mockData);
-      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(mockData, true);
+      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
+        mockData,
+        true,
+        "fetch"
+      );
     });
 
     it("should handle file read errors and exit", () => {

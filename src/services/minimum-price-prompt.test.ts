@@ -2,7 +2,7 @@ import { promptForMinimumPrice } from "./minimum-price-prompt";
 import { logger } from "@semihcihan/shared";
 
 // Mock the logger
-jest.mock("../utils/logger", () => ({
+jest.mock("@semihcihan/shared", () => ({
   logger: {
     info: jest.fn(),
     prompt: jest.fn(),
