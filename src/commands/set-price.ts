@@ -11,7 +11,7 @@ import type {
   PricingItem,
   PricePointInfo,
   PricingRequest,
-} from "../models/pricing-request";
+} from "@semihcihan/shared";
 import type { AppStoreModel } from "@semihcihan/shared";
 
 // Helper function to make HTTP requests to the API
