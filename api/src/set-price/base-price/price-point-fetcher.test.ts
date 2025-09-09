@@ -12,7 +12,7 @@ import {
   fetchAllSubscriptionPricePoints,
   fetchSubscriptionGroups,
 } from "../../domains/subscriptions/api-client";
-import type { AppStoreModel } from "../../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 
 // Mock dependencies
 jest.mock("../../domains/pricing/api-client");

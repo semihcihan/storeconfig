@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { logger } from "../../utils/logger";
-import { TerritoryCodeSchema } from "../../models/territories";
+import { logger } from "@semihcihan/shared";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 import { validateTerritoryCode } from "../../helpers/id-encoding-helpers";
-import type { components } from "../../generated/app-store-connect-api";
-import { ContextualError } from "../../helpers/error-handling-helpers";
+import type { components } from "@semihcihan/app-store-connect-api-types";
+import { ContextualError } from "@semihcihan/shared";
 
 // Map app availability response to territory codes
 export async function mapAppAvailability(

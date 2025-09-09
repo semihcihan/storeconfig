@@ -1,8 +1,8 @@
 import type { CommandModule } from "yargs";
 import * as fs from "fs";
-import { logger } from "../utils/logger";
-import { readJsonFile } from "../helpers/validation-helpers";
-import { validateAppStoreModel } from "../helpers/validation-model";
+import { logger } from "@semihcihan/shared";
+import { readJsonFile } from "@semihcihan/shared";
+import { validateAppStoreModel } from "@semihcihan/shared";
 import { startInteractivePricing } from "../services/set-price-service";
 import { removeShortcuts, useShortcuts } from "../utils/shortcut-converter";
 import axios from "axios";
@@ -12,7 +12,7 @@ import type {
   PricePointInfo,
   PricingRequest,
 } from "../models/pricing-request";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 
 // Helper function to make HTTP requests to the API
 async function fetchTerritoryPricePointsForSelectedItem(
@@ -73,7 +73,9 @@ const setPriceCommand: CommandModule = {
     try {
       // Generate appStoreState from the file
       const appStoreState = validateAppStoreModel(
-        removeShortcuts(readJsonFile(inputFile))
+        removeShortcuts(readJsonFile(inputFile)),
+        false,
+        "apply"
       );
 
       logger.debug(

@@ -1,5 +1,5 @@
 import { withAuthRetry } from "./auth-interceptor";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 
 // Mock the logger
 jest.mock("../utils/logger");

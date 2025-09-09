@@ -5,13 +5,13 @@ import {
   deleteAppStoreVersion,
   getAppStoreVersionsForApp,
 } from "./api-client";
-import type { components } from "../../generated/app-store-connect-api";
-import { logger } from "../../utils/logger";
+import type { components } from "@semihcihan/app-store-connect-api-types";
+import { logger } from "@semihcihan/shared";
 import {
   ContextualError,
   isVersionNotUpdatableError,
-} from "../../helpers/error-handling-helpers";
-import { AppStoreModelSchema } from "../../models/app-store";
+} from "@semihcihan/shared";
+import { AppStoreModelSchema } from "@semihcihan/shared";
 import { z } from "zod";
 
 type AppStoreVersion = components["schemas"]["AppStoreVersionResponse"]["data"];

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { readFileSync } from "fs";
-import { ContextualError } from "../helpers/error-handling-helpers";
+import { ContextualError } from "./error-handling-helpers";
 
 /**
  * Deep compare two objects, treating arrays as unordered sets

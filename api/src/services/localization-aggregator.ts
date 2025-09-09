@@ -1,15 +1,15 @@
 import { LocalizationService as AppStoreVersionLocalizationService } from "../domains/versions/localization-service";
 import { LocalizationService as AppInfoLocalizationService } from "../domains/app-info/localization-service";
 import { AppStoreVersionService } from "../domains/versions/service";
-import { logger } from "../utils/logger";
-import type { components } from "../generated/app-store-connect-api";
+import { logger } from "@semihcihan/shared";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 import { z } from "zod";
 import {
   AppStoreLocalizationSchema,
   AppStoreVersionLocalizationSchema,
   AppStoreAppInfoLocalizationSchema,
-} from "../models/app-store";
-import { LocaleCodeSchema } from "../models/locales";
+} from "@semihcihan/shared";
+import { LocaleCodeSchema } from "@semihcihan/shared";
 import { getAppInfosForApp } from "../domains/app-info/api-client";
 
 type AppInfoState = NonNullable<

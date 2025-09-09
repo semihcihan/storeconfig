@@ -1,8 +1,8 @@
 import { CommandModule } from "yargs";
-import { readJsonFile } from "../helpers/validation-helpers";
-import { logger } from "../utils/logger";
+import { readJsonFile } from "@semihcihan/shared";
+import { logger } from "@semihcihan/shared";
 import { removeShortcuts } from "../utils/shortcut-converter";
-import { validateAppStoreModel } from "../helpers/validation-model";
+import { validateAppStoreModel } from "@semihcihan/shared";
 
 const command: CommandModule = {
   command: "validate-format",
@@ -18,7 +18,11 @@ const command: CommandModule = {
   handler: (argv) => {
     const filePath = argv.file as string;
     try {
-      validateAppStoreModel(removeShortcuts(readJsonFile(filePath)), true);
+      validateAppStoreModel(
+        removeShortcuts(readJsonFile(filePath)),
+        true,
+        "fetch"
+      );
     } catch (error) {
       logger.error(error);
       process.exit(1);

@@ -1,9 +1,9 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   isNotFoundError,
   isRateLimitError,
   ContextualError,
-} from "../helpers/error-handling-helpers";
+} from "@semihcihan/shared";
 import { withAuthRetry } from "./auth-interceptor";
 
 export interface RetryOptions {

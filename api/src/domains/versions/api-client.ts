@@ -1,6 +1,6 @@
 import { api } from "../../services/api";
-import type { components } from "../../generated/app-store-connect-api";
-import { ContextualError } from "../../helpers/error-handling-helpers";
+import type { components } from "@semihcihan/app-store-connect-api-types";
+import { ContextualError } from "@semihcihan/shared";
 
 export async function createAppStoreVersion(
   appId: string,

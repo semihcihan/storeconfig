@@ -6,12 +6,12 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { fetchAppStoreState } from "../services/fetch-service";
 import { diff } from "../services/diff-service";
 import { apply } from "../services/apply-service";
 import { showPlan } from "../services/plan-service";
-import { readJsonFile } from "../helpers/validation-helpers";
+import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import { removeShortcuts } from "../utils/shortcut-converter";
 

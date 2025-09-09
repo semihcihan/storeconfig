@@ -3,9 +3,9 @@ import {
   AppStoreModel,
   SubscriptionGroupSchema,
   SubscriptionSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { fetchAndMapSubscriptionGroups } from "./fetch-service";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   generateTestIdentifier,
   generateConstantLengthTestIdentifier,

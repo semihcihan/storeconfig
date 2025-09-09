@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { applyPricing } from "../services/set-price-service";
 import { z } from "zod";
 import { PricingRequestSchema } from "../models/pricing-request";

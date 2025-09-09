@@ -6,8 +6,8 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "../utils/logger";
-import { readJsonFile } from "../helpers/validation-helpers";
+import { logger } from "@semihcihan/shared";
+import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import * as fs from "fs";
 

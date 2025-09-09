@@ -4,9 +4,9 @@ import {
   PurchasingPowerPricingStrategy,
 } from "./pricing-strategy";
 import { buildSubscriptionPricesWithEqualizations } from "../domains/subscriptions/pricing-service";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingRequest } from "../models/pricing-request";
-import { TerritoryCodeSchema } from "../models/territories";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 import { z } from "zod";
 
 type TerritoryCode = z.infer<typeof TerritoryCodeSchema>;

@@ -15,9 +15,9 @@ import {
   AppStoreLocalizationSchema,
   AppStoreVersionLocalizationSchema,
   AppStoreAppInfoLocalizationSchema,
-} from "./app-store";
-import { LocaleCodeSchema } from "./locales";
-import { TerritoryCodeSchema } from "./territories";
+  LocaleCodeSchema,
+  TerritoryCodeSchema,
+} from "@semihcihan/shared";
 
 // #################################################################################
 // Base Action Types

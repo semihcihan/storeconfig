@@ -1,11 +1,11 @@
 import type { CommandModule } from "yargs";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import type {
   AppStoreModel,
   SubscriptionSchema,
   SubscriptionGroupSchema,
   InAppPurchaseSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
 
 // Type definitions for individual examples

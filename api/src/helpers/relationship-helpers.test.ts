@@ -6,7 +6,7 @@ import {
 } from "./relationship-helpers";
 
 // Mock the generated types for testing
-jest.mock("../generated/app-store-connect-api");
+jest.mock("@semihcihan/app-store-connect-api-types");
 
 describe("relationship-helpers", () => {
   describe("createIncludedByIdMap", () => {

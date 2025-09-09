@@ -1,5 +1,5 @@
-import { logger } from "../utils/logger";
-import { isNotAuthorizedError } from "../helpers/error-handling-helpers";
+import { logger } from "@semihcihan/shared";
+import { isNotAuthorizedError } from "@semihcihan/shared";
 
 /**
  * Simple authentication interceptor that retries failed requests once after reauthentication

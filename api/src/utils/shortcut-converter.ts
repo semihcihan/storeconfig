@@ -1,10 +1,10 @@
-import { territoryCodes } from "../models/territories";
-import { deepEqualUnordered } from "../helpers/validation-helpers";
-import { logger } from "./logger";
+import { territoryCodes } from "@semihcihan/shared";
+import { deepEqualUnordered } from "@semihcihan/shared";
+import { logger } from "@semihcihan/shared";
 import {
   AppStoreLocalizationSchema,
   WORLDWIDE_TERRITORY_CODE,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
 
 function isWorldwideTerritory(territory: string): boolean {

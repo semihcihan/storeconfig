@@ -6,14 +6,14 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import {
   AppStoreModelSchema,
   SubscriptionSchema,
   SubscriptionGroupSchema,
   InAppPurchaseSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {

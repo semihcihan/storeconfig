@@ -3,7 +3,7 @@ import {
   removeShortcuts,
   WORLDWIDE_TERRITORY_CODE,
 } from "./shortcut-converter";
-import { territoryCodes } from "../models/territories";
+import { territoryCodes } from "@semihcihan/shared";
 import { jest } from "@jest/globals";
 
 // Mock logger

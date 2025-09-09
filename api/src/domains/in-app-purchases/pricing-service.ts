@@ -1,13 +1,13 @@
-import { logger } from "../../utils/logger";
-import { PriceSchema, PriceScheduleSchema } from "../../models/app-store";
-import { TerritoryCodeSchema } from "../../models/territories";
+import { logger } from "@semihcihan/shared";
+import { PriceSchema, PriceScheduleSchema } from "@semihcihan/shared";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 import { z } from "zod";
 import {
   getIAPPriceScheduleId,
   findIAPPricePointId,
   createIAPPriceSchedule,
 } from "./api-client";
-import type { components } from "../../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 
 type Price = z.infer<typeof PriceSchema>;
 type Territory = z.infer<typeof TerritoryCodeSchema>;

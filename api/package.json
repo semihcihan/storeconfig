@@ -19,8 +19,6 @@
     "test:e2e": "jest --config jest.e2e.config.js",
     "test:coverage": "jest --config jest.unit.config.js --coverage",
     "prepublishOnly": "npm run build",
-    "codegen": "openapi-typescript openapi.json --output src/generated/app-store-connect-api/index.ts",
-    "split-openapi": "npx redocly split openapi.json --outDir=openapi",
     "fetch-currencies": "npx ts-node src/scripts/fetch-territories.ts && npx ts-node src/scripts/fetch-ppp.ts && npx ts-node src/scripts/update-exchange-rates.ts",
     "update-rates": "npx ts-node src/scripts/update-exchange-rates.ts",
     "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --f fetch.json",
@@ -39,6 +37,8 @@
     "README.md"
   ],
   "dependencies": {
+    "@semihcihan/app-store-connect-api-types": "file:../app-store-connect-api-types",
+    "@semihcihan/shared": "file:../shared",
     "@types/lodash": "^4.17.20",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
@@ -50,10 +50,9 @@
     "openapi-fetch": "^0.14.0",
     "winston": "^3.17.0",
     "yargs": "^17.7.2",
-    "zod": "^3.25.74"
+    "zod": "3.25.76"
   },
   "devDependencies": {
-    "@redocly/cli": "^1.34.4",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
@@ -62,7 +61,6 @@
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
     "jest": "^30.0.4",
-    "openapi-typescript": "^7.0.2",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

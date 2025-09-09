@@ -1,5 +1,5 @@
 import { api } from "../services/api";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import * as fs from "fs";
 import * as path from "path";
 

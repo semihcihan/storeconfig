@@ -1,13 +1,13 @@
 import { CommandModule } from "yargs";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { showPlan } from "../services/plan-service";
-import { readJsonFile } from "../helpers/validation-helpers";
-import { validateAppStoreModel } from "../helpers/validation-model";
+import { readJsonFile } from "@semihcihan/shared";
+import { validateAppStoreModel } from "@semihcihan/shared";
 import { removeShortcuts } from "../utils/shortcut-converter";
 import * as readline from "readline";
 import axios from "axios";
 
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 
 const confirmChanges = async (): Promise<boolean> => {
   const rl = readline.createInterface({

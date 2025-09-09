@@ -9,9 +9,9 @@ import {
   AppStoreLocalizationSchema,
   AppStoreVersionLocalizationSchema,
   AppStoreAppInfoLocalizationSchema,
-} from "../models/app-store";
-import { LocaleCodeSchema } from "../models/locales";
-import { logger } from "../utils/logger";
+} from "@semihcihan/shared";
+import { LocaleCodeSchema } from "@semihcihan/shared";
+import { logger } from "@semihcihan/shared";
 
 // Mock dependencies
 jest.mock("../domains/versions/localization-service");

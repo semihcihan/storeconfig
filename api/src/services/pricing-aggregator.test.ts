@@ -6,8 +6,8 @@ import {
   fetchAppPriceScheduleBaseTerritory,
   getAppPriceSchedule,
 } from "../domains/pricing/api-client";
-import { isNotFoundError } from "../helpers/error-handling-helpers";
-import { logger } from "../utils/logger";
+import { isNotFoundError } from "@semihcihan/shared";
+import { logger } from "@semihcihan/shared";
 
 // Mock dependencies
 jest.mock("../domains/pricing/api-client");

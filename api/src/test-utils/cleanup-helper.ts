@@ -1,4 +1,4 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
 import { fetchSubscriptionGroups } from "../domains/subscriptions/api-client";
 import { deleteInAppPurchase } from "../domains/in-app-purchases/api-client";

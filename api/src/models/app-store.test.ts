@@ -8,7 +8,7 @@ import {
   SubscriptionGroupSchema,
   AppStoreLocalizationSchema,
 } from "./app-store";
-import { isValidProductId } from "../helpers/validation-helpers";
+import { isValidProductId } from "@semihcihan/shared";
 import { validateAppStoreModel } from "../helpers/validation-model";
 import { describe, it, expect } from "@jest/globals";
 

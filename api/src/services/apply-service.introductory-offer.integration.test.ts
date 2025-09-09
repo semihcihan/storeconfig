@@ -1,7 +1,7 @@
 import { apply } from "./apply-service";
-import { AppStoreModel, SubscriptionGroupSchema } from "../models/app-store";
+import { AppStoreModel, SubscriptionGroupSchema } from "@semihcihan/shared";
 import { fetchAndMapSubscriptionGroups } from "./fetch-service";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   generateTestIdentifier,
   TEST_APP_ID,

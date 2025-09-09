@@ -1,7 +1,7 @@
 import { isValidProductId, deepEqualUnordered } from "./validation-helpers";
 import { describe, it, expect } from "@jest/globals";
 import { z } from "zod";
-import { TerritoryCodeSchema } from "../models/territories";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 
 type TerritoryCode = z.infer<typeof TerritoryCodeSchema>;
 

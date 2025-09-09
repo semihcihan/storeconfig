@@ -1,12 +1,12 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   AppStoreModelSchema,
   APP_STORE_SCHEMA_VERSION,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
-import { isNotFoundError } from "../helpers/error-handling-helpers";
+import { isNotFoundError } from "@semihcihan/shared";
 
-import { validateAppStoreModel } from "../helpers/validation-model";
+import { validateAppStoreModel } from "@semihcihan/shared";
 
 // Import API clients
 import { fetchInAppPurchases } from "../domains/in-app-purchases/api-client";
@@ -25,8 +25,8 @@ import { mapAppPricing } from "./pricing-aggregator";
 // Import services
 import { AppStoreVersionService } from "../domains/versions/service";
 import { LocalizationAggregator } from "./localization-aggregator";
-import { LocaleCodeSchema } from "../models/locales";
-import { AppStoreLocalizationSchema } from "../models/app-store";
+import { LocaleCodeSchema } from "@semihcihan/shared";
+import { AppStoreLocalizationSchema } from "@semihcihan/shared";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 
@@ -125,6 +125,6 @@ export async function fetchAppStoreState(
     localizations: localizations.length > 0 ? localizations : undefined,
   };
 
-  const parsedData = validateAppStoreModel(result);
+  const parsedData = validateAppStoreModel(result, false, "fetch");
   return parsedData;
 }

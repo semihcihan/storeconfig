@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { analyzePricing } from "../services/compare-price-service";
 import { z } from "zod";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { TerritoryData } from "../services/pricing-strategy";
 import * as fs from "fs";
 

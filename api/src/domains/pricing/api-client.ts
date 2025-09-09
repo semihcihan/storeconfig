@@ -3,8 +3,8 @@ import { API_FIELD_CONFIGS, API_LIMITS } from "../../helpers/constants";
 import {
   ContextualError,
   isNotFoundError,
-} from "../../helpers/error-handling-helpers";
-import type { components } from "../../generated/app-store-connect-api";
+} from "@semihcihan/shared";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 
 type AppPriceScheduleResponse =
   components["schemas"]["AppPriceScheduleResponse"];

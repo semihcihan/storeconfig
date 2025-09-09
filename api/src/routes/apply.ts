@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { apply } from "../services/apply-service";
 import { z } from "zod";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { Plan } from "../models/diff-plan";
 
 const router = Router();

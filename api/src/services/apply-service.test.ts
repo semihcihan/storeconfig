@@ -1,6 +1,6 @@
 import { apply } from "./apply-service";
 import { AnyAction } from "../models/diff-plan";
-import { AppStoreModelSchema } from "../models/app-store";
+import { AppStoreModelSchema } from "@semihcihan/shared";
 import { z } from "zod";
 
 // Mock the services

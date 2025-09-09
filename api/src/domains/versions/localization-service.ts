@@ -5,8 +5,8 @@ import {
   deleteAppStoreVersionLocalization,
   getAppStoreVersionLocalizationsForVersion,
 } from "./api-client";
-import type { AppStoreVersionLocalizationSchema } from "../../models/app-store";
-import type { components } from "../../generated/app-store-connect-api";
+import type { AppStoreVersionLocalizationSchema } from "@semihcihan/shared";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 import { z } from "zod";
 
 type AppStoreVersionLocalization =

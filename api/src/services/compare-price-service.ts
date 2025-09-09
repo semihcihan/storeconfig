@@ -1,7 +1,7 @@
-import { logger } from "../utils/logger";
-import type { AppStoreModel } from "../models/app-store";
+import { logger } from "@semihcihan/shared";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem } from "../models/pricing-request";
-import { PriceSchema } from "../models/app-store";
+import { PriceSchema } from "@semihcihan/shared";
 import type { TerritoryData } from "./pricing-strategy";
 import type { z } from "zod";
 import { BASE_TERRITORY } from "./pricing-strategy";

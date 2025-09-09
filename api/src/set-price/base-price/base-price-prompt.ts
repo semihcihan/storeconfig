@@ -1,6 +1,6 @@
 import * as readline from "readline";
-import { logger } from "../../utils/logger";
-import type { AppStoreModel } from "../../models/app-store";
+import { logger } from "@semihcihan/shared";
+import type { AppStoreModel } from "@semihcihan/shared";
 import { fetchTerritoryPricePointsForSelectedItem } from "./price-point-fetcher";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 import { BASE_TERRITORY } from "../../services/pricing-strategy";

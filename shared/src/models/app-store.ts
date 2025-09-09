@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { components } from "../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 import { TerritoryCodeSchema } from "./territories";
 import { LocaleCodeSchema } from "./locales";
 import {

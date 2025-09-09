@@ -1,4 +1,4 @@
-import { TerritoryCodeSchema } from "../models/territories";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 import { z } from "zod";
 
 // Helper function to validate territory code

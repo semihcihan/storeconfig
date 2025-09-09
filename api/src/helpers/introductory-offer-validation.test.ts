@@ -5,7 +5,7 @@ import {
   getIntroductoryOfferGroupingDescription,
 } from "./introductory-offer-validation";
 import { z } from "zod";
-import { IntroductoryOfferSchema } from "../models/app-store";
+import { IntroductoryOfferSchema } from "@semihcihan/shared";
 
 type IntroductoryOffer = z.infer<typeof IntroductoryOfferSchema>;
 

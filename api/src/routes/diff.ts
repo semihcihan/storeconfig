@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { diff } from "../services/diff-service";
 import { fetchAppStoreState } from "../services/fetch-service";
 import { useShortcuts } from "../utils/shortcut-converter";
 import { z } from "zod";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 
 const router = Router();
 

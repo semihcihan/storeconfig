@@ -1,4 +1,4 @@
-import { components } from "../generated/app-store-connect-api";
+import { components } from "@semihcihan/app-store-connect-api-types";
 
 export type ErrorResponse = components["schemas"]["ErrorResponse"];
 

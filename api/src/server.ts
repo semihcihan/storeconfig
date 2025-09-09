@@ -7,7 +7,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { logger } from "./utils/logger";
+import { logger } from "@semihcihan/shared";
 import fetchRouter from "./routes/fetch";
 import comparePriceRouter from "./routes/compare-price";
 import diffRouter from "./routes/diff";

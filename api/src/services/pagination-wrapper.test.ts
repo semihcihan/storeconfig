@@ -1,6 +1,6 @@
 import { createPaginationWrapper } from "./pagination-wrapper";
-import { logger } from "../utils/logger";
-import { ContextualError } from "../helpers/error-handling-helpers";
+import { logger } from "@semihcihan/shared";
+import { ContextualError } from "@semihcihan/shared";
 
 // Mock the logger
 jest.mock("../utils/logger", () => ({

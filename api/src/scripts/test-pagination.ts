@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { api } from "../services/api";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 
 /**
  * Test script to verify automatic pagination is working

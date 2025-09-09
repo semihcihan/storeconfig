@@ -1,6 +1,6 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import * as fs from "fs";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import { selectPricingItem } from "../set-price/item-selection";
 import { promptForBasePricePoint } from "../set-price/base-price/base-price-prompt";
 import { promptForPricingStrategy } from "../set-price/strategy-prompt";
@@ -9,7 +9,7 @@ import {
   SubscriptionSchema,
   PromotionalOfferSchema,
   IntroductoryOfferSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
 import {
   createPricingStrategy,

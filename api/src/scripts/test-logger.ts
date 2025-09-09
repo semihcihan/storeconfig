@@ -1,5 +1,5 @@
-import { logger } from "../utils/logger";
-import { ContextualError } from "../helpers/error-handling-helpers";
+import { logger } from "@semihcihan/shared";
+import { ContextualError } from "@semihcihan/shared";
 
 const testError = new Error("This is a test error");
 

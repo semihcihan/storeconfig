@@ -7,7 +7,7 @@ import {
   SubscriptionSchema,
   IntroductoryOfferSchema,
   PromotionalOfferSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 import { CreateSubscriptionPriceAction } from "../models/diff-plan";
 import { z } from "zod";
 

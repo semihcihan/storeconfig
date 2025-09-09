@@ -1,5 +1,5 @@
 import * as readline from "readline";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import type { PricingStrategy } from "../models/pricing-request";
 
 export async function promptForMinimumPrice(

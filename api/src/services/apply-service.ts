@@ -1,6 +1,6 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { AnyAction } from "../models/diff-plan";
-import { AppStoreModelSchema } from "../models/app-store";
+import { AppStoreModelSchema } from "@semihcihan/shared";
 import { updateAppAvailability } from "../domains/availability/service";
 import { createAppPriceSchedule } from "../domains/pricing/service";
 import {
@@ -31,7 +31,7 @@ import {
   deleteSubscriptionLocalization,
 } from "../domains/subscriptions/service";
 import { z } from "zod";
-import type { components } from "../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 import { showAction } from "./plan-service";
 import { LocalizationAggregator } from "./localization-aggregator";
 import { AppStoreVersionService } from "../domains/versions/service";

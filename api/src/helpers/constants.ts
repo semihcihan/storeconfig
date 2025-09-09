@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   SubscriptionPeriodSchema,
   SubscriptionOfferDurationSchema,
-} from "../models/app-store";
+} from "@semihcihan/shared";
 
 // Subscription period mappings between Apple's format and our format
 export const SUBSCRIPTION_PERIOD_MAPPING: {

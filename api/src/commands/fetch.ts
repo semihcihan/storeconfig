@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
 

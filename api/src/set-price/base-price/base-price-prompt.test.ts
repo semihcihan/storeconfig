@@ -1,8 +1,8 @@
 import { jest } from "@jest/globals";
 import * as readline from "node:readline";
-import { logger } from "../../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { promptForBasePricePoint } from "./base-price-prompt";
-import type { AppStoreModel } from "../../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem, PricePointInfo } from "../../models/pricing-request";
 
 // Mock dependencies

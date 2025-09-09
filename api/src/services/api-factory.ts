@@ -1,5 +1,5 @@
 import createClient from "openapi-fetch";
-import type { paths } from "../generated/app-store-connect-api";
+import type { paths } from "@semihcihan/app-store-connect-api-types";
 import { createRetryMiddleware } from "./retry-middleware";
 import { createPaginationWrapper } from "./pagination-wrapper";
 

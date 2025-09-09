@@ -1,12 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   getPricesForItem,
   analyzePricing,
   exportAnalysisToCSV,
   exportAnalysis,
 } from "./compare-price-service";
-import type { AppStoreModel } from "../models/app-store";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem } from "../models/pricing-request";
 import type { TerritoryData } from "./pricing-strategy";
 

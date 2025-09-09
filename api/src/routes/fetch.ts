@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { fetchAppStoreState } from "../services/fetch-service";
 import { useShortcuts } from "../utils/shortcut-converter";
 import { z } from "zod";

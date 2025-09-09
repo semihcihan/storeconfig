@@ -1,4 +1,4 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { AnyAction } from "../models/diff-plan";
 
 export async function showAction(action: AnyAction) {

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { validateTerritoryCode } from "./id-encoding-helpers";
-import { TerritoryCodeSchema } from "../models/territories";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 
 // Mock logger
 jest.mock("../utils/logger");

@@ -1,6 +1,6 @@
 import * as jwt from "jsonwebtoken";
-import { logger } from "../utils/logger";
-import { ContextualError } from "../helpers/error-handling-helpers";
+import { logger } from "@semihcihan/shared";
+import { ContextualError } from "@semihcihan/shared";
 
 export type AuthContext = "default" | "fallback";
 

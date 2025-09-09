@@ -1,8 +1,8 @@
-import { logger } from "../../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   IntroductoryOfferSchema,
   SubscriptionOfferDurationSchema,
-} from "../../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
 import {
   createSubscriptionIntroductoryOffer,
@@ -13,7 +13,7 @@ import {
   findSubscriptionId,
   findSubscriptionPricePointId,
 } from "./pricing-service";
-import type { components } from "../../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 
 type SubscriptionGroupsResponse =
   components["schemas"]["SubscriptionGroupsResponse"];

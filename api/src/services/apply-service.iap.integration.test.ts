@@ -1,7 +1,7 @@
 import { apply } from "./apply-service";
-import { AppStoreModel, InAppPurchaseSchema } from "../models/app-store";
+import { AppStoreModel, InAppPurchaseSchema } from "@semihcihan/shared";
 import { fetchAndMapInAppPurchases } from "./fetch-service";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   generateTestIdentifier,
   generateConstantLengthTestIdentifier,

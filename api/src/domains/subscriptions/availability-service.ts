@@ -1,15 +1,15 @@
-import { logger } from "../../utils/logger";
+import { logger } from "@semihcihan/shared";
 import {
   AppStoreModelSchema,
   AvailabilitySchema,
-} from "../../models/app-store";
+} from "@semihcihan/shared";
 import { z } from "zod";
 import {
   getSubscriptionAvailability,
   createSubscriptionAvailability,
 } from "./api-client";
-import type { components } from "../../generated/app-store-connect-api";
-import { TerritoryCodeSchema } from "../../models/territories";
+import type { components } from "@semihcihan/app-store-connect-api-types";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 type SubscriptionAvailabilityCreateRequest =

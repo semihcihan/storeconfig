@@ -1,6 +1,6 @@
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { API_LIMITS } from "../helpers/constants";
-import { ContextualError } from "../helpers/error-handling-helpers";
+import { ContextualError } from "@semihcihan/shared";
 
 interface PaginationConfig {
   v1Limit: number;

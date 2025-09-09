@@ -7,7 +7,7 @@ dotenv.config();
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { logger, LOG_LEVELS, DEFAULT_LOG_LEVEL } from "./utils/logger";
+import { logger, LOG_LEVELS, DEFAULT_LOG_LEVEL } from "@semihcihan/shared";
 
 import validateFormatCmd from "./commands/validate";
 import applyCmd from "./commands/apply";

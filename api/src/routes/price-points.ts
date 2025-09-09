@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import { fetchTerritoryPricePointsForSelectedItem } from "../set-price/base-price/price-point-fetcher";
 import { z } from "zod";
 import { PricingItemSchema } from "../models/pricing-request";

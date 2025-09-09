@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 import * as fs from "fs";
 
 // Mock process.exit before importing the command

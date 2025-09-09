@@ -8,8 +8,8 @@ import {
 } from "@jest/globals";
 import * as fs from "fs";
 import * as readline from "readline";
-import { logger } from "../utils/logger";
-import type { AppStoreModel } from "../models/app-store";
+import { logger } from "@semihcihan/shared";
+import type { AppStoreModel } from "@semihcihan/shared";
 
 // Mock dependencies
 jest.mock("fs");

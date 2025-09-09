@@ -12,8 +12,8 @@ import {
   fetchSubscriptionPricePointEqualizations,
 } from "./api-client";
 import { api } from "../../services/api";
-import { ContextualError } from "../../helpers/error-handling-helpers";
-import { PriceSchema } from "../../models/app-store";
+import { ContextualError } from "@semihcihan/shared";
+import { PriceSchema } from "@semihcihan/shared";
 import { z } from "zod";
 
 // Mock dependencies

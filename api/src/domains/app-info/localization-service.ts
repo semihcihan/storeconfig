@@ -5,9 +5,9 @@ import {
   deleteAppInfoLocalization,
   getAppInfoLocalizationsForAppInfo,
 } from "./api-client";
-import type { components } from "../../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 import { z } from "zod";
-import { AppStoreAppInfoLocalizationSchema } from "../../models/app-store";
+import { AppStoreAppInfoLocalizationSchema } from "@semihcihan/shared";
 
 type AppInfoLocalization =
   components["schemas"]["AppInfoLocalizationResponse"]["data"];

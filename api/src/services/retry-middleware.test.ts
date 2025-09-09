@@ -1,5 +1,5 @@
 import { createRetryMiddleware } from "./retry-middleware";
-import { logger } from "../utils/logger";
+import { logger } from "@semihcihan/shared";
 
 // Mock the logger to avoid console output during tests
 jest.mock("../utils/logger", () => ({

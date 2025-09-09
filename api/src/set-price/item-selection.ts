@@ -1,6 +1,6 @@
 import * as readline from "readline";
-import { logger } from "../utils/logger";
-import type { AppStoreModel } from "../models/app-store";
+import { logger } from "@semihcihan/shared";
+import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem } from "../models/pricing-request";
 
 export function collectPricingItems(

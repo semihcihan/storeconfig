@@ -1,6 +1,6 @@
-import { logger } from "../../utils/logger";
-import { AppStoreModelSchema } from "../../models/app-store";
-import { TerritoryCodeSchema } from "../../models/territories";
+import { logger } from "@semihcihan/shared";
+import { AppStoreModelSchema } from "@semihcihan/shared";
+import { TerritoryCodeSchema } from "@semihcihan/shared";
 import { z } from "zod";
 import {
   getAppAvailability,
@@ -8,7 +8,7 @@ import {
   getTerritoryAvailabilities,
   updateTerritoryAvailability,
 } from "../../domains/availability/api-client";
-import { territoryCodes } from "../../models/territories";
+import { territoryCodes } from "@semihcihan/shared";
 
 type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
 

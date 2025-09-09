@@ -1,4 +1,4 @@
-import type { components } from "../generated/app-store-connect-api";
+import type { components } from "@semihcihan/app-store-connect-api-types";
 
 // Type definition for included resources
 type IncludedResource =
