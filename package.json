@@ -1,0 +1,47 @@
+{
+  "name": "@semihcihan/developer-tool-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for App Store Connect synchronization",
+  "main": "dist/cli.js",
+  "bin": {
+    "app-store-sync": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "jest --config jest.unit.config.js",
+    "test:unit": "jest --config jest.unit.config.js",
+    "test:coverage": "jest --config jest.unit.config.js --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "app-store",
+    "ios",
+    "synchronization"
+  ],
+  "author": "Semih Cihan",
+  "license": "ISC",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "dependencies": {
+    "@semihcihan/shared": "file:../shared",
+    "axios": "^1.10.0",
+    "dotenv": "^16.6.1",
+    "yargs": "^17.7.2",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.10",
+    "@types/yargs": "^17.0.33",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
