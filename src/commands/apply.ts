@@ -7,8 +7,6 @@ import { removeShortcuts } from "@semihcihan/shared";
 import * as readline from "readline";
 import axios from "axios";
 
-import type { AppStoreModel } from "@semihcihan/shared";
-
 const confirmChanges = async (): Promise<boolean> => {
   const rl = readline.createInterface({
     input: process.stdin,
