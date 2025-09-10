@@ -10,6 +10,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "dev": "tsc --watch",
+    "clean": "rm -rf dist",
     "start": "node dist/cli.js",
     "test": "jest --config jest.unit.config.js",
     "test:unit": "jest --config jest.unit.config.js",
