@@ -11,7 +11,7 @@
     "build:watch": "tsc --watch & tsc-alias --watch",
     "dev": "node -r ts-node/register -r tsconfig-paths/register src/cli.ts",
     "clean": "rm -rf dist",
-    "nuke": "rm -rf node_modules package-lock.json dist",
+    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
     "start": "node dist/cli.js",
     "test": "jest --config jest.unit.config.js",
     "test:unit": "jest --config jest.unit.config.js",
