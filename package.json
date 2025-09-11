@@ -7,11 +7,11 @@
     "app-store-sync": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "dev": "tsc --watch",
+    "build": "tsc && tsc-alias",
+    "build:watch": "tsc --watch & tsc-alias --watch",
+    "dev": "node -r ts-node/register -r tsconfig-paths/register src/cli.ts",
     "clean": "rm -rf dist",
-    "nuke": "rm -rf node_modules package-lock.json",
+    "nuke": "rm -rf node_modules package-lock.json dist",
     "start": "node dist/cli.js",
     "test": "jest --config jest.unit.config.js",
     "test:unit": "jest --config jest.unit.config.js",
@@ -52,6 +52,8 @@
     "jest": "^30.0.4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   }
 }
