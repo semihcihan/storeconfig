@@ -3,7 +3,6 @@
 A powerful command-line tool for managing apps on **App Store Connect**. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect with ease. **No more manual work**.
 
 [![npm version](https://badge.fury.io/js/storeconfig.svg)](https://badge.fury.io/js/storeconfig)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
 ## 🚀 Quick Start
 
