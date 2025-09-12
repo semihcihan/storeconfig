@@ -7,11 +7,66 @@ import type {
   InAppPurchaseSchema,
 } from "@semihcihan/shared";
 import { z } from "zod";
+import * as readline from "readline";
 
 // Type definitions for individual examples
 type SubscriptionExample = z.infer<typeof SubscriptionSchema>;
 type SubscriptionGroupExample = z.infer<typeof SubscriptionGroupSchema>;
 type InAppPurchaseExample = z.infer<typeof InAppPurchaseSchema>;
+
+// Available example types
+const exampleTypes = [
+  { key: "minimal", name: "Minimal App" },
+  { key: "full", name: "Full App" },
+  { key: "subscription", name: "Subscription" },
+  { key: "in-app-purchase", name: "In-App Purchase" },
+];
+
+async function selectType(): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    var logs: string[] = [];
+    logs.push("Available example types are below:");
+    exampleTypes.forEach((type, index) => {
+      logs.push(`${index + 1}. ${type.name}`);
+    });
+    logger.info(logs.join("\n"));
+
+    const askForSelection = () => {
+      rl.question(
+        "\nEnter the number of the example type you want to generate (1-" +
+          exampleTypes.length +
+          "): ",
+        (answer) => {
+          const selection = parseInt(answer, 10);
+
+          if (
+            isNaN(selection) ||
+            selection < 1 ||
+            selection > exampleTypes.length
+          ) {
+            logger.error(
+              "Invalid selection. Please enter a number between 1 and " +
+                exampleTypes.length
+            );
+            askForSelection();
+            return;
+          }
+
+          const selectedType = exampleTypes[selection - 1];
+          rl.close();
+          resolve(selectedType.key);
+        }
+      );
+    };
+
+    askForSelection();
+  });
+}
 
 // Subscription example
 const subscriptionExample: SubscriptionExample[] = [
@@ -242,7 +297,7 @@ const minimalAppExample: AppStoreModel = {
     baseTerritory: "USA",
     prices: [
       {
-        price: "0.00",
+        price: "0.0",
         territory: "USA",
       },
     ],
@@ -259,12 +314,15 @@ const exampleCommand: CommandModule = {
       alias: "t",
       describe: "Type of example to generate",
       choices: ["minimal", "full", "subscription", "iap", "in-app-purchase"],
-      demandOption: true,
       type: "string",
     },
   },
   handler: async (argv) => {
-    const type = argv.type as string;
+    let type = argv.type as string;
+
+    if (!type) {
+      type = await selectType();
+    }
 
     const examples = {
       minimal: minimalAppExample,

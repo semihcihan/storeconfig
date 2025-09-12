@@ -24,7 +24,7 @@
     "validate": "npx ts-node src/cli.ts validate-format --f apply.json",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",
     "compare-price": "npx ts-node src/cli.ts compare-price --i apply.json --o compare-price.csv",
-    "example": "npx ts-node src/cli.ts example --t full"
+    "example": "npx ts-node src/cli.ts example"
   },
   "keywords": [
     "cli",

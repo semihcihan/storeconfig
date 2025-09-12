@@ -181,8 +181,6 @@ storeconfig example --type iap
 }
 ```
 
-## 🚨 Important Notes
-
 ### API Limitations
 
 There are some limitations with the App Store Connect APIs. When these are supported, we will update the CLI to support them too.
@@ -196,9 +194,9 @@ There are some limitations with the App Store Connect APIs. When these are suppo
 - StoreConfig API keys are stored in your local machine
 - Apple credentials and keys are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth logout` command to remove them from our servers.
 
-## 🆘 Support
+## Support
 
 - 📚 [Documentation](https://www.storeconfig.com/docs)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
-⚠️ This CLI is proprietary software. Usage requires a valid subscription and API key from [StoreConfig](https://www.storeconfig.com).
+This CLI is proprietary software. Usage requires a valid subscription and API key from [StoreConfig](https://www.storeconfig.com).
