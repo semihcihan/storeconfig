@@ -15,6 +15,7 @@ import fetchCmd from "./commands/fetch";
 import setPriceCmd from "./commands/set-price";
 import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
+import authCmd from "./commands/auth";
 
 yargs(hideBin(process.argv))
   .option("log-level", {
@@ -36,6 +37,7 @@ yargs(hideBin(process.argv))
   .command(setPriceCmd)
   .command(comparePriceCmd)
   .command(exampleCmd)
+  .command(authCmd)
   .command({
     command: "plan",
     describe: "Show a plan of changes (dry run) - alias for apply --preview",
