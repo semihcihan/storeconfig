@@ -258,7 +258,7 @@ const exampleCommand: CommandModule = {
     type: {
       alias: "t",
       describe: "Type of example to generate",
-      choices: ["minimal", "full", "subscription", "in-app-purchase"],
+      choices: ["minimal", "full", "subscription", "iap", "in-app-purchase"],
       demandOption: true,
       type: "string",
     },
@@ -270,6 +270,7 @@ const exampleCommand: CommandModule = {
       minimal: minimalAppExample,
       full: fullAppExample,
       subscription: subscriptionExample,
+      iap: inAppPurchaseExample,
       "in-app-purchase": inAppPurchaseExample,
     };
 
