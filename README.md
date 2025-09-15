@@ -182,21 +182,21 @@ storeconfig example --type iap
 
 ### Tool Limitations
 
-There are some limitations with the App Store Connect APIs. When these are supported, we will update the CLI to support them too.
+Due to current App Store Connect API restrictions, some features are not yet available in the CLI. As soon as these capabilities are supported by the API, we will update the CLI accordingly.
 
-- **Creating a New App**: You can only create a new app through the App Store Connect website.
-- **App Privacy**: You can only create/update App Privacy data through the App Store Connect website. This is a very repetitive work and we will add support for it in the future when it is supported by the API.
-- **State Management**: We don't support submitting apps, in-app-purchases, subscriptions etc. This is usually the last step of the process and is not repetitive nor hard to do manually.
-- **Age Rating**: We don't support setting age rating for apps.
-- **Start and End Dates**: We don't support setting start and end dates for in-app purchases, subscriptions etc.
-- **Promo Offers**: We don't support promo offers for subscriptions.
-- **Billing Grace Period**: We don't support billing grace period for subscriptions.
+- **Creating a New App**: New apps can only be created via the App Store Connect website.
+- **App Privacy**: App Privacy data can only be created or updated through the App Store Connect website. This process is repetitive, and we plan to add support once the API allows it.
+- **State Management**: Submitting apps, in-app purchases, and subscriptions is not supported. These are typically final steps and are not repetitive or difficult to perform manually.
+- **Age Rating**: Setting age ratings for apps is not currently supported.
+- **Start and End Dates**: Setting start and end dates for in-app purchases and subscriptions is not supported.
+- **Promo Offers**: Promo offers for subscriptions are not supported.
+- **Billing Grace Period**: Billing grace period for subscriptions is not supported.
 
 ### Planned Features
 
-- **App Category**: We will support setting app category for apps soon.
-- **Content Rights**: We will support setting content rights for apps soon.
-- **iOS Platform**: We only support iOS platform for now. We are planning to add support for other platforms in the future.
+- **App Category**: Support for setting app categories will be added soon.
+- **Content Rights**: Support for managing content rights will be added soon.
+- **iOS Platform**: Currently, only the iOS platform is supported. We plan to add support for additional platforms in the future.
 
 ### Security
 
