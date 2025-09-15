@@ -22,7 +22,7 @@ For detailed documentation, visit [www.storeconfig.com/docs](https://www.storeco
 
 - **😌 Easy to Use** - Prepare App Store Connect for your app in minutes instead of hours. What normally takes 2+ hours of manual work is now done in minutes.
 - **⚡️ Quick App Duplication** - Copy App Store Connect data from an existing app to a new app in minutes.
-- **📄 JSON-Based Configuration** - Define your app structure in version-controlled JSON files.
+- **📄 Configuration as Code** - Define your app structure in version-controlled JSON files.
 - **🤖 AI-Powered Editing** - Use any AI tool to modify your JSON configuration for app descriptions, content updates, and more.
 - **🌍 Multi-Language Support** - Easily manage localized content across all supported territories.
 - **📊 Bulk Operations** - Make changes across multiple products, subscriptions, or territories at once.
