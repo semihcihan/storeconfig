@@ -180,13 +180,23 @@ storeconfig example --type iap
 }
 ```
 
-### API Limitations
+### Tool Limitations
 
 There are some limitations with the App Store Connect APIs. When these are supported, we will update the CLI to support them too.
 
 - **Creating a New App**: You can only create a new app through the App Store Connect website.
 - **App Privacy**: You can only create/update App Privacy data through the App Store Connect website. This is a very repetitive work and we will add support for it in the future when it is supported by the API.
 - **State Management**: We don't support submitting apps, in-app-purchases, subscriptions etc. This is usually the last step of the process and is not repetitive nor hard to do manually.
+- **Age Rating**: We don't support setting age rating for apps.
+- **Start and End Dates**: We don't support setting start and end dates for in-app purchases, subscriptions etc.
+- **Promo Offers**: We don't support promo offers for subscriptions.
+- **Billing Grace Period**: We don't support billing grace period for subscriptions.
+
+### Planned Features
+
+- **App Category**: We will support setting app category for apps soon.
+- **Content Rights**: We will support setting content rights for apps soon.
+- **iOS Platform**: We only support iOS platform for now. We are planning to add support for other platforms in the future.
 
 ### Security
 
