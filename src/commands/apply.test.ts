@@ -12,6 +12,7 @@ import {
   readJsonFile,
   validateAppStoreModel,
   removeShortcuts,
+  validateFileExists,
 } from "@semihcihan/shared";
 import axios from "axios";
 
@@ -32,6 +33,7 @@ jest.mock("@semihcihan/shared", () => ({
   readJsonFile: jest.fn(),
   validateAppStoreModel: jest.fn(),
   removeShortcuts: jest.fn(),
+  validateFileExists: jest.fn(),
 }));
 jest.mock("../services/plan-service");
 jest.mock("axios");
@@ -49,6 +51,7 @@ const mockShowPlan = jest.mocked(showPlan);
 const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
+const mockValidateFileExists = jest.mocked(validateFileExists);
 const mockAxios = jest.mocked(axios);
 
 // Import the command after mocking
@@ -71,6 +74,7 @@ describe("apply command", () => {
     mockReadJsonFile.mockReturnValue(mockData);
     mockValidateAppStoreModel.mockReturnValue(mockData);
     mockRemoveShortcuts.mockReturnValue(mockData);
+    mockValidateFileExists.mockReturnValue("desired.json");
     mockShowPlan.mockResolvedValue(undefined);
 
     // Mock axios responses
@@ -108,7 +112,7 @@ describe("apply command", () => {
       const builder = applyCommand.builder as any;
       expect(builder.file).toBeDefined();
       expect(builder.file.alias).toBe("f");
-      expect(builder.file.demandOption).toBe(true);
+      expect(builder.file.demandOption).toBe(false);
       expect(builder.file.type).toBe("string");
     });
 
@@ -122,6 +126,41 @@ describe("apply command", () => {
   });
 
   describe("command execution", () => {
+    it("should validate file exists before processing", async () => {
+      const mockData = { appId: "123456789" } as any;
+      const mockPlan = [
+        { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
+      ] as any;
+
+      mockReadJsonFile.mockReturnValue(mockData);
+      mockValidateAppStoreModel.mockReturnValue(mockData);
+      mockRemoveShortcuts.mockReturnValue(mockData);
+
+      // Mock diff API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            plan: mockPlan,
+            currentState: mockData,
+          },
+        },
+      });
+
+      // Mock apply API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+        },
+      });
+
+      await applyCommand.handler!(mockArgv as any);
+
+      expect(mockValidateFileExists).toHaveBeenCalledWith("desired.json", {
+        fileDescription: "desired state JSON file",
+      });
+    });
+
     it("should execute successfully with changes", async () => {
       const mockData = { appId: "123456789" } as any;
       const mockPlan = [
@@ -221,17 +260,12 @@ describe("apply command", () => {
     });
 
     it("should handle validation errors and exit", async () => {
-      mockReadJsonFile.mockImplementation(() => {
-        throw new Error("File not found");
+      mockValidateFileExists.mockImplementation(() => {
+        throw new Error("process.exit called");
       });
 
       await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
         "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Apply failed",
-        expect.any(Error)
       );
     });
 

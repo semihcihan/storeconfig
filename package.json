@@ -19,7 +19,7 @@
     "prepublishOnly": "npm run build",
     "fetch": "npx ts-node src/cli.ts fetch --id 6503259293 --f fetch.json",
     "fetch:all": "npx ts-node src/cli.ts fetch --f fetch.json",
-    "apply": "npx ts-node src/cli.ts apply --f apply.json",
+    "apply": "npx ts-node src/cli.ts apply --f applyasda.json",
     "plan": "npx ts-node src/cli.ts plan --f apply.json",
     "validate": "npx ts-node src/cli.ts validate-format --f apply.json",
     "set-price": "npx ts-node src/cli.ts set-price --f apply.json",

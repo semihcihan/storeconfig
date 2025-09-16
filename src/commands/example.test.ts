@@ -68,9 +68,10 @@ describe("example command", () => {
         "minimal",
         "full",
         "subscription",
+        "iap",
         "in-app-purchase",
       ]);
-      expect(builder.type.demandOption).toBe(true);
+      expect(builder.type.demandOption).toBeUndefined();
       expect(builder.type.type).toBe("string");
     });
   });

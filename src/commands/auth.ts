@@ -1,6 +1,5 @@
 import { CommandModule } from "yargs";
 import { logger } from "@semihcihan/shared";
-import { configService } from "../services/config-service";
 
 // Login subcommand
 const loginCommand: CommandModule = {
@@ -56,16 +55,18 @@ const appleCommand: CommandModule = {
   },
 };
 
-// Logout subcommand
-const logoutCommand: CommandModule = {
-  command: "logout",
-  describe: "Clear all stored authentication data",
+// Delete user subcommand
+const deleteUserCommand: CommandModule = {
+  command: "delete",
+  describe:
+    "Deletes the user and all stored authentication data for the API key",
   builder: {},
   handler: async (argv) => {
-    logger.info("Logout command - not implemented yet");
+    logger.info("Delete user command - not implemented yet");
     logger.info("This will clear the stored API key");
 
-    // TODO: Implement actual logout logic
+    // TODO: Implement actual delete user logic
+    // - Delete user from backend
     // - Clear API key from config
   },
 };
@@ -78,13 +79,13 @@ const authCommand: CommandModule = {
     return yargs
       .command(loginCommand)
       .command(appleCommand)
-      .command(logoutCommand)
+      .command(deleteUserCommand)
       .demandCommand(1, "You must specify a subcommand");
   },
   handler: async (argv) => {
     // This should not be called as we have subcommands
     logger.error(
-      "No subcommand specified. Use 'auth login', 'auth apple', or 'auth logout'"
+      "No subcommand specified. Use 'auth login', 'auth apple', or 'auth delete'"
     );
   },
 };

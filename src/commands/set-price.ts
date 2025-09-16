@@ -1,6 +1,10 @@
 import type { CommandModule } from "yargs";
 import * as fs from "fs";
-import { logger } from "@semihcihan/shared";
+import {
+  DEFAULT_CONFIG_FILENAME,
+  logger,
+  validateFileExists,
+} from "@semihcihan/shared";
 import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 import { startInteractivePricing } from "../services/set-price-service";
@@ -58,14 +62,15 @@ const setPriceCommand: CommandModule = {
   builder: {
     file: {
       alias: "f",
-      describe:
-        "Path to the current state file (e.g., fetch.json) - will be updated in place",
-      demandOption: true,
+      describe: `Path to the store config JSON file - will be updated in place. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
+      demandOption: false,
       type: "string",
     },
   },
   handler: async (argv) => {
-    const inputFile = argv.file as string;
+    const inputFile = validateFileExists(argv.file as string, {
+      fileDescription: "store config JSON file",
+    });
     const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     logger.info(`Setting prices using file: ${inputFile}`);

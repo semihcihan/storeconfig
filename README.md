@@ -201,7 +201,7 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 ### Security
 
 - StoreConfig API keys are stored in your local machine
-- Apple credentials and keys are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth logout` command to remove them from our servers.
+- Apple credentials and keys are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth delete` command to remove them from our servers.
 
 ## Support
 

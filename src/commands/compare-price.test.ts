@@ -6,7 +6,13 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "@semihcihan/shared";
+import {
+  logger,
+  validateFileExists,
+  readJsonFile,
+  validateAppStoreModel,
+  removeShortcuts,
+} from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
 
@@ -23,6 +29,10 @@ jest.mock("@semihcihan/shared", () => ({
     warn: jest.fn(),
     debug: jest.fn(),
   },
+  validateFileExists: jest.fn(),
+  readJsonFile: jest.fn(),
+  validateAppStoreModel: jest.fn(),
+  removeShortcuts: jest.fn(),
 }));
 jest.mock("fs");
 jest.mock("axios");
@@ -36,6 +46,10 @@ jest.mock("../services/compare-price-service", () => ({
 }));
 
 const mockLogger = jest.mocked(logger);
+const mockValidateFileExists = jest.mocked(validateFileExists);
+const mockReadJsonFile = jest.mocked(readJsonFile);
+const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
+const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockFs = jest.mocked(fs);
 const mockAxios = jest.mocked(axios);
 
@@ -44,7 +58,7 @@ import comparePriceCommand from "./compare-price";
 
 describe("compare-price command", () => {
   const mockArgv = {
-    input: "test-input.json",
+    file: "test-input.json",
     output: "test-output.json",
     _: [],
     $0: "test",
@@ -98,6 +112,10 @@ describe("compare-price command", () => {
     mockLogger.error.mockReturnValue(undefined);
     mockLogger.info.mockReturnValue(undefined);
     mockExportAnalysis.mockReturnValue(undefined);
+    mockValidateFileExists.mockReturnValue("test-input.json");
+    mockReadJsonFile.mockReturnValue(mockAppStoreData);
+    mockValidateAppStoreModel.mockReturnValue(mockAppStoreData);
+    mockRemoveShortcuts.mockReturnValue(mockAppStoreData);
     mockFs.readFileSync.mockReturnValue("" as any);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
     mockFs.existsSync.mockReturnValue(true);
@@ -130,30 +148,40 @@ describe("compare-price command", () => {
       expect(comparePriceCommand.builder).toBeDefined();
     });
 
-    it("should have input parameter with correct configuration", () => {
+    it("should have file parameter with correct configuration", () => {
       const builder = comparePriceCommand.builder as any;
-      expect(builder.input).toBeDefined();
-      expect(builder.input.alias).toBe("i");
-      expect(builder.input.demandOption).toBe(true);
-      expect(builder.input.type).toBe("string");
+      expect(builder.file).toBeDefined();
+      expect(builder.file.alias).toBe("f");
+      expect(builder.file.demandOption).toBe(false);
+      expect(builder.file.type).toBe("string");
     });
 
     it("should have output parameter with correct configuration", () => {
       const builder = comparePriceCommand.builder as any;
       expect(builder.output).toBeDefined();
       expect(builder.output.alias).toBe("o");
-      expect(builder.output.demandOption).toBe(true);
+      expect(builder.output.demandOption).toBe(false);
       expect(builder.output.type).toBe("string");
     });
   });
 
   describe("handler", () => {
-    it("should read input file and call API successfully", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
-
+    it("should validate file exists before processing", async () => {
       await comparePriceCommand.handler(mockArgv);
 
-      expect(mockFs.readFileSync).toHaveBeenCalledWith(mockArgv.input, "utf8");
+      expect(mockValidateFileExists).toHaveBeenCalledWith("test-input.json", {
+        fileDescription: "input JSON file with app store data",
+      });
+    });
+
+    it("should read input file and call API successfully", async () => {
+      await comparePriceCommand.handler(mockArgv);
+
+      expect(mockReadJsonFile).toHaveBeenCalledWith("test-input.json");
+      expect(mockValidateAppStoreModel).toHaveBeenCalledWith(
+        mockAppStoreData,
+        false
+      );
       expect(mockAxios.post).toHaveBeenCalledWith(
         "http://localhost:3000/api/v1/compare-price",
         { appStoreData: mockAppStoreData }
@@ -161,8 +189,6 @@ describe("compare-price command", () => {
     });
 
     it("should call API with correct parameters", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
-
       await comparePriceCommand.handler(mockArgv);
 
       expect(mockAxios.post).toHaveBeenCalledWith(
@@ -172,8 +198,6 @@ describe("compare-price command", () => {
     });
 
     it("should write analysis to output file", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
-
       await comparePriceCommand.handler(mockArgv);
 
       expect(mockExportAnalysis).toHaveBeenCalledWith(
@@ -182,24 +206,80 @@ describe("compare-price command", () => {
       );
     });
 
+    it("should use default output filename when output parameter is not provided", async () => {
+      const argvWithoutOutput = {
+        file: "test-input.json",
+        _: [],
+        $0: "test",
+      } as any;
+
+      await comparePriceCommand.handler(argvWithoutOutput);
+
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "compare-price.csv"
+      );
+    });
+
+    it("should use default output filename when output parameter is undefined", async () => {
+      const argvWithUndefinedOutput = {
+        file: "test-input.json",
+        output: undefined,
+        _: [],
+        $0: "test",
+      } as any;
+
+      await comparePriceCommand.handler(argvWithUndefinedOutput);
+
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "compare-price.csv"
+      );
+    });
+
+    it("should use default output filename when output parameter is empty string", async () => {
+      const argvWithEmptyOutput = {
+        file: "test-input.json",
+        output: "",
+        _: [],
+        $0: "test",
+      } as any;
+
+      await comparePriceCommand.handler(argvWithEmptyOutput);
+
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "compare-price.csv"
+      );
+    });
+
+    it("should use default output filename when output parameter is null", async () => {
+      const argvWithNullOutput = {
+        file: "test-input.json",
+        output: null,
+        _: [],
+        $0: "test",
+      } as any;
+
+      await comparePriceCommand.handler(argvWithNullOutput);
+
+      expect(mockExportAnalysis).toHaveBeenCalledWith(
+        mockAnalysis,
+        "compare-price.csv"
+      );
+    });
+
     it("should handle input file read error", async () => {
-      const error = new Error("File not found");
-      mockFs.readFileSync.mockImplementation(() => {
-        throw error;
+      mockValidateFileExists.mockImplementation(() => {
+        throw new Error("process.exit called");
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
       );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        error
-      );
     });
 
     it("should handle API error", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
       mockAxios.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
@@ -213,7 +293,9 @@ describe("compare-price command", () => {
     });
 
     it("should handle invalid JSON in input file", async () => {
-      mockFs.readFileSync.mockReturnValue("invalid json" as any);
+      mockValidateAppStoreModel.mockImplementation(() => {
+        throw new Error("Invalid JSON");
+      });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
@@ -226,7 +308,6 @@ describe("compare-price command", () => {
     });
 
     it("should handle API response error", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
       mockAxios.post.mockResolvedValueOnce({
         data: {
           success: false,
@@ -245,7 +326,6 @@ describe("compare-price command", () => {
     });
 
     it("should handle export error", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
       mockExportAnalysis.mockImplementation(() => {
         throw new Error("Export failed");
       });
@@ -261,7 +341,6 @@ describe("compare-price command", () => {
     });
 
     it("should handle write file error", async () => {
-      mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(mockAppStoreData));
       mockExportAnalysis.mockImplementation(() => {
         throw new Error("Export failed");
       });

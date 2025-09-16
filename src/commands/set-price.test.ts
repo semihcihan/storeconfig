@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "@semihcihan/shared";
+import { logger, validateFileExists } from "@semihcihan/shared";
 import { readJsonFile } from "@semihcihan/shared";
 import {
   validateAppStoreModel,
@@ -32,6 +32,7 @@ jest.mock("@semihcihan/shared", () => ({
   validateAppStoreModel: jest.fn(),
   removeShortcuts: jest.fn(),
   useShortcuts: jest.fn(),
+  validateFileExists: jest.fn(),
 }));
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
@@ -42,6 +43,7 @@ jest.mock("fs");
 const mockLogger = jest.mocked(logger);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockReadJsonFile = jest.mocked(readJsonFile);
+const mockValidateFileExists = jest.mocked(validateFileExists);
 const mockFs = jest.mocked(fs);
 
 // Import the command after mocking
@@ -63,6 +65,7 @@ describe("set-price command", () => {
     jest.clearAllMocks();
     mockLogger.info.mockReturnValue(undefined);
     mockLogger.error.mockReturnValue(undefined);
+    mockValidateFileExists.mockReturnValue("test-file.json");
     mockStartInteractivePricing.mockResolvedValue({
       appId: "app-1",
       selectedItem: {
@@ -111,7 +114,7 @@ describe("set-price command", () => {
       const builder = setPriceCommand.builder as any;
       expect(builder.file).toBeDefined();
       expect(builder.file.alias).toBe("f");
-      expect(builder.file.demandOption).toBe(true);
+      expect(builder.file.demandOption).toBe(false);
       expect(builder.file.type).toBe("string");
     });
   });

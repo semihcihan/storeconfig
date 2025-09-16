@@ -1,5 +1,9 @@
 import { CommandModule } from "yargs";
-import { logger } from "@semihcihan/shared";
+import {
+  logger,
+  DEFAULT_CONFIG_FILENAME,
+  validateFileExists,
+} from "@semihcihan/shared";
 import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
@@ -42,8 +46,8 @@ const command: CommandModule = {
   builder: {
     file: {
       alias: "f",
-      describe: "Path to the desired state JSON file.",
-      demandOption: true,
+      describe: `Path to the desired state JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
+      demandOption: false,
       type: "string",
     },
     preview: {
@@ -54,9 +58,12 @@ const command: CommandModule = {
     },
   },
   handler: async (argv) => {
-    const desiredStateFile = argv.file as string;
     const preview = argv.preview as boolean;
     const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
+
+    const desiredStateFile = validateFileExists(argv.file as string, {
+      fileDescription: "desired state JSON file",
+    });
 
     logger.debug(`Processing desired state from ${desiredStateFile}...`);
 

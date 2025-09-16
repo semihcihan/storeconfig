@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "@semihcihan/shared";
+import { logger, validateFileExists } from "@semihcihan/shared";
 import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel, removeShortcuts } from "@semihcihan/shared";
 
@@ -26,12 +26,14 @@ jest.mock("@semihcihan/shared", () => ({
   readJsonFile: jest.fn(),
   validateAppStoreModel: jest.fn(),
   removeShortcuts: jest.fn(),
+  validateFileExists: jest.fn(),
 }));
 
 const mockLogger = jest.mocked(logger);
 const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
+const mockValidateFileExists = jest.mocked(validateFileExists);
 
 // Import the command after mocking
 import validateCommand from "./validate";
@@ -46,6 +48,7 @@ describe("validate command", () => {
     mockLogger.error.mockReturnValue(undefined);
 
     const mockData = { appId: "123456789" } as any;
+    mockValidateFileExists.mockReturnValue("test.json");
     mockReadJsonFile.mockReturnValue(mockData);
     mockRemoveShortcuts.mockReturnValue(mockData);
     mockValidateAppStoreModel.mockReturnValue(mockData);
@@ -74,7 +77,7 @@ describe("validate command", () => {
       const builder = validateCommand.builder as any;
       expect(builder.file).toBeDefined();
       expect(builder.file.alias).toBe("f");
-      expect(builder.file.demandOption).toBe(true);
+      expect(builder.file.demandOption).toBe(false);
       expect(builder.file.type).toBe("string");
     });
   });
@@ -99,15 +102,13 @@ describe("validate command", () => {
     });
 
     it("should handle file read errors and exit", () => {
-      mockReadJsonFile.mockImplementation(() => {
-        throw new Error("File not found");
+      mockValidateFileExists.mockImplementation(() => {
+        throw new Error("process.exit called");
       });
 
       expect(() => validateCommand.handler!(mockArgv as any)).toThrow(
         "process.exit called"
       );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error));
     });
 
     it("should handle validation errors and exit", () => {

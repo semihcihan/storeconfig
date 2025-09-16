@@ -1,5 +1,9 @@
 import { CommandModule } from "yargs";
-import { readJsonFile } from "@semihcihan/shared";
+import {
+  DEFAULT_CONFIG_FILENAME,
+  readJsonFile,
+  validateFileExists,
+} from "@semihcihan/shared";
 import { logger } from "@semihcihan/shared";
 import { removeShortcuts } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
@@ -10,13 +14,15 @@ const command: CommandModule = {
   builder: {
     file: {
       alias: "f",
-      describe: "Path to the JSON file",
-      demandOption: true,
+      describe: `Path to the JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
+      demandOption: false,
       type: "string",
     },
   },
   handler: (argv) => {
-    const filePath = argv.file as string;
+    const filePath = validateFileExists(argv.file as string, {
+      fileDescription: "JSON file",
+    });
     try {
       validateAppStoreModel(
         removeShortcuts(readJsonFile(filePath)),
