@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "@semihcihan/shared";
+import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
 import * as readline from "readline";
@@ -108,9 +108,11 @@ describe("fetch command", () => {
       const builder = fetchCommand.builder as any;
       expect(builder.file).toBeDefined();
       expect(builder.file.alias).toBe("f");
-      expect(builder.file.demandOption).toBe(true);
+      expect(builder.file.demandOption).toBe(false);
       expect(builder.file.type).toBe("string");
-      expect(builder.file.describe).toBe("Path to the output JSON file.");
+      expect(builder.file.describe).toBe(
+        `Path to the output JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`
+      );
     });
   });
 
@@ -138,6 +140,36 @@ describe("fetch command", () => {
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Successfully fetched app and wrote to output.json"
+      );
+    });
+
+    it("should use default filename when no file parameter provided", async () => {
+      const mockArgvWithoutFile = {
+        id: "123456789",
+      };
+
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: mockAppStoreState,
+        },
+      });
+
+      await fetchCommand.handler!(mockArgvWithoutFile as any);
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Fetching details for app ID: 123456789 and writing to ${DEFAULT_CONFIG_FILENAME}`
+      );
+      expect(mockAxios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/v1/fetch",
+        { appId: "123456789" }
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        DEFAULT_CONFIG_FILENAME,
+        JSON.stringify(mockAppStoreState, null, 2)
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Successfully fetched app and wrote to ${DEFAULT_CONFIG_FILENAME}`
       );
     });
 
@@ -195,6 +227,8 @@ describe("fetch command", () => {
     const mockArgvWithoutId = {
       file: "output.json",
     };
+
+    const mockArgvWithoutIdAndFile = {};
 
     it("should fetch apps list and let user select when no app ID provided", async () => {
       // Mock fetch apps API call
@@ -372,6 +406,60 @@ describe("fetch command", () => {
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Failed to fetch apps list",
         expect.any(Error)
+      );
+    });
+
+    it("should use default filename when no file parameter provided in interactive mode", async () => {
+      // Mock fetch apps API call
+      mockAxios.get.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: mockApps,
+        },
+      });
+
+      // Mock user selection
+      const mockRl = {
+        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
+          callback("1"); // User selects first app
+        }),
+        close: jest.fn(),
+      };
+      mockReadline.createInterface.mockReturnValue(mockRl as any);
+
+      // Mock fetch app details API call
+      mockAxios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: mockAppStoreState,
+        },
+      });
+
+      await fetchCommand.handler!(mockArgvWithoutIdAndFile as any);
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "No app ID provided. Fetching available apps..."
+      );
+      expect(mockAxios.get).toHaveBeenCalledWith(
+        "http://localhost:3000/api/v1/fetch-apps"
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith("Available apps:");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "1. Test App 1\n2. Test App 2"
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "Selected: Test App 1 (ID: 123456789)"
+      );
+      expect(mockAxios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/v1/fetch",
+        { appId: "123456789" }
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        DEFAULT_CONFIG_FILENAME,
+        JSON.stringify(mockAppStoreState, null, 2)
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Successfully fetched app and wrote to ${DEFAULT_CONFIG_FILENAME}`
       );
     });
   });

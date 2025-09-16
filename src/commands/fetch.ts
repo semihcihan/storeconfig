@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger } from "@semihcihan/shared";
+import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
 import * as readline from "readline";
@@ -79,14 +79,14 @@ const fetchCommand: CommandModule = {
     },
     file: {
       alias: "f",
-      describe: "Path to the output JSON file.",
-      demandOption: true,
+      describe: `Path to the output JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
+      demandOption: false,
       type: "string",
     },
   },
   handler: async (argv) => {
     let appId = argv.id as string;
-    const outputFile = argv.file as string;
+    const outputFile = (argv.file as string) || DEFAULT_CONFIG_FILENAME;
     const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     try {
