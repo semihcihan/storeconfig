@@ -96,11 +96,11 @@ This is required for store config to manage your apps on App Store Connect.
 Fetch current app configuration from App Store Connect. Easiest way to get started. Fetch the app you want to manage or fetch another app to use as a template for your new app.
 
 ```bash
-# Show all your apps to select from
-storeconfig fetch --f my-app.json
+# Show all your apps to select from (saves to storeconfig.json by default)
+storeconfig fetch
 
 # Fetch specific app by ID
-storeconfig fetch --id 1234567890 --f my-app.json
+storeconfig fetch --id 1234567890
 ```
 
 #### `apply`
@@ -108,8 +108,8 @@ storeconfig fetch --id 1234567890 --f my-app.json
 Apply changes from JSON file to App Store Connect after making changes on it. It will preview the changes and ask for approval before applying them.
 
 ```bash
-# Apply changes
-storeconfig apply --f my-app.json
+# Apply changes (uses storeconfig.json by default)
+storeconfig apply
 ```
 
 #### `set-price`
@@ -117,7 +117,8 @@ storeconfig apply --f my-app.json
 Set prices for your app, in-app purchases, and subscriptions interactively. Easiest way to manage pricing.
 
 ```bash
-storeconfig set-price --f my-app.json
+# Set prices (uses storeconfig.json by default)
+storeconfig set-price
 ```
 
 #### `compare-price`
@@ -125,7 +126,8 @@ storeconfig set-price --f my-app.json
 Compare prices across territories in USD. Useful to see how your pricing compares to other territories.
 
 ```bash
-storeconfig compare-price --input my-app.json --output price-analysis.csv
+# Compare prices (uses storeconfig.json and outputs to compare-price.csv by default)
+storeconfig compare-price
 ```
 
 #### `example`
@@ -133,6 +135,9 @@ storeconfig compare-price --input my-app.json --output price-analysis.csv
 Generate example JSON files for different data types. Useful to get started or to see how to structure your JSON file.
 
 ```bash
+# Interactive selection of example type
+storeconfig example
+
 # Generate minimal app example
 storeconfig example --type minimal
 
@@ -186,7 +191,7 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 
 - **Creating a New App**: New apps can only be created via the App Store Connect website.
 - **App Privacy**: App Privacy data can only be created or updated through the App Store Connect website. This process is repetitive, and we plan to add support once the API allows it.
-- **State Management**: Submitting apps, in-app purchases, and subscriptions is not supported. These are typically final steps and are not repetitive or difficult to perform manually.
+- **State Management**: Submitting apps, in-app purchases, and subscriptions is not supported. These actions are usually performed as a final step and are not repetitive or particularly difficult to do manually.
 - **Age Rating**: Setting age ratings for apps is not currently supported.
 - **Start and End Dates**: Setting start and end dates for in-app purchases and subscriptions is not supported.
 - **Promo Offers**: Promo offers for subscriptions are not supported.
