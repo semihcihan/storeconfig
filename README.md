@@ -46,19 +46,19 @@ npx storeconfig --help
 
 ## 🔧 Setup
 
-### 1. Sign Up & Get API Key
+### 1. Sign Up & Get Secret Key
 
-First, sign up at [www.storeconfig.com](https://www.storeconfig.com) to get your API key.
+First, sign up at [www.storeconfig.com](https://www.storeconfig.com) to get your Secret Key.
 
 ### 2. Authentication
 
 Set up your App Store Connect API credentials:
 
 ```bash
-# Login with your API key
-storeconfig auth login
+# Configure StoreConfig with the StoreConfig Secret Key
+storeconfig auth configure
 
-# Configure Apple
+# Configure Apple credentials
 # See below for how to get the key and IDs.
 storeconfig auth apple \
   --issuer-id YOUR_ISSUER_ID \
@@ -205,12 +205,12 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 
 ### Security
 
-- StoreConfig API keys are stored in your local machine
-- Apple credentials and keys are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth delete` command to remove them from our servers.
+- StoreConfig Secret Keys are stored in your local machine
+- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth delete` command to remove them from our servers.
 
 ## Support
 
 - 📚 [Documentation](https://www.storeconfig.com/docs)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
-This CLI is proprietary software. Usage requires a valid subscription and API key from [StoreConfig](https://www.storeconfig.com).
+This CLI is proprietary software. Usage requires a valid subscription and Secret Key from [StoreConfig](https://www.storeconfig.com).

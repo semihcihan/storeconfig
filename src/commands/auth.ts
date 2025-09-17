@@ -1,18 +1,18 @@
 import { CommandModule } from "yargs";
 import { logger } from "@semihcihan/shared";
 
-// Login subcommand
-const loginCommand: CommandModule = {
-  command: "login",
-  describe: "Login with your API key",
+// Configure subcommand
+const configureCommand: CommandModule = {
+  command: "configure",
+  describe: "Configure StoreConfig with the Secret Key",
   builder: {},
   handler: async (argv) => {
-    logger.info("Login command - not implemented yet");
-    logger.info("This will prompt for API key and store it in config");
+    logger.info("Configure command - not implemented yet");
+    logger.info("This will prompt for Secret Key and store it in config");
 
-    // TODO: Implement actual login logic
-    // - Prompt for API key
-    // - Validate API key with backend (Optional)
+    // TODO: Implement actual configure logic
+    // - Prompt for Secret Key key
+    // - Validate Secret Key with backend (Optional)
     // - Store in config
   },
 };
@@ -20,7 +20,7 @@ const loginCommand: CommandModule = {
 // Apple subcommand
 const appleCommand: CommandModule = {
   command: "apple",
-  describe: "Associate Apple credentials with your API key",
+  describe: "Configure Apple credentials",
   builder: {
     "issuer-id": {
       describe: "Apple App Store Connect Issuer ID",
@@ -50,7 +50,7 @@ const appleCommand: CommandModule = {
 
     // TODO: Implement actual Apple auth logic
     // - Validate key file exists and is readable
-    // - Send credentials to backend for association with stored API key
+    // - Send credentials to backend for association with stored Secret Key
     // - Apple credentials are not stored locally, only sent to backend
   },
 };
@@ -59,25 +59,25 @@ const appleCommand: CommandModule = {
 const deleteUserCommand: CommandModule = {
   command: "delete",
   describe:
-    "Deletes the user and all stored authentication data for the API key",
+    "Deletes the user and all stored authentication data for StoreConfig and Apple",
   builder: {},
   handler: async (argv) => {
     logger.info("Delete user command - not implemented yet");
-    logger.info("This will clear the stored API key");
+    logger.info("This will clear the stored keys for StoreConfig and Apple");
 
     // TODO: Implement actual delete user logic
     // - Delete user from backend
-    // - Clear API key from config
+    // - Clear Secret Key and Apple credentials from config
   },
 };
 
 // Main auth command with subcommands
 const authCommand: CommandModule = {
   command: "auth",
-  describe: "Authentication commands for API key and Apple credentials",
+  describe: "Authentication commands for StoreConfig and Apple credentials",
   builder: (yargs) => {
     return yargs
-      .command(loginCommand)
+      .command(configureCommand)
       .command(appleCommand)
       .command(deleteUserCommand)
       .demandCommand(1, "You must specify a subcommand");
@@ -85,7 +85,7 @@ const authCommand: CommandModule = {
   handler: async (argv) => {
     // This should not be called as we have subcommands
     logger.error(
-      "No subcommand specified. Use 'auth login', 'auth apple', or 'auth delete'"
+      "No subcommand specified. Use 'auth configure', 'auth apple', or 'auth delete'"
     );
   },
 };
