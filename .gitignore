@@ -31,3 +31,5 @@ coverage/
 # Logs
 logs
 *.log
+
+storeconfig.json
