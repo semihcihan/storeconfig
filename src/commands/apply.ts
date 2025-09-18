@@ -26,9 +26,7 @@ Some operations are inherently irreversible — even if performed manually throu
 `);
 
     rl.question(
-      logger.prompt(
-        "Do you want to proceed with applying these changes? (y/N): "
-      ),
+      "Do you want to proceed with applying these changes? (y/N): ",
       (answer) => {
         rl.close();
         resolve(

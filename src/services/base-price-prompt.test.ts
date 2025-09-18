@@ -43,7 +43,6 @@ describe("base-price-prompt", () => {
     };
 
     mockReadline.createInterface.mockReturnValue(mockRl);
-    mockLogger.prompt.mockReturnValue("Enter base price in USD (e.g., 5.99): ");
   });
 
   describe("promptForBasePricePoint", () => {

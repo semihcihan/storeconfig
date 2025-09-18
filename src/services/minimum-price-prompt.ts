@@ -24,7 +24,7 @@ export async function promptForMinimumPrice(
   return await new Promise((resolve) => {
     const ask = () => {
       rl.question(
-        logger.prompt("Minimum price in USD (optional, press Enter to skip): "),
+        "Minimum price in USD (optional, press Enter to skip): ",
         (answer) => {
           const trimmed = String(answer ?? "").trim();
 

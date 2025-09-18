@@ -74,56 +74,53 @@ export async function promptForBasePricePoint(
 
   return await new Promise((resolve) => {
     const ask = () => {
-      rl.question(
-        logger.prompt("Enter base price in USD (e.g., 5.99): "),
-        (answer) => {
-          const parsed = parsePriceInputToNumber(answer);
-          if (parsed === null) {
-            logger.error(
-              "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
-            );
-            ask();
-            return;
-          }
-
-          const canonical = parsed.toFixed(2);
-          if (
-            normalizedAvailablePricePoints.length &&
-            !normalizedAvailablePricePoints.some((p) => p.price === canonical)
-          ) {
-            const nearest = findNearestPrices(
-              parsed,
-              normalizedAvailablePricePoints.map(
-                (p: { id: string; price: string }) => p.price
-              ),
-              20
-            );
-            logger.error(
-              `❌ The price ${canonical} is not an available Apple price.`
-            );
-            if (nearest.length) {
-              logger.info(`Closest available prices:\n${nearest.join(" | ")}`);
-            }
-            ask();
-            return;
-          }
-
-          rl.close();
-          const selectedNormalizedPricePoint =
-            normalizedAvailablePricePoints.find(
-              (p: { id: string; price: string }) => p.price === canonical
-            );
-          const selectedPricePoint = availablePricePoints.find(
-            (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
+      rl.question("Enter base price in USD (e.g., 5.99): ", (answer) => {
+        const parsed = parsePriceInputToNumber(answer);
+        if (parsed === null) {
+          logger.error(
+            "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
           );
-          if (selectedPricePoint) {
-            resolve(selectedPricePoint);
-          } else {
-            // This shouldn't happen since we validated the price, but handle it gracefully
-            throw new Error(`Price point not found for price ${canonical}`);
-          }
+          ask();
+          return;
         }
-      );
+
+        const canonical = parsed.toFixed(2);
+        if (
+          normalizedAvailablePricePoints.length &&
+          !normalizedAvailablePricePoints.some((p) => p.price === canonical)
+        ) {
+          const nearest = findNearestPrices(
+            parsed,
+            normalizedAvailablePricePoints.map(
+              (p: { id: string; price: string }) => p.price
+            ),
+            20
+          );
+          logger.error(
+            `❌ The price ${canonical} is not an available Apple price.`
+          );
+          if (nearest.length) {
+            logger.info(`Closest available prices:\n${nearest.join(" | ")}`);
+          }
+          ask();
+          return;
+        }
+
+        rl.close();
+        const selectedNormalizedPricePoint =
+          normalizedAvailablePricePoints.find(
+            (p: { id: string; price: string }) => p.price === canonical
+          );
+        const selectedPricePoint = availablePricePoints.find(
+          (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
+        );
+        if (selectedPricePoint) {
+          resolve(selectedPricePoint);
+        } else {
+          // This shouldn't happen since we validated the price, but handle it gracefully
+          throw new Error(`Price point not found for price ${canonical}`);
+        }
+      });
     };
     ask();
   });

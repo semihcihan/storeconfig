@@ -21,25 +21,22 @@ export async function promptForPricingStrategy(): Promise<PricingStrategy> {
   displayStrategyOptions();
   return await new Promise((resolve) => {
     const ask = () => {
-      rl.question(
-        logger.prompt("Select pricing strategy (1 or 2): "),
-        (answer) => {
-          const trimmed = String(answer ?? "").trim();
-          if (trimmed === "1") {
-            rl.close();
-            resolve("apple");
-            return;
-          }
-          if (trimmed === "2") {
-            rl.close();
-            resolve("purchasingPower");
-            return;
-          }
-          logger.error("❌ Invalid selection. Please enter 1 or 2.");
-          displayStrategyOptions();
-          ask();
+      rl.question("Select pricing strategy (1 or 2): ", (answer) => {
+        const trimmed = String(answer ?? "").trim();
+        if (trimmed === "1") {
+          rl.close();
+          resolve("apple");
+          return;
         }
-      );
+        if (trimmed === "2") {
+          rl.close();
+          resolve("purchasingPower");
+          return;
+        }
+        logger.error("❌ Invalid selection. Please enter 1 or 2.");
+        displayStrategyOptions();
+        ask();
+      });
     };
     ask();
   });

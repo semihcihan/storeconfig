@@ -32,22 +32,19 @@ async function promptForItemSelection(
   });
   return await new Promise((resolve) => {
     const ask = () => {
-      rl.question(
-        logger.prompt(`Select an item (1-${items.length}): `),
-        (answer) => {
-          const selection = parseInt(answer.trim(), 10);
-          if (isNaN(selection) || selection < 1 || selection > items.length) {
-            logger.error(
-              `❌ Invalid selection. Please enter a number between 1 and ${items.length}.`
-            );
-            displayItemSelection(items);
-            ask();
-            return;
-          }
-          rl.close();
-          resolve(items[selection - 1]);
+      rl.question(`Select an item (1-${items.length}): `, (answer) => {
+        const selection = parseInt(answer.trim(), 10);
+        if (isNaN(selection) || selection < 1 || selection > items.length) {
+          logger.error(
+            `❌ Invalid selection. Please enter a number between 1 and ${items.length}.`
+          );
+          displayItemSelection(items);
+          ask();
+          return;
         }
-      );
+        rl.close();
+        resolve(items[selection - 1]);
+      });
     };
     ask();
   });
