@@ -170,6 +170,7 @@ const subscriptionExample: SubscriptionExample[] = [
             territory: "MEX",
           },
         ],
+        availableTerritories: "worldwide",
       },
     ],
   },
