@@ -207,46 +207,6 @@ storeconfig example --type iap
         ]
       }
     }
-  ],
-  "subscriptionGroups": [
-    {
-      "referenceName": "Premium Subscriptions",
-      "localizations": [
-        {
-          "locale": "en-US",
-          "name": "Premium Subscriptions"
-        }
-      ],
-      "subscriptions": [
-        {
-          "productId": "com.mycompany.myapp.premium.monthly",
-          "referenceName": "Monthly Premium",
-          "groupLevel": 2,
-          "subscriptionPeriod": "ONE_MONTH",
-          "familySharable": false,
-          "availability": {
-            "availableInNewTerritories": true,
-            "availableTerritories": "worldwide"
-          },
-          "prices": {
-            "baseTerritory": "USA",
-            "prices": [
-              {
-                "price": "3.99",
-                "territory": "USA"
-              }
-            ]
-          },
-          "localizations": [
-            {
-              "locale": "en-US",
-              "name": "Monthly Premium",
-              "description": "Monthly access to premium features"
-            }
-          ]
-        }
-      ]
-    }
   ]
 }
 ```
