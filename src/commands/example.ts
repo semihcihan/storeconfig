@@ -88,14 +88,6 @@ const subscriptionExample: SubscriptionExample[] = [
           price: "3.99",
           territory: "USA",
         },
-        {
-          price: "3.99",
-          territory: "CAN",
-        },
-        {
-          price: "3.99",
-          territory: "MEX",
-        },
       ],
     },
     localizations: [
@@ -114,7 +106,7 @@ const subscriptionExample: SubscriptionExample[] = [
       {
         type: "FREE_TRIAL",
         duration: "ONE_WEEK",
-        availableTerritories: ["USA", "CAN", "MEX"],
+        availableTerritories: "worldwide",
       },
     ],
   },
@@ -127,7 +119,7 @@ const subscriptionExample: SubscriptionExample[] = [
     reviewNote: "Yearly premium subscription with pay as you go",
     availability: {
       availableInNewTerritories: true,
-      availableTerritories: ["USA", "CAN", "MEX"],
+      availableTerritories: "worldwide",
     },
     prices: {
       baseTerritory: "USA",
@@ -136,26 +128,18 @@ const subscriptionExample: SubscriptionExample[] = [
           price: "20.99",
           territory: "USA",
         },
-        {
-          price: "20.99",
-          territory: "CAN",
-        },
-        {
-          price: "20.99",
-          territory: "MEX",
-        },
       ],
     },
     localizations: [
       {
         locale: "en-US",
-        name: "Monthly Premium",
-        description: "Monthly access to premium features",
+        name: "Yearly Premium",
+        description: "Yearly access to premium features",
       },
       {
         locale: "es-ES",
-        name: "Premium Mensual",
-        description: "Acceso mensual a funciones premium",
+        name: "Premium Anual",
+        description: "Acceso anual a funciones premium",
       },
     ],
     introductoryOffers: [
@@ -168,14 +152,6 @@ const subscriptionExample: SubscriptionExample[] = [
             {
               price: "10.99",
               territory: "USA",
-            },
-            {
-              price: "10.99",
-              territory: "CAN",
-            },
-            {
-              price: "10.99",
-              territory: "MEX",
             },
           ],
         },
