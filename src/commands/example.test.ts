@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger } from "@semihcihan/shared";
+import { logger, removeShortcuts } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 
 // Mock process.exit before importing the command
@@ -142,7 +142,9 @@ describe("example command", () => {
 
       const output = mockLogger.std.mock.calls[0][0];
       // Use real validation instead of mocked schema
-      expect(() => validateAppStoreModel(output, false, "fetch")).not.toThrow();
+      expect(() =>
+        validateAppStoreModel(removeShortcuts(output), false, "fetch")
+      ).not.toThrow();
     });
 
     it("should generate valid full app example that passes validation", async () => {
@@ -152,7 +154,9 @@ describe("example command", () => {
 
       const output = mockLogger.std.mock.calls[0][0];
       // Use real validation instead of mocked schema
-      expect(() => validateAppStoreModel(output, false, "fetch")).not.toThrow();
+      expect(() =>
+        validateAppStoreModel(removeShortcuts(output), false, "fetch")
+      ).not.toThrow();
     });
   });
 

@@ -81,20 +81,23 @@ const subscriptionExample: SubscriptionExample[] = [
       availableInNewTerritories: true,
       availableTerritories: ["USA", "CAN", "MEX"],
     },
-    prices: [
-      {
-        price: "3.99",
-        territory: "USA",
-      },
-      {
-        price: "3.99",
-        territory: "CAN",
-      },
-      {
-        price: "3.99",
-        territory: "MEX",
-      },
-    ],
+    prices: {
+      baseTerritory: "USA",
+      prices: [
+        {
+          price: "3.99",
+          territory: "USA",
+        },
+        {
+          price: "3.99",
+          territory: "CAN",
+        },
+        {
+          price: "3.99",
+          territory: "MEX",
+        },
+      ],
+    },
     localizations: [
       {
         locale: "en-US",
@@ -126,20 +129,23 @@ const subscriptionExample: SubscriptionExample[] = [
       availableInNewTerritories: true,
       availableTerritories: ["USA", "CAN", "MEX"],
     },
-    prices: [
-      {
-        price: "20.99",
-        territory: "USA",
-      },
-      {
-        price: "20.99",
-        territory: "CAN",
-      },
-      {
-        price: "20.99",
-        territory: "MEX",
-      },
-    ],
+    prices: {
+      baseTerritory: "USA",
+      prices: [
+        {
+          price: "20.99",
+          territory: "USA",
+        },
+        {
+          price: "20.99",
+          territory: "CAN",
+        },
+        {
+          price: "20.99",
+          territory: "MEX",
+        },
+      ],
+    },
     localizations: [
       {
         locale: "en-US",
@@ -156,20 +162,23 @@ const subscriptionExample: SubscriptionExample[] = [
       {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 1,
-        prices: [
-          {
-            price: "10.99",
-            territory: "USA",
-          },
-          {
-            price: "10.99",
-            territory: "CAN",
-          },
-          {
-            price: "10.99",
-            territory: "MEX",
-          },
-        ],
+        prices: {
+          baseTerritory: "USA",
+          prices: [
+            {
+              price: "10.99",
+              territory: "USA",
+            },
+            {
+              price: "10.99",
+              territory: "CAN",
+            },
+            {
+              price: "10.99",
+              territory: "MEX",
+            },
+          ],
+        },
         availableTerritories: "worldwide",
       },
     ],
