@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger } from "@semihcihan/shared";
+import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import type {
   AppStoreModel,
   SubscriptionSchema,
@@ -8,6 +8,8 @@ import type {
 } from "@semihcihan/shared";
 import { z } from "zod";
 import * as readline from "readline";
+import * as fs from "fs";
+import * as path from "path";
 
 // Type definitions for individual examples
 type SubscriptionExample = z.infer<typeof SubscriptionSchema>;
@@ -21,6 +23,18 @@ const exampleTypes = [
   { key: "subscription", name: "Subscription" },
   { key: "in-app-purchase", name: "In-App Purchase" },
 ];
+
+function createExampleFilename(filename: string): string {
+  const parsedPath = path.parse(filename);
+  const extension = parsedPath.ext;
+  const nameWithoutExt = parsedPath.name;
+
+  if (extension) {
+    return `${nameWithoutExt}_example${extension}`;
+  } else {
+    return `${filename}_example`;
+  }
+}
 
 async function selectType(): Promise<string> {
   const rl = readline.createInterface({
@@ -79,7 +93,7 @@ const subscriptionExample: SubscriptionExample[] = [
     reviewNote: "Monthly premium subscription with free trial",
     availability: {
       availableInNewTerritories: true,
-      availableTerritories: ["USA", "CAN", "MEX"],
+      availableTerritories: "worldwide",
     },
     prices: {
       baseTerritory: "USA",
@@ -302,9 +316,19 @@ const exampleCommand: CommandModule = {
       choices: ["minimal", "full", "subscription", "iap", "in-app-purchase"],
       type: "string",
     },
+    file: {
+      alias: "f",
+      describe: `Path to the output JSON file. Defaults to ${createExampleFilename(
+        DEFAULT_CONFIG_FILENAME
+      )} in current directory.`,
+      demandOption: false,
+      type: "string",
+    },
   },
   handler: async (argv) => {
     let type = argv.type as string;
+    const outputFile =
+      (argv.file as string) || createExampleFilename(DEFAULT_CONFIG_FILENAME);
 
     if (!type) {
       type = await selectType();
@@ -324,7 +348,13 @@ const exampleCommand: CommandModule = {
       process.exit(1);
     }
 
-    logger.std(example);
+    try {
+      fs.writeFileSync(outputFile, JSON.stringify(example, null, 2));
+      logger.info(`Successfully generated example and wrote to ${outputFile}`);
+    } catch (error) {
+      logger.error(`Failed to write example file`, error);
+      process.exit(1);
+    }
   },
 };
 

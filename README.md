@@ -155,30 +155,96 @@ storeconfig example --type iap
 
 ```json
 {
+  "schemaVersion": "1.0.0",
   "appId": "1234567890",
-  "name": "My Awesome App",
-  "bundleId": "com.example.myapp",
+  "versionString": "2.1.17",
+  "primaryLocale": "en-US",
+  "availableTerritories": "worldwide",
+  "localizations": [
+    {
+      "locale": "en-US",
+      "name": "My Awesome App",
+      "subtitle": "The best app ever",
+      "description": "The best app ever in the whole world",
+      "keywords": "best,app,ever",
+      "promotionalText": "The best app ever in the whole world",
+      "whatsNew": "Bug fixes and improvements"
+    }
+  ],
+  "pricing": {
+    "baseTerritory": "USA",
+    "prices": [
+      {
+        "price": "0",
+        "territory": "USA"
+      }
+    ]
+  },
   "inAppPurchases": [
     {
-      "productId": "com.example.premium",
-      "referenceName": "Premium Upgrade",
+      "productId": "com.mycompany.myapp.premium",
       "type": "NON_CONSUMABLE",
+      "referenceName": "Premium",
+      "familySharable": false,
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Premium Upgrade",
+          "description": "Unlock all premium features"
+        }
+      ],
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": "worldwide"
+      },
       "priceSchedule": {
         "baseTerritory": "USA",
         "prices": [
-          { "price": "9.99", "territory": "USA" },
-          { "price": "12.99", "territory": "CAN" }
+          {
+            "price": "49.99",
+            "territory": "USA"
+          }
         ]
       }
     }
   ],
-  "subscriptions": [
+  "subscriptionGroups": [
     {
-      "productId": "com.example.monthly",
-      "referenceName": "Monthly Premium",
-      "prices": [
-        { "price": "4.99", "territory": "USA" },
-        { "price": "5.99", "territory": "CAN" }
+      "referenceName": "Premium Subscriptions",
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Premium Subscriptions"
+        }
+      ],
+      "subscriptions": [
+        {
+          "productId": "com.mycompany.myapp.premium.monthly",
+          "referenceName": "Monthly Premium",
+          "groupLevel": 2,
+          "subscriptionPeriod": "ONE_MONTH",
+          "familySharable": false,
+          "availability": {
+            "availableInNewTerritories": true,
+            "availableTerritories": "worldwide"
+          },
+          "prices": {
+            "baseTerritory": "USA",
+            "prices": [
+              {
+                "price": "3.99",
+                "territory": "USA"
+              }
+            ]
+          },
+          "localizations": [
+            {
+              "locale": "en-US",
+              "name": "Monthly Premium",
+              "description": "Monthly access to premium features"
+            }
+          ]
+        }
       ]
     }
   ]
