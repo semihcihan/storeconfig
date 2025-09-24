@@ -158,19 +158,6 @@ storeconfig example --type iap
   "schemaVersion": "1.0.0",
   "appId": "1234567890",
   "versionString": "2.1.17",
-  "primaryLocale": "en-US",
-  "availableTerritories": "worldwide",
-  "localizations": [
-    {
-      "locale": "en-US",
-      "name": "My Awesome App",
-      "subtitle": "The best app ever",
-      "description": "The best app ever in the whole world",
-      "keywords": "best,app,ever",
-      "promotionalText": "The best app ever in the whole world",
-      "whatsNew": "Bug fixes and improvements"
-    }
-  ],
   "pricing": {
     "baseTerritory": "USA",
     "prices": [
@@ -180,23 +167,13 @@ storeconfig example --type iap
       }
     ]
   },
+  "availableTerritories": "worldwide",
   "inAppPurchases": [
     {
       "productId": "com.mycompany.myapp.premium",
       "type": "NON_CONSUMABLE",
       "referenceName": "Premium",
       "familySharable": false,
-      "localizations": [
-        {
-          "locale": "en-US",
-          "name": "Premium Upgrade",
-          "description": "Unlock all premium features"
-        }
-      ],
-      "availability": {
-        "availableInNewTerritories": true,
-        "availableTerritories": "worldwide"
-      },
       "priceSchedule": {
         "baseTerritory": "USA",
         "prices": [
@@ -205,7 +182,30 @@ storeconfig example --type iap
             "territory": "USA"
           }
         ]
-      }
+      },
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": "worldwide"
+      },
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Premium Upgrade",
+          "description": "Unlock all premium features"
+        }
+      ]
+    }
+  ],
+  "primaryLocale": "en-US",
+  "localizations": [
+    {
+      "locale": "en-US",
+      "name": "My Awesome App",
+      "subtitle": "The best app ever",
+      "description": "The best app ever in the whole world",
+      "keywords": "best,app,ever",
+      "promotionalText": "The best app ever in the whole world",
+      "whatsNew": "Bug fixes and improvements"
     }
   ]
 }

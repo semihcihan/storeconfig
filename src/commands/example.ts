@@ -91,10 +91,6 @@ const subscriptionExample: SubscriptionExample[] = [
     subscriptionPeriod: "ONE_MONTH",
     familySharable: false,
     reviewNote: "Monthly premium subscription with free trial",
-    availability: {
-      availableInNewTerritories: true,
-      availableTerritories: "worldwide",
-    },
     prices: {
       baseTerritory: "USA",
       prices: [
@@ -103,6 +99,17 @@ const subscriptionExample: SubscriptionExample[] = [
           territory: "USA",
         },
       ],
+    },
+    introductoryOffers: [
+      {
+        type: "FREE_TRIAL",
+        duration: "ONE_WEEK",
+        availableTerritories: "worldwide",
+      },
+    ],
+    availability: {
+      availableInNewTerritories: true,
+      availableTerritories: "worldwide",
     },
     localizations: [
       {
@@ -116,13 +123,6 @@ const subscriptionExample: SubscriptionExample[] = [
         description: "Acceso mensual a funciones premium",
       },
     ],
-    introductoryOffers: [
-      {
-        type: "FREE_TRIAL",
-        duration: "ONE_WEEK",
-        availableTerritories: "worldwide",
-      },
-    ],
   },
   {
     productId: "com.mycompany.myapp.premium.yearly",
@@ -131,10 +131,6 @@ const subscriptionExample: SubscriptionExample[] = [
     subscriptionPeriod: "ONE_YEAR",
     familySharable: false,
     reviewNote: "Yearly premium subscription with pay as you go",
-    availability: {
-      availableInNewTerritories: true,
-      availableTerritories: "worldwide",
-    },
     prices: {
       baseTerritory: "USA",
       prices: [
@@ -144,18 +140,6 @@ const subscriptionExample: SubscriptionExample[] = [
         },
       ],
     },
-    localizations: [
-      {
-        locale: "en-US",
-        name: "Yearly Premium",
-        description: "Yearly access to premium features",
-      },
-      {
-        locale: "es-ES",
-        name: "Premium Anual",
-        description: "Acceso anual a funciones premium",
-      },
-    ],
     introductoryOffers: [
       {
         type: "PAY_AS_YOU_GO",
@@ -170,6 +154,22 @@ const subscriptionExample: SubscriptionExample[] = [
           ],
         },
         availableTerritories: "worldwide",
+      },
+    ],
+    availability: {
+      availableInNewTerritories: true,
+      availableTerritories: "worldwide",
+    },
+    localizations: [
+      {
+        locale: "en-US",
+        name: "Yearly Premium",
+        description: "Yearly access to premium features",
+      },
+      {
+        locale: "es-ES",
+        name: "Premium Anual",
+        description: "Acceso anual a funciones premium",
       },
     ],
   },
@@ -199,6 +199,19 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
     referenceName: "Premium",
     familySharable: false,
     reviewNote: "Premium features unlock",
+    priceSchedule: {
+      baseTerritory: "USA",
+      prices: [
+        {
+          price: "49.99",
+          territory: "USA",
+        },
+      ],
+    },
+    availability: {
+      availableInNewTerritories: true,
+      availableTerritories: "worldwide",
+    },
     localizations: [
       {
         locale: "en-US",
@@ -211,19 +224,6 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
         description: "Acceso a todas las funciones premium",
       },
     ],
-    availability: {
-      availableInNewTerritories: true,
-      availableTerritories: "worldwide",
-    },
-    priceSchedule: {
-      baseTerritory: "USA",
-      prices: [
-        {
-          price: "49.99",
-          territory: "USA",
-        },
-      ],
-    },
   },
   {
     productId: "com.mycompany.myapp.consumable",
@@ -231,17 +231,6 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
     referenceName: "Coins",
     familySharable: false,
     reviewNote: "Coins",
-    localizations: [
-      {
-        locale: "en-US",
-        name: "Coins",
-        description: "Coins to spend in the app",
-      },
-    ],
-    availability: {
-      availableInNewTerritories: true,
-      availableTerritories: "worldwide",
-    },
     priceSchedule: {
       baseTerritory: "USA",
       prices: [
@@ -251,6 +240,17 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
         },
       ],
     },
+    availability: {
+      availableInNewTerritories: true,
+      availableTerritories: "worldwide",
+    },
+    localizations: [
+      {
+        locale: "en-US",
+        name: "Coins",
+        description: "Coins to spend in the app",
+      },
+    ],
   },
 ];
 
@@ -259,9 +259,19 @@ const fullAppExample: AppStoreModel = {
   schemaVersion: "1.0.0",
   appId: "1234567890",
   versionString: "2.1.17",
-  copyright: "© 2025 My Company",
-  primaryLocale: "en-US",
+  pricing: {
+    baseTerritory: "USA",
+    prices: [
+      {
+        price: "0.99",
+        territory: "USA",
+      },
+    ],
+  },
   availableTerritories: "worldwide",
+  inAppPurchases: inAppPurchaseExample,
+  subscriptionGroups: [subscriptionGroupExample],
+  primaryLocale: "en-US",
   localizations: [
     {
       locale: "en-US",
@@ -277,17 +287,7 @@ const fullAppExample: AppStoreModel = {
       whatsNew: "Bug fixes and improvements",
     },
   ],
-  pricing: {
-    baseTerritory: "USA",
-    prices: [
-      {
-        price: "0.99",
-        territory: "USA",
-      },
-    ],
-  },
-  inAppPurchases: inAppPurchaseExample,
-  subscriptionGroups: [subscriptionGroupExample],
+  copyright: "© 2025 My Company",
 };
 
 // Minimal app example
