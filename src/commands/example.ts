@@ -91,7 +91,7 @@ const subscriptionExample: SubscriptionExample[] = [
     subscriptionPeriod: "ONE_MONTH",
     familySharable: false,
     reviewNote: "Monthly premium subscription with free trial",
-    prices: {
+    pricing: {
       baseTerritory: "USA",
       prices: [
         {
@@ -131,7 +131,7 @@ const subscriptionExample: SubscriptionExample[] = [
     subscriptionPeriod: "ONE_YEAR",
     familySharable: false,
     reviewNote: "Yearly premium subscription with pay as you go",
-    prices: {
+    pricing: {
       baseTerritory: "USA",
       prices: [
         {
@@ -144,7 +144,7 @@ const subscriptionExample: SubscriptionExample[] = [
       {
         type: "PAY_AS_YOU_GO",
         numberOfPeriods: 1,
-        prices: {
+        pricing: {
           baseTerritory: "USA",
           prices: [
             {
@@ -199,7 +199,7 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
     referenceName: "Premium",
     familySharable: false,
     reviewNote: "Premium features unlock",
-    priceSchedule: {
+    pricing: {
       baseTerritory: "USA",
       prices: [
         {
@@ -231,7 +231,7 @@ const inAppPurchaseExample: InAppPurchaseExample[] = [
     referenceName: "Coins",
     familySharable: false,
     reviewNote: "Coins",
-    priceSchedule: {
+    pricing: {
       baseTerritory: "USA",
       prices: [
         {

@@ -174,7 +174,7 @@ storeconfig example --type iap
       "type": "NON_CONSUMABLE",
       "referenceName": "Premium",
       "familySharable": false,
-      "priceSchedule": {
+      "pricing": {
         "baseTerritory": "USA",
         "prices": [
           {
