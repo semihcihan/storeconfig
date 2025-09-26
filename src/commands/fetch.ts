@@ -3,6 +3,7 @@ import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
 import * as readline from "readline";
+import { ContextualError } from "@semihcihan/shared";
 
 interface App {
   id: string;
@@ -10,18 +11,13 @@ interface App {
 }
 
 async function fetchApps(apiBaseUrl: string): Promise<App[]> {
-  try {
-    const response = await axios.get(`${apiBaseUrl}/api/v1/fetch-apps`);
+  const response = await axios.get(`${apiBaseUrl}/api/v1/fetch-apps`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to fetch apps");
-    }
-
-    return response.data.data;
-  } catch (error) {
-    logger.error("Failed to fetch apps list", error);
-    throw error;
+  if (!response.data.success) {
+    throw new ContextualError("Failed to fetch apps", response.data.error);
   }
+
+  return response.data.data;
 }
 
 async function selectApp(apps: App[]): Promise<string> {
@@ -113,7 +109,7 @@ const fetchCommand: CommandModule = {
       });
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "API request failed");
+        throw response.data.error;
       }
 
       const appStoreState = response.data.data;

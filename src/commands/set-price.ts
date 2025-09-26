@@ -1,6 +1,7 @@
 import type { CommandModule } from "yargs";
 import * as fs from "fs";
 import {
+  ContextualError,
   DEFAULT_CONFIG_FILENAME,
   logger,
   validateFileExists,
@@ -32,7 +33,10 @@ async function fetchTerritoryPricePointsForSelectedItem(
   });
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch price points");
+    throw new ContextualError(
+      "Failed to fetch price points",
+      response.data.error
+    );
   }
 
   return response.data.data.pricePoints;
@@ -49,7 +53,7 @@ async function applyPricing(
   });
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to apply pricing");
+    throw new ContextualError("Failed to apply pricing", response.data.error);
   }
 
   return response.data.data.updatedState;

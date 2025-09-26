@@ -47,7 +47,7 @@ const comparePriceCommand: CommandModule = {
       });
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "API request failed");
+        throw response.data.error;
       }
 
       const analysis = response.data.data;

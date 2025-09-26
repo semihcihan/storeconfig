@@ -3,6 +3,7 @@ import {
   logger,
   DEFAULT_CONFIG_FILENAME,
   validateFileExists,
+  ContextualError,
 } from "@semihcihan/shared";
 import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "@semihcihan/shared";
@@ -78,8 +79,9 @@ const command: CommandModule = {
       });
 
       if (!diffResponse.data.success) {
-        throw new Error(
-          diffResponse.data.error || "Failed to generate diff plan"
+        throw new ContextualError(
+          "Failed to generate diff plan",
+          diffResponse.data.error
         );
       }
 
@@ -110,7 +112,7 @@ const command: CommandModule = {
       });
 
       if (!applyResponse.data.success) {
-        throw new Error(applyResponse.data.error || "Failed to apply changes");
+        throw new Error(applyResponse.data.error);
       }
 
       logger.info("Changes applied successfully");

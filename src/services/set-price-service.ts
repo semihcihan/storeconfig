@@ -24,37 +24,31 @@ export async function startInteractivePricing(
 ): Promise<PricingRequest> {
   const { appStoreState, fetchTerritoryPricePointsForSelectedItem } = options;
 
-  try {
-    const selectedItem = await selectPricingItem(appStoreState);
+  const selectedItem = await selectPricingItem(appStoreState);
 
-    logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
+  logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
 
-    const basePricePoint = await promptForBasePricePoint(
-      selectedItem,
-      appStoreState,
-      fetchTerritoryPricePointsForSelectedItem
-    );
-    const pricingStrategy = await promptForPricingStrategy();
-    const minimumPrice = await promptForMinimumPrice(
-      pricingStrategy,
-      basePricePoint.price
-    );
+  const basePricePoint = await promptForBasePricePoint(
+    selectedItem,
+    appStoreState,
+    fetchTerritoryPricePointsForSelectedItem
+  );
+  const pricingStrategy = await promptForPricingStrategy();
+  const minimumPrice = await promptForMinimumPrice(
+    pricingStrategy,
+    basePricePoint.price
+  );
 
-    return {
-      appId: appStoreState.appId,
-      selectedItem: {
-        type: selectedItem.type,
-        id: selectedItem.id,
-        name: selectedItem.name,
-        offerType: selectedItem.offerType,
-      },
-      basePricePoint,
-      pricingStrategy,
-      minimumPrice,
-    };
-  } catch (error) {
-    logger.error(`Interactive pricing failed`, error);
-
-    throw error;
-  }
+  return {
+    appId: appStoreState.appId,
+    selectedItem: {
+      type: selectedItem.type,
+      id: selectedItem.id,
+      name: selectedItem.name,
+      offerType: selectedItem.offerType,
+    },
+    basePricePoint,
+    pricingStrategy,
+    minimumPrice,
+  };
 }

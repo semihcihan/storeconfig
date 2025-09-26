@@ -16,6 +16,9 @@ import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
 import authCmd from "./commands/auth";
 
+logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
+logger.setLevel("info");
+
 yargs(hideBin(process.argv))
   .option("log-level", {
     alias: "l",
@@ -24,12 +27,7 @@ yargs(hideBin(process.argv))
     choices: LOG_LEVELS,
     default: process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL,
   })
-  .middleware((argv) => {
-    // Set the log level from command line argument
-    if (argv.logLevel) {
-      logger.setLevel(argv.logLevel as any);
-    }
-  })
+  .middleware((argv) => {})
   .command(validateFormatCmd)
   .command(applyCmd)
   .command(fetchCmd)
