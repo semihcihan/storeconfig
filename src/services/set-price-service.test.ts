@@ -216,10 +216,8 @@ describe("set-price-service", () => {
         })
       ).rejects.toThrow("Test error");
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Interactive pricing failed",
-        error
-      );
+      // Error logging was removed from the function, so no error logging is expected
+      expect(mockLogger.error).not.toHaveBeenCalled();
     });
 
     it("should log selected item", async () => {

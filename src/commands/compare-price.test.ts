@@ -321,7 +321,7 @@ describe("compare-price command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Price comparison failed",
-        expect.any(Error)
+        "API error"
       );
     });
 

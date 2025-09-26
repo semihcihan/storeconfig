@@ -205,7 +205,7 @@ describe("fetch command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Fetch failed",
-        expect.any(Error)
+        "App not found"
       );
     });
 
@@ -385,7 +385,7 @@ describe("fetch command", () => {
       ).rejects.toThrow("process.exit called");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to fetch apps list",
+        "Fetch failed",
         expect.any(Error)
       );
     });
@@ -404,7 +404,7 @@ describe("fetch command", () => {
       ).rejects.toThrow("process.exit called");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to fetch apps list",
+        "Fetch failed",
         expect.any(Error)
       );
     });
