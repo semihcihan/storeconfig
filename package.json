@@ -4,7 +4,7 @@
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
-    "app-store-sync": "dist/cli.js"
+    "storeconfig": "dist/cli.js"
   },
   "scripts": {
     "prebuild": "npm run update-readme",
