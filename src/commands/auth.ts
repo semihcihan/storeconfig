@@ -2,6 +2,7 @@ import { CommandModule } from "yargs";
 import { logger } from "@semihcihan/shared";
 import { keyService } from "../services/key-service";
 import { promptForSecretKey } from "../services/secret-key-prompt";
+import { appleAuthService } from "../services/apple-auth-service";
 
 // Configure subcommand
 const configureCommand: CommandModule = {
@@ -52,19 +53,20 @@ const appleCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
-    const issuerId = argv["issuer-id"] as string;
-    const keyId = argv["key-id"] as string;
-    const keyPath = argv["key-path"] as string;
+    try {
+      const issuerId = argv["issuer-id"] as string;
+      const keyId = argv["key-id"] as string;
+      const keyPath = argv["key-path"] as string;
 
-    logger.info("Apple authentication command - not implemented yet");
-    logger.info(`Issuer ID: ${issuerId}`);
-    logger.info(`Key ID: ${keyId}`);
-    logger.info(`Key Path: ${keyPath}`);
-
-    // TODO: Implement actual Apple auth logic
-    // - Validate key file exists and is readable
-    // - Send credentials to backend for association with stored Secret Key
-    // - Apple credentials are not stored locally, only sent to backend
+      await appleAuthService.configureAppleCredentials(
+        issuerId,
+        keyId,
+        keyPath
+      );
+    } catch (error) {
+      logger.error("Failed to configure Apple credentials", error);
+      process.exit(1);
+    }
   },
 };
 
@@ -88,6 +90,7 @@ const deleteUserCommand: CommandModule = {
 
       // TODO: Clear Apple credentials from backend
       // TODO: Delete user from backend
+      // Note: These endpoints need to be implemented in the serverless backend
 
       logger.info("✅ User authentication data cleared!");
     } catch (error) {
