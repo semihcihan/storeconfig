@@ -8,7 +8,6 @@ import {
 } from "@jest/globals";
 import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
-import axios from "axios";
 import inquirer from "inquirer";
 
 // Mock process.exit before importing the command
@@ -25,14 +24,26 @@ jest.mock("@semihcihan/shared", () => ({
     error: jest.fn(),
   },
 }));
-jest.mock("axios");
+jest.mock("../services/api-client", () => ({
+  apiClient: {
+    post: jest.fn(),
+    get: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+  isAuthenticated: jest.fn(),
+  requireAuth: jest.fn(),
+}));
 jest.mock("fs");
 jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
-const mockAxios = jest.mocked(axios);
 const mockFs = jest.mocked(fs);
 const mockInquirer = jest.mocked(inquirer);
+
+// Import the mocked apiClient
+import { apiClient } from "../services/api-client";
+const mockApiClient = jest.mocked(apiClient);
 
 // Import the command after mocking
 import fetchCommand from "./fetch";
@@ -109,7 +120,7 @@ describe("fetch command", () => {
 
   describe("command execution with app ID provided", () => {
     it("should execute successfully with valid app ID", async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -121,10 +132,9 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Fetching details for app ID: 123456789 and writing to output.json"
       );
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch",
-        { appId: "123456789" }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+        appId: "123456789",
+      });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         "output.json",
         JSON.stringify(mockAppStoreState, null, 2)
@@ -139,7 +149,7 @@ describe("fetch command", () => {
         id: "123456789",
       };
 
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -151,10 +161,9 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         `Fetching details for app ID: 123456789 and writing to ${DEFAULT_CONFIG_FILENAME}`
       );
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch",
-        { appId: "123456789" }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+        appId: "123456789",
+      });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         DEFAULT_CONFIG_FILENAME,
         JSON.stringify(mockAppStoreState, null, 2)
@@ -167,7 +176,7 @@ describe("fetch command", () => {
     it("should use custom API base URL from environment", async () => {
       process.env.API_BASE_URL = "https://api.example.com";
 
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -176,19 +185,13 @@ describe("fetch command", () => {
 
       await fetchCommand.handler!(mockArgv as any);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "https://api.example.com/api/v1/fetch",
-        { appId: "123456789" }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+        appId: "123456789",
+      });
     });
 
     it("should handle API error response", async () => {
-      mockAxios.post.mockResolvedValueOnce({
-        data: {
-          success: false,
-          error: "App not found",
-        },
-      });
+      mockApiClient.post.mockRejectedValueOnce(new Error("API error"));
 
       await expect(fetchCommand.handler!(mockArgv as any)).rejects.toThrow(
         "process.exit called"
@@ -196,12 +199,12 @@ describe("fetch command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Fetch failed",
-        "App not found"
+        expect.any(Error)
       );
     });
 
     it("should handle API request failure", async () => {
-      mockAxios.post.mockRejectedValueOnce(new Error("Network error"));
+      mockApiClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(fetchCommand.handler!(mockArgv as any)).rejects.toThrow(
         "process.exit called"
@@ -223,7 +226,7 @@ describe("fetch command", () => {
 
     it("should fetch apps list and let user select when no app ID provided", async () => {
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -236,7 +239,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -248,21 +251,18 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "No app ID provided. Fetching available apps..."
       );
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch-apps"
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith("/api/v1/fetch-apps");
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
       );
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch",
-        { appId: "123456789" }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+        appId: "123456789",
+      });
     });
 
     it("should handle invalid user selection and retry", async () => {
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -275,7 +275,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -291,7 +291,7 @@ describe("fetch command", () => {
 
     it("should handle out of range user selection and retry", async () => {
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -304,7 +304,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -320,7 +320,7 @@ describe("fetch command", () => {
 
     it("should handle empty apps list", async () => {
       // Mock fetch apps API call with empty result
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: [],
@@ -338,7 +338,7 @@ describe("fetch command", () => {
 
     it("should handle fetch apps API error", async () => {
       // Mock fetch apps API call failure
-      mockAxios.get.mockRejectedValueOnce(new Error("API error"));
+      mockApiClient.get.mockRejectedValueOnce(new Error("API error"));
 
       await expect(
         fetchCommand.handler!(mockArgvWithoutId as any)
@@ -352,7 +352,7 @@ describe("fetch command", () => {
 
     it("should handle fetch apps API error response", async () => {
       // Mock fetch apps API call with error response
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: false,
           error: "Authentication failed",
@@ -371,7 +371,7 @@ describe("fetch command", () => {
 
     it("should use default filename when no file parameter provided in interactive mode", async () => {
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -384,7 +384,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -396,16 +396,13 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "No app ID provided. Fetching available apps..."
       );
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch-apps"
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith("/api/v1/fetch-apps");
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
       );
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/fetch",
-        { appId: "123456789" }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+        appId: "123456789",
+      });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         DEFAULT_CONFIG_FILENAME,
         JSON.stringify(mockAppStoreState, null, 2)
@@ -418,7 +415,7 @@ describe("fetch command", () => {
 
   describe("file writing", () => {
     it("should write app store state to file with proper formatting", async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -434,7 +431,7 @@ describe("fetch command", () => {
     });
 
     it("should handle file write errors", async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -458,7 +455,7 @@ describe("fetch command", () => {
 
   describe("logging", () => {
     it("should log when starting fetch with app ID", async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -474,7 +471,7 @@ describe("fetch command", () => {
 
     it("should log when starting interactive selection", async () => {
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -487,7 +484,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -502,7 +499,7 @@ describe("fetch command", () => {
     });
 
     it("should log success message after completion", async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -525,7 +522,7 @@ describe("fetch command", () => {
       };
 
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -538,7 +535,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,
@@ -559,7 +556,7 @@ describe("fetch command", () => {
       };
 
       // Mock fetch apps API call
-      mockAxios.get.mockResolvedValueOnce({
+      mockApiClient.get.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockApps,
@@ -572,7 +569,7 @@ describe("fetch command", () => {
       });
 
       // Mock fetch app details API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: mockAppStoreState,

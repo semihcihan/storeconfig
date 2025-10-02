@@ -10,7 +10,7 @@ import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 import { removeShortcuts } from "@semihcihan/shared";
 import inquirer from "inquirer";
-import axios from "axios";
+import { apiClient } from "../services/api-client";
 
 const confirmChanges = async (): Promise<boolean> => {
   logger.warn(`### CRITICAL WARNING ###
@@ -51,7 +51,6 @@ const command: CommandModule = {
   },
   handler: async (argv) => {
     const preview = argv.preview as boolean;
-    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     const desiredStateFile = validateFileExists(argv.file as string, {
       fileDescription: "desired state JSON file",
@@ -67,16 +66,9 @@ const command: CommandModule = {
       );
 
       // Generate diff plan using the API (which will fetch current state internally)
-      const diffResponse = await axios.post(`${apiBaseUrl}/api/v1/diff`, {
+      const diffResponse = await apiClient.post("/api/v1/diff", {
         desiredState: desiredState,
       });
-
-      if (!diffResponse.data.success) {
-        throw new ContextualError(
-          "Failed to generate diff plan",
-          diffResponse.data.error
-        );
-      }
 
       const { plan, currentState } = diffResponse.data.data;
       if (plan.length === 0) {
@@ -98,15 +90,11 @@ const command: CommandModule = {
       }
 
       // Apply the plan using the API
-      const applyResponse = await axios.post(`${apiBaseUrl}/api/v1/apply`, {
+      const applyResponse = await apiClient.post("/api/v1/apply", {
         plan: plan,
         currentState: currentState,
         desiredState: desiredState,
       });
-
-      if (!applyResponse.data.success) {
-        throw new Error(applyResponse.data.error);
-      }
 
       logger.info("Changes applied successfully");
     } catch (error) {

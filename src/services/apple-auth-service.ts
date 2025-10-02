@@ -1,18 +1,14 @@
 import fs from "fs";
-import axios from "axios";
 import {
   logger,
   validateFileExists,
   ContextualError,
 } from "@semihcihan/shared";
-import { keyService } from "./key-service";
+import { apiClient } from "./api-client";
 
 export class AppleAuthService {
-  private apiBaseUrl: string;
-
-  constructor(apiBaseUrl?: string) {
-    this.apiBaseUrl =
-      apiBaseUrl || process.env.API_BASE_URL || "http://localhost:3000";
+  constructor() {
+    // No need to store API base URL as it's handled by apiClient
   }
 
   /**
@@ -23,14 +19,6 @@ export class AppleAuthService {
     keyId: string,
     keyPath: string
   ): Promise<void> {
-    // Check if secret key exists
-    if (!keyService.hasKey()) {
-      throw new ContextualError(
-        "No secret key found",
-        "Please run 'auth configure' first to set up your secret key"
-      );
-    }
-
     // Validate key file exists and is readable
     validateFileExists(keyPath, {
       fileDescription: "Apple private key (.p8 file)",
@@ -44,11 +32,8 @@ export class AppleAuthService {
 
     logger.info("Sending Apple credentials to backend...");
 
-    // Get the secret key for authentication
-    const secretKey = this.getSecretKey();
-
     // Send credentials to backend
-    await this.sendCredentialsToBackend(issuerId, keyId, privateKey, secretKey);
+    await this.sendCredentialsToBackend(issuerId, keyId, privateKey);
 
     logger.info("✅ Apple credentials stored successfully!");
   }
@@ -83,69 +68,22 @@ export class AppleAuthService {
   }
 
   /**
-   * Get the stored secret key for authentication
-   */
-  private getSecretKey(): string {
-    const secretKey = keyService.loadKey();
-    if (!secretKey) {
-      throw new ContextualError(
-        "Failed to load secret key",
-        "Secret key file exists but could not be read"
-      );
-    }
-    return secretKey;
-  }
-
-  /**
    * Send Apple credentials to the backend API
    */
   private async sendCredentialsToBackend(
     issuerId: string,
     keyId: string,
-    privateKey: string,
-    secretKey: string
+    privateKey: string
   ): Promise<void> {
-    try {
-      const response = await axios.post(
-        `${this.apiBaseUrl}/api/v1/auth`,
-        {
-          keyId,
-          issuerId,
-          privateKey,
-        },
-        {
-          headers: {
-            "X-StoreConfig-ApiKey": secretKey,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+    const response = await apiClient.post("/api/v1/auth", {
+      keyId,
+      issuerId,
+      privateKey,
+    });
 
-      if (!response.data.success) {
-        throw new ContextualError(
-          "Failed to store Apple credentials",
-          response.data.error
-        );
-      }
-
-      // Log the success message from the backend
-      if (response.data.message) {
-        logger.info(response.data.message);
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.data?.error) {
-          throw new ContextualError(
-            "API request failed",
-            error.response.data.error
-          );
-        }
-        throw new ContextualError(
-          "API request failed",
-          `HTTP ${error.response?.status}: ${error.message}`
-        );
-      }
-      throw new ContextualError("Failed to send credentials to backend", error);
+    // Log the success message from the backend
+    if (response.data.message) {
+      logger.info(response.data.message);
     }
   }
 }

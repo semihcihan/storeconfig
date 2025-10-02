@@ -37,7 +37,16 @@ jest.mock("@semihcihan/shared", () => ({
 jest.mock("../services/set-price-service", () => ({
   startInteractivePricing: jest.fn(),
 }));
-jest.mock("axios");
+jest.mock("../services/api-client", () => ({
+  apiClient: {
+    post: jest.fn(),
+    get: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+  isAuthenticated: jest.fn(),
+  requireAuth: jest.fn(),
+}));
 jest.mock("fs");
 
 const mockLogger = jest.mocked(logger);
@@ -45,6 +54,10 @@ const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateFileExists = jest.mocked(validateFileExists);
 const mockFs = jest.mocked(fs);
+
+// Import the mocked apiClient
+import { apiClient } from "../services/api-client";
+const mockApiClient = jest.mocked(apiClient);
 
 // Import the command after mocking
 import setPriceCommand from "./set-price";
@@ -54,7 +67,6 @@ import axios from "axios";
 const mockStartInteractivePricing = jest.mocked(startInteractivePricing);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockUseShortcuts = jest.mocked(useShortcuts);
-const mockAxios = jest.mocked(axios);
 
 describe("set-price command", () => {
   const mockArgv = {
@@ -131,7 +143,7 @@ describe("set-price command", () => {
       mockValidateAppStoreModel.mockReturnValue(mockDataWithoutShortcuts);
 
       // Mock axios response - only apply pricing is called
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -153,7 +165,7 @@ describe("set-price command", () => {
         appStoreState: mockDataWithoutShortcuts,
         fetchTerritoryPricePointsForSelectedItem: expect.any(Function),
       });
-      expect(mockAxios.post).toHaveBeenCalled(); // API call for apply pricing
+      expect(mockApiClient.post).toHaveBeenCalled(); // API call for apply pricing
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
@@ -181,7 +193,7 @@ describe("set-price command", () => {
       mockValidateAppStoreModel.mockReturnValue(mockData);
 
       // Mock axios response - only apply pricing is called
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -242,7 +254,7 @@ describe("set-price command", () => {
       mockUseShortcuts.mockReturnValue(mockFinalStateWithShortcuts);
 
       // Mock axios response - only apply pricing is called
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -283,7 +295,7 @@ describe("set-price command", () => {
       mockUseShortcuts.mockReturnValue(mockData); // No change
 
       // Mock axios response - only apply pricing is called
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {

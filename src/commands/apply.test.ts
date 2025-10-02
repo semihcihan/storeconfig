@@ -14,7 +14,6 @@ import {
   removeShortcuts,
   validateFileExists,
 } from "@semihcihan/shared";
-import axios from "axios";
 import inquirer from "inquirer";
 
 // Mock process.exit before importing the command
@@ -37,7 +36,16 @@ jest.mock("@semihcihan/shared", () => ({
   validateFileExists: jest.fn(),
 }));
 jest.mock("../services/plan-service");
-jest.mock("axios");
+jest.mock("../services/api-client", () => ({
+  apiClient: {
+    post: jest.fn(),
+    get: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+  isAuthenticated: jest.fn(),
+  requireAuth: jest.fn(),
+}));
 jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
@@ -46,8 +54,11 @@ const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockValidateFileExists = jest.mocked(validateFileExists);
-const mockAxios = jest.mocked(axios);
 const mockInquirer = jest.mocked(inquirer);
+
+// Import the mocked apiClient
+import { apiClient } from "../services/api-client";
+const mockApiClient = jest.mocked(apiClient);
 
 // Import the command after mocking
 import applyCommand from "./apply";
@@ -75,8 +86,8 @@ describe("apply command", () => {
     // Mock inquirer to return true by default
     mockInquirer.prompt.mockResolvedValue({ confirmed: true });
 
-    // Mock axios responses
-    mockAxios.post.mockResolvedValue({
+    // Mock apiClient responses
+    mockApiClient.post.mockResolvedValue({
       data: {
         success: true,
         data: {
@@ -135,7 +146,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -146,7 +157,7 @@ describe("apply command", () => {
       });
 
       // Mock apply API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
         },
@@ -170,7 +181,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -181,7 +192,7 @@ describe("apply command", () => {
       });
 
       // Mock apply API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
         },
@@ -196,7 +207,7 @@ describe("apply command", () => {
         "apply"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockAxios.post).toHaveBeenCalledTimes(2); // diff + apply calls
+      expect(mockApiClient.post).toHaveBeenCalledTimes(2); // diff + apply calls
     });
 
     it("should handle no changes scenario", async () => {
@@ -207,7 +218,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call with empty plan
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -223,7 +234,7 @@ describe("apply command", () => {
         "No changes to apply. Exiting..."
       );
       expect(mockShowPlan).not.toHaveBeenCalled();
-      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
     it("should handle preview mode", async () => {
@@ -238,7 +249,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -254,7 +265,7 @@ describe("apply command", () => {
         "Preview mode - no changes will be applied"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
     it("should handle validation errors and exit", async () => {
@@ -275,7 +286,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call failure
-      mockAxios.post.mockRejectedValueOnce(new Error("API failed"));
+      mockApiClient.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
         "process.exit called"
@@ -301,7 +312,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {
@@ -316,7 +327,7 @@ describe("apply command", () => {
       expect(mockLogger.warn).toHaveBeenCalledWith(
         "Operation cancelled by user"
       );
-      expect(mockAxios.post).toHaveBeenCalledTimes(1); // only diff call
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
   });
 
@@ -329,7 +340,7 @@ describe("apply command", () => {
       mockRemoveShortcuts.mockReturnValue(mockData);
 
       // Mock diff API call
-      mockAxios.post.mockResolvedValueOnce({
+      mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
           data: {

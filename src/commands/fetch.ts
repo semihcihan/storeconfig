@@ -1,22 +1,16 @@
 import type { CommandModule } from "yargs";
 import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
-import axios from "axios";
 import inquirer from "inquirer";
-import { ContextualError } from "@semihcihan/shared";
+import { apiClient } from "../services/api-client";
 
 interface App {
   id: string;
   name: string;
 }
 
-async function fetchApps(apiBaseUrl: string): Promise<App[]> {
-  const response = await axios.get(`${apiBaseUrl}/api/v1/fetch-apps`);
-
-  if (!response.data.success) {
-    throw new ContextualError("Failed to fetch apps", response.data.error);
-  }
-
+async function fetchApps(): Promise<App[]> {
+  const response = await apiClient.get("/api/v1/fetch-apps");
   return response.data.data;
 }
 
@@ -59,13 +53,12 @@ const fetchCommand: CommandModule = {
   handler: async (argv) => {
     let appId = argv.id as string;
     const outputFile = (argv.file as string) || DEFAULT_CONFIG_FILENAME;
-    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     try {
       // If no app ID provided, fetch apps list and let user select
       if (!appId) {
         logger.info("No app ID provided. Fetching available apps...");
-        const apps = await fetchApps(apiBaseUrl);
+        const apps = await fetchApps();
 
         if (apps.length === 0) {
           logger.error("No apps found in your App Store Connect account");
@@ -79,14 +72,10 @@ const fetchCommand: CommandModule = {
         `Fetching details for app ID: ${appId} and writing to ${outputFile}`
       );
 
-      // Call the HTTP API instead of the internal service
-      const response = await axios.post(`${apiBaseUrl}/api/v1/fetch`, {
+      // Call the HTTP API using the api client
+      const response = await apiClient.post("/api/v1/fetch", {
         appId: appId,
       });
-
-      if (!response.data.success) {
-        throw response.data.error;
-      }
 
       const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));

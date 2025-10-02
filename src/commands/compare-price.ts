@@ -7,8 +7,8 @@ import {
   validateFileExists,
   DEFAULT_CONFIG_FILENAME,
 } from "@semihcihan/shared";
-import axios from "axios";
 import { exportAnalysis } from "../services/compare-price-service";
+import { apiClient } from "../services/api-client";
 
 const comparePriceCommand: CommandModule = {
   command: "compare-price",
@@ -33,7 +33,6 @@ const comparePriceCommand: CommandModule = {
       fileDescription: "input JSON file with app store data",
     });
     const outputFile = (argv.output as string) || "compare-price.csv";
-    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
 
     try {
       const appStoreData = validateAppStoreModel(
@@ -41,14 +40,10 @@ const comparePriceCommand: CommandModule = {
         false
       );
 
-      // Call the HTTP API instead of the internal service
-      const response = await axios.post(`${apiBaseUrl}/api/v1/compare-price`, {
+      // Call the HTTP API using the api client
+      const response = await apiClient.post("/api/v1/compare-price", {
         appStoreData: appStoreData,
       });
-
-      if (!response.data.success) {
-        throw response.data.error;
-      }
 
       const analysis = response.data.data;
       exportAnalysis(analysis, outputFile);

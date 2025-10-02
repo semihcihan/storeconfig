@@ -14,7 +14,6 @@ import {
   removeShortcuts,
 } from "@semihcihan/shared";
 import * as fs from "fs";
-import axios from "axios";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -35,7 +34,16 @@ jest.mock("@semihcihan/shared", () => ({
   removeShortcuts: jest.fn(),
 }));
 jest.mock("fs");
-jest.mock("axios");
+jest.mock("../services/api-client", () => ({
+  apiClient: {
+    post: jest.fn(),
+    get: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+  isAuthenticated: jest.fn(),
+  requireAuth: jest.fn(),
+}));
 
 // Mock the entire compare-price-service module
 const mockAnalyzePricing = jest.fn();
@@ -51,7 +59,10 @@ const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockFs = jest.mocked(fs);
-const mockAxios = jest.mocked(axios);
+
+// Import the mocked apiClient
+import { apiClient } from "../services/api-client";
+const mockApiClient = jest.mocked(apiClient);
 
 // Import the command after mocking
 import comparePriceCommand from "./compare-price";
@@ -121,7 +132,7 @@ describe("compare-price command", () => {
     mockFs.existsSync.mockReturnValue(true);
 
     // Mock axios response
-    mockAxios.post.mockResolvedValue({
+    mockApiClient.post.mockResolvedValue({
       data: {
         success: true,
         data: mockAnalysis,
@@ -182,19 +193,17 @@ describe("compare-price command", () => {
         mockAppStoreData,
         false
       );
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/compare-price",
-        { appStoreData: mockAppStoreData }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/compare-price", {
+        appStoreData: mockAppStoreData,
+      });
     });
 
     it("should call API with correct parameters", async () => {
       await comparePriceCommand.handler(mockArgv);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/v1/compare-price",
-        { appStoreData: mockAppStoreData }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/compare-price", {
+        appStoreData: mockAppStoreData,
+      });
     });
 
     it("should write analysis to output file", async () => {
@@ -280,7 +289,7 @@ describe("compare-price command", () => {
     });
 
     it("should handle API error", async () => {
-      mockAxios.post.mockRejectedValueOnce(new Error("API failed"));
+      mockApiClient.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
@@ -308,12 +317,7 @@ describe("compare-price command", () => {
     });
 
     it("should handle API response error", async () => {
-      mockAxios.post.mockResolvedValueOnce({
-        data: {
-          success: false,
-          error: "API error",
-        },
-      });
+      mockApiClient.post.mockRejectedValueOnce(new Error("API error"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
         "process.exit called"
@@ -321,7 +325,7 @@ describe("compare-price command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Price comparison failed",
-        "API error"
+        expect.any(Error)
       );
     });
 

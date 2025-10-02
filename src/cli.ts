@@ -15,6 +15,7 @@ import setPriceCmd from "./commands/set-price";
 import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
 import authCmd from "./commands/auth";
+import { requireAuth } from "./services/api-client";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
 logger.setLevel("info");
@@ -27,7 +28,26 @@ yargs(hideBin(process.argv))
     choices: LOG_LEVELS,
     default: process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL,
   })
-  .middleware((argv) => {})
+  .middleware((argv) => {
+    // Commands that require authentication
+    const protectedCommands = [
+      "fetch",
+      "apply",
+      "set-price",
+      "compare-price",
+      "auth apple",
+    ];
+    const command = argv._[0] as string;
+
+    if (protectedCommands.includes(command)) {
+      try {
+        requireAuth();
+      } catch (error) {
+        logger.error("Authentication required", error);
+        process.exit(1);
+      }
+    }
+  })
   .command(validateFormatCmd)
   .command(applyCmd)
   .command(fetchCmd)
