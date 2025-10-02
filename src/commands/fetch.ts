@@ -2,7 +2,7 @@ import type { CommandModule } from "yargs";
 import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
-import * as readline from "readline";
+import inquirer from "inquirer";
 import { ContextualError } from "@semihcihan/shared";
 
 interface App {
@@ -21,46 +21,22 @@ async function fetchApps(apiBaseUrl: string): Promise<App[]> {
 }
 
 async function selectApp(apps: App[]): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const choices = apps.map((app, index) => ({
+    name: `${index + 1}. ${app.name}`,
+    value: app,
+  }));
 
-  return new Promise((resolve) => {
-    logger.info("Available apps:");
-    var logs: string[] = [];
-    apps.forEach((app, index) => {
-      logs.push(`${index + 1}. ${app.name}`);
-    });
-    logger.info(logs.join("\n"));
+  const { selectedApp } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "selectedApp",
+      message: "Select the app you want to fetch:",
+      choices,
+    },
+  ]);
 
-    const askForSelection = () => {
-      rl.question(
-        "\nEnter the number of the app you want to fetch (1-" +
-          apps.length +
-          "): ",
-        (answer) => {
-          const selection = parseInt(answer, 10);
-
-          if (isNaN(selection) || selection < 1 || selection > apps.length) {
-            logger.error(
-              "Invalid selection. Please enter a number between 1 and " +
-                apps.length
-            );
-            askForSelection();
-            return;
-          }
-
-          const selectedApp = apps[selection - 1];
-          logger.info(`Selected: ${selectedApp.name} (ID: ${selectedApp.id})`);
-          rl.close();
-          resolve(selectedApp.id);
-        }
-      );
-    };
-
-    askForSelection();
-  });
+  logger.info(`Selected: ${selectedApp.name} (ID: ${selectedApp.id})`);
+  return selectedApp.id;
 }
 
 const fetchCommand: CommandModule = {

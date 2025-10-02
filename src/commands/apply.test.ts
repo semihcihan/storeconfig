@@ -15,6 +15,7 @@ import {
   validateFileExists,
 } from "@semihcihan/shared";
 import axios from "axios";
+import inquirer from "inquirer";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -37,14 +38,7 @@ jest.mock("@semihcihan/shared", () => ({
 }));
 jest.mock("../services/plan-service");
 jest.mock("axios");
-jest.mock("readline", () => ({
-  createInterface: jest.fn().mockReturnValue({
-    question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-      callback("y"); // Auto-confirm
-    }),
-    close: jest.fn(),
-  }),
-}));
+jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
 const mockShowPlan = jest.mocked(showPlan);
@@ -53,6 +47,7 @@ const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
 const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockValidateFileExists = jest.mocked(validateFileExists);
 const mockAxios = jest.mocked(axios);
+const mockInquirer = jest.mocked(inquirer);
 
 // Import the command after mocking
 import applyCommand from "./apply";
@@ -76,6 +71,9 @@ describe("apply command", () => {
     mockRemoveShortcuts.mockReturnValue(mockData);
     mockValidateFileExists.mockReturnValue("desired.json");
     mockShowPlan.mockResolvedValue(undefined);
+
+    // Mock inquirer to return true by default
+    mockInquirer.prompt.mockResolvedValue({ confirmed: true });
 
     // Mock axios responses
     mockAxios.post.mockResolvedValue({
@@ -295,14 +293,8 @@ describe("apply command", () => {
         { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
       ] as any;
 
-      // Mock readline to return "n" (no)
-      const readline = require("readline");
-      readline.createInterface.mockReturnValue({
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("n"); // User cancels
-        }),
-        close: jest.fn(),
-      });
+      // Mock inquirer to return false (user cancels)
+      mockInquirer.prompt.mockResolvedValueOnce({ confirmed: false });
 
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);

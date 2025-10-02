@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import * as readline from "node:readline";
+import inquirer from "inquirer";
 import { logger } from "@semihcihan/shared";
 import { promptForBasePricePoint } from "./base-price-prompt";
 import type { AppStoreModel } from "@semihcihan/shared";
@@ -13,10 +13,10 @@ jest.mock("@semihcihan/shared", () => ({
     info: jest.fn(),
   },
 }));
-jest.mock("node:readline");
+jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
-const mockReadline = jest.mocked(readline);
+const mockInquirer = jest.mocked(inquirer);
 const mockFetchTerritoryPricePointsForSelectedItem =
   jest.fn() as jest.MockedFunction<
     (
@@ -27,22 +27,8 @@ const mockFetchTerritoryPricePointsForSelectedItem =
   >;
 
 describe("base-price-prompt", () => {
-  let mockRl: any;
-  let mockQuestion: jest.Mock;
-  let mockClose: jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockQuestion = jest.fn();
-    mockClose = jest.fn();
-
-    mockRl = {
-      question: mockQuestion,
-      close: mockClose,
-    };
-
-    mockReadline.createInterface.mockReturnValue(mockRl);
   });
 
   describe("promptForBasePricePoint", () => {
@@ -67,21 +53,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      const result = await promise;
-
       expect(result).toEqual({ id: "price-1", price: "3.00" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should successfully find price point when API returns different format than normalized", async () => {
@@ -96,21 +84,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // The function should now succeed by normalizing the price format
-      const result = await promise;
       expect(result).toEqual({ id: "price-1", price: "3.0" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should successfully find price point when API returns integer format", async () => {
@@ -125,21 +115,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // The function should now succeed by normalizing the price format
-      const result = await promise;
       expect(result).toEqual({ id: "price-1", price: "3" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should handle mixed price formats from API by finding any matching price", async () => {
@@ -155,21 +147,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // This should work because we should find a matching price point
-      const result = await promise;
       expect(result).toBeDefined();
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should demonstrate the fixed bug scenario", async () => {
@@ -183,21 +177,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // The function should now succeed by normalizing the price format
-      const result = await promise;
       expect(result).toEqual({ id: "price-1", price: "3.0" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should show the fixed bug: validation and lookup now work together", async () => {
@@ -211,24 +207,23 @@ describe("base-price-prompt", () => {
         mockPricePoints
       );
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // The fix:
-      // 1. normalizedAvailablePrices contains ["3.00"] (from Number("3.0").toFixed(2))
-      // 2. Validation passes: "3.00" is in normalizedAvailablePrices
-      // 3. Lookup succeeds: finds by ID from normalized list, then returns original
-      const result = await promise;
       expect(result).toEqual({ id: "price-1", price: "3.0" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should demonstrate the normalization behavior", async () => {
@@ -255,21 +250,23 @@ describe("base-price-prompt", () => {
       expect(normalizedPrices).toEqual(["3.00"]);
       expect(normalizedPrices.includes("3.00")).toBe(true);
 
-      const promise = promptForBasePricePoint(
+      // Mock inquirer to return "3"
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "3" });
+
+      const result = await promptForBasePricePoint(
         mockSelectedItem,
         mockAppStoreState,
         mockFetchTerritoryPricePointsForSelectedItem
       );
 
-      // Simulate user entering "3"
-      mockQuestion.mockImplementationOnce((prompt: any, callback: any) => {
-        callback("3");
-      });
-
-      // The function should now succeed by using the normalized data
-      const result = await promise;
       expect(result).toEqual({ id: "price-1", price: "3.0" });
-      expect(mockClose).toHaveBeenCalled();
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        expect.objectContaining({
+          type: "input",
+          name: "price",
+          message: "Enter base price in USD (e.g., 5.99):",
+        }),
+      ]);
     });
 
     it("should verify the fixed logic", () => {

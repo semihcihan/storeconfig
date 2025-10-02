@@ -9,7 +9,7 @@ import {
 import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import axios from "axios";
-import * as readline from "readline";
+import inquirer from "inquirer";
 
 // Mock process.exit before importing the command
 const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => {
@@ -27,14 +27,12 @@ jest.mock("@semihcihan/shared", () => ({
 }));
 jest.mock("axios");
 jest.mock("fs");
-jest.mock("readline", () => ({
-  createInterface: jest.fn(),
-}));
+jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
 const mockAxios = jest.mocked(axios);
 const mockFs = jest.mocked(fs);
-const mockReadline = jest.mocked(readline);
+const mockInquirer = jest.mocked(inquirer);
 
 // Import the command after mocking
 import fetchCommand from "./fetch";
@@ -64,13 +62,6 @@ describe("fetch command", () => {
     mockLogger.debug.mockReturnValue(undefined);
     mockLogger.warn.mockReturnValue(undefined);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
-
-    // Mock readline interface
-    const mockRl = {
-      question: jest.fn(),
-      close: jest.fn(),
-    };
-    mockReadline.createInterface.mockReturnValue(mockRl as any);
 
     // Set default environment
     process.env.API_BASE_URL = "http://localhost:3000";
@@ -239,14 +230,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("1"); // User selects first app
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -263,10 +250,6 @@ describe("fetch command", () => {
       );
       expect(mockAxios.get).toHaveBeenCalledWith(
         "http://localhost:3000/api/v1/fetch-apps"
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith("Available apps:");
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "1. Test App 1\n2. Test App 2"
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
@@ -286,20 +269,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection with invalid input first, then valid
-      let callCount = 0;
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callCount++;
-          if (callCount === 1) {
-            callback("invalid"); // Invalid input
-          } else {
-            callback("2"); // Valid selection
-          }
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return second app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[1],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -311,9 +284,6 @@ describe("fetch command", () => {
 
       await fetchCommand.handler!(mockArgvWithoutId as any);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Invalid selection. Please enter a number between 1 and 2"
-      );
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 2 (ID: 987654321)"
       );
@@ -328,20 +298,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection with out of range input first, then valid
-      let callCount = 0;
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callCount++;
-          if (callCount === 1) {
-            callback("5"); // Out of range
-          } else {
-            callback("1"); // Valid selection
-          }
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -353,8 +313,8 @@ describe("fetch command", () => {
 
       await fetchCommand.handler!(mockArgvWithoutId as any);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Invalid selection. Please enter a number between 1 and 2"
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "Selected: Test App 1 (ID: 123456789)"
       );
     });
 
@@ -418,14 +378,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("1"); // User selects first app
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -442,10 +398,6 @@ describe("fetch command", () => {
       );
       expect(mockAxios.get).toHaveBeenCalledWith(
         "http://localhost:3000/api/v1/fetch-apps"
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith("Available apps:");
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "1. Test App 1\n2. Test App 2"
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
@@ -529,14 +481,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("1");
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -584,14 +532,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("1");
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({
@@ -622,14 +566,10 @@ describe("fetch command", () => {
         },
       });
 
-      // Mock user selection
-      const mockRl = {
-        question: jest.fn().mockImplementation((prompt: any, callback: any) => {
-          callback("1");
-        }),
-        close: jest.fn(),
-      };
-      mockReadline.createInterface.mockReturnValue(mockRl as any);
+      // Mock inquirer to return first app
+      mockInquirer.prompt.mockResolvedValueOnce({
+        selectedApp: mockApps[0],
+      });
 
       // Mock fetch app details API call
       mockAxios.post.mockResolvedValueOnce({

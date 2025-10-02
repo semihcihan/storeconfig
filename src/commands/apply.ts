@@ -9,34 +9,27 @@ import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 import { removeShortcuts } from "@semihcihan/shared";
-import * as readline from "readline";
+import inquirer from "inquirer";
 import axios from "axios";
 
 const confirmChanges = async (): Promise<boolean> => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    logger.warn(`### CRITICAL WARNING ###
+  logger.warn(`### CRITICAL WARNING ###
 You are about to apply changes directly to App Store Connect.
 
 These changes will take effect immediately and may impact your live app configuration.
 Some operations are inherently irreversible — even if performed manually through App Store Connect.
 `);
 
-    rl.question(
-      "Do you want to proceed with applying these changes? (y/N): ",
-      (answer) => {
-        rl.close();
-        resolve(
-          answer.trim().toLowerCase() === "y" ||
-            answer.trim().toLowerCase() === "yes"
-        );
-      }
-    );
-  });
+  const { confirmed } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "confirmed",
+      message: "Do you want to proceed with applying these changes?",
+      default: false,
+    },
+  ]);
+
+  return confirmed;
 };
 
 const command: CommandModule = {

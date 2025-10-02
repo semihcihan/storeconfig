@@ -7,7 +7,7 @@ import type {
   InAppPurchaseSchema,
 } from "@semihcihan/shared";
 import { z } from "zod";
-import * as readline from "readline";
+import inquirer from "inquirer";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -37,49 +37,21 @@ function createExampleFilename(filename: string): string {
 }
 
 async function selectType(): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const choices = exampleTypes.map((type, index) => ({
+    name: `${index + 1}. ${type.name}`,
+    value: type.key,
+  }));
 
-  return new Promise((resolve) => {
-    var logs: string[] = [];
-    logs.push("Available example types are below:");
-    exampleTypes.forEach((type, index) => {
-      logs.push(`${index + 1}. ${type.name}`);
-    });
-    logger.info(logs.join("\n"));
+  const { selectedType } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "selectedType",
+      message: "Select the example type you want to generate:",
+      choices,
+    },
+  ]);
 
-    const askForSelection = () => {
-      rl.question(
-        "\nEnter the number of the example type you want to generate (1-" +
-          exampleTypes.length +
-          "): ",
-        (answer) => {
-          const selection = parseInt(answer, 10);
-
-          if (
-            isNaN(selection) ||
-            selection < 1 ||
-            selection > exampleTypes.length
-          ) {
-            logger.error(
-              "Invalid selection. Please enter a number between 1 and " +
-                exampleTypes.length
-            );
-            askForSelection();
-            return;
-          }
-
-          const selectedType = exampleTypes[selection - 1];
-          rl.close();
-          resolve(selectedType.key);
-        }
-      );
-    };
-
-    askForSelection();
-  });
+  return selectedType;
 }
 
 // Subscription example

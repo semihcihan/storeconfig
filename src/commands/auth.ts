@@ -1,5 +1,7 @@
 import { CommandModule } from "yargs";
 import { logger } from "@semihcihan/shared";
+import { keyService } from "../services/key-service";
+import { promptForSecretKey } from "../services/secret-key-prompt";
 
 // Configure subcommand
 const configureCommand: CommandModule = {
@@ -7,13 +9,24 @@ const configureCommand: CommandModule = {
   describe: "Configure StoreConfig with the Secret Key",
   builder: {},
   handler: async (argv) => {
-    logger.info("Configure command - not implemented yet");
-    logger.info("This will prompt for Secret Key and store it in config");
+    try {
+      const secretKey = await promptForSecretKey();
 
-    // TODO: Implement actual configure logic
-    // - Prompt for Secret Key key
-    // - Validate Secret Key with backend (Optional)
-    // - Store in config
+      if (!secretKey) {
+        logger.error("Secret key cannot be empty");
+        process.exit(1);
+      }
+
+      // Save the secret key
+      keyService.saveKey(secretKey);
+
+      logger.info(
+        "✅ Secret key saved successfully! Configure Apple credentials now if you haven't already."
+      );
+    } catch (error) {
+      logger.error("Failed to configure secret key", error);
+      process.exit(1);
+    }
   },
 };
 
@@ -62,12 +75,25 @@ const deleteUserCommand: CommandModule = {
     "Deletes the user and all stored authentication data for StoreConfig and Apple",
   builder: {},
   handler: async (argv) => {
-    logger.info("Delete user command - not implemented yet");
-    logger.info("This will clear the stored keys for StoreConfig and Apple");
+    try {
+      logger.info("Deleting user authentication data...");
 
-    // TODO: Implement actual delete user logic
-    // - Delete user from backend
-    // - Clear Secret Key and Apple credentials from config
+      // Clear the secret key
+      if (keyService.hasKey()) {
+        keyService.deleteKey();
+        logger.info("✅ Secret key deleted successfully!");
+      } else {
+        logger.info("No secret key found to delete");
+      }
+
+      // TODO: Clear Apple credentials from backend
+      // TODO: Delete user from backend
+
+      logger.info("✅ User authentication data cleared!");
+    } catch (error) {
+      logger.error("Failed to delete user data:", error);
+      process.exit(1);
+    }
   },
 };
 

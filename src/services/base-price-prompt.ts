@@ -1,4 +1,4 @@
-import * as readline from "readline";
+import inquirer from "inquirer";
 import { logger } from "@semihcihan/shared";
 import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem, PricePointInfo } from "@semihcihan/shared";
@@ -35,10 +35,6 @@ export async function promptForBasePricePoint(
     territoryId: string
   ) => Promise<PricePointInfo[]>
 ): Promise<PricePointInfo> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
   let availablePricePoints: PricePointInfo[];
 
   availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
@@ -72,56 +68,55 @@ export async function promptForBasePricePoint(
     );
   }
 
-  return await new Promise((resolve) => {
-    const ask = () => {
-      rl.question("Enter base price in USD (e.g., 5.99): ", (answer) => {
-        const parsed = parsePriceInputToNumber(answer);
-        if (parsed === null) {
-          logger.error(
-            "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
-          );
-          ask();
-          return;
-        }
+  const validatePrice = (input: string): boolean | string => {
+    const parsed = parsePriceInputToNumber(input);
+    if (parsed === null) {
+      return "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99).";
+    }
 
-        const canonical = parsed.toFixed(2);
-        if (
-          normalizedAvailablePricePoints.length &&
-          !normalizedAvailablePricePoints.some((p) => p.price === canonical)
-        ) {
-          const nearest = findNearestPrices(
-            parsed,
-            normalizedAvailablePricePoints.map(
-              (p: { id: string; price: string }) => p.price
-            ),
-            20
-          );
-          logger.error(
-            `❌ The price ${canonical} is not an available Apple price.`
-          );
-          if (nearest.length) {
-            logger.info(`Closest available prices:\n${nearest.join(" | ")}`);
-          }
-          ask();
-          return;
-        }
+    const canonical = parsed.toFixed(2);
+    if (
+      normalizedAvailablePricePoints.length &&
+      !normalizedAvailablePricePoints.some((p) => p.price === canonical)
+    ) {
+      const nearest = findNearestPrices(
+        parsed,
+        normalizedAvailablePricePoints.map(
+          (p: { id: string; price: string }) => p.price
+        ),
+        20
+      );
+      let errorMessage = `❌ The price ${canonical} is not an available Apple price.`;
+      if (nearest.length) {
+        errorMessage += `\nClosest available prices:\n${nearest.join(" | ")}`;
+      }
+      return errorMessage;
+    }
 
-        rl.close();
-        const selectedNormalizedPricePoint =
-          normalizedAvailablePricePoints.find(
-            (p: { id: string; price: string }) => p.price === canonical
-          );
-        const selectedPricePoint = availablePricePoints.find(
-          (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
-        );
-        if (selectedPricePoint) {
-          resolve(selectedPricePoint);
-        } else {
-          // This shouldn't happen since we validated the price, but handle it gracefully
-          throw new Error(`Price point not found for price ${canonical}`);
-        }
-      });
-    };
-    ask();
-  });
+    return true;
+  };
+
+  const { price } = await inquirer.prompt([
+    {
+      type: "input",
+      name: "price",
+      message: "Enter base price in USD (e.g., 5.99):",
+      validate: validatePrice,
+    },
+  ]);
+
+  const parsed = parsePriceInputToNumber(price);
+  const canonical = parsed!.toFixed(2);
+  const selectedNormalizedPricePoint = normalizedAvailablePricePoints.find(
+    (p: { id: string; price: string }) => p.price === canonical
+  );
+  const selectedPricePoint = availablePricePoints.find(
+    (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
+  );
+
+  if (selectedPricePoint) {
+    return selectedPricePoint;
+  } else {
+    throw new Error(`Price point not found for price ${canonical}`);
+  }
 }
