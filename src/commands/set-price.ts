@@ -25,7 +25,7 @@ async function fetchTerritoryPricePointsForSelectedItem(
   appId: string,
   territoryId: string
 ): Promise<PricePointInfo[]> {
-  const response = await apiClient.post("/api/v1/price-points", {
+  const response = await apiClient.post("/price-points", {
     selectedItem,
     appId,
     territoryId,
@@ -38,7 +38,7 @@ async function applyPricing(
   appStoreState: AppStoreModel,
   pricingRequest: PricingRequest
 ): Promise<AppStoreModel> {
-  const response = await apiClient.post("/api/v1/apply-pricing", {
+  const response = await apiClient.post("/apply-pricing", {
     appStoreState,
     pricingRequest,
   });

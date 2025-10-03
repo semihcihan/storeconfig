@@ -66,7 +66,7 @@ const command: CommandModule = {
       );
 
       // Generate diff plan using the API (which will fetch current state internally)
-      const diffResponse = await apiClient.post("/api/v1/diff", {
+      const diffResponse = await apiClient.post("/diff", {
         desiredState: desiredState,
       });
 
@@ -90,7 +90,7 @@ const command: CommandModule = {
       }
 
       // Apply the plan using the API
-      const applyResponse = await apiClient.post("/api/v1/apply", {
+      const applyResponse = await apiClient.post("/apply", {
         plan: plan,
         currentState: currentState,
         desiredState: desiredState,

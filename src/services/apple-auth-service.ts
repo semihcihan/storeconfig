@@ -75,7 +75,7 @@ export class AppleAuthService {
     keyId: string,
     privateKey: string
   ): Promise<void> {
-    const response = await apiClient.post("/api/v1/auth", {
+    const response = await apiClient.post("/auth", {
       keyId,
       issuerId,
       privateKey,

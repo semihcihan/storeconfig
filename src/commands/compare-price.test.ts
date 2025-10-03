@@ -193,7 +193,7 @@ describe("compare-price command", () => {
         mockAppStoreData,
         false
       );
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/compare-price", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/compare-price", {
         appStoreData: mockAppStoreData,
       });
     });
@@ -201,7 +201,7 @@ describe("compare-price command", () => {
     it("should call API with correct parameters", async () => {
       await comparePriceCommand.handler(mockArgv);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/compare-price", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/compare-price", {
         appStoreData: mockAppStoreData,
       });
     });

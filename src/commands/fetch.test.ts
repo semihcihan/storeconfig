@@ -132,7 +132,7 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Fetching details for app ID: 123456789 and writing to output.json"
       );
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
         appId: "123456789",
       });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
@@ -161,7 +161,7 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         `Fetching details for app ID: 123456789 and writing to ${DEFAULT_CONFIG_FILENAME}`
       );
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
         appId: "123456789",
       });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
@@ -185,7 +185,7 @@ describe("fetch command", () => {
 
       await fetchCommand.handler!(mockArgv as any);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
         appId: "123456789",
       });
     });
@@ -251,11 +251,11 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "No app ID provided. Fetching available apps..."
       );
-      expect(mockApiClient.get).toHaveBeenCalledWith("/api/v1/fetch-apps");
+      expect(mockApiClient.get).toHaveBeenCalledWith("/fetch-apps");
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
       );
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
         appId: "123456789",
       });
     });
@@ -396,11 +396,11 @@ describe("fetch command", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "No app ID provided. Fetching available apps..."
       );
-      expect(mockApiClient.get).toHaveBeenCalledWith("/api/v1/fetch-apps");
+      expect(mockApiClient.get).toHaveBeenCalledWith("/fetch-apps");
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Selected: Test App 1 (ID: 123456789)"
       );
-      expect(mockApiClient.post).toHaveBeenCalledWith("/api/v1/fetch", {
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
         appId: "123456789",
       });
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(

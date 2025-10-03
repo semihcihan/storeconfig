@@ -41,7 +41,7 @@ const comparePriceCommand: CommandModule = {
       );
 
       // Call the HTTP API using the api client
-      const response = await apiClient.post("/api/v1/compare-price", {
+      const response = await apiClient.post("/compare-price", {
         appStoreData: appStoreData,
       });
 

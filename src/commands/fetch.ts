@@ -10,7 +10,7 @@ interface App {
 }
 
 async function fetchApps(): Promise<App[]> {
-  const response = await apiClient.get("/api/v1/fetch-apps");
+  const response = await apiClient.get("/fetch-apps");
   return response.data.data;
 }
 
@@ -73,7 +73,7 @@ const fetchCommand: CommandModule = {
       );
 
       // Call the HTTP API using the api client
-      const response = await apiClient.post("/api/v1/fetch", {
+      const response = await apiClient.post("/fetch", {
         appId: appId,
       });
 
