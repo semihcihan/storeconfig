@@ -14,7 +14,8 @@ import fetchCmd from "./commands/fetch";
 import setPriceCmd from "./commands/set-price";
 import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
-import authCmd from "./commands/auth";
+import configureCmd from "./commands/configure";
+import appleCmd from "./commands/apple";
 import { requireAuth } from "./services/api-client";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
@@ -35,7 +36,7 @@ yargs(hideBin(process.argv))
       "apply",
       "set-price",
       "compare-price",
-      "auth apple",
+      "apple",
     ];
     const command = argv._[0] as string;
 
@@ -54,7 +55,8 @@ yargs(hideBin(process.argv))
   .command(setPriceCmd)
   .command(comparePriceCmd)
   .command(exampleCmd)
-  .command(authCmd)
+  .command(configureCmd)
+  .command(appleCmd)
   .command({
     command: "plan",
     describe: "Show a plan of changes (dry run) - alias for apply --preview",
@@ -64,5 +66,15 @@ yargs(hideBin(process.argv))
       return applyCmd.handler!(argv);
     },
   })
-  .demandCommand()
+  .demandCommand(1, "Please specify a command")
+  .strict()
+  .fail((msg, err, yargs) => {
+    if (err) {
+      logger.error(err.message);
+    } else {
+      logger.error(msg);
+    }
+    logger.std("\n" + yargs.help());
+    process.exit(1);
+  })
   .help().argv;

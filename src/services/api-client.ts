@@ -54,7 +54,7 @@ export const requireAuth = (): void => {
   if (!isAuthenticated()) {
     throw new ContextualError(
       "Authentication required",
-      "Please run 'storeconfig auth configure' first to set up your secret key"
+      "Please run 'storeconfig configure' first to set up your secret key"
     );
   }
 };

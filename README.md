@@ -56,11 +56,11 @@ Set up your App Store Connect API credentials:
 
 ```bash
 # Configure StoreConfig with the StoreConfig Secret Key
-storeconfig auth configure
+storeconfig configure
 
-# Configure Apple credentials
+# Add Apple credentials
 # See below for how to get the key and IDs.
-storeconfig auth apple \
+storeconfig apple \
   --issuer-id YOUR_ISSUER_ID \
   --key-id YOUR_KEY_ID \
   --key-path /path/to/your/AuthKey_XXXXX.p8
@@ -85,9 +85,9 @@ This is required for store config to manage your apps on App Store Connect.
    - Select **App Manager Access** - this is required to manage prices and other app configurations
 
 4. **Download and Copy Credentials**
-   - Download the `.p8` file. This is the `--key-path` for the `auth apple` command.
-   - **Key ID** is the `--key-id` for the `auth apple` command.
-   - **Issuer ID** is the `--issuer-id` for the `auth apple` command.
+   - Download the `.p8` file. This is the `--key-path` for the `apple` command.
+   - **Key ID** is the `--key-id` for the `apple` command.
+   - **Issuer ID** is the `--issuer-id` for the `apple` command.
 
 ## 📋 Commands
 
@@ -232,7 +232,7 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 ### Security
 
 - StoreConfig Secret Keys are stored in your local machine
-- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `auth delete` command to remove them from our servers.
+- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `configure delete` command to remove them from our servers.
 
 ## Support
 
