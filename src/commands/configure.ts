@@ -51,7 +51,7 @@ const configureCommand: CommandModule = {
       keyService.saveKey(secretKey);
 
       logger.info(
-        "✅ Secret key saved successfully! Configure Apple credentials now if you haven't already."
+        "✅ Secret key saved successfully! Add Apple credentials now (storeconfig apple) if you haven't already."
       );
     } catch (error) {
       logger.error("Failed to configure secret key", error);

@@ -5,7 +5,7 @@ import { appleAuthService } from "../services/apple-auth-service";
 // Apple command
 const appleCommand: CommandModule = {
   command: "apple",
-  describe: "Configure Apple credentials",
+  describe: "Add Apple credentials",
   builder: {
     "issuer-id": {
       describe: "Apple App Store Connect Issuer ID",
@@ -35,7 +35,7 @@ const appleCommand: CommandModule = {
         keyPath
       );
     } catch (error) {
-      logger.error("Failed to configure Apple credentials", error);
+      logger.error("Failed to add Apple credentials", error);
       process.exit(1);
     }
   },
