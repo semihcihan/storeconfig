@@ -232,7 +232,7 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 ### Security
 
 - StoreConfig Secret Keys are stored in your local machine
-- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or use the `configure delete` command to remove them from our servers.
+- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or contact us to delete your user data and credentials.
 
 ## Support
 

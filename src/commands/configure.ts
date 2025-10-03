@@ -3,40 +3,10 @@ import { logger } from "@semihcihan/shared";
 import { keyService } from "../services/key-service";
 import { promptForSecretKey } from "../services/secret-key-prompt";
 
-// Delete subcommand
-const deleteSubCommand: CommandModule = {
-  command: "delete",
-  describe:
-    "Deletes the user and all stored authentication data for StoreConfig and Apple",
-  builder: {},
-  handler: async (argv) => {
-    try {
-      // Clear the secret key
-      if (keyService.hasKey()) {
-        keyService.deleteKey();
-      } else {
-        logger.warn("No secret key found to delete");
-      }
-
-      // TODO: Clear Apple credentials from backend
-      // TODO: Delete user from backend
-      // Note: These endpoints need to be implemented in the serverless backend
-    } catch (error) {
-      logger.error("Failed to delete user data:", error);
-      process.exit(1);
-    }
-  },
-};
-
-// Main configure command with subcommands
+// Main configure command
 const configureCommand: CommandModule = {
   command: "configure",
   describe: "Configure StoreConfig with the Secret Key",
-  builder: (yargs) => {
-    return yargs
-      .command(deleteSubCommand)
-      .demandCommand(0, "Please specify a subcommand");
-  },
   handler: async (argv) => {
     // Default behavior: configure with secret key
     try {
