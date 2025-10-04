@@ -30,18 +30,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.error) {
-        throw new ContextualError(
-          "API request failed",
-          error.response.data.error
-        );
+      if (error.response?.data?.message) {
+        throw error.response.data.message;
       }
-      throw new ContextualError(
-        "API request failed",
-        `HTTP ${error.response?.status}: ${error.message}`
-      );
     }
-    throw new ContextualError("Network request failed", error);
+    throw error;
   }
 );
 
