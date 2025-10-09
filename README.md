@@ -1,6 +1,6 @@
 # Store Config CLI
 
-A powerful command-line tool for managing apps on **App Store Connect**. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect with ease. **No more manual work**.
+A powerful command-line tool for managing apps on **App Store Connect**. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect - the smart way. **No more manual work**.
 
 [![npm version](https://badge.fury.io/js/storeconfig.svg)](https://badge.fury.io/js/storeconfig)
 
@@ -26,7 +26,7 @@ For detailed documentation, visit [www.storeconfig.com/docs](https://www.storeco
 - **🤖 AI-Powered Editing** - Use any AI tool to modify your JSON configuration for app descriptions, content updates, and more.
 - **🌍 Multi-Language Support** - Easily manage localized content across all supported territories.
 - **📊 Bulk Operations** - Make changes across multiple products, subscriptions, or territories at once.
-- **🔄 Bidirectional Sync** - Fetch current state and apply changes to App Store Connect.
+- **🔄 Bidirectional Sync** - Fetch current state of your app and apply changes to App Store Connect.
 - **💰 Interactive Pricing** - Set prices across territories based on Purchasing Power Parity (PPP) for fair pricing to increase revenue. Also supports Apple's standard pricing tiers.
 
 ## 🛠 Installation
