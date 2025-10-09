@@ -46,6 +46,9 @@ jest.mock("../services/api-client", () => ({
   isAuthenticated: jest.fn(),
   requireAuth: jest.fn(),
 }));
+jest.mock("../services/job-service");
+jest.mock("../services/job-polling-service");
+jest.mock("../services/info-service");
 jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
@@ -56,9 +59,16 @@ const mockRemoveShortcuts = jest.mocked(removeShortcuts);
 const mockValidateFileExists = jest.mocked(validateFileExists);
 const mockInquirer = jest.mocked(inquirer);
 
-// Import the mocked apiClient
+// Import the mocked services
 import { apiClient } from "../services/api-client";
+import { createJob } from "../services/job-service";
+import { trackJob } from "../services/job-polling-service";
+import { getInfo } from "../services/info-service";
+
 const mockApiClient = jest.mocked(apiClient);
+const mockCreateJob = jest.mocked(createJob);
+const mockTrackJob = jest.mocked(trackJob);
+const mockGetInfo = jest.mocked(getInfo);
 
 // Import the command after mocking
 import applyCommand from "./apply";
@@ -85,6 +95,14 @@ describe("apply command", () => {
 
     // Mock inquirer to return true by default
     mockInquirer.prompt.mockResolvedValue({ confirmed: true });
+
+    // Mock job services
+    mockCreateJob.mockResolvedValue("job-123");
+    mockTrackJob.mockResolvedValue(undefined);
+    mockGetInfo.mockResolvedValue({
+      currentJob: undefined,
+      user: { id: "user-123", email: "test@example.com", name: "Test User" },
+    });
 
     // Mock apiClient responses
     mockApiClient.post.mockResolvedValue({
@@ -156,13 +174,6 @@ describe("apply command", () => {
         },
       });
 
-      // Mock apply API call
-      mockApiClient.post.mockResolvedValueOnce({
-        data: {
-          success: true,
-        },
-      });
-
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockValidateFileExists).toHaveBeenCalledWith("desired.json", {
@@ -191,13 +202,6 @@ describe("apply command", () => {
         },
       });
 
-      // Mock apply API call
-      mockApiClient.post.mockResolvedValueOnce({
-        data: {
-          success: true,
-        },
-      });
-
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockReadJsonFile).toHaveBeenCalledWith("desired.json");
@@ -207,7 +211,9 @@ describe("apply command", () => {
         "apply"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockApiClient.post).toHaveBeenCalledTimes(2); // diff + apply calls
+      expect(mockCreateJob).toHaveBeenCalledWith(mockPlan, mockData, mockData);
+      expect(mockTrackJob).toHaveBeenCalledWith("job-123");
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
     it("should handle no changes scenario", async () => {
@@ -234,6 +240,8 @@ describe("apply command", () => {
         "No changes to apply. Exiting..."
       );
       expect(mockShowPlan).not.toHaveBeenCalled();
+      expect(mockCreateJob).not.toHaveBeenCalled();
+      expect(mockTrackJob).not.toHaveBeenCalled();
       expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
@@ -265,6 +273,8 @@ describe("apply command", () => {
         "Preview mode - no changes will be applied"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
+      expect(mockCreateJob).not.toHaveBeenCalled();
+      expect(mockTrackJob).not.toHaveBeenCalled();
       expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
@@ -304,9 +314,6 @@ describe("apply command", () => {
         { type: "CREATE_IN_APP_PURCHASE", payload: { productId: "test" } },
       ] as any;
 
-      // Mock inquirer to return false (user cancels)
-      mockInquirer.prompt.mockResolvedValueOnce({ confirmed: false });
-
       mockReadJsonFile.mockReturnValue(mockData);
       mockValidateAppStoreModel.mockReturnValue(mockData);
       mockRemoveShortcuts.mockReturnValue(mockData);
@@ -322,12 +329,19 @@ describe("apply command", () => {
         },
       });
 
-      await applyCommand.handler!(mockArgv as any);
-
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        "Operation cancelled by user"
+      // Mock createJob to throw user cancellation error
+      mockCreateJob.mockRejectedValueOnce(
+        new Error("Operation cancelled by user")
       );
-      expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
+
+      await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
+        "process.exit called"
+      );
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Apply failed",
+        expect.any(Error)
+      );
     });
   });
 

@@ -3,34 +3,14 @@ import {
   logger,
   DEFAULT_CONFIG_FILENAME,
   validateFileExists,
-  ContextualError,
 } from "@semihcihan/shared";
 import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 import { removeShortcuts } from "@semihcihan/shared";
-import inquirer from "inquirer";
 import { apiClient } from "../services/api-client";
-
-const confirmChanges = async (): Promise<boolean> => {
-  logger.warn(`### CRITICAL WARNING ###
-You are about to apply changes directly to App Store Connect.
-
-These changes will take effect immediately and may impact your live app configuration.
-Some operations are inherently irreversible — even if performed manually through App Store Connect.
-`);
-
-  const { confirmed } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "confirmed",
-      message: "Do you want to proceed with applying these changes?",
-      default: false,
-    },
-  ]);
-
-  return confirmed;
-};
+import { trackJob } from "../services/job-polling-service";
+import { createJob } from "../services/job-service";
 
 const command: CommandModule = {
   command: "apply",
@@ -83,20 +63,8 @@ const command: CommandModule = {
         return;
       }
 
-      const confirmed = await confirmChanges();
-      if (!confirmed) {
-        logger.warn("Operation cancelled by user");
-        return;
-      }
-
-      // Apply the plan using the API
-      const applyResponse = await apiClient.post("/apply", {
-        plan: plan,
-        currentState: currentState,
-        desiredState: desiredState,
-      });
-
-      logger.info("Changes applied successfully");
+      const jobId = await createJob(plan, currentState, desiredState);
+      await trackJob(jobId);
     } catch (error) {
       logger.error(`Apply failed`, error);
       process.exit(1);
