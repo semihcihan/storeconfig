@@ -6,7 +6,8 @@ import { apiClient } from "./api-client";
 export const createJob = async (
   plan: any[],
   currentState: any,
-  desiredState: any
+  desiredState: any,
+  dryRun: boolean = false
 ): Promise<string> => {
   const ongoingJobId = await checkForOngoingJob();
   if (ongoingJobId) {
@@ -23,6 +24,7 @@ export const createJob = async (
     plan: plan,
     currentState: currentState,
     desiredState: desiredState,
+    dryRun: dryRun,
   });
 
   return applyResponse.data.data;

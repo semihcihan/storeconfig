@@ -31,12 +31,19 @@ const command: CommandModule = {
   },
   handler: async (argv) => {
     const preview = argv.preview as boolean;
+    const dryRun = process.env.dryRun === "true";
 
     const desiredStateFile = validateFileExists(argv.file as string, {
       fileDescription: "desired state JSON file",
     });
 
     logger.debug(`Processing desired state from ${desiredStateFile}...`);
+
+    if (dryRun) {
+      logger.debug(
+        "Dry run mode enabled - no actual changes will be applied to App Store Connect"
+      );
+    }
 
     try {
       const desiredState = validateAppStoreModel(
@@ -63,7 +70,7 @@ const command: CommandModule = {
         return;
       }
 
-      const jobId = await createJob(plan, currentState, desiredState);
+      const jobId = await createJob(plan, currentState, desiredState, dryRun);
       await trackJob(jobId);
     } catch (error) {
       logger.error(`Apply failed`, error);
