@@ -1,10 +1,9 @@
 import { apiClient } from "./api-client";
 import { ContextualError, logger } from "@semihcihan/shared";
 import { AnyAction } from "@semihcihan/shared";
-import ora from "ora";
+import { Ora } from "ora";
 
-const POLL_INTERVAL_MS = 5000; // 5 seconds
-const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
+const POLL_INTERVAL_MS = 1000;
 
 const getActionDescription = (action: AnyAction): string => {
   return action.type;
@@ -23,8 +22,7 @@ interface JobStatusResponse {
   };
 }
 
-export const trackJob = async (jobId: string): Promise<void> => {
-  const spinner = ora("Starting job...").start();
+export const trackJob = async (jobId: string, spinner: Ora): Promise<void> => {
   let lastActionIndex = -1;
 
   while (true) {
@@ -34,7 +32,7 @@ export const trackJob = async (jobId: string): Promise<void> => {
 
     if (currentActionIndex !== lastActionIndex) {
       const actionDescription = getActionDescription(currentAction);
-      const progressText = `[${
+      const progressText = `Processing action [${
         currentActionIndex + 1
       }/${totalActions}] ${actionDescription}`;
       spinner.text = progressText;
@@ -48,6 +46,7 @@ export const trackJob = async (jobId: string): Promise<void> => {
 
     if (status === "failed") {
       spinner.fail("Job failed");
+      // TODO: receive error on failed job
       throw new ContextualError("Job failed", jobId);
     }
 
@@ -56,8 +55,6 @@ export const trackJob = async (jobId: string): Promise<void> => {
 };
 
 const getJobStatus = async (jobId: string): Promise<JobStatusResponse> => {
-  const response = await apiClient.get<JobStatusResponse>(`/status/${jobId}`, {
-    timeout: REQUEST_TIMEOUT_MS,
-  });
+  const response = await apiClient.get<JobStatusResponse>(`/status/${jobId}`);
   return response.data;
 };

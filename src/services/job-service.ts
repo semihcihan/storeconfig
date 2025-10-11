@@ -2,24 +2,27 @@ import { logger } from "@semihcihan/shared";
 import inquirer from "inquirer";
 import { getInfo } from "./info-service";
 import { apiClient } from "./api-client";
+import { Ora } from "ora";
 
 export const createJob = async (
   plan: any[],
   currentState: any,
   desiredState: any,
-  dryRun: boolean = false
-): Promise<string> => {
+  dryRun: boolean = false,
+  spinner: Ora
+): Promise<string | null> => {
   const ongoingJobId = await checkForOngoingJob();
   if (ongoingJobId) {
-    return await handleOngoingJob(ongoingJobId);
+    return await handleOngoingJob(ongoingJobId, spinner);
   }
 
   const confirmed = await confirmChanges();
   if (!confirmed) {
     logger.warn("Operation cancelled by user");
-    throw new Error("Operation cancelled by user");
+    return null;
   }
 
+  spinner.start("Processing actions...");
   const applyResponse = await apiClient.post("/apply", {
     plan: plan,
     currentState: currentState,
@@ -30,16 +33,21 @@ export const createJob = async (
   return applyResponse.data.data;
 };
 
-const handleOngoingJob = async (ongoingJobId: string): Promise<string> => {
+const handleOngoingJob = async (
+  ongoingJobId: string,
+  spinner: Ora
+): Promise<string | null> => {
   const watchOngoing = await promptToWatchOngoingJob(ongoingJobId);
   if (watchOngoing) {
-    logger.info(`Watching progress of ongoing job: ${ongoingJobId}`);
+    spinner.start(
+      `Tracking progress of ongoing actions with ID: ${ongoingJobId}`
+    );
     return ongoingJobId;
   } else {
     logger.warn(
-      "Operation cancelled by user - cannot create new job while another is ongoing"
+      "Operation cancelled by user - cannot create new actions while already processing actions"
     );
-    throw new Error("Cannot create new job while another is ongoing");
+    return null;
   }
 };
 
@@ -62,7 +70,7 @@ const promptToWatchOngoingJob = async (jobId: string): Promise<boolean> => {
     {
       type: "confirm",
       name: "watchOngoing",
-      message: `You already have an ongoing job (${jobId}). No new job will be created until the ongoing job is completed. Would you like to track the ongoing job?`,
+      message: `You already have ongoing actions with ID: (${jobId}). No new actions will be created until the ongoing actions are completed. Would you like to track the ongoing actions?`,
       default: true,
     },
   ]);

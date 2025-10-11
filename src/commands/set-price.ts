@@ -1,7 +1,6 @@
 import type { CommandModule } from "yargs";
 import * as fs from "fs";
 import {
-  ContextualError,
   DEFAULT_CONFIG_FILENAME,
   logger,
   validateFileExists,
@@ -11,6 +10,7 @@ import { validateAppStoreModel } from "@semihcihan/shared";
 import { startInteractivePricing } from "../services/set-price-service";
 import { removeShortcuts, useShortcuts } from "@semihcihan/shared";
 import { apiClient } from "../services/api-client";
+import ora from "ora";
 
 import type {
   PricingItem,
@@ -64,6 +64,7 @@ const setPriceCommand: CommandModule = {
     });
 
     logger.info(`Setting prices using file: ${inputFile}`);
+    const spinner = ora();
 
     try {
       // Generate appStoreState from the file
@@ -86,14 +87,16 @@ const setPriceCommand: CommandModule = {
 
       logger.debug("Pricing data:", pricingRequest);
 
+      spinner.start("Applying pricing. This may take up to 15 minutes...");
       // Apply pricing via API
       const updatedState = useShortcuts(
         await applyPricing(appStoreState, pricingRequest)
       );
 
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
-      logger.info(`✅ Updated ${inputFile} with pricing changes.`);
+      spinner.succeed(`Updated ${inputFile} with pricing changes.`);
     } catch (error) {
+      spinner.fail("Set-price failed");
       logger.error(`Set-price failed`, error);
       process.exit(1);
     }

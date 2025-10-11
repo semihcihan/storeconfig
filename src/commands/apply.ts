@@ -11,6 +11,7 @@ import { removeShortcuts } from "@semihcihan/shared";
 import { apiClient } from "../services/api-client";
 import { trackJob } from "../services/job-polling-service";
 import { createJob } from "../services/job-service";
+import ora from "ora";
 
 const command: CommandModule = {
   command: "apply",
@@ -45,6 +46,7 @@ const command: CommandModule = {
       );
     }
 
+    const spinner = ora("Generating actions...").start();
     try {
       const desiredState = validateAppStoreModel(
         removeShortcuts(readJsonFile(desiredStateFile)),
@@ -59,9 +61,12 @@ const command: CommandModule = {
 
       const { plan, currentState } = diffResponse.data.data;
       if (plan.length === 0) {
-        logger.info("No changes to apply. Exiting...");
+        spinner.succeed(
+          "No changes to apply. Your configuration is up to date. Exiting..."
+        );
         return;
       }
+      spinner.stop();
 
       await showPlan(plan);
 
@@ -70,9 +75,18 @@ const command: CommandModule = {
         return;
       }
 
-      const jobId = await createJob(plan, currentState, desiredState, dryRun);
-      await trackJob(jobId);
+      const jobId = await createJob(
+        plan,
+        currentState,
+        desiredState,
+        dryRun,
+        spinner
+      );
+      if (jobId) {
+        await trackJob(jobId, spinner);
+      }
     } catch (error) {
+      spinner.fail("Apply failed");
       logger.error(`Apply failed`, error);
       process.exit(1);
     }

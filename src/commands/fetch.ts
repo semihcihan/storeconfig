@@ -3,6 +3,7 @@ import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
 import inquirer from "inquirer";
 import { apiClient } from "../services/api-client";
+import ora from "ora";
 
 interface App {
   id: string;
@@ -53,22 +54,23 @@ const fetchCommand: CommandModule = {
   handler: async (argv) => {
     let appId = argv.id as string;
     const outputFile = (argv.file as string) || DEFAULT_CONFIG_FILENAME;
+    const spinner = ora();
 
     try {
       // If no app ID provided, fetch apps list and let user select
       if (!appId) {
-        logger.info("No app ID provided. Fetching available apps...");
+        spinner.start("No app ID provided. Fetching available apps...");
         const apps = await fetchApps();
 
         if (apps.length === 0) {
-          logger.error("No apps found in your App Store Connect account");
+          spinner.fail("No IOS apps found in your App Store Connect account");
           process.exit(1);
         }
-
+        spinner.stop();
         appId = await selectApp(apps);
       }
 
-      logger.info(
+      spinner.start(
         `Fetching details for app ID: ${appId} and writing to ${outputFile}`
       );
 
@@ -79,8 +81,9 @@ const fetchCommand: CommandModule = {
 
       const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
-      logger.info(`Successfully fetched app and wrote to ${outputFile}`);
+      spinner.succeed(`Successfully fetched app and wrote to ${outputFile}`);
     } catch (error) {
+      spinner.fail("Fetch failed");
       logger.error(`Fetch failed`, error);
       process.exit(1);
     }
