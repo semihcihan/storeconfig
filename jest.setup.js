@@ -47,3 +47,18 @@ const originalConsoleDebug = console.debug;
 // If you need to see logger output in a specific test, you can:
 // import { setLogLevel } from '../src/utils/logger';
 // setLogLevel('debug');
+
+// Mock ora spinner
+jest.mock("ora", () => {
+  return jest.fn(() => ({
+    start: jest.fn().mockReturnThis(),
+    succeed: jest.fn().mockReturnThis(),
+    fail: jest.fn().mockReturnThis(),
+    warn: jest.fn().mockReturnThis(),
+    info: jest.fn().mockReturnThis(),
+    stop: jest.fn().mockReturnThis(),
+    text: "",
+    color: "cyan",
+    spinner: "dots",
+  }));
+});

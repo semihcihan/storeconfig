@@ -7,6 +7,7 @@ import {
   afterEach,
 } from "@jest/globals";
 import { logger } from "@semihcihan/shared";
+import ora from "ora";
 import { showPlan } from "../services/plan-service";
 import {
   readJsonFile,
@@ -52,6 +53,7 @@ jest.mock("../services/info-service");
 jest.mock("inquirer");
 
 const mockLogger = jest.mocked(logger);
+const mockOra = jest.mocked(ora);
 const mockShowPlan = jest.mocked(showPlan);
 const mockReadJsonFile = jest.mocked(readJsonFile);
 const mockValidateAppStoreModel = jest.mocked(validateAppStoreModel);
@@ -211,8 +213,14 @@ describe("apply command", () => {
         "apply"
       );
       expect(mockShowPlan).toHaveBeenCalledWith(mockPlan);
-      expect(mockCreateJob).toHaveBeenCalledWith(mockPlan, mockData, mockData);
-      expect(mockTrackJob).toHaveBeenCalledWith("job-123");
+      expect(mockCreateJob).toHaveBeenCalledWith(
+        mockPlan,
+        mockData,
+        mockData,
+        false,
+        expect.any(Object)
+      );
+      expect(mockTrackJob).toHaveBeenCalledWith("job-123", expect.any(Object));
       expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 
@@ -236,8 +244,11 @@ describe("apply command", () => {
 
       await applyCommand.handler!(mockArgv as any);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "No changes to apply. Exiting..."
+      // Test that spinner.succeed() was called with the correct message
+      expect(mockOra).toHaveBeenCalled();
+      const spinnerInstance = mockOra.mock.results[0].value as any;
+      expect(spinnerInstance.succeed).toHaveBeenCalledWith(
+        "No changes to apply. Your configuration is up to date. Exiting..."
       );
       expect(mockShowPlan).not.toHaveBeenCalled();
       expect(mockCreateJob).not.toHaveBeenCalled();
