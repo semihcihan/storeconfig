@@ -1,7 +1,7 @@
 import inquirer from "inquirer";
 import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem } from "@semihcihan/shared";
-import { collectPricingItems } from "@semihcihan/shared";
+import { collectPricingItems, logger } from "@semihcihan/shared";
 
 function formatItemType(type: PricingItem["type"]): string {
   switch (type) {
@@ -50,6 +50,17 @@ async function promptForItemSelection(
       choices,
     },
   ]);
+
+  const displayName =
+    selectedItem.type === "offer"
+      ? formatOfferName(selectedItem)
+      : `"${selectedItem.name}"`;
+
+  logger.info(
+    `✅ Selected: ${formatItemType(selectedItem.type)}: ${displayName} (ID: ${
+      selectedItem.id
+    })`
+  );
 
   return selectedItem;
 }
