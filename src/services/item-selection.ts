@@ -1,21 +1,43 @@
 import inquirer from "inquirer";
-import { logger } from "@semihcihan/shared";
 import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem } from "@semihcihan/shared";
 import { collectPricingItems } from "@semihcihan/shared";
+
+function formatItemType(type: PricingItem["type"]): string {
+  switch (type) {
+    case "inAppPurchase":
+      return "In App Purchase";
+    case "subscription":
+      return "Subscription";
+    case "offer":
+      return "Offer";
+    case "app":
+      return "App";
+  }
+}
+
+function formatOfferName(item: PricingItem): string {
+  if (item.type !== "offer" || !item.offerType) {
+    return `"${item.name}"`;
+  }
+
+  const offerType = item.offerType.replace(/_/g, " ").toLowerCase();
+  const capitalizedOfferType =
+    offerType.charAt(0).toUpperCase() + offerType.slice(1);
+
+  return `"${capitalizedOfferType}" | belongs to "${item.parentName}"`;
+}
 
 async function promptForItemSelection(
   items: PricingItem[]
 ): Promise<PricingItem> {
   const choices = items.map((item, index) => {
-    let displayName = item.name;
+    let displayName = `"${item.name}"`;
     if (item.type === "offer") {
-      displayName = `${item.name} - belongs to "${item.parentName}"`;
+      displayName = formatOfferName(item);
     }
     return {
-      name: `${
-        item.type.charAt(0).toUpperCase() + item.type.slice(1)
-      }: "${displayName}" (ID: ${item.id})`,
+      name: `${formatItemType(item.type)}: ${displayName} (ID: ${item.id})`,
       value: item,
     };
   });
