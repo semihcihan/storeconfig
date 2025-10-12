@@ -16,6 +16,7 @@ import comparePriceCmd from "./commands/compare-price";
 import exampleCmd from "./commands/example";
 import configureCmd from "./commands/configure";
 import appleCmd from "./commands/apple";
+import userCmd from "./commands/user";
 import { requireAuth } from "./services/api-client";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
@@ -37,6 +38,7 @@ yargs(hideBin(process.argv))
       "set-price",
       "compare-price",
       "apple",
+      "user",
     ];
     const command = argv._[0] as string;
 
@@ -57,6 +59,7 @@ yargs(hideBin(process.argv))
   .command(exampleCmd)
   .command(configureCmd)
   .command(appleCmd)
+  .command(userCmd)
   .command({
     command: "plan",
     describe: "Show a plan of changes (dry run) - alias for apply --preview",

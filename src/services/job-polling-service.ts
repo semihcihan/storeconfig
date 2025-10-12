@@ -53,14 +53,14 @@ export const trackJob = async (
     }
 
     if (status === "completed") {
-      spinner.succeed("Job completed successfully");
+      spinner.succeed("Actions completed successfully");
       return;
     }
 
     if (status === "failed") {
-      spinner.fail("Job failed");
+      spinner.fail("Actions failed");
       // TODO: receive error on failed job
-      throw new ContextualError("Job failed", jobId);
+      throw new ContextualError("Actions failed", jobId);
     }
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));

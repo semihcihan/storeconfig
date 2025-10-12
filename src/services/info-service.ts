@@ -1,5 +1,4 @@
 import { apiClient } from "./api-client";
-import { logger } from "@semihcihan/shared";
 
 interface InfoResponse {
   success: boolean;

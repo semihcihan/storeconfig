@@ -26,8 +26,6 @@ export async function startInteractivePricing(
 
   const selectedItem = await selectPricingItem(appStoreState);
 
-  logger.info(`✅ Selected: ${selectedItem.type} "${selectedItem.name}"`);
-
   const basePricePoint = await promptForBasePricePoint(
     selectedItem,
     appStoreState,
