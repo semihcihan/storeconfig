@@ -114,7 +114,7 @@ storeconfig apply
 
 #### `set-price`
 
-Set prices for your app, in-app purchases, and subscriptions interactively. Easiest way to manage pricing.
+Set prices for your app, in-app purchases, and subscriptions interactively. This updates pricing only in your configuration file; changes won't be applied to App Store Connect until you run the `apply` command.
 
 ```bash
 # Set prices (uses storeconfig.json by default)
