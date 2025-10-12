@@ -99,7 +99,7 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("job-123");
+        expect(result).toEqual({ jobId: "job-123", newJobCreated: true });
         expect(mockGetInfo).toHaveBeenCalled();
         expect(mockInquirer.prompt).toHaveBeenCalledWith([
           {
@@ -133,7 +133,7 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("job-123");
+        expect(result).toEqual({ jobId: "job-123", newJobCreated: true });
         expect(mockApiClient.post).toHaveBeenCalledWith("/apply", {
           plan: mockPlan,
           currentState: mockCurrentState,
@@ -203,7 +203,10 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("ongoing-job-123");
+        expect(result).toEqual({
+          jobId: "ongoing-job-123",
+          newJobCreated: false,
+        });
         expect(mockInquirer.prompt).toHaveBeenCalled();
         expect(mockSpinner.start).toHaveBeenCalledWith(
           "Tracking progress of ongoing actions with ID: ongoing-job-123"
@@ -212,7 +215,9 @@ describe("job-service", () => {
       });
 
       it("should return null when user chooses not to watch ongoing job", async () => {
-        mockInquirer.prompt.mockResolvedValueOnce({ watchOngoing: false });
+        mockInquirer.prompt
+          .mockResolvedValueOnce({ watchOngoing: false })
+          .mockResolvedValueOnce({ confirmed: false });
 
         const result = await createJob(
           mockPlan,
@@ -251,7 +256,10 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("pending-job-123");
+        expect(result).toEqual({
+          jobId: "pending-job-123",
+          newJobCreated: false,
+        });
       });
 
       it("should not treat completed job as ongoing", async () => {
@@ -279,7 +287,7 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("new-job-123");
+        expect(result).toEqual({ jobId: "new-job-123", newJobCreated: true });
         expect(mockApiClient.post).toHaveBeenCalled();
       });
 
@@ -308,7 +316,7 @@ describe("job-service", () => {
           mockSpinner
         );
 
-        expect(result).toBe("new-job-123");
+        expect(result).toEqual({ jobId: "new-job-123", newJobCreated: true });
         expect(mockApiClient.post).toHaveBeenCalled();
       });
     });

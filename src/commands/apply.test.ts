@@ -99,7 +99,7 @@ describe("apply command", () => {
     mockInquirer.prompt.mockResolvedValue({ confirmed: true });
 
     // Mock job services
-    mockCreateJob.mockResolvedValue("job-123");
+    mockCreateJob.mockResolvedValue({ jobId: "job-123", newJobCreated: true });
     mockTrackJob.mockResolvedValue(undefined);
     mockGetInfo.mockResolvedValue({
       currentJob: undefined,
@@ -220,7 +220,11 @@ describe("apply command", () => {
         false,
         expect.any(Object)
       );
-      expect(mockTrackJob).toHaveBeenCalledWith("job-123", expect.any(Object));
+      expect(mockTrackJob).toHaveBeenCalledWith(
+        "job-123",
+        expect.any(Object),
+        mockPlan
+      );
       expect(mockApiClient.post).toHaveBeenCalledTimes(1); // only diff call
     });
 

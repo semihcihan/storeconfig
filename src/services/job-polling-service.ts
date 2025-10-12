@@ -1,13 +1,9 @@
 import { apiClient } from "./api-client";
 import { ContextualError, logger } from "@semihcihan/shared";
-import { AnyAction } from "@semihcihan/shared";
+import { AnyAction, Plan } from "@semihcihan/shared";
 import { Ora } from "ora";
 
-const POLL_INTERVAL_MS = 1000;
-
-const getActionDescription = (action: AnyAction): string => {
-  return action.type;
-};
+const POLL_INTERVAL_MS = 5000;
 
 interface JobStatusResponse {
   success: boolean;
@@ -22,7 +18,11 @@ interface JobStatusResponse {
   };
 }
 
-export const trackJob = async (jobId: string, spinner: Ora): Promise<void> => {
+export const trackJob = async (
+  jobId: string,
+  spinner: Ora,
+  plan?: Plan
+): Promise<void> => {
   let lastActionIndex = -1;
 
   while (true) {
@@ -31,6 +31,19 @@ export const trackJob = async (jobId: string, spinner: Ora): Promise<void> => {
     ).data;
 
     if (currentActionIndex !== lastActionIndex) {
+      if (
+        plan &&
+        currentActionIndex !== lastActionIndex + 1 &&
+        lastActionIndex >= 0
+      ) {
+        await displaySkippedActions(
+          plan,
+          lastActionIndex + 1,
+          currentActionIndex,
+          spinner
+        );
+      }
+
       const actionDescription = getActionDescription(currentAction);
       const progressText = `Processing action [${
         currentActionIndex + 1
@@ -57,4 +70,33 @@ export const trackJob = async (jobId: string, spinner: Ora): Promise<void> => {
 const getJobStatus = async (jobId: string): Promise<JobStatusResponse> => {
   const response = await apiClient.get<JobStatusResponse>(`/status/${jobId}`);
   return response.data;
+};
+
+const getActionDescription = (action: AnyAction): string => {
+  return action.type;
+};
+
+const displaySkippedActions = async (
+  plan: Plan,
+  startIndex: number,
+  endIndex: number,
+  spinner: Ora
+): Promise<void> => {
+  const safeStartIndex = Math.max(0, startIndex);
+  const safeEndIndex = Math.min(plan.length, endIndex);
+
+  for (let i = safeStartIndex; i < safeEndIndex; i++) {
+    const action = plan[i];
+    let totalActions = plan.length;
+    if (action) {
+      const actionDescription = getActionDescription(action);
+      const progressText = `Processing action [${
+        i + 1
+      }/${totalActions}] ${actionDescription}`;
+      spinner.text = progressText;
+
+      // Display for 0.5 seconds
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 };

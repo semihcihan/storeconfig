@@ -4,16 +4,24 @@ import { getInfo } from "./info-service";
 import { apiClient } from "./api-client";
 import { Ora } from "ora";
 
+type CreateJobResponse = {
+  jobId: string;
+  newJobCreated: boolean;
+};
+
 export const createJob = async (
   plan: any[],
   currentState: any,
   desiredState: any,
   dryRun: boolean = false,
   spinner: Ora
-): Promise<string | null> => {
+): Promise<CreateJobResponse | null> => {
   const ongoingJobId = await checkForOngoingJob();
   if (ongoingJobId) {
-    return await handleOngoingJob(ongoingJobId, spinner);
+    let jobId = await handleOngoingJob(ongoingJobId, spinner);
+    if (jobId) {
+      return { jobId, newJobCreated: false };
+    }
   }
 
   const confirmed = await confirmChanges();
@@ -30,7 +38,7 @@ export const createJob = async (
     dryRun: dryRun,
   });
 
-  return applyResponse.data.data;
+  return { jobId: applyResponse.data.data, newJobCreated: true };
 };
 
 const handleOngoingJob = async (

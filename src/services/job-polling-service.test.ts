@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { ContextualError, logger } from "@semihcihan/shared";
+import { ContextualError, logger, Plan } from "@semihcihan/shared";
 import ora from "ora";
 import { trackJob } from "./job-polling-service";
 import { apiClient } from "./api-client";
@@ -133,7 +133,14 @@ describe("job-polling-service", () => {
             currentActionIndex: 0,
             currentAction: {
               type: "CREATE_IN_APP_PURCHASE",
-              payload: { productId: "test1" },
+              payload: {
+                inAppPurchase: {
+                  productId: "test1",
+                  type: "CONSUMABLE",
+                  referenceName: "Test Product 1",
+                  familySharable: false,
+                },
+              },
             },
             totalActions: 3,
             createdAt: "2023-01-01T00:00:00Z",
@@ -148,7 +155,12 @@ describe("job-polling-service", () => {
             currentActionIndex: 1,
             currentAction: {
               type: "UPDATE_IN_APP_PURCHASE",
-              payload: { productId: "test2" },
+              payload: {
+                productId: "test2",
+                changes: {
+                  referenceName: "Updated Test Product 2",
+                },
+              },
             },
             totalActions: 3,
             createdAt: "2023-01-01T00:00:00Z",
@@ -162,8 +174,11 @@ describe("job-polling-service", () => {
             status: "completed" as const,
             currentActionIndex: 2,
             currentAction: {
-              type: "DELETE_IN_APP_PURCHASE",
-              payload: { productId: "test3" },
+              type: "DELETE_IAP_LOCALIZATION",
+              payload: {
+                productId: "test3",
+                locale: "en-US",
+              },
             },
             totalActions: 3,
             createdAt: "2023-01-01T00:00:00Z",
@@ -188,7 +203,7 @@ describe("job-polling-service", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledTimes(3);
       expect(mockSpinner.text).toBe(
-        "Processing action [3/3] DELETE_IN_APP_PURCHASE"
+        "Processing action [3/3] DELETE_IAP_LOCALIZATION"
       );
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
         "Job completed successfully"
@@ -239,7 +254,12 @@ describe("job-polling-service", () => {
             currentActionIndex: 2,
             currentAction: {
               type: "UPDATE_IN_APP_PURCHASE",
-              payload: { productId: "test2" },
+              payload: {
+                productId: "test2",
+                changes: {
+                  referenceName: "Updated Test Product 2",
+                },
+              },
             },
             totalActions: 3,
             createdAt: "2023-01-01T00:00:00Z",
@@ -410,6 +430,308 @@ describe("job-polling-service", () => {
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
         "Job completed successfully"
       );
+    });
+
+    it("should display skipped actions when plan is provided and action index jumps", async () => {
+      const mockPlan: Plan = [
+        {
+          type: "CREATE_IN_APP_PURCHASE",
+          payload: {
+            inAppPurchase: {
+              productId: "test1",
+              type: "CONSUMABLE",
+              referenceName: "Test Product 1",
+              familySharable: false,
+            },
+          },
+        },
+        {
+          type: "UPDATE_IN_APP_PURCHASE",
+          payload: {
+            productId: "test2",
+            changes: {
+              referenceName: "Updated Test Product 2",
+            },
+          },
+        },
+        {
+          type: "DELETE_IAP_LOCALIZATION",
+          payload: {
+            productId: "test3",
+            locale: "en-US",
+          },
+        },
+      ];
+
+      let callCount = 0;
+      const mockJobStatuses = [
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "processing" as const,
+            currentActionIndex: 0,
+            currentAction: {
+              type: "CREATE_IN_APP_PURCHASE",
+              payload: {
+                inAppPurchase: {
+                  productId: "test1",
+                  type: "CONSUMABLE",
+                  referenceName: "Test Product 1",
+                  familySharable: false,
+                },
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "completed" as const,
+            currentActionIndex: 2, // Jumped from 0 to 2, skipping index 1
+            currentAction: {
+              type: "DELETE_IAP_LOCALIZATION",
+              payload: {
+                productId: "test3",
+                locale: "en-US",
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+      ];
+
+      mockApiClient.get.mockImplementation(() => {
+        const response = mockJobStatuses[callCount];
+        callCount++;
+        return Promise.resolve({ data: response } as any);
+      });
+
+      // Track spinner text changes
+      const spinnerTextCalls: string[] = [];
+      const originalTextSetter =
+        Object.getOwnPropertyDescriptor(mockSpinner, "text") || {};
+      Object.defineProperty(mockSpinner, "text", {
+        get: () =>
+          originalTextSetter.get?.call(mockSpinner) || mockSpinner._text || "",
+        set: (value: string) => {
+          mockSpinner._text = value;
+          spinnerTextCalls.push(value);
+        },
+        configurable: true,
+      });
+
+      // Mock setTimeout to resolve immediately for testing
+      jest.spyOn(global, "setTimeout").mockImplementation((callback: any) => {
+        callback();
+        return {} as any;
+      });
+
+      await trackJob(jobId, mockSpinner, mockPlan);
+
+      expect(mockApiClient.get).toHaveBeenCalledTimes(2);
+      expect(spinnerTextCalls).toContain(
+        "Processing action [1/3] CREATE_IN_APP_PURCHASE"
+      );
+      // Should have displayed skipped action for index 1
+      expect(spinnerTextCalls).toContain(
+        "Processing action [2/3] UPDATE_IN_APP_PURCHASE"
+      );
+      expect(spinnerTextCalls).toContain(
+        "Processing action [3/3] DELETE_IAP_LOCALIZATION"
+      );
+      expect(mockSpinner.succeed).toHaveBeenCalledWith(
+        "Job completed successfully"
+      );
+
+      // Restore setTimeout
+      jest.restoreAllMocks();
+    });
+
+    it("should not display skipped actions when plan is not provided", async () => {
+      let callCount = 0;
+      const mockJobStatuses = [
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "processing" as const,
+            currentActionIndex: 0,
+            currentAction: {
+              type: "CREATE_IN_APP_PURCHASE",
+              payload: {
+                inAppPurchase: {
+                  productId: "test1",
+                  type: "CONSUMABLE",
+                  referenceName: "Test Product 1",
+                  familySharable: false,
+                },
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "processing" as const,
+            currentActionIndex: 2, // Jumped from 0 to 2
+            currentAction: {
+              type: "DELETE_IAP_LOCALIZATION",
+              payload: {
+                productId: "test3",
+                locale: "en-US",
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "completed" as const,
+            currentActionIndex: 2,
+            currentAction: {
+              type: "DELETE_IAP_LOCALIZATION",
+              payload: {
+                productId: "test3",
+                locale: "en-US",
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+      ];
+
+      mockApiClient.get.mockImplementation(() => {
+        const response = mockJobStatuses[callCount];
+        callCount++;
+        return Promise.resolve({ data: response } as any);
+      });
+
+      // Mock setTimeout to resolve immediately for testing
+      jest.spyOn(global, "setTimeout").mockImplementation((callback: any) => {
+        callback();
+        return {} as any;
+      });
+
+      await trackJob(jobId, mockSpinner); // No plan provided
+
+      expect(mockApiClient.get).toHaveBeenCalledTimes(3);
+      // Should not display skipped actions
+      expect(mockSpinner.text).toBe(
+        "Processing action [3/3] DELETE_IAP_LOCALIZATION"
+      );
+      expect(mockSpinner.succeed).toHaveBeenCalledWith(
+        "Job completed successfully"
+      );
+
+      // Restore setTimeout
+      jest.restoreAllMocks();
+    });
+
+    it("should handle plan with undefined actions gracefully", async () => {
+      const mockPlan: Plan = [
+        {
+          type: "CREATE_IN_APP_PURCHASE",
+          payload: {
+            inAppPurchase: {
+              productId: "test1",
+              type: "CONSUMABLE",
+              referenceName: "Test Product 1",
+              familySharable: false,
+            },
+          },
+        },
+        undefined as any, // Undefined action
+        {
+          type: "DELETE_IAP_LOCALIZATION",
+          payload: {
+            productId: "test3",
+            locale: "en-US",
+          },
+        },
+      ];
+
+      let callCount = 0;
+      const mockJobStatuses = [
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "processing" as const,
+            currentActionIndex: 0,
+            currentAction: {
+              type: "CREATE_IN_APP_PURCHASE",
+              payload: {
+                inAppPurchase: {
+                  productId: "test1",
+                  type: "CONSUMABLE",
+                  referenceName: "Test Product 1",
+                  familySharable: false,
+                },
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "completed" as const,
+            currentActionIndex: 2,
+            currentAction: {
+              type: "DELETE_IAP_LOCALIZATION",
+              payload: {
+                productId: "test3",
+                locale: "en-US",
+              },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+      ];
+
+      mockApiClient.get.mockImplementation(() => {
+        const response = mockJobStatuses[callCount];
+        callCount++;
+        return Promise.resolve({ data: response } as any);
+      });
+
+      // Mock setTimeout to resolve immediately for testing
+      jest.spyOn(global, "setTimeout").mockImplementation((callback: any) => {
+        callback();
+        return {} as any;
+      });
+
+      await trackJob(jobId, mockSpinner, mockPlan);
+
+      expect(mockApiClient.get).toHaveBeenCalledTimes(2);
+      expect(mockSpinner.succeed).toHaveBeenCalledWith(
+        "Job completed successfully"
+      );
+
+      // Restore setTimeout
+      jest.restoreAllMocks();
     });
   });
 });

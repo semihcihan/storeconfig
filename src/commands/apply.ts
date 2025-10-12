@@ -75,15 +75,17 @@ const command: CommandModule = {
         return;
       }
 
-      const jobId = await createJob(
+      const jobResponse = await createJob(
         plan,
         currentState,
         desiredState,
         dryRun,
         spinner
       );
-      if (jobId) {
-        await trackJob(jobId, spinner);
+      if (jobResponse) {
+        const { jobId, newJobCreated } = jobResponse;
+        // If new job was created plan matches the jobId, if not it's an old job and and old plan
+        await trackJob(jobId, spinner, newJobCreated ? plan : undefined);
       }
     } catch (error) {
       spinner.fail("Apply failed");
