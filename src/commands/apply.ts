@@ -3,6 +3,8 @@ import {
   logger,
   DEFAULT_CONFIG_FILENAME,
   validateFileExists,
+  Plan,
+  AppStoreModel,
 } from "@semihcihan/shared";
 import { showPlan } from "../services/plan-service";
 import { readJsonFile } from "@semihcihan/shared";
@@ -12,6 +14,14 @@ import { apiClient } from "../services/api-client";
 import { trackJob } from "../services/job-polling-service";
 import { createJob } from "../services/job-service";
 import ora from "ora";
+
+interface DiffResponse {
+  success: boolean;
+  data: {
+    plan: Plan;
+    currentState: AppStoreModel;
+  };
+}
 
 const command: CommandModule = {
   command: "apply",
@@ -55,7 +65,7 @@ const command: CommandModule = {
       );
 
       // Generate diff plan using the API (which will fetch current state internally)
-      const diffResponse = await apiClient.post("/diff", {
+      const diffResponse = await apiClient.post<DiffResponse>("/diff", {
         desiredState: desiredState,
       });
 
