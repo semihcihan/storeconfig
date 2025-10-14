@@ -92,7 +92,7 @@ describe("job-polling-service", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledWith(`/status/${jobId}`);
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
     });
 
@@ -118,8 +118,8 @@ describe("job-polling-service", () => {
       await expect(trackJob(jobId, mockSpinner)).rejects.toThrow();
 
       expect(mockApiClient.get).toHaveBeenCalledWith(`/status/${jobId}`);
-      expect(mockSpinner.fail).toHaveBeenCalledWith("Job failed");
-      expect(mockContextualError).toHaveBeenCalledWith("Job failed", jobId);
+      expect(mockSpinner.fail).toHaveBeenCalledWith("Actions failed");
+      expect(mockContextualError).toHaveBeenCalledWith("Actions failed", jobId);
     });
 
     it("should update spinner text when action index changes", async () => {
@@ -206,7 +206,7 @@ describe("job-polling-service", () => {
         "Processing action [3/3] DELETE_IAP_LOCALIZATION"
       );
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout
@@ -288,7 +288,7 @@ describe("job-polling-service", () => {
         "Processing action [3/3] UPDATE_IN_APP_PURCHASE"
       );
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout
@@ -346,7 +346,7 @@ describe("job-polling-service", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledTimes(2);
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout
@@ -380,7 +380,7 @@ describe("job-polling-service", () => {
 
       expect(mockSpinner.text).toBe("Processing action [1/1] UPDATE_APP_PRICE");
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
     });
 
@@ -404,7 +404,7 @@ describe("job-polling-service", () => {
 
       expect(mockSpinner.text).toBe("Processing action [1/1] ");
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
     });
 
@@ -428,7 +428,7 @@ describe("job-polling-service", () => {
 
       expect(mockSpinner.text).toBe("Processing action [1/1] undefined");
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
     });
 
@@ -547,7 +547,7 @@ describe("job-polling-service", () => {
         "Processing action [3/3] DELETE_IAP_LOCALIZATION"
       );
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout
@@ -637,7 +637,7 @@ describe("job-polling-service", () => {
         "Processing action [3/3] DELETE_IAP_LOCALIZATION"
       );
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout
@@ -727,7 +727,7 @@ describe("job-polling-service", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledTimes(2);
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
-        "Job completed successfully"
+        "Actions completed successfully"
       );
 
       // Restore setTimeout

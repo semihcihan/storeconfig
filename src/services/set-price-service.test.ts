@@ -219,17 +219,6 @@ describe("set-price-service", () => {
       // Error logging was removed from the function, so no error logging is expected
       expect(mockLogger.error).not.toHaveBeenCalled();
     });
-
-    it("should log selected item", async () => {
-      await startInteractivePricing({
-        appStoreState: mockAppStoreData,
-        fetchTerritoryPricePointsForSelectedItem: mockFetchTerritoryPricePoints,
-      });
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        '✅ Selected: app "Test App"'
-      );
-    });
   });
 
   afterEach(() => {
