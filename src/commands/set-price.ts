@@ -59,6 +59,9 @@ const setPriceCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
+    logger.warn("this command will be available soon");
+    return;
+
     const inputFile = validateFileExists(argv.file as string, {
       fileDescription: "store config JSON file",
     });

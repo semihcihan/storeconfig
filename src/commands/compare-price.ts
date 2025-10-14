@@ -29,6 +29,9 @@ const comparePriceCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
+    logger.warn("this command will be available soon");
+    return;
+
     const inputFile = validateFileExists(argv.file as string, {
       fileDescription: "input JSON file with app store data",
     });
