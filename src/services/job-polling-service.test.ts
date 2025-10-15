@@ -119,7 +119,9 @@ describe("job-polling-service", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledWith(`/status/${jobId}`);
       expect(mockSpinner.fail).toHaveBeenCalledWith("Actions failed");
-      expect(mockContextualError).toHaveBeenCalledWith("Job 'test-job-123' failed");
+      expect(mockContextualError).toHaveBeenCalledWith(
+        "Job 'test-job-123' failed"
+      );
     });
 
     it("should update spinner text when action index changes", async () => {
