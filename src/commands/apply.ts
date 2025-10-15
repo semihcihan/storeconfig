@@ -23,6 +23,13 @@ interface DiffResponse {
   };
 }
 
+const APPLY_REMINDER =
+  "\n┌─────────────────────────────────────────────────────────────┐\n" +
+  "│  This may take up to 30 minutes depending on the changes.   │\n" +
+  "│  Processing continues on our servers even if CLI is closed. │\n" +
+  "│  You can rerun the same command to check current status.    │\n" +
+  "└─────────────────────────────────────────────────────────────┘\n\n";
+
 const command: CommandModule = {
   command: "apply",
   describe: "Apply the changes to App Store Connect",
@@ -95,13 +102,7 @@ const command: CommandModule = {
       if (jobResponse) {
         const { jobId, newJobCreated } = jobResponse;
         // If new job was created plan matches the jobId, if not it's an old job and and old plan
-        spinner.prefixText =
-          "\n┌─────────────────────────────────────────────────────────────┐\n" +
-          "│  This may take up to 30 minutes depending on the changes.   │\n" +
-          "│  Processing continues on our servers even if CLI is closed. │\n" +
-          "│  You can rerun the same command to check current status.    │\n" +
-          "└─────────────────────────────────────────────────────────────┘\n\n";
-        await new Promise((resolve) => setTimeout(resolve, 10000));
+        spinner.prefixText = APPLY_REMINDER;
         await trackJob(jobId, spinner, newJobCreated ? plan : undefined);
       }
     } catch (error) {

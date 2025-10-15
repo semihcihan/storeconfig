@@ -6,6 +6,7 @@ interface InfoResponse {
     currentJob?: {
       id: string;
       status: "pending" | "processing" | "completed" | "failed";
+      error: string | undefined;
     };
     user: {
       id: string;

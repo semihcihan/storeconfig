@@ -10,8 +10,9 @@ interface JobStatusResponse {
   data: {
     jobId: string;
     status: "pending" | "processing" | "completed" | "failed";
+    error: string | undefined;
     currentActionIndex: number;
-    currentAction: AnyAction;
+    currentAction: AnyAction | undefined;
     totalActions: number;
     createdAt: string;
     updatedAt: string;
@@ -26,7 +27,7 @@ export const trackJob = async (
   let lastActionIndex = -1;
 
   while (true) {
-    const { status, currentActionIndex, currentAction, totalActions } = (
+    const { status, currentActionIndex, currentAction, totalActions, error } = (
       await getJobStatus(jobId)
     ).data;
 
@@ -59,8 +60,11 @@ export const trackJob = async (
 
     if (status === "failed") {
       spinner.fail("Actions failed");
-      // TODO: receive error on failed job
-      throw new ContextualError("Actions failed", jobId);
+      let message = `Job '${jobId}' failed`;
+      if (error) {
+        message += `: ${error}`;
+      }
+      throw new ContextualError(message);
     }
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -72,7 +76,10 @@ const getJobStatus = async (jobId: string): Promise<JobStatusResponse> => {
   return response.data;
 };
 
-const getActionDescription = (action: AnyAction): string => {
+const getActionDescription = (action: AnyAction | undefined): string => {
+  if (!action) {
+    return "Unknown Action";
+  }
   return action.type;
 };
 

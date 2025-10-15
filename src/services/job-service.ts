@@ -16,7 +16,7 @@ export const createJob = async (
   dryRun: boolean = false,
   spinner: Ora
 ): Promise<CreateJobResponse | null> => {
-  const ongoingJobId = await checkForOngoingJob();
+  const ongoingJobId = await getOngoingJobId();
   if (ongoingJobId) {
     let jobId = await handleOngoingJob(ongoingJobId, spinner);
     if (jobId) {
@@ -59,7 +59,7 @@ const handleOngoingJob = async (
   }
 };
 
-const checkForOngoingJob = async (): Promise<string | null> => {
+const getOngoingJobId = async (): Promise<string | null> => {
   const info = await getInfo();
   const { currentJob } = info;
 
@@ -86,8 +86,7 @@ const promptToWatchOngoingJob = async (jobId: string): Promise<boolean> => {
   return watchOngoing;
 };
 
-const confirmChanges = async (): Promise<boolean> => {
-  logger.std(`
+const APPLY_CRITICAL_WARNING = `
 ┌───────────────────────────────────────────────────────────┐
 │  ⚠️  CRITICAL WARNING                                      │
 ├───────────────────────────────────────────────────────────┤
@@ -97,7 +96,10 @@ const confirmChanges = async (): Promise<boolean> => {
 │  Some operations are inherently irreversible — even if    │
 │  performed manually through App Store Connect.            │
 └───────────────────────────────────────────────────────────┘
-`);
+`;
+
+const confirmChanges = async (): Promise<boolean> => {
+  logger.std(APPLY_CRITICAL_WARNING);
 
   const { confirmed } = await inquirer.prompt([
     {
