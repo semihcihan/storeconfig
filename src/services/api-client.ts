@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from "axios";
-import { ContextualError } from "@semihcihan/shared";
 import { keyService } from "./key-service";
 
 // Create a configured axios instance
@@ -45,9 +44,8 @@ export const isAuthenticated = (): boolean => {
 
 export const requireAuth = (): void => {
   if (!isAuthenticated()) {
-    throw new ContextualError(
-      "Authentication required",
-      "Please run 'storeconfig configure' first to set up your secret key"
+    throw new Error(
+      "Authentication required. Please run 'storeconfig configure' first to set up your secret key"
     );
   }
 };

@@ -106,7 +106,7 @@ const command: CommandModule = {
         await trackJob(jobId, spinner, newJobCreated ? plan : undefined);
       }
     } catch (error) {
-      spinner.fail("Apply failed");
+      spinner.stop();
       logger.error(`Apply failed`, error);
       process.exit(1);
     }

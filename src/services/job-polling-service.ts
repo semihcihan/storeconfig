@@ -1,5 +1,4 @@
 import { apiClient } from "./api-client";
-import { ContextualError, logger } from "@semihcihan/shared";
 import { AnyAction, Plan } from "@semihcihan/shared";
 import { Ora } from "ora";
 
@@ -59,12 +58,11 @@ export const trackJob = async (
     }
 
     if (status === "failed") {
-      spinner.fail("Actions failed");
-      let message = `Job '${jobId}' failed`;
+      let message = `Actions ID '${jobId}'`;
       if (error) {
-        message += `: ${error}`;
+        message += `\n${error}`;
       }
-      throw new ContextualError(message);
+      throw new Error(message);
     }
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));

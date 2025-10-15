@@ -99,7 +99,7 @@ const setPriceCommand: CommandModule = {
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
       spinner.succeed(`Updated ${inputFile} with pricing changes.`);
     } catch (error) {
-      spinner.fail("Set-price failed");
+      spinner.stop();
       logger.error(`Set-price failed`, error);
       process.exit(1);
     }

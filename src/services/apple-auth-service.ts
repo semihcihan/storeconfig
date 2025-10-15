@@ -1,8 +1,8 @@
 import fs from "fs";
 import {
+  ContextualError,
   logger,
   validateFileExists,
-  ContextualError,
 } from "@semihcihan/shared";
 import { apiClient } from "./api-client";
 
@@ -46,8 +46,8 @@ export class AppleAuthService {
       return fs.readFileSync(keyPath, "utf8");
     } catch (error) {
       throw new ContextualError(
-        "Failed to read private key file",
-        `Could not read the file at ${keyPath}: ${error}`
+        `Failed to read private key file at ${keyPath}`,
+        error
       );
     }
   }
@@ -60,9 +60,8 @@ export class AppleAuthService {
       !privateKey.includes("BEGIN PRIVATE KEY") &&
       !privateKey.includes("BEGIN RSA PRIVATE KEY")
     ) {
-      throw new ContextualError(
-        "Invalid private key file",
-        "The file does not appear to be a valid Apple private key (.p8 file)"
+      throw new Error(
+        "Invalid private key file, the file does not appear to be a valid Apple private key (.p8 file)"
       );
     }
   }

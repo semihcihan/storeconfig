@@ -83,7 +83,7 @@ const fetchCommand: CommandModule = {
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
       spinner.succeed(`Successfully fetched app and wrote to ${outputFile}`);
     } catch (error) {
-      spinner.fail("Fetch failed");
+      spinner.stop();
       logger.error(`Fetch failed`, error);
       process.exit(1);
     }
