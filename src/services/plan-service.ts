@@ -26,7 +26,7 @@ export async function showAction(action: AnyAction) {
 
   switch (action.type) {
     case "UPDATE_APP_AVAILABILITY":
-      const territories = action.payload.availableTerritories;
+      const territories = action.payload.desiredTerritories;
       const isWorldwide = isWorldwideTerritories(territories);
       title = "Updating app availability";
       details = isWorldwide

@@ -20,6 +20,7 @@ jest.mock("@semihcihan/shared", () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+    std: jest.fn(),
   },
 }));
 
@@ -116,7 +117,7 @@ describe("job-service", () => {
           desiredState: mockDesiredState,
           dryRun: false,
         });
-        expect(mockLogger.warn).toHaveBeenCalled();
+        expect(mockLogger.warn).not.toHaveBeenCalled();
       });
 
       it("should create a new job with dryRun=true when specified", async () => {
@@ -183,6 +184,7 @@ describe("job-service", () => {
           currentJob: {
             id: "ongoing-job-123",
             status: "processing",
+            error: undefined,
           },
           user: {
             id: "user-123",
@@ -239,6 +241,7 @@ describe("job-service", () => {
           currentJob: {
             id: "pending-job-123",
             status: "pending",
+            error: undefined,
           },
           user: {
             id: "user-123",
@@ -267,6 +270,7 @@ describe("job-service", () => {
           currentJob: {
             id: "completed-job-123",
             status: "completed",
+            error: undefined,
           },
           user: {
             id: "user-123",
@@ -296,6 +300,7 @@ describe("job-service", () => {
           currentJob: {
             id: "failed-job-123",
             status: "failed",
+            error: "Job failed due to error",
           },
           user: {
             id: "user-123",
