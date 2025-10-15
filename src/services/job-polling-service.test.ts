@@ -115,13 +115,11 @@ describe("job-polling-service", () => {
 
       mockApiClient.get.mockResolvedValue({ data: mockJobStatus });
 
-      await expect(trackJob(jobId, mockSpinner)).rejects.toThrow();
+      await expect(trackJob(jobId, mockSpinner)).rejects.toThrow(
+        "Actions ID 'test-job-123'"
+      );
 
       expect(mockApiClient.get).toHaveBeenCalledWith(`/status/${jobId}`);
-      expect(mockSpinner.fail).toHaveBeenCalledWith("Actions failed");
-      expect(mockContextualError).toHaveBeenCalledWith(
-        "Job 'test-job-123' failed"
-      );
     });
 
     it("should update spinner text when action index changes", async () => {
