@@ -87,11 +87,16 @@ const promptToWatchOngoingJob = async (jobId: string): Promise<boolean> => {
 };
 
 const confirmChanges = async (): Promise<boolean> => {
-  logger.warn(`### CRITICAL WARNING ###
-You are about to apply changes directly to App Store Connect.
-
-These changes will take effect immediately and may impact your live app configuration.
-Some operations are inherently irreversible — even if performed manually through App Store Connect.
+  logger.std(`
+┌───────────────────────────────────────────────────────────┐
+│  ⚠️  CRITICAL WARNING                                      │
+├───────────────────────────────────────────────────────────┤
+│  You are about to apply changes directly to App Store     │
+│  Connect. These changes will take effect immediately.     │
+│                                                           │
+│  Some operations are inherently irreversible — even if    │
+│  performed manually through App Store Connect.            │
+└───────────────────────────────────────────────────────────┘
 `);
 
   const { confirmed } = await inquirer.prompt([
