@@ -37,6 +37,7 @@ jest.mock("../services/api-client", () => ({
 }));
 jest.mock("fs");
 jest.mock("inquirer");
+jest.mock("ora");
 
 const mockLogger = jest.mocked(logger);
 const mockFs = jest.mocked(fs);
@@ -75,6 +76,15 @@ describe("fetch command", () => {
     mockLogger.debug.mockReturnValue(undefined);
     mockLogger.warn.mockReturnValue(undefined);
     mockFs.writeFileSync.mockReturnValue(undefined as any);
+
+    // Mock ora spinner
+    const mockSpinner = {
+      start: jest.fn().mockReturnThis(),
+      succeed: jest.fn().mockReturnThis(),
+      fail: jest.fn().mockReturnThis(),
+      stop: jest.fn().mockReturnThis(),
+    };
+    mockOra.mockReturnValue(mockSpinner as any);
 
     // Set default environment
     process.env.API_BASE_URL = "http://localhost:3000";
@@ -146,7 +156,7 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        "Successfully fetched app and wrote to output.json"
+        "Successfully fetched app: output.json"
       );
     });
 
@@ -179,7 +189,7 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        `Successfully fetched app and wrote to ${DEFAULT_CONFIG_FILENAME}`
+        `Successfully fetched app: ${DEFAULT_CONFIG_FILENAME}`
       );
     });
 
@@ -344,10 +354,12 @@ describe("fetch command", () => {
         fetchCommand.handler!(mockArgvWithoutId as any)
       ).rejects.toThrow("process.exit called");
 
-      // The actual implementation uses spinner.fail() instead of logger.error()
-      // expect(mockLogger.error).toHaveBeenCalledWith(
-      //   "No apps found in your App Store Connect account"
-      // );
+      // Test that spinner.fail() was called with the correct message
+      expect(mockOra).toHaveBeenCalled();
+      const spinnerInstance = mockOra.mock.results[0].value as any;
+      expect(spinnerInstance.fail).toHaveBeenCalledWith(
+        "No IOS apps found in your App Store Connect account"
+      );
     });
 
     it("should handle fetch apps API error", async () => {
@@ -426,7 +438,7 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        `Successfully fetched app and wrote to ${DEFAULT_CONFIG_FILENAME}`
+        `Successfully fetched app: ${DEFAULT_CONFIG_FILENAME}`
       );
     });
   });
@@ -520,7 +532,7 @@ describe("fetch command", () => {
       );
     });
 
-    it("should log success message after completion", async () => {
+    it("should show success message after completion", async () => {
       mockApiClient.post.mockResolvedValueOnce({
         data: {
           success: true,
@@ -530,10 +542,12 @@ describe("fetch command", () => {
 
       await fetchCommand.handler!(mockArgv as any);
 
-      // The actual implementation uses spinner.succeed() instead of logger.info()
-      // expect(mockLogger.info).toHaveBeenCalledWith(
-      //   "Successfully fetched app and wrote to output.json"
-      // );
+      // Test that spinner.succeed() was called with the correct message
+      expect(mockOra).toHaveBeenCalled();
+      const spinnerInstance = mockOra.mock.results[0].value as any;
+      expect(spinnerInstance.succeed).toHaveBeenCalledWith(
+        "Successfully fetched app: output.json"
+      );
     });
   });
 
