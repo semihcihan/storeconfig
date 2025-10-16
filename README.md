@@ -211,6 +211,54 @@ storeconfig example --type iap
 }
 ```
 
+## 🧰 AI Integration - IDE Support - JSON Schema
+
+StoreConfig provides a JSON Schema that enhances the development experience by offering validation, autocomplete, and IntelliSense support in your favorite IDE, while also improving results with AI tools.
+
+### AI Integration
+
+When using AI tools to modify your StoreConfig JSON files, provide the schema URL for more accurate and consistent results:
+
+**JSON Schema URL:** `https://storeconfig.com/storeconfig-schema.json`
+
+### VSCode Setup
+
+1. **Open VSCode Settings** (Cmd/Ctrl + ,)
+2. **Search for "json schema"**
+3. **Ensure Schema Download is enabled:**
+4. **Click "Edit in settings.json"**
+5. **Add the following configuration:**
+
+```json
+// root settings.json
+{
+  // Other settings (if any)...
+  "json.schemas": [
+    // Other schemas (if any)...
+    {
+      "fileMatch": ["*storeconfig*.json"],
+      "url": "https://storeconfig.com/storeconfig-schema.json"
+    }
+  ]
+}
+```
+
+> **Note:** You can add this configuration to either:
+>
+> - **User Settings** (applies to all your projects)
+> - **Workspace Settings** (applies only to the current project)
+
+### Benefits
+
+- ✅ **Real-time validation** - Catch errors as you type
+- ✅ **Autocomplete** - Get suggestions for properties and values
+- ✅ **Documentation** - Hover over properties to see descriptions
+- ✅ **Type safety** - Ensure your JSON structure is correct
+
+### Schema URL
+
+The JSON Schema is available at: [https://storeconfig.com/storeconfig-schema.json](https://storeconfig.com/storeconfig-schema.json)
+
 ### Tool Limitations
 
 Due to current App Store Connect API restrictions, some features are not yet available in the CLI. As soon as these capabilities are supported by the API, we will update the CLI accordingly.
@@ -237,6 +285,8 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 ## Support
 
 - 📚 [Documentation](https://www.storeconfig.com/docs)
+- 📄 [Schemas Documentation](https://www.storeconfig.com/schemas)
+- 📄 [JSON Schema](https://www.storeconfig.com/storeconfig-schema.json)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
 This CLI is proprietary software. Usage requires a valid subscription and Secret Key from [StoreConfig](https://www.storeconfig.com).
