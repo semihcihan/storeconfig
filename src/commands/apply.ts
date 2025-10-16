@@ -42,7 +42,8 @@ const command: CommandModule = {
     },
     preview: {
       alias: "p",
-      describe: "Show what changes would be made without applying them",
+      describe:
+        "Show what changes would be made without applying them (i.e., perform a 'dry run' preview only).",
       type: "boolean",
       default: false,
     },

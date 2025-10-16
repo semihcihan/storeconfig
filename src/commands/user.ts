@@ -11,13 +11,9 @@ const userCommand: CommandModule = {
       const info = await getInfo();
 
       let output = "";
-      output += `Email → ${info.user.email}\n`;
-      output += `Latest Apply → `;
+      output += `Email → ${info.user.email}`;
       if (info.currentJob) {
-        output += `ID: ${info.currentJob.id}, Status: ${info.currentJob.status}`;
-      } else {
-        output +=
-          "No Apply found, you can create a new apply with the `apply` command";
+        output += `\nLatest Actions → ID: ${info.currentJob.id}, Status: ${info.currentJob.status}`;
       }
 
       logger.std(output);
