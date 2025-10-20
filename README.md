@@ -16,7 +16,7 @@ npx storeconfig --help
 
 ## 📖 Documentation
 
-For detailed documentation, visit [www.storeconfig.com/docs](https://www.storeconfig.com/docs)
+For detailed documentation, visit [storeconfig.com/docs](https://storeconfig.com/docs)
 
 ## ✨ Features
 
@@ -48,7 +48,7 @@ npx storeconfig --help
 
 ### 1. Sign Up & Get Secret Key
 
-First, sign up at [www.storeconfig.com](https://www.storeconfig.com) to get your Secret Key.
+First, sign up at [storeconfig.com](https://storeconfig.com) to get your Secret Key.
 
 ### 2. Authentication
 
@@ -284,9 +284,9 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 
 ## Support
 
-- 📚 [Documentation](https://www.storeconfig.com/docs)
-- 📄 [Schemas Documentation](https://www.storeconfig.com/schemas)
-- 📄 [JSON Schema](https://www.storeconfig.com/storeconfig-schema.json)
+- 📚 [Documentation](https://storeconfig.com/docs)
+- 📄 [Schemas Documentation](https://storeconfig.com/schemas)
+- 📄 [JSON Schema](https://storeconfig.com/storeconfig-schema.json)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
-This CLI is proprietary software. Usage requires a valid subscription and Secret Key from [StoreConfig](https://www.storeconfig.com).
+This CLI is proprietary software. Usage requires a valid subscription and Secret Key from [StoreConfig](https://storeconfig.com).
