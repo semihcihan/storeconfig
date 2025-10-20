@@ -14,6 +14,9 @@ const userCommand: CommandModule = {
       output += `Email → ${info.user.email}`;
       if (info.currentJob) {
         output += `\nLatest Actions → ID: ${info.currentJob.id}, Status: ${info.currentJob.status}`;
+        if (info.currentJob.error) {
+          output += `\n   Error: ${info.currentJob.error}`;
+        }
       }
 
       logger.std(output);

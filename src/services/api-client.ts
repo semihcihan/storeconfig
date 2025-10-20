@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { keyService } from "./key-service";
+import { ContextualError } from "@semihcihan/shared";
 
 // Create a configured axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -29,8 +30,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
+      if (error.response?.data && error.response.status) {
+        const statusCode = error.response.status;
+        const message =
+          error.response.data?.message ||
+          `API request failed with status ${statusCode}`;
+        const details = error.response.data?.details;
+        throw new ContextualError(message, details);
       }
     }
     throw error;
