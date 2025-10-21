@@ -35,8 +35,26 @@
     "ios",
     "synchronization"
   ],
-  "author": "Semih Cihan",
-  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/semihcihan/storeconfig"
+  },
+  "contributors": [
+    {
+      "name": "Semih Cihan",
+      "url": "https://github.com/semihcihan"
+    },
+    {
+      "name": "Selçuk Cihan",
+      "url": "https://github.com/selcukcihan"
+    }
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "homepage": "https://storeconfig.com",
   "files": [
     "dist/",
     "README.md"
