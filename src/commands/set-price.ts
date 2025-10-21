@@ -100,8 +100,7 @@ const setPriceCommand: CommandModule = {
       spinner.succeed(`Updated ${inputFile} with pricing changes.`);
     } catch (error) {
       spinner.stop();
-      logger.error(`Set-price failed`, error);
-      process.exit(1);
+      throw error;
     }
   },
 };

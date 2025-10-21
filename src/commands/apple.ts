@@ -24,20 +24,11 @@ const appleCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
-    try {
-      const issuerId = argv["issuer-id"] as string;
-      const keyId = argv["key-id"] as string;
-      const keyPath = argv["key-path"] as string;
+    const issuerId = argv["issuer-id"] as string;
+    const keyId = argv["key-id"] as string;
+    const keyPath = argv["key-path"] as string;
 
-      await appleAuthService.configureAppleCredentials(
-        issuerId,
-        keyId,
-        keyPath
-      );
-    } catch (error) {
-      logger.error("Failed to add Apple credentials", error);
-      process.exit(1);
-    }
+    await appleAuthService.configureAppleCredentials(issuerId, keyId, keyPath);
   },
 };
 

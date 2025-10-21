@@ -37,24 +37,19 @@ const comparePriceCommand: CommandModule = {
     });
     const outputFile = (argv.output as string) || "compare-price.csv";
 
-    try {
-      const appStoreData = validateAppStoreModel(
-        removeShortcuts(readJsonFile(inputFile)),
-        false
-      );
+    const appStoreData = validateAppStoreModel(
+      removeShortcuts(readJsonFile(inputFile)),
+      false
+    );
 
-      // Call the HTTP API using the api client
-      const response = await apiClient.post("/compare-price", {
-        appStoreData: appStoreData,
-      });
+    // Call the HTTP API using the api client
+    const response = await apiClient.post("/compare-price", {
+      appStoreData: appStoreData,
+    });
 
-      const analysis = response.data.data;
-      exportAnalysis(analysis, outputFile);
-      logger.info(`Successfully exported analysis to ${outputFile}`);
-    } catch (error) {
-      logger.error(`Price comparison failed`, error);
-      process.exit(1);
-    }
+    const analysis = response.data.data;
+    exportAnalysis(analysis, outputFile);
+    logger.info(`Successfully exported analysis to ${outputFile}`);
   },
 };
 

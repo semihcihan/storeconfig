@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import "./services/instrument";
+import Bugsnag from "@bugsnag/js";
 
 import dotenv from "dotenv";
 process.env.DOTENV_CONFIG_SILENT = "true";
@@ -6,7 +8,7 @@ dotenv.config();
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { logger } from "@semihcihan/shared";
+import { logger, processNestedErrors } from "@semihcihan/shared";
 
 import validateFormatCmd from "./commands/validate";
 import applyCmd from "./commands/apply";
@@ -22,46 +24,63 @@ import { requireAuth } from "./services/api-client";
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
 logger.setLevel("info");
 
-yargs(hideBin(process.argv))
-  .middleware((argv) => {
-    // Commands that require authentication
-    const protectedCommands = [
-      "fetch",
-      "apply",
-      "set-price",
-      "compare-price",
-      "apple",
-      "user",
-    ];
-    const command = argv._[0] as string;
+async function main() {
+  const parser = yargs(hideBin(process.argv))
+    .middleware((argv) => {
+      // Commands that require authentication
+      const protectedCommands = [
+        "fetch",
+        "apply",
+        "set-price",
+        "compare-price",
+        "apple",
+        "user",
+      ];
+      const command = argv._[0] as string;
 
-    if (protectedCommands.includes(command)) {
-      try {
+      if (protectedCommands.includes(command)) {
         requireAuth();
-      } catch (error) {
-        logger.error("Authentication required", error);
+      }
+    })
+    .command(validateFormatCmd)
+    .command(applyCmd)
+    .command(fetchCmd)
+    .command(setPriceCmd)
+    .command(comparePriceCmd)
+    .command(exampleCmd)
+    .command(configureCmd)
+    .command(appleCmd)
+    .command(userCmd)
+    .demandCommand(1, "Please specify a command")
+    .strict()
+    .fail(async (msg, err, yargs) => {
+      if (msg) {
+        logger.error(
+          msg,
+          "Use 'storeconfig --help' to see available commands and options."
+        );
         process.exit(1);
       }
-    }
-  })
-  .command(validateFormatCmd)
-  .command(applyCmd)
-  .command(fetchCmd)
-  .command(setPriceCmd)
-  .command(comparePriceCmd)
-  .command(exampleCmd)
-  .command(configureCmd)
-  .command(appleCmd)
-  .command(userCmd)
-  .demandCommand(1, "Please specify a command")
-  .strict()
-  .fail((msg, err, yargs) => {
-    if (err) {
-      logger.error(err.message);
-    } else {
-      logger.error(msg);
-    }
-    logger.std("\n" + yargs.help());
-    process.exit(1);
-  })
-  .help().argv;
+    })
+    .help();
+
+  await parser.parseAsync();
+}
+
+main().catch((err) => {
+  let command = "unknown";
+
+  try {
+    const processArgs = process.argv?.slice(2) || [];
+    command = processArgs[0] || "unknown";
+  } catch (error) {
+    command = "unknown";
+  }
+
+  let processedError = processNestedErrors(err, false);
+
+  logger.error(`Command '${command}' failed`, processedError);
+  Bugsnag.notify(err, (event) => {
+    event.addMetadata("metadata", { command, context: processedError });
+  });
+});

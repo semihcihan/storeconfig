@@ -23,16 +23,11 @@ const command: CommandModule = {
     const filePath = validateFileExists(argv.file as string, {
       fileDescription: "JSON file",
     });
-    try {
-      validateAppStoreModel(
-        removeShortcuts(readJsonFile(filePath)),
-        true,
-        "fetch"
-      );
-    } catch (error) {
-      logger.error(error);
-      process.exit(1);
-    }
+    validateAppStoreModel(
+      removeShortcuts(readJsonFile(filePath)),
+      true,
+      "fetch"
+    );
   },
 };
 

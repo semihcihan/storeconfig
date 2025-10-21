@@ -84,8 +84,7 @@ const fetchCommand: CommandModule = {
       spinner.succeed(`Successfully fetched app: ${outputFile}`);
     } catch (error) {
       spinner.stop();
-      logger.error(`Fetch failed`, error);
-      process.exit(1);
+      throw error;
     }
   },
 };

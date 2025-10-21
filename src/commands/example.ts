@@ -1,5 +1,9 @@
 import type { CommandModule } from "yargs";
-import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
+import {
+  logger,
+  DEFAULT_CONFIG_FILENAME,
+  ContextualError,
+} from "@semihcihan/shared";
 import type {
   AppStoreModel,
   SubscriptionSchema,
@@ -316,16 +320,14 @@ const exampleCommand: CommandModule = {
 
     const example = examples[type as keyof typeof examples];
     if (!example) {
-      logger.error(`Unknown example type: ${type}`);
-      process.exit(1);
+      throw new Error(`Unknown example type: ${type}`);
     }
 
     try {
       fs.writeFileSync(outputFile, JSON.stringify(example, null, 2));
       logger.info(`Successfully generated example and wrote to ${outputFile}`);
     } catch (error) {
-      logger.error(`Failed to write example file`, error);
-      process.exit(1);
+      throw new ContextualError(`Failed to write example file`, error);
     }
   },
 };

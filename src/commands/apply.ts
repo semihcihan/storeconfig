@@ -108,8 +108,7 @@ const command: CommandModule = {
       }
     } catch (error) {
       spinner.stop();
-      logger.error(`Apply failed`, error);
-      process.exit(1);
+      throw error;
     }
   },
 };

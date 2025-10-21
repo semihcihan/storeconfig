@@ -1,84 +1,85 @@
 {
-  "name": "storeconfig",
-  "version": "0.0.2",
-  "description": "CLI tool for App Store Connect synchronization",
-  "main": "dist/cli.js",
-  "bin": {
-    "storeconfig": "dist/cli.js"
-  },
-  "scripts": {
-    "prebuild": "npm run update-readme",
-    "predev": "npm run update-readme",
-    "build": "node esbuild.config.js",
-    "build:watch": "node esbuild.config.js --watch",
-    "dev": "node -r ts-node/register -r tsconfig-paths/register src/cli.ts",
-    "clean": "rm -rf dist",
-    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
-    "start": "node dist/cli.js",
-    "test": "jest --config jest.unit.config.js",
-    "test:unit": "jest --config jest.unit.config.js",
-    "test:coverage": "jest --config jest.unit.config.js --coverage",
-    "prepublishOnly": "npm run build",
-    "fetch": "npx ts-node src/cli.ts fetch --id 6503259293",
-    "fetch:all": "npx ts-node src/cli.ts fetch",
-    "apply": "npx ts-node src/cli.ts apply",
-    "plan": "npx ts-node src/cli.ts plan",
-    "validate": "npx ts-node src/cli.ts validate-format",
-    "set-price": "npx ts-node src/cli.ts set-price",
-    "compare-price": "npx ts-node src/cli.ts compare-price",
-    "example": "npx ts-node src/cli.ts example",
-    "update-readme": "node scripts/generate-readme-example.js"
-  },
-  "keywords": [
-    "cli",
-    "app-store",
-    "ios",
-    "synchronization"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/semihcihan/storeconfig.git"
-  },
-  "contributors": [
-    {
-      "name": "Semih Cihan",
-      "url": "https://github.com/semihcihan"
+    "name": "storeconfig",
+    "version": "0.0.2",
+    "description": "CLI tool for App Store Connect synchronization",
+    "main": "dist/cli.js",
+    "bin": {
+        "storeconfig": "dist/cli.js"
     },
-    {
-      "name": "Selçuk Cihan",
-      "url": "https://github.com/selcukcihan"
+    "scripts": {
+        "prebuild": "npm run update-readme",
+        "predev": "npm run update-readme",
+        "build": "node esbuild.config.js",
+        "build:watch": "node esbuild.config.js --watch",
+        "dev": "node -r ts-node/register -r tsconfig-paths/register src/cli.ts",
+        "clean": "rm -rf dist",
+        "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
+        "start": "node dist/cli.js",
+        "test": "jest --config jest.unit.config.js",
+        "test:unit": "jest --config jest.unit.config.js",
+        "test:coverage": "jest --config jest.unit.config.js --coverage",
+        "prepublishOnly": "npm run build",
+        "fetch": "npx ts-node src/cli.ts fetch --id 6503259293",
+        "fetch:all": "npx ts-node src/cli.ts fetch",
+        "apply": "npx ts-node src/cli.ts apply",
+        "plan": "npx ts-node src/cli.ts plan",
+        "validate": "npx ts-node src/cli.ts validate-format",
+        "set-price": "npx ts-node src/cli.ts set-price",
+        "compare-price": "npx ts-node src/cli.ts compare-price",
+        "example": "npx ts-node src/cli.ts example",
+        "update-readme": "node scripts/generate-readme-example.js"
+    },
+    "keywords": [
+        "cli",
+        "app-store",
+        "ios",
+        "synchronization"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/semihcihan/storeconfig.git"
+    },
+    "contributors": [
+        {
+            "name": "Semih Cihan",
+            "url": "https://github.com/semihcihan"
+        },
+        {
+            "name": "Selçuk Cihan",
+            "url": "https://github.com/selcukcihan"
+        }
+    ],
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+    },
+    "homepage": "https://storeconfig.com",
+    "files": [
+        "dist/",
+        "README.md"
+    ],
+    "dependencies": {
+        "@bugsnag/js": "^8.6.0",
+        "axios": "^1.10.0",
+        "dotenv": "^16.6.1",
+        "inquirer": "^12.9.6",
+        "ora": "^9.0.0",
+        "winston": "^3.17.0",
+        "yargs": "^17.7.2",
+        "zod": "4.1.9",
+        "zod-validation-error": "^4.0.2"
+    },
+    "devDependencies": {
+        "@types/inquirer": "^9.0.9",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.0.10",
+        "@types/yargs": "^17.0.33",
+        "esbuild": "^0.25.11",
+        "jest": "^30.0.4",
+        "ts-jest": "^29.4.0",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.8.3"
     }
-  ],
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
-  "homepage": "https://storeconfig.com",
-  "files": [
-    "dist/",
-    "README.md"
-  ],
-  "dependencies": {
-    "axios": "^1.10.0",
-    "dotenv": "^16.6.1",
-    "inquirer": "^12.9.6",
-    "ora": "^9.0.0",
-    "yargs": "^17.7.2",
-    "zod": "4.1.9",
-    "winston": "^3.17.0",
-    "zod-validation-error": "^4.0.2"
-  },
-  "devDependencies": {
-    "@types/inquirer": "^9.0.9",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.10",
-    "@types/yargs": "^17.0.33",
-    "esbuild": "^0.25.11",
-    "jest": "^30.0.4",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
-  }
 }
