@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
@@ -9,8 +9,8 @@
   "scripts": {
     "prebuild": "npm run update-readme",
     "predev": "npm run update-readme",
-    "build": "tsc",
-    "build:watch": "tsc --watch",
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
     "dev": "node -r ts-node/register -r tsconfig-paths/register src/cli.ts",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
@@ -42,19 +42,21 @@
     "README.md"
   ],
   "dependencies": {
-    "@semihcihan/shared": "file:../shared",
     "axios": "^1.10.0",
     "dotenv": "^16.6.1",
     "inquirer": "^12.9.6",
     "ora": "^9.0.0",
     "yargs": "^17.7.2",
-    "zod": "4.1.9"
+    "zod": "4.1.9",
+    "winston": "^3.17.0",
+    "zod-validation-error": "^4.0.2"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.9",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
+    "esbuild": "^0.25.11",
     "jest": "^30.0.4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
