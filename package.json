@@ -37,7 +37,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/semihcihan/storeconfig"
+    "url": "git+https://github.com/semihcihan/storeconfig.git"
   },
   "contributors": [
     {
