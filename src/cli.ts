@@ -2,6 +2,7 @@
 
 import dotenv from "dotenv";
 process.env.DOTENV_CONFIG_SILENT = "true";
+
 dotenv.config();
 
 import yargs from "yargs";
