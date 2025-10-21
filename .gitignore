@@ -33,3 +33,4 @@ logs
 *.log
 
 storeconfig.json
+storeconfig_example.json
