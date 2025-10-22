@@ -4,7 +4,7 @@ import { ContextualError } from "@semihcihan/shared";
 
 // Create a configured axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.API_BASE_URL || "http://localhost:3000",
+  baseURL: process.env.API_BASE_URL || "https://api.storeconfig.com",
   timeout: 30000, // 30 seconds
   headers: {
     "Content-Type": "application/json",
