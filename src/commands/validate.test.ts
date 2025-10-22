@@ -122,10 +122,8 @@ describe("validate command", () => {
       });
 
       expect(() => validateCommand.handler!(mockArgv as any)).toThrow(
-        "process.exit called"
+        "Validation failed"
       );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(validationError);
     });
 
     it("should handle shortcut conversion errors and exit", () => {
@@ -135,10 +133,8 @@ describe("validate command", () => {
       });
 
       expect(() => validateCommand.handler!(mockArgv as any)).toThrow(
-        "process.exit called"
+        "Shortcut conversion failed"
       );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 });

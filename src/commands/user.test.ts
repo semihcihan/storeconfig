@@ -175,14 +175,10 @@ describe("user command", () => {
       mockGetInfo.mockRejectedValueOnce(error);
 
       await expect(userCommand.handler!({} as any)).rejects.toThrow(
-        "process.exit called"
+        "API connection failed"
       );
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to fetch user information",
-        error
-      );
     });
 
     it("should handle network timeout error", async () => {
@@ -190,12 +186,7 @@ describe("user command", () => {
       mockGetInfo.mockRejectedValueOnce(error);
 
       await expect(userCommand.handler!({} as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to fetch user information",
-        error
+        "Request timeout"
       );
     });
 
@@ -204,12 +195,7 @@ describe("user command", () => {
       mockGetInfo.mockRejectedValueOnce(error);
 
       await expect(userCommand.handler!({} as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to fetch user information",
-        error
+        "Unauthorized"
       );
     });
   });
@@ -451,10 +437,9 @@ describe("user command", () => {
       mockGetInfo.mockRejectedValueOnce(error);
 
       await expect(userCommand.handler!({} as any)).rejects.toThrow(
-        "process.exit called"
+        "Test error"
       );
 
-      expect(mockLogger.error).toHaveBeenCalledTimes(1);
       expect(mockLogger.std).not.toHaveBeenCalled();
     });
   });

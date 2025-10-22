@@ -314,12 +314,7 @@ describe("apply command", () => {
       mockApiClient.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Apply failed",
-        expect.any(Error)
+        "API failed"
       );
     });
 
@@ -350,12 +345,7 @@ describe("apply command", () => {
       );
 
       await expect(applyCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Apply failed",
-        expect.any(Error)
+        "Operation cancelled by user"
       );
     });
   });

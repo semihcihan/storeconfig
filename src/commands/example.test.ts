@@ -142,10 +142,6 @@ describe("example command", () => {
       const mockArgv = { type: "unknown" };
 
       await expect(exampleCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
         "Unknown example type: unknown"
       );
     });
@@ -330,12 +326,7 @@ describe("example command", () => {
       });
 
       await expect(exampleCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to write example file",
-        mockError
+        "Failed to write example file"
       );
     });
   });

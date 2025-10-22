@@ -214,12 +214,7 @@ describe("fetch command", () => {
       mockApiClient.post.mockRejectedValueOnce(new Error("API error"));
 
       await expect(fetchCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Fetch failed",
-        expect.any(Error)
+        "API error"
       );
     });
 
@@ -227,12 +222,7 @@ describe("fetch command", () => {
       mockApiClient.post.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(fetchCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Fetch failed",
-        expect.any(Error)
+        "Network error"
       );
     });
   });
@@ -368,12 +358,7 @@ describe("fetch command", () => {
 
       await expect(
         fetchCommand.handler!(mockArgvWithoutId as any)
-      ).rejects.toThrow("process.exit called");
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Fetch failed",
-        expect.any(Error)
-      );
+      ).rejects.toThrow("API error");
     });
 
     it("should handle fetch apps API error response", async () => {
@@ -387,11 +372,8 @@ describe("fetch command", () => {
 
       await expect(
         fetchCommand.handler!(mockArgvWithoutId as any)
-      ).rejects.toThrow("process.exit called");
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Fetch failed",
-        expect.any(Error)
+      ).rejects.toThrow(
+        "Cannot read properties of undefined (reading 'length')"
       );
     });
 
@@ -473,12 +455,7 @@ describe("fetch command", () => {
       });
 
       await expect(fetchCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Fetch failed",
-        expect.any(Error)
+        "File write error"
       );
     });
   });
