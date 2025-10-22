@@ -12,8 +12,6 @@ const buildConfig = {
     // External dependencies (they will be installed with the package)
     "axios",
     "dotenv",
-    "inquirer",
-    "ora",
     "yargs",
     "zod",
     "zod-validation-error",

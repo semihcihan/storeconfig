@@ -8,6 +8,7 @@ if (!isDevelopment) {
     autoTrackSessions: false,
     appVersion: version,
     logger: null,
+    enabledBreadcrumbTypes: ["error", "manual"],
   });
 } else {
   Bugsnag.notify = () => {}; // No-op function
