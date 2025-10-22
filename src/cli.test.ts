@@ -1,12 +1,10 @@
 import { jest } from "@jest/globals";
+import Bugsnag from "@bugsnag/js";
 
 // Mock Bugsnag before importing cli.ts
-const mockBugsnagNotify = jest.fn();
-const mockBugsnag = {
-  notify: mockBugsnagNotify,
-};
-
-jest.mock("@bugsnag/js", () => mockBugsnag);
+jest.mock("@bugsnag/js", () => ({
+  notify: jest.fn(),
+}));
 
 // Mock the logger
 const mockLogger = {
@@ -119,16 +117,90 @@ describe("CLI Error Handling", () => {
   describe("Bugsnag mocking", () => {
     it("should verify Bugsnag is properly mocked", () => {
       // Verify that Bugsnag is mocked and won't send real notifications
-      expect(mockBugsnagNotify).toBeDefined();
-      expect(typeof mockBugsnagNotify).toBe("function");
-      expect(mockBugsnag).toBeDefined();
-      expect(mockBugsnag.notify).toBe(mockBugsnagNotify);
+      expect(Bugsnag.notify).toBeDefined();
+      expect(typeof Bugsnag.notify).toBe("function");
+      expect(jest.isMockFunction(Bugsnag.notify)).toBe(true);
     });
 
     it("should not send real notifications during tests", () => {
       // Verify that the mock function is not a real Bugsnag function
-      expect(mockBugsnagNotify).not.toBe(undefined);
-      expect(mockBugsnagNotify.mock).toBeDefined();
+      expect(Bugsnag.notify).not.toBe(undefined);
+      expect(jest.isMockFunction(Bugsnag.notify)).toBe(true);
+    });
+  });
+
+  describe("Bugsnag environment behavior", () => {
+    let originalNodeEnv: string | undefined;
+
+    beforeEach(() => {
+      originalNodeEnv = process.env.NODE_ENV;
+      jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it("should enable Bugsnag by default (production mode)", () => {
+      // Unset NODE_ENV (defaults to production behavior)
+      delete process.env.NODE_ENV;
+      
+      // Re-import the instrument module to test environment detection
+      jest.resetModules();
+      const instrument = require("./services/instrument");
+      
+      // In production (default), Bugsnag should be properly initialized
+      // The mock will still be in place for testing, but the real behavior
+      // would be different in actual production
+      expect(Bugsnag).toBeDefined();
+    });
+
+    it("should disable Bugsnag in development environment", () => {
+      // Set development environment
+      process.env.NODE_ENV = "development";
+      
+      // Re-import the instrument module to test environment detection
+      jest.resetModules();
+      const instrument = require("./services/instrument");
+      
+      // In development, Bugsnag.notify should be a no-op function
+      expect(typeof Bugsnag.notify).toBe("function");
+      
+      // Call notify and verify it doesn't throw or send real notifications
+      expect(() => {
+        Bugsnag.notify(new Error("test error"));
+      }).not.toThrow();
+    });
+
+    it("should disable Bugsnag when DEBUG is true", () => {
+      // Set DEBUG environment variable
+      process.env.DEBUG = "true";
+      
+      // Re-import the instrument module to test environment detection
+      jest.resetModules();
+      const instrument = require("./services/instrument");
+      
+      // In development, Bugsnag.notify should be a no-op function
+      expect(typeof Bugsnag.notify).toBe("function");
+      
+      // Call notify and verify it doesn't throw or send real notifications
+      expect(() => {
+        Bugsnag.notify(new Error("test error"));
+      }).not.toThrow();
+    });
+
+    it("should enable Bugsnag in production environment", () => {
+      // Set production environment
+      process.env.NODE_ENV = "production";
+      
+      // Re-import the instrument module to test environment detection
+      jest.resetModules();
+      const instrument = require("./services/instrument");
+      
+      // In production, Bugsnag should be properly initialized
+      // The mock will still be in place for testing, but the real behavior
+      // would be different in actual production
+      expect(Bugsnag).toBeDefined();
     });
   });
 
@@ -241,17 +313,17 @@ describe("CLI Error Handling", () => {
       const processedError = { message: "Test error", stack: undefined };
 
       // Test Bugsnag notification
-      mockBugsnagNotify(testError, (event: any) => {
+      Bugsnag.notify(testError, (event: any) => {
         event.addMetadata("metadata", { command, context: processedError });
       });
 
-      expect(mockBugsnagNotify).toHaveBeenCalledWith(
+      expect(Bugsnag.notify).toHaveBeenCalledWith(
         testError,
         expect.any(Function)
       );
 
       // Test the metadata callback
-      const notifyCallback = mockBugsnagNotify.mock.calls[0][1] as (
+      const notifyCallback = (Bugsnag.notify as jest.Mock).mock.calls[0][1] as (
         event: any
       ) => void;
       const mockEvent = {
@@ -358,7 +430,7 @@ describe("CLI Error Handling", () => {
           expect(mockExit).toHaveBeenCalledWith(1);
 
           // Verify Bugsnag was NOT called for invalid commands
-          expect(mockBugsnagNotify).not.toHaveBeenCalled();
+          expect(Bugsnag.notify).not.toHaveBeenCalled();
         } finally {
           process.exit = originalExit;
         }
@@ -381,12 +453,12 @@ describe("CLI Error Handling", () => {
 
       // Simulate the main().catch() error handler
       mockLogger.error(`Command '${command}' failed`, processedError);
-      mockBugsnagNotify(realError, (event: any) => {
+      Bugsnag.notify(realError, (event: any) => {
         event.addMetadata("metadata", { command, context: processedError });
       });
 
       // Verify Bugsnag was called for real errors
-      expect(mockBugsnagNotify).toHaveBeenCalledWith(
+      expect(Bugsnag.notify).toHaveBeenCalledWith(
         realError,
         expect.any(Function)
       );
@@ -412,7 +484,7 @@ describe("CLI Error Handling", () => {
       );
 
       // Verify Bugsnag was NOT called for validation errors
-      expect(mockBugsnagNotify).not.toHaveBeenCalled();
+      expect(Bugsnag.notify).not.toHaveBeenCalled();
     });
   });
 

@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const path = require("path");
 
 const buildConfig = {
   entryPoints: ["src/cli.ts"],
@@ -22,6 +23,23 @@ const buildConfig = {
   minify: true,
 };
 
+const watchConfig = {
+  ...buildConfig,
+  plugins: [
+    {
+      name: "path-mapping",
+      setup(build) {
+        build.onResolve({ filter: /^@semihcihan\/shared/ }, (args) => {
+          return {
+            path: path.resolve(__dirname, "../shared/src/index.ts"),
+            watchFiles: ["../shared/src/**/*"],
+          };
+        });
+      },
+    },
+  ],
+};
+
 async function build() {
   try {
     console.log("Building CLI with esbuild...");
@@ -33,8 +51,25 @@ async function build() {
   }
 }
 
-if (require.main === module) {
-  build();
+async function watch() {
+  try {
+    console.log("Watching CLI files for changes...");
+    const context = await esbuild.context(watchConfig);
+    await context.watch();
+    console.log("Watching for changes...");
+  } catch (error) {
+    console.error("Watch failed:", error);
+    process.exit(1);
+  }
 }
 
-module.exports = { buildConfig, build };
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  if (args.includes("--watch")) {
+    watch();
+  } else {
+    build();
+  }
+}
+
+module.exports = { buildConfig, build, watch };

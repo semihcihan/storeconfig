@@ -1,10 +1,7 @@
 #!/usr/bin/env node
+import "./load-env";
 import "./services/instrument";
 import Bugsnag from "@bugsnag/js";
-
-import dotenv from "dotenv";
-process.env.DOTENV_CONFIG_SILENT = "true";
-dotenv.config();
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";

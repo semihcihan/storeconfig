@@ -48,6 +48,14 @@ const originalConsoleDebug = console.debug;
 // import { setLogLevel } from '../src/utils/logger';
 // setLogLevel('debug');
 
+// Mock Bugsnag globally for all tests
+jest.mock("@bugsnag/js", () => ({
+  notify: jest.fn(),
+  start: jest.fn(),
+  addMetadata: jest.fn(),
+  addOnError: jest.fn(),
+}));
+
 // Mock ora spinner
 jest.mock("ora", () => {
   return jest.fn(() => ({
