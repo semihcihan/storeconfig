@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
@@ -63,7 +63,7 @@
     "@bugsnag/js": "^8.6.0",
     "axios": "^1.10.0",
     "dotenv": "^16.6.1",
-    "inquirer": "^9.2.23",
+    "inquirer": "^8.2.5",
     "ora": "^8.2.0",
     "winston": "^3.17.0",
     "yargs": "^17.7.2",
