@@ -83,4 +83,5 @@ main().catch((err) => {
   Bugsnag.notify(err, (event) => {
     event.addMetadata("metadata", { command, context: processedError });
   });
+  process.exitCode = 1;
 });
