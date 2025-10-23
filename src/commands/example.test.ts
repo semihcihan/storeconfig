@@ -314,7 +314,9 @@ describe("example command", () => {
       await exampleCommand.handler!(mockArgv as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "Successfully generated example and wrote to storeconfig_example.json"
+        expect.stringMatching(
+          /Successfully generated example and wrote to .*storeconfig_example\.json/
+        )
       );
     });
 

@@ -24,6 +24,7 @@ jest.mock("@semihcihan/shared", () => ({
     warn: jest.fn(),
     error: jest.fn(),
   },
+  DEFAULT_CONFIG_FILENAME: "storeconfig.json",
 }));
 jest.mock("../services/api-client", () => ({
   apiClient: {
@@ -156,7 +157,7 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        "Successfully fetched app: output.json"
+        expect.stringMatching(/Successfully fetched app: .*output\.json/)
       );
     });
 
@@ -189,7 +190,9 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        `Successfully fetched app: ${DEFAULT_CONFIG_FILENAME}`
+        expect.stringMatching(
+          new RegExp(`Successfully fetched app: .*${DEFAULT_CONFIG_FILENAME}`)
+        )
       );
     });
 
@@ -420,7 +423,9 @@ describe("fetch command", () => {
       );
       // Test that spinner.succeed() was called with the correct message
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        `Successfully fetched app: ${DEFAULT_CONFIG_FILENAME}`
+        expect.stringMatching(
+          new RegExp(`Successfully fetched app: .*${DEFAULT_CONFIG_FILENAME}`)
+        )
       );
     });
   });
@@ -523,7 +528,7 @@ describe("fetch command", () => {
       expect(mockOra).toHaveBeenCalled();
       const spinnerInstance = mockOra.mock.results[0].value as any;
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
-        "Successfully fetched app: output.json"
+        expect.stringMatching(/Successfully fetched app: .*output\.json/)
       );
     });
   });
