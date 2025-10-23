@@ -27,7 +27,8 @@
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",
-    "update-readme": "node scripts/generate-readme-example.js"
+    "update-readme": "node scripts/generate-readme-example.js",
+    "upload-sourcemap": "../node_modules/.bin/bugsnag-cli upload js --api-key=9214ba2acdaeee4012c236461232c4f3 --bundle dist/cli.js --source-map dist/cli.js.map --bundle-url \"https://unpkg.com/storeconfig@latest/dist/cli.js\""
   },
   "keywords": [
     "cli",
@@ -72,6 +73,7 @@
     "zod-validation-error": "^4.0.2"
   },
   "devDependencies": {
+    "@bugsnag/cli": "^3.4.1",
     "@types/inquirer": "^9.0.9",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
