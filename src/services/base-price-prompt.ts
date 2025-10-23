@@ -1,5 +1,5 @@
 import inquirer from "inquirer";
-import { logger } from "@semihcihan/shared";
+import { findNearestPrices } from "@semihcihan/shared";
 import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem, PricePointInfo } from "@semihcihan/shared";
 import { BASE_TERRITORY } from "@semihcihan/shared";
@@ -10,20 +10,6 @@ function parsePriceInputToNumber(input: string): number | null {
   const value = Number(trimmed);
   if (!isFinite(value) || value < 0) return null;
   return value;
-}
-
-function findNearestPrices(
-  enteredPrice: number,
-  availablePrices: string[],
-  count: number
-): string[] {
-  const nearest = availablePrices
-    .map((p) => ({ price: p, diff: Math.abs(Number(p) - enteredPrice) }))
-    .sort((a, b) => a.diff - b.diff)
-    .slice(0, Math.max(0, count))
-    .map((s) => s.price);
-  // Ensure output is ordered ascending numerically for clearer UX
-  return nearest.sort((a, b) => Number(a) - Number(b));
 }
 
 export async function promptForBasePricePoint(
