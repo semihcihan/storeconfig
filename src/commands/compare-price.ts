@@ -9,6 +9,7 @@ import {
 } from "@semihcihan/shared";
 import { exportAnalysis } from "../services/compare-price-service";
 import { apiClient } from "../services/api-client";
+import path from "path";
 
 const comparePriceCommand: CommandModule = {
   command: "compare-price",
@@ -49,7 +50,8 @@ const comparePriceCommand: CommandModule = {
 
     const analysis = response.data.data;
     exportAnalysis(analysis, outputFile);
-    logger.info(`Successfully exported analysis to ${outputFile}`);
+    const fullPath = path.resolve(outputFile);
+    logger.info(`Successfully exported analysis to ${fullPath}`);
   },
 };
 

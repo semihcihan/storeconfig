@@ -325,7 +325,8 @@ const exampleCommand: CommandModule = {
 
     try {
       fs.writeFileSync(outputFile, JSON.stringify(example, null, 2));
-      logger.info(`Successfully generated example and wrote to ${outputFile}`);
+      const fullPath = path.resolve(outputFile);
+      logger.info(`Successfully generated example and wrote to ${fullPath}`);
     } catch (error) {
       throw new ContextualError(`Failed to write example file`, error);
     }

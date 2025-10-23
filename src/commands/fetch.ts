@@ -1,6 +1,7 @@
 import type { CommandModule } from "yargs";
 import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
 import * as fs from "fs";
+import * as path from "path";
 import inquirer from "inquirer";
 import { apiClient } from "../services/api-client";
 import ora from "ora";
@@ -81,7 +82,8 @@ const fetchCommand: CommandModule = {
 
       const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
-      spinner.succeed(`Successfully fetched app: ${outputFile}`);
+      const fullPath = path.resolve(outputFile);
+      spinner.succeed(`Successfully fetched app: ${fullPath}`);
     } catch (error) {
       spinner.stop();
       throw error;
