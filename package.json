@@ -23,6 +23,7 @@
     "fetch:all": "node dist/cli.js fetch",
     "apply": "node dist/cli.js apply",
     "plan": "node dist/cli.js plan",
+    "apple": "node dist/cli.js apple",
     "validate": "node dist/cli.js validate-format",
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",

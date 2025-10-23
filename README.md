@@ -59,11 +59,8 @@ Set up your App Store Connect API credentials:
 storeconfig configure
 
 # Add Apple credentials
-# See below for how to get the key and IDs.
-storeconfig apple \
-  --issuer-id YOUR_ISSUER_ID \
-  --key-id YOUR_KEY_ID \
-  --key-path /path/to/your/AuthKey_XXXXX.p8
+# The command will prompt you for Issuer ID and Key ID
+storeconfig apple --key-path /path/to/your/AuthKey_XXXXX.p8
 ```
 
 #### Get App Store Connect Key and IDs
@@ -85,9 +82,9 @@ This is required for store config to manage your apps on App Store Connect.
    - Select **App Manager Access** - this is required to manage prices and other app configurations
 
 4. **Download and Copy Credentials**
-   - Download the `.p8` file. This is the `--key-path` for the `apple` command.
-   - **Key ID** is the `--key-id` for the `apple` command.
-   - **Issuer ID** is the `--issuer-id` for the `apple` command.
+   - Download the `.p8` file. Use its path as the `--key-path` argument.
+   - **Key ID** - you'll be prompted to enter this.
+   - **Issuer ID** - you'll be prompted to enter this.
 
 ## 📋 Commands
 
