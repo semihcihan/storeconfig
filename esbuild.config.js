@@ -17,7 +17,7 @@ const buildConfig = {
     "zod-validation-error",
   ],
   packages: "bundle",
-  sourcemap: "inline",
+  sourcemap: true,
   minify: true,
 };
 
