@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import axiosRetry from "axios-retry";
 import { keyService } from "./key-service";
 import { ContextualError } from "@semihcihan/shared";
 
@@ -8,6 +9,19 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30000, // 30 seconds
   headers: {
     "Content-Type": "application/json",
+  },
+});
+
+// Configure retry middleware
+axiosRetry(apiClient, {
+  retries: 2,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    // Retry on network errors or 5xx status codes
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      (error.response?.status !== undefined && error.response.status >= 500)
+    );
   },
 });
 
