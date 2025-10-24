@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
@@ -28,8 +28,7 @@
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",
-    "update-readme": "node scripts/generate-readme-example.js",
-    "upload-sourcemap": "../node_modules/.bin/bugsnag-cli upload js --api-key=9214ba2acdaeee4012c236461232c4f3 --bundle dist/cli.js --source-map dist/cli.js.map --bundle-url \"https://unpkg.com/storeconfig@latest/dist/cli.js\""
+    "update-readme": "node scripts/generate-readme-example.js"
   },
   "keywords": [
     "cli",
