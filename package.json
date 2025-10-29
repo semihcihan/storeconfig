@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
@@ -28,7 +28,8 @@
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",
-    "update-readme": "node scripts/generate-readme-example.js"
+    "update-readme": "node scripts/generate-readme-example.js",
+    "upload-sourcemap": "npx bugsnag-source-maps upload-node --api-key 9214ba2acdaeee4012c236461232c4f3 --overwrite --detect-app-version --bundle dist/cli.js --source-map dist/cli.js.map"
   },
   "keywords": [
     "cli",
@@ -75,16 +76,17 @@
   },
   "devDependencies": {
     "@bugsnag/cli": "^3.4.1",
+    "@bugsnag/source-maps": "^2.3.3",
     "@types/inquirer": "^9.0.9",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
+    "axios-mock-adapter": "^2.1.0",
     "esbuild": "^0.25.11",
     "jest": "^30.0.4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3",
-    "axios-mock-adapter": "^2.1.0"
+    "typescript": "^5.8.3"
   }
 }
