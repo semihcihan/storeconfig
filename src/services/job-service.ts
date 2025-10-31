@@ -47,9 +47,7 @@ const handleOngoingJob = async (
 ): Promise<string | null> => {
   const watchOngoing = await promptToWatchOngoingJob(ongoingJobId);
   if (watchOngoing) {
-    spinner.start(
-      `Tracking progress of ongoing actions with ID: ${ongoingJobId}`
-    );
+    spinner.start(`Tracking progress of ongoing actions`);
     return ongoingJobId;
   } else {
     logger.warn(
@@ -78,7 +76,7 @@ const promptToWatchOngoingJob = async (jobId: string): Promise<boolean> => {
     {
       type: "confirm",
       name: "watchOngoing",
-      message: `You already have ongoing actions with ID: (${jobId}). No new actions will be created until the ongoing actions are completed. Would you like to track the ongoing actions?`,
+      message: `You already have ongoing actions. No new actions will be created until the ongoing actions are completed. Would you like to track the ongoing actions?`,
       default: true,
     },
   ]);

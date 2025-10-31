@@ -211,7 +211,7 @@ describe("job-service", () => {
         });
         expect(mockInquirer.prompt).toHaveBeenCalled();
         expect(mockSpinner.start).toHaveBeenCalledWith(
-          "Tracking progress of ongoing actions with ID: ongoing-job-123"
+          "Tracking progress of ongoing actions"
         );
         expect(mockApiClient.post).not.toHaveBeenCalled();
       });
