@@ -58,11 +58,7 @@ export const trackJob = async (
     }
 
     if (status === "failed") {
-      let message = `Actions ID '${jobId}'`;
-      if (error) {
-        message += `\n${error}`;
-      }
-      throw new Error(message);
+      throw new Error(error);
     }
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));

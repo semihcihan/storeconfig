@@ -104,7 +104,7 @@ describe("user command", () => {
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → ID: job-456, Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing"
       );
     });
 
@@ -128,7 +128,7 @@ describe("user command", () => {
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → ID: job-456, Status: failed\n   Error: Something went wrong"
+        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Something went wrong"
       );
     });
 
@@ -162,9 +162,8 @@ describe("user command", () => {
 
         const expectedOutput =
           status === "failed"
-            ? "Email → test@example.com\nLatest Actions → ID: job-456, Status: failed\n   Error: Test error"
-            : "Email → test@example.com\nLatest Actions → ID: job-456, Status: " +
-              status;
+            ? "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Test error"
+            : "Email → test@example.com\nLatest Actions → Status: " + status;
 
         expect(mockLogger.std).toHaveBeenCalledWith(expectedOutput);
       }
@@ -237,7 +236,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → ID: job-789, Status: completed"
+        "Email → user@domain.com\nLatest Actions → Status: completed"
       );
     });
 
@@ -260,7 +259,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → ID: job-789, Status: failed\n   Error: Validation failed: Invalid product ID"
+        "Email → user@domain.com\nLatest Actions → Status: failed\n   Error: Validation failed: Invalid product ID"
       );
     });
 
@@ -283,7 +282,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → ID: job-789, Status: failed"
+        "Email → user@domain.com\nLatest Actions → Status: failed"
       );
     });
 
@@ -306,7 +305,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → ID: job-789, Status: failed"
+        "Email → user@domain.com\nLatest Actions → Status: failed"
       );
     });
   });
@@ -382,7 +381,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → ID: job-456-special_chars.123, Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing"
       );
     });
 
@@ -408,7 +407,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        `Email → test@example.com\nLatest Actions → ID: job-456, Status: failed\n   Error: ${longError}`
+        `Email → test@example.com\nLatest Actions → Status: failed\n   Error: ${longError}`
       );
     });
   });

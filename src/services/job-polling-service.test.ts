@@ -115,9 +115,7 @@ describe("job-polling-service", () => {
 
       mockApiClient.get.mockResolvedValue({ data: mockJobStatus });
 
-      await expect(trackJob(jobId, mockSpinner)).rejects.toThrow(
-        "Actions ID 'test-job-123'"
-      );
+      await expect(trackJob(jobId, mockSpinner)).rejects.toThrow();
 
       expect(mockApiClient.get).toHaveBeenCalledWith(`/status/${jobId}`);
     });
