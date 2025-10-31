@@ -28,6 +28,7 @@
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",
+    "user": "node dist/cli.js user",
     "update-readme": "node scripts/generate-readme-example.js",
     "upload-sourcemap": "npx bugsnag-source-maps upload-node --api-key 9214ba2acdaeee4012c236461232c4f3 --overwrite --detect-app-version --bundle dist/cli.js --source-map dist/cli.js.map"
   },
