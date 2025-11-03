@@ -1,4 +1,4 @@
-# Store Config CLI
+# StoreConfig CLI
 
 A powerful command-line tool for managing apps on **App Store Connect**. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect - the smart way. **No more manual work**.
 
