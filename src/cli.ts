@@ -17,6 +17,7 @@ import configureCmd from "./commands/configure";
 import appleCmd from "./commands/apple";
 import userCmd from "./commands/user";
 import { requireAuth } from "./services/api-client";
+import { userService } from "./services/user-service";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
 logger.setLevel("info");
@@ -79,6 +80,10 @@ main().catch((err) => {
   logger.error(`Command '${command}' failed`, processedError);
   Bugsnag.notify(err, (event) => {
     event.addMetadata("metadata", { command, context: processedError });
+    const email = userService.loadUser();
+    if (email) {
+      event.setUser(email, email);
+    }
   });
   process.exitCode = 1;
 });

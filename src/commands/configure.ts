@@ -2,6 +2,7 @@ import { CommandModule } from "yargs";
 import { logger } from "@semihcihan/shared";
 import { keyService } from "../services/key-service";
 import { promptForSecretKey } from "../services/secret-key-prompt";
+import { userService } from "../services/user-service";
 
 // Main configure command
 const configureCommand: CommandModule = {
@@ -17,6 +18,8 @@ const configureCommand: CommandModule = {
 
     // Save the secret key
     keyService.saveKey(secretKey);
+
+    await userService.ensureUserCached();
 
     logger.info(
       "✅ Secret key saved successfully! Add Apple credentials now (storeconfig apple) if you haven't already."

@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import inquirer from "inquirer";
 import { apiClient } from "../services/api-client";
+import { userService } from "../services/user-service";
 import ora from "ora";
 
 interface App {
@@ -79,6 +80,8 @@ const fetchCommand: CommandModule = {
       const response = await apiClient.post("/fetch", {
         appId: appId,
       });
+
+      await userService.ensureUserCached();
 
       const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));

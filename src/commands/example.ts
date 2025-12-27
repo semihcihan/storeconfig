@@ -262,8 +262,17 @@ const fullAppExample: AppStoreModel = {
       supportUrl: "https://mycompany.com/support",
       whatsNew: "Bug fixes and improvements",
     },
+    {
+      locale: "es-ES",
+      name: "Mi App",
+      subtitle: "La mejor app del mundo",
+      description: "La mejor app del mundo en el mundo entero",
+      keywords: "mejor,app,mundo",
+      promotionalText: "La mejor app del mundo en el mundo entero",
+      whatsNew: "Correcciones de errores y mejoras",
+    },
   ],
-  copyright: "© 2025 My Company",
+  copyright: "© 2026 My Company",
 };
 
 // Minimal app example
