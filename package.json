@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
@@ -24,7 +24,7 @@
     "apply": "node dist/cli.js apply",
     "plan": "node dist/cli.js plan",
     "apple": "node dist/cli.js apple",
-    "validate": "node dist/cli.js validate-format",
+    "validate": "node dist/cli.js validate",
     "set-price": "node dist/cli.js set-price",
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",

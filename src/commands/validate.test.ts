@@ -60,7 +60,7 @@ describe("validate command", () => {
 
   describe("command structure", () => {
     it("should have correct command name", () => {
-      expect(validateCommand.command).toBe("validate-format");
+      expect(validateCommand.command).toBe("validate");
     });
 
     it("should have correct description", () => {

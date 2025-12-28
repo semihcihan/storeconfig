@@ -127,6 +127,15 @@ Compare prices across territories in USD. Useful to see how your pricing compare
 storeconfig compare-price
 ```
 
+#### `validate`
+
+Validate the JSON file format and structure. Useful for AI tools to check if your configuration file is valid before applying changes.
+
+```bash
+# Validate configuration (uses storeconfig.json by default)
+storeconfig validate
+```
+
 #### `example`
 
 Generate example JSON files for different data types. Useful to get started or to see how to structure your JSON file.

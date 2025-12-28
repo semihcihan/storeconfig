@@ -9,7 +9,7 @@ import { removeShortcuts } from "@semihcihan/shared";
 import { validateAppStoreModel } from "@semihcihan/shared";
 
 const command: CommandModule = {
-  command: "validate-format",
+  command: "validate",
   describe: "Validate the JSON file format and structure",
   builder: {
     file: {
