@@ -18,6 +18,8 @@ import appleCmd from "./commands/apple";
 import userCmd from "./commands/user";
 import { requireAuth } from "./services/api-client";
 import { userService } from "./services/user-service";
+import setPriceCommand from "./commands/set-price";
+import comparePriceCommand from "./commands/compare-price";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
 logger.setLevel("info");
@@ -49,6 +51,8 @@ async function main() {
     .command(configureCmd)
     .command(appleCmd)
     .command(userCmd)
+    .command(setPriceCommand)
+    .command(comparePriceCommand)
     .demandCommand(1, "Please specify a command")
     .strict()
     .fail(async (msg, err, yargs) => {

@@ -30,7 +30,7 @@ const comparePriceCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
-    logger.warn("this command will be available soon");
+    logger.warn("This command is still in beta and will be available soon.");
     return;
 
     const inputFile = validateFileExists(argv.file as string, {
