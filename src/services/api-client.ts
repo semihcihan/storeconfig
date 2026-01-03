@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import axiosRetry from "axios-retry";
 import { keyService } from "./key-service";
 import { ContextualError } from "@semihcihan/shared";
+import packageJson from "../../package.json";
 
 // Create a configured axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -25,13 +26,14 @@ axiosRetry(apiClient, {
   },
 });
 
-// Add request interceptor to inject API key
+// Add request interceptor to inject API key and CLI version
 apiClient.interceptors.request.use(
   (config) => {
     const apiKey = keyService.loadKey();
     if (apiKey) {
       config.headers["X-StoreConfig-ApiKey"] = apiKey;
     }
+    config.headers["X-CLI-Version"] = packageJson.version;
     return config;
   },
   (error) => {
