@@ -179,7 +179,7 @@ describe("apply command", () => {
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockValidateFileExists).toHaveBeenCalledWith("desired.json", {
-        fileDescription: "desired state JSON file",
+        fileDescription: "target state JSON file",
       });
     });
 
@@ -351,7 +351,7 @@ describe("apply command", () => {
   });
 
   describe("logging", () => {
-    it("should log when processing desired state", async () => {
+    it("should log when processing target state", async () => {
       const mockData = { appId: "123456789" } as any;
 
       mockReadJsonFile.mockReturnValue(mockData);
@@ -372,7 +372,7 @@ describe("apply command", () => {
       await applyCommand.handler!(mockArgv as any);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Processing desired state from desired.json..."
+        "Processing target state from desired.json..."
       );
     });
   });

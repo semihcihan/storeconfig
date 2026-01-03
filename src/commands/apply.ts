@@ -36,7 +36,7 @@ const command: CommandModule = {
   builder: {
     file: {
       alias: "f",
-      describe: `Path to the desired state JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
+      describe: `Path to the target state JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`,
       demandOption: false,
       type: "string",
     },
@@ -53,10 +53,10 @@ const command: CommandModule = {
     const dryRun = process.env.dryRun === "true";
 
     const desiredStateFile = validateFileExists(argv.file as string, {
-      fileDescription: "desired state JSON file",
+      fileDescription: "target state JSON file",
     });
 
-    logger.debug(`Processing desired state from ${desiredStateFile}...`);
+    logger.debug(`Processing target state from ${desiredStateFile}...`);
 
     if (dryRun) {
       logger.debug(
