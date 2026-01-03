@@ -6,8 +6,13 @@ import {
   beforeEach,
   afterEach,
 } from "@jest/globals";
-import { logger, removeShortcuts } from "@semihcihan/shared";
-import { validateAppStoreModel } from "@semihcihan/shared";
+import {
+  logger,
+  removeShortcuts,
+  validateAppStoreModel,
+  SubscriptionSchema,
+  InAppPurchaseSchema,
+} from "@semihcihan/shared";
 import * as fs from "fs";
 
 // Mock process.exit before importing the command
@@ -148,30 +153,120 @@ describe("example command", () => {
   });
 
   describe("example data validation", () => {
-    it("should generate valid minimal app example that passes validation", async () => {
+    it("should generate valid minimal app example that passes validation for fetch context", async () => {
       const mockArgv = { type: "minimal" };
 
       await exampleCommand.handler!(mockArgv as any);
 
       const [, content] = mockFs.writeFileSync.mock.calls[0];
       const output = JSON.parse(content as string);
-      // Use real validation instead of mocked schema
       expect(() =>
         validateAppStoreModel(removeShortcuts(output), false, "fetch")
       ).not.toThrow();
     });
 
-    it("should generate valid full app example that passes validation", async () => {
+    it("should generate valid minimal app example that passes validation for apply context", async () => {
+      const mockArgv = { type: "minimal" };
+
+      await exampleCommand.handler!(mockArgv as any);
+
+      const [, content] = mockFs.writeFileSync.mock.calls[0];
+      const output = JSON.parse(content as string);
+      expect(() =>
+        validateAppStoreModel(removeShortcuts(output), false, "apply")
+      ).not.toThrow();
+    });
+
+    it("should generate valid full app example that passes validation for fetch context", async () => {
       const mockArgv = { type: "full" };
 
       await exampleCommand.handler!(mockArgv as any);
 
       const [, content] = mockFs.writeFileSync.mock.calls[0];
       const output = JSON.parse(content as string);
-      // Use real validation instead of mocked schema
       expect(() =>
         validateAppStoreModel(removeShortcuts(output), false, "fetch")
       ).not.toThrow();
+    });
+
+    it("should generate valid full app example that passes validation for apply context", async () => {
+      const mockArgv = { type: "full" };
+
+      await exampleCommand.handler!(mockArgv as any);
+
+      const [, content] = mockFs.writeFileSync.mock.calls[0];
+      const output = JSON.parse(content as string);
+      expect(() =>
+        validateAppStoreModel(removeShortcuts(output), false, "apply")
+      ).not.toThrow();
+    });
+
+    it("should generate valid subscription examples that pass validation", async () => {
+      const mockArgv = { type: "subscription" };
+
+      await exampleCommand.handler!(mockArgv as any);
+
+      const [, content] = mockFs.writeFileSync.mock.calls[0];
+      const output = JSON.parse(content as string);
+      expect(Array.isArray(output)).toBe(true);
+
+      for (const subscription of output) {
+        const subscriptionWithoutShortcuts = removeShortcuts(subscription);
+        const result = SubscriptionSchema.safeParse(
+          subscriptionWithoutShortcuts
+        );
+        if (!result.success) {
+          console.error(
+            "Subscription validation error:",
+            JSON.stringify(result.error.format(), null, 2)
+          );
+        }
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("should generate valid in-app-purchase examples that pass validation", async () => {
+      const mockArgv = { type: "in-app-purchase" };
+
+      await exampleCommand.handler!(mockArgv as any);
+
+      const [, content] = mockFs.writeFileSync.mock.calls[0];
+      const output = JSON.parse(content as string);
+      expect(Array.isArray(output)).toBe(true);
+
+      for (const iap of output) {
+        const iapWithoutShortcuts = removeShortcuts(iap);
+        const result = InAppPurchaseSchema.safeParse(iapWithoutShortcuts);
+        if (!result.success) {
+          console.error(
+            "IAP validation error:",
+            JSON.stringify(result.error.format(), null, 2)
+          );
+        }
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("should generate valid iap examples that pass validation", async () => {
+      const mockArgv = { type: "iap" };
+
+      await exampleCommand.handler!(mockArgv as any);
+
+      const [, content] = mockFs.writeFileSync.mock.calls[0];
+      const output = JSON.parse(content as string);
+      expect(Array.isArray(output)).toBe(true);
+
+      for (const iap of output) {
+        const iapWithoutShortcuts = removeShortcuts(iap);
+        const result = InAppPurchaseSchema.safeParse(iapWithoutShortcuts);
+        if (!result.success) {
+          console.error(
+            "IAP validation error:",
+            JSON.stringify(result.error.format(), null, 2)
+          );
+        }
+        expect(result.success).toBe(true);
+      }
     });
   });
 
