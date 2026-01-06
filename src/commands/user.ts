@@ -16,6 +16,17 @@ const userCommand: CommandModule = {
       if (info.currentJob.error) {
         output += `\n   Error: ${info.currentJob.error}`;
       }
+
+      // Filter and display after messages
+      const afterMessages = info.currentJob.info?.filter(
+        (item) => item.type === "after"
+      );
+      if (afterMessages && afterMessages.length > 0) {
+        output += `\n\nAdditional information:`;
+        for (const item of afterMessages) {
+          output += `\n   ${item.message}`;
+        }
+      }
     }
 
     logger.std(output);
