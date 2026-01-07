@@ -30,9 +30,6 @@ const comparePriceCommand: CommandModule = {
     },
   },
   handler: async (argv) => {
-    logger.warn("This command is still in beta and will be available soon.");
-    return;
-
     const inputFile = validateFileExists(argv.file as string, {
       fileDescription: "input JSON file with app store data",
     });
