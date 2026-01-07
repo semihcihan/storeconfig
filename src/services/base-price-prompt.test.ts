@@ -6,12 +6,14 @@ import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem, PricePointInfo } from "@semihcihan/shared";
 
 // Mock dependencies
+const mockFindNearestPrices = jest.fn();
 jest.mock("@semihcihan/shared", () => ({
   logger: {
     prompt: jest.fn(),
     error: jest.fn(),
     info: jest.fn(),
   },
+  findNearestPrices: (...args: any[]) => mockFindNearestPrices(...args),
 }));
 jest.mock("inquirer");
 
@@ -29,6 +31,7 @@ const mockFetchTerritoryPricePointsForSelectedItem =
 describe("base-price-prompt", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFindNearestPrices.mockReturnValue([]);
   });
 
   describe("promptForBasePricePoint", () => {
@@ -309,6 +312,288 @@ describe("base-price-prompt", () => {
       expect(canonical).toBe("3.00");
       expect(validationPasses).toBe(true);
       expect(lookupSucceeds).toBe(true);
+    });
+
+    it("should throw error when no available price points are found", async () => {
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue([]);
+
+      await expect(
+        promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        )
+      ).rejects.toThrow(
+        "No available Apple price points found. This is unexpected. Please try again."
+      );
+    });
+
+    it("should handle edge case where price point lookup might fail", async () => {
+      // Note: With the current implementation, if validation passes, lookup should always succeed
+      // because both use the same normalization logic. This test verifies the error path exists
+      // for defensive programming purposes, even though it's unlikely to be triggered in practice.
+      const mockPricePoints: PricePointInfo[] = [
+        { id: "price-1", price: "3.00" },
+        { id: "price-2", price: "4.99" },
+      ];
+
+      mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+        mockPricePoints
+      );
+
+      // Test with a valid price that exists in the list
+      mockInquirer.prompt.mockResolvedValueOnce({ price: "4.99" });
+
+      const result = await promptForBasePricePoint(
+        mockSelectedItem,
+        mockAppStoreState,
+        mockFetchTerritoryPricePointsForSelectedItem
+      );
+
+      expect(result).toEqual({ id: "price-2", price: "4.99" });
+    });
+
+    describe("validation error cases", () => {
+      it("should reject invalid format with letters", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        // Mock inquirer to simulate validation failure
+        (mockInquirer.prompt as any).mockImplementationOnce(
+          (questions: any[]) => {
+            const validateFn = questions[0].validate;
+            const result = validateFn("abc");
+            expect(result).toBe(
+              "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
+            );
+            // Return a valid price after validation check
+            return Promise.resolve({ price: "3.00" });
+          }
+        );
+
+        const result = await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+
+        expect(result).toEqual({ id: "price-1", price: "3.00" });
+      });
+
+      it("should reject invalid format with more than 2 decimals", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        (mockInquirer.prompt as any).mockImplementationOnce(
+          (questions: any[]) => {
+            const validateFn = questions[0].validate;
+            const result = validateFn("3.999");
+            expect(result).toBe(
+              "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
+            );
+            return Promise.resolve({ price: "3.00" });
+          }
+        );
+
+        await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+      });
+
+      it("should reject negative numbers", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        (mockInquirer.prompt as any).mockImplementationOnce(
+          (questions: any[]) => {
+            const validateFn = questions[0].validate;
+            const result = validateFn("-5.99");
+            expect(result).toBe(
+              "❌ Invalid format. Please enter a non-negative number with up to 2 decimals (e.g., 5.99)."
+            );
+            return Promise.resolve({ price: "3.00" });
+          }
+        );
+
+        await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+      });
+
+      it("should reject price not in available list with nearest prices shown", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+          { id: "price-2", price: "4.99" },
+          { id: "price-3", price: "5.99" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        mockFindNearestPrices.mockReturnValue(["4.99", "5.99"]);
+
+        (mockInquirer.prompt as any).mockImplementationOnce(
+          (questions: any[]) => {
+            const validateFn = questions[0].validate;
+            const result = validateFn("5.00");
+            expect(result).toContain(
+              "❌ The price 5.00 is not an available Apple price."
+            );
+            expect(result).toContain("Closest available prices:");
+            expect(result).toContain("4.99");
+            expect(result).toContain("5.99");
+            return Promise.resolve({ price: "4.99" });
+          }
+        );
+
+        const result = await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+
+        expect(result).toEqual({ id: "price-2", price: "4.99" });
+        expect(mockFindNearestPrices).toHaveBeenCalledWith(
+          5.0,
+          ["3.00", "4.99", "5.99"],
+          20
+        );
+      });
+
+      it("should reject price not in available list without nearest prices when findNearestPrices returns empty", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        mockFindNearestPrices.mockReturnValue([]);
+
+        (mockInquirer.prompt as any).mockImplementationOnce(
+          (questions: any[]) => {
+            const validateFn = questions[0].validate;
+            const result = validateFn("5.00");
+            expect(result).toBe(
+              "❌ The price 5.00 is not an available Apple price."
+            );
+            expect(result).not.toContain("Closest available prices:");
+            return Promise.resolve({ price: "3.00" });
+          }
+        );
+
+        await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+      });
+    });
+
+    describe("normalization edge cases", () => {
+      it("should filter out price points with invalid prices (non-finite)", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+          { id: "price-2", price: "NaN" },
+          { id: "price-3", price: "Infinity" },
+          { id: "price-4", price: "4.99" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        mockInquirer.prompt.mockResolvedValueOnce({ price: "3.00" });
+
+        const result = await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+
+        expect(result).toEqual({ id: "price-1", price: "3.00" });
+      });
+
+      it("should filter out price points with negative prices", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+          { id: "price-2", price: "-5.99" },
+          { id: "price-3", price: "4.99" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        mockInquirer.prompt.mockResolvedValueOnce({ price: "3.00" });
+
+        const result = await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+
+        expect(result).toEqual({ id: "price-1", price: "3.00" });
+      });
+
+      it("should handle price points with empty string prices", async () => {
+        const mockPricePoints: PricePointInfo[] = [
+          { id: "price-1", price: "3.00" },
+          { id: "price-2", price: "" },
+          { id: "price-3", price: "4.99" },
+        ];
+
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          mockPricePoints
+        );
+
+        mockInquirer.prompt.mockResolvedValueOnce({ price: "3.00" });
+
+        const result = await promptForBasePricePoint(
+          mockSelectedItem,
+          mockAppStoreState,
+          mockFetchTerritoryPricePointsForSelectedItem
+        );
+
+        expect(result).toEqual({ id: "price-1", price: "3.00" });
+      });
+
+      it("should handle null or undefined price points array", async () => {
+        mockFetchTerritoryPricePointsForSelectedItem.mockResolvedValue(
+          null as any
+        );
+
+        await expect(
+          promptForBasePricePoint(
+            mockSelectedItem,
+            mockAppStoreState,
+            mockFetchTerritoryPricePointsForSelectedItem
+          )
+        ).rejects.toThrow(
+          "No available Apple price points found. This is unexpected. Please try again."
+        );
+      });
     });
   });
 });

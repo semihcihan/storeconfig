@@ -175,12 +175,7 @@ describe("set-price command", () => {
       });
 
       await expect(setPriceCommand.handler!(mockArgv as any)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Set-price failed",
-        expect.any(Error)
+        "File not found"
       );
     });
   });

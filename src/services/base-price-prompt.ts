@@ -48,7 +48,7 @@ export async function promptForBasePricePoint(
       Number(a.price) - Number(b.price)
   );
 
-  if (!availablePricePoints.length) {
+  if (!availablePricePoints || !availablePricePoints.length) {
     throw new Error(
       "No available Apple price points found. This is unexpected. Please try again."
     );
@@ -93,12 +93,15 @@ export async function promptForBasePricePoint(
 
   const parsed = parsePriceInputToNumber(price);
   const canonical = parsed!.toFixed(2);
-  const selectedNormalizedPricePoint = normalizedAvailablePricePoints.find(
-    (p: { id: string; price: string }) => p.price === canonical
-  );
-  const selectedPricePoint = availablePricePoints.find(
-    (p: PricePointInfo) => p.id === selectedNormalizedPricePoint?.id
-  );
+
+  // Match by normalized price - convert API price to canonical format for comparison
+  // This handles cases where API returns "3.0" but user enters "3" (normalized to "3.00")
+  const selectedPricePoint = availablePricePoints.find((p: PricePointInfo) => {
+    const apiPriceParsed = parsePriceInputToNumber(p.price);
+    if (apiPriceParsed === null) return false;
+    const apiPriceCanonical = apiPriceParsed.toFixed(2);
+    return apiPriceCanonical === canonical;
+  });
 
   if (selectedPricePoint) {
     return selectedPricePoint;

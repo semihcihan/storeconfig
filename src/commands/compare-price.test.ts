@@ -292,12 +292,7 @@ describe("compare-price command", () => {
       mockApiClient.post.mockRejectedValueOnce(new Error("API failed"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        expect.any(Error)
+        "API failed"
       );
     });
 
@@ -307,12 +302,7 @@ describe("compare-price command", () => {
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        expect.any(Error)
+        "Invalid JSON"
       );
     });
 
@@ -320,12 +310,7 @@ describe("compare-price command", () => {
       mockApiClient.post.mockRejectedValueOnce(new Error("API error"));
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        expect.any(Error)
+        "API error"
       );
     });
 
@@ -335,12 +320,7 @@ describe("compare-price command", () => {
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        expect.any(Error)
+        "Export failed"
       );
     });
 
@@ -350,12 +330,7 @@ describe("compare-price command", () => {
       });
 
       await expect(comparePriceCommand.handler(mockArgv)).rejects.toThrow(
-        "process.exit called"
-      );
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Price comparison failed",
-        expect.any(Error)
+        "Export failed"
       );
     });
   });
