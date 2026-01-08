@@ -185,6 +185,7 @@ describe("job-service", () => {
             id: "ongoing-job-123",
             status: "processing",
             error: undefined,
+            info: [],
           },
           user: {
             id: "user-123",
@@ -242,6 +243,7 @@ describe("job-service", () => {
             id: "pending-job-123",
             status: "pending",
             error: undefined,
+            info: [],
           },
           user: {
             id: "user-123",
@@ -271,6 +273,7 @@ describe("job-service", () => {
             id: "completed-job-123",
             status: "completed",
             error: undefined,
+            info: [],
           },
           user: {
             id: "user-123",
@@ -301,6 +304,7 @@ describe("job-service", () => {
             id: "failed-job-123",
             status: "failed",
             error: "Job failed due to error",
+            info: [],
           },
           user: {
             id: "user-123",

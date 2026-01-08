@@ -1,8 +1,15 @@
 import { apiClient } from "./api-client";
 import { AnyAction, Plan } from "@semihcihan/shared";
 import { Ora } from "ora";
+import { logger } from "@semihcihan/shared";
 
 const POLL_INTERVAL_MS = 5000;
+
+interface JobInfo {
+  actionIndex: number;
+  message: string;
+  type: "default" | "after";
+}
 
 interface JobStatusResponse {
   success: boolean;
@@ -15,6 +22,7 @@ interface JobStatusResponse {
     totalActions: number;
     createdAt: string;
     updatedAt: string;
+    info: JobInfo[];
   };
 }
 
@@ -24,11 +32,24 @@ export const trackJob = async (
   plan?: Plan
 ): Promise<void> => {
   let lastActionIndex = -1;
+  let displayedInfoCount = 0;
 
   while (true) {
-    const { status, currentActionIndex, currentAction, totalActions, error } = (
-      await getJobStatus(jobId)
-    ).data;
+    const {
+      status,
+      currentActionIndex,
+      currentAction,
+      totalActions,
+      error,
+      info,
+    } = (await getJobStatus(jobId)).data;
+
+    // Display new info messages (only default type, not after)
+    displayedInfoCount = displayNewInfoMessages(
+      info,
+      displayedInfoCount,
+      spinner
+    );
 
     if (currentActionIndex !== lastActionIndex) {
       if (
@@ -54,10 +75,14 @@ export const trackJob = async (
 
     if (status === "completed") {
       spinner.succeed("Actions completed successfully");
+      // Display after messages if any
+      displayAfterMessages(info);
       return;
     }
 
     if (status === "failed") {
+      // Display after messages even on failure
+      displayAfterMessages(info);
       throw new Error(error);
     }
 
@@ -99,5 +124,37 @@ const displaySkippedActions = async (
       // Display for 0.5 seconds
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
+  }
+};
+
+const displayNewInfoMessages = (
+  info: JobInfo[] | undefined,
+  displayedInfoCount: number,
+  spinner: Ora
+): number => {
+  if (!info || info.length <= displayedInfoCount) {
+    return displayedInfoCount;
+  }
+
+  for (let i = displayedInfoCount; i < info.length; i++) {
+    const infoMessage = info[i];
+    if (infoMessage.type === "default") {
+      spinner.stop();
+      logger.info(infoMessage.message);
+      spinner.start();
+    }
+  }
+
+  return info.length;
+};
+
+const displayAfterMessages = (info: JobInfo[] | undefined): void => {
+  if (!info) return;
+
+  const afterMessages = info.filter((item) => item.type === "after");
+  if (afterMessages.length === 0) return;
+
+  for (const item of afterMessages) {
+    logger.info(item.message);
   }
 };

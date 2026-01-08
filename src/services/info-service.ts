@@ -1,5 +1,11 @@
 import { apiClient } from "./api-client";
 
+interface JobInfo {
+  actionIndex: number;
+  message: string;
+  type: "default" | "after";
+}
+
 interface InfoResponse {
   success: boolean;
   data: {
@@ -7,6 +13,7 @@ interface InfoResponse {
       id: string;
       status: "pending" | "processing" | "completed" | "failed";
       error: string | undefined;
+      info: JobInfo[];
     };
     user: {
       id: string;

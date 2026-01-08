@@ -95,6 +95,7 @@ describe("user command", () => {
           id: "job-456",
           status: "processing" as const,
           error: undefined,
+          info: [],
         },
       };
 
@@ -119,6 +120,7 @@ describe("user command", () => {
           id: "job-456",
           status: "failed" as const,
           error: "Something went wrong",
+          info: [],
         },
       };
 
@@ -153,6 +155,7 @@ describe("user command", () => {
             id: "job-456",
             status,
             error: status === "failed" ? "Test error" : undefined,
+            info: [],
           },
         };
 
@@ -228,6 +231,7 @@ describe("user command", () => {
           id: "job-789",
           status: "completed" as const,
           error: undefined,
+          info: [],
         },
       };
 
@@ -251,6 +255,7 @@ describe("user command", () => {
           id: "job-789",
           status: "failed" as const,
           error: "Validation failed: Invalid product ID",
+          info: [],
         },
       };
 
@@ -274,6 +279,7 @@ describe("user command", () => {
           id: "job-789",
           status: "failed" as const,
           error: "",
+          info: [],
         },
       };
 
@@ -297,6 +303,7 @@ describe("user command", () => {
           id: "job-789",
           status: "failed" as const,
           error: null as any,
+          info: [],
         },
       };
 
@@ -373,6 +380,7 @@ describe("user command", () => {
           id: "job-456-special_chars.123",
           status: "processing" as const,
           error: undefined,
+          info: [],
         },
       };
 
@@ -399,6 +407,7 @@ describe("user command", () => {
           id: "job-456",
           status: "failed" as const,
           error: longError,
+          info: [],
         },
       };
 
@@ -408,6 +417,226 @@ describe("user command", () => {
 
       expect(mockLogger.std).toHaveBeenCalledWith(
         `Email → test@example.com\nLatest Actions → Status: failed\n   Error: ${longError}`
+      );
+    });
+  });
+
+  describe("info property handling", () => {
+    it("should display after messages when info contains after type items", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "completed" as const,
+          error: undefined,
+          info: [
+            {
+              actionIndex: 0,
+              message: "Price changes are scheduled for tomorrow",
+              type: "after" as const,
+            },
+          ],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled for tomorrow"
+      );
+    });
+
+    it("should not display default type messages", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "processing" as const,
+          error: undefined,
+          info: [
+            {
+              actionIndex: 0,
+              message: "This is a default message",
+              type: "default" as const,
+            },
+          ],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: processing"
+      );
+    });
+
+    it("should display only after messages when info contains both after and default types", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "completed" as const,
+          error: undefined,
+          info: [
+            {
+              actionIndex: 0,
+              message: "This is a default message",
+              type: "default" as const,
+            },
+            {
+              actionIndex: 1,
+              message: "Price changes are scheduled",
+              type: "after" as const,
+            },
+            {
+              actionIndex: 2,
+              message: "Another default message",
+              type: "default" as const,
+            },
+          ],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled"
+      );
+    });
+
+    it("should display multiple after messages", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "completed" as const,
+          error: undefined,
+          info: [
+            {
+              actionIndex: 0,
+              message: "First after message",
+              type: "after" as const,
+            },
+            {
+              actionIndex: 1,
+              message: "Second after message",
+              type: "after" as const,
+            },
+            {
+              actionIndex: 2,
+              message: "Third after message",
+              type: "after" as const,
+            },
+          ],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   First after message\n   Second after message\n   Third after message"
+      );
+    });
+
+    it("should not display additional information when info is empty array", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "processing" as const,
+          error: undefined,
+          info: [],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: processing"
+      );
+    });
+
+    it("should not display additional information when info is undefined", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "processing" as const,
+          error: undefined,
+          info: undefined as any, // Type allows undefined due to optional chaining in implementation
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: processing"
+      );
+    });
+
+    it("should display after messages along with error message", async () => {
+      const mockUserInfo = {
+        user: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+        },
+        currentJob: {
+          id: "job-456",
+          status: "failed" as const,
+          error: "Validation failed",
+          info: [
+            {
+              actionIndex: 0,
+              message: "Some additional context about the failure",
+              type: "after" as const,
+            },
+          ],
+        },
+      };
+
+      mockGetInfo.mockResolvedValueOnce(mockUserInfo);
+
+      await userCommand.handler!({} as any);
+
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Validation failed\n\nAdditional information:\n   Some additional context about the failure"
       );
     });
   });

@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger, DEFAULT_CONFIG_FILENAME } from "@semihcihan/shared";
+import { logger, DEFAULT_CONFIG_FILENAME, MESSAGES } from "@semihcihan/shared";
 import * as fs from "fs";
 import * as path from "path";
 import inquirer from "inquirer";
@@ -87,6 +87,7 @@ const fetchCommand: CommandModule = {
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
       const fullPath = path.resolve(outputFile);
       spinner.succeed(`Successfully fetched app: ${fullPath}`);
+      logger.info(MESSAGES.SCHEDULED_CHANGES_NOT_VISIBLE);
     } catch (error) {
       spinner.stop();
       throw error;

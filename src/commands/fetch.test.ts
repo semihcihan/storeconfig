@@ -25,6 +25,10 @@ jest.mock("@semihcihan/shared", () => ({
     error: jest.fn(),
   },
   DEFAULT_CONFIG_FILENAME: "storeconfig.json",
+  MESSAGES: {
+    SCHEDULED_CHANGES_NOT_VISIBLE:
+      "Scheduled changes won't appear in your configuration until they become active.",
+  },
 }));
 jest.mock("../services/api-client", () => ({
   apiClient: {
