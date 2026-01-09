@@ -17,6 +17,7 @@ const apiClient: AxiosInstance = axios.create({
 axiosRetry(apiClient, {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
+  shouldResetTimeout: true,
   retryCondition: (error) => {
     // Retry on network errors or 5xx status codes
     return (
