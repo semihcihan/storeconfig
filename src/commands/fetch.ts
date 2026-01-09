@@ -86,8 +86,9 @@ const fetchCommand: CommandModule = {
       const appStoreState = response.data.data;
       fs.writeFileSync(outputFile, JSON.stringify(appStoreState, null, 2));
       const fullPath = path.resolve(outputFile);
-      spinner.succeed(`Successfully fetched app: ${fullPath}`);
+      spinner.stop();
       logger.info(MESSAGES.SCHEDULED_CHANGES_NOT_VISIBLE);
+      spinner.succeed(`Successfully fetched app: ${fullPath}`);
     } catch (error) {
       spinner.stop();
       throw error;

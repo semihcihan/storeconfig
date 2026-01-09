@@ -19,7 +19,7 @@
     "test:unit": "jest --config jest.unit.config.js",
     "test:coverage": "jest --config jest.unit.config.js --coverage",
     "prepublishOnly": "npm run build",
-    "fetch": "node dist/cli.js fetch --id 6503259293",
+    "fetch": "node dist/cli.js fetch",
     "fetch:all": "node dist/cli.js fetch",
     "apply": "node dist/cli.js apply",
     "plan": "node dist/cli.js plan",
