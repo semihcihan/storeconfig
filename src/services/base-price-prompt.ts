@@ -3,6 +3,7 @@ import { findNearestPrices } from "@semihcihan/shared";
 import type { AppStoreModel } from "@semihcihan/shared";
 import type { PricingItem, PricePointInfo } from "@semihcihan/shared";
 import { BASE_TERRITORY } from "@semihcihan/shared";
+import type { Ora } from "ora";
 
 function parsePriceInputToNumber(input: string): number | null {
   const trimmed = input.trim();
@@ -19,15 +20,24 @@ export async function promptForBasePricePoint(
     selectedItem: PricingItem,
     appId: string,
     territoryId: string
-  ) => Promise<PricePointInfo[]>
+  ) => Promise<PricePointInfo[]>,
+  spinner?: Ora
 ): Promise<PricePointInfo> {
   let availablePricePoints: PricePointInfo[];
+
+  if (spinner) {
+    spinner.start("Fetching available price points...");
+  }
 
   availablePricePoints = await fetchTerritoryPricePointsForSelectedItem(
     selectedItem,
     appStoreState.appId,
     BASE_TERRITORY
   );
+
+  if (spinner) {
+    spinner.stop();
+  }
 
   // Normalize available price points to two decimals for robust comparison (e.g., "4.0" → "4.00")
   const normalizedAvailablePricePoints = Array.from(

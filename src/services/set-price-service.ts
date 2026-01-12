@@ -4,7 +4,7 @@ import type {
   PricePointInfo,
   PricingItem,
 } from "@semihcihan/shared";
-import { logger } from "@semihcihan/shared";
+import type { Ora } from "ora";
 import { selectPricingItem } from "./item-selection";
 import { promptForBasePricePoint } from "../services/base-price-prompt";
 import { promptForPricingStrategy } from "../services/strategy-prompt";
@@ -17,19 +17,22 @@ export interface InteractivePricingOptions {
     appId: string,
     territoryId: string
   ) => Promise<PricePointInfo[]>;
+  spinner?: Ora;
 }
 
 export async function startInteractivePricing(
   options: InteractivePricingOptions
 ): Promise<PricingRequest> {
-  const { appStoreState, fetchTerritoryPricePointsForSelectedItem } = options;
+  const { appStoreState, fetchTerritoryPricePointsForSelectedItem, spinner } =
+    options;
 
   const selectedItem = await selectPricingItem(appStoreState);
 
   const basePricePoint = await promptForBasePricePoint(
     selectedItem,
     appStoreState,
-    fetchTerritoryPricePointsForSelectedItem
+    fetchTerritoryPricePointsForSelectedItem,
+    spinner
   );
   const pricingStrategy = await promptForPricingStrategy();
   const minimumPrice = await promptForMinimumPrice(

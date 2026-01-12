@@ -83,6 +83,7 @@ const setPriceCommand: CommandModule = {
         appStoreState,
         fetchTerritoryPricePointsForSelectedItem:
           fetchTerritoryPricePointsForSelectedItem,
+        spinner,
       });
 
       logger.debug("Pricing data:", pricingRequest);
@@ -94,7 +95,9 @@ const setPriceCommand: CommandModule = {
       );
 
       fs.writeFileSync(inputFile, JSON.stringify(updatedState, null, 2) + "\n");
-      spinner.succeed(`Updated ${inputFile} with pricing changes.`);
+      spinner.succeed(
+        `Updated ${inputFile} with pricing changes.\nDon’t forget to run 'storeconfig apply' to push the changes to App Store Connect.`
+      );
     } catch (error) {
       spinner.stop();
       throw error;
