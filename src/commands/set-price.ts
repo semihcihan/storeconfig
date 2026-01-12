@@ -87,7 +87,7 @@ const setPriceCommand: CommandModule = {
 
       logger.debug("Pricing data:", pricingRequest);
 
-      spinner.start("Applying pricing. This may take up to 15 minutes...");
+      spinner.start("Applying pricing. Please wait...");
       // Apply pricing via API
       const updatedState = useShortcuts(
         await applyPricing(appStoreState, pricingRequest)
