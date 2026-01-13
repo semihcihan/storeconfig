@@ -6,9 +6,15 @@ import fetchCommand from "./commands/fetch";
 import applyCommand from "./commands/apply";
 import type { AppStoreModel } from "@semihcihan/shared";
 
-const API_BASE_URL = "https://api.storeconfig.com";
-const API_KEY = "sc_vQEIMDPf2YjyCbxzTGppo";
-const APP_ID = "6566170641";
+const API_BASE_URL = process.env.API_BASE_URL;
+const API_KEY = process.env.API_KEY;
+const APP_ID = process.env.APP_ID;
+
+if (!API_BASE_URL || !API_KEY || !APP_ID) {
+  throw new Error(
+    "Missing required environment variables. Please create a .env.e2e file with API_BASE_URL, API_KEY, and APP_ID. See .env.e2e.example for reference."
+  );
+}
 
 function generateRandomId(): string {
   return `test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
