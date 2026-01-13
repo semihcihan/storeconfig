@@ -21,7 +21,7 @@ module.exports = {
     ],
   },
   // Transform ES modules that are in node_modules
-  transformIgnorePatterns: ["node_modules/(?!(inquirer|ora)/)"],
+  transformIgnorePatterns: ["node_modules/(?!(inquirer)/)"],
   collectCoverageFrom: [
     "src/**/*.{js,ts}",
     "!src/**/*.test.{js,ts}",
