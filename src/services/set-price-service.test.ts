@@ -121,7 +121,8 @@ describe("set-price-service", () => {
           name: "Test App",
         },
         mockAppStoreData,
-        mockFetchTerritoryPricePoints
+        mockFetchTerritoryPricePoints,
+        undefined
       );
       expect(mockPromptForPricingStrategy).toHaveBeenCalled();
       expect(mockPromptForMinimumPrice).toHaveBeenCalledWith("apple", "0.99");

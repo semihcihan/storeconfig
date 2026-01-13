@@ -164,6 +164,7 @@ describe("set-price command", () => {
       expect(mockStartInteractivePricing).toHaveBeenCalledWith({
         appStoreState: mockDataWithoutShortcuts,
         fetchTerritoryPricePointsForSelectedItem: expect.any(Function),
+        spinner: expect.any(Object),
       });
       expect(mockApiClient.post).toHaveBeenCalled(); // API call for apply pricing
       expect(mockFs.writeFileSync).toHaveBeenCalled();

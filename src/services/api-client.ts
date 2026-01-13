@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import axiosRetry from "axios-retry";
 import { keyService } from "./key-service";
-import { ContextualError } from "@semihcihan/shared";
+import { ContextualError, CLI_VERSION_HEADER } from "@semihcihan/shared";
 import packageJson from "../../package.json";
 
 // Create a configured axios instance
@@ -34,7 +34,7 @@ apiClient.interceptors.request.use(
     if (apiKey) {
       config.headers["X-StoreConfig-ApiKey"] = apiKey;
     }
-    config.headers["X-CLI-Version"] = packageJson.version;
+    config.headers[CLI_VERSION_HEADER] = packageJson.version;
     return config;
   },
   (error) => {

@@ -4,6 +4,7 @@ import path from "path";
 import os from "os";
 import packageJson from "../../package.json";
 import { boxifyMessage } from "./format-helper";
+import { compareVersions } from "@semihcihan/shared";
 
 const NPM_REGISTRY_URL = "https://registry.npmjs.org";
 const CHECK_TIMEOUT = 3000;
@@ -17,21 +18,6 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000; // during beta testing, we will check ev
 interface VersionCache {
   latestVersion: string;
   lastCheckDate: string;
-}
-
-function compareVersions(current: string, latest: string): number {
-  const currentParts = current.split(".").map(Number);
-  const latestParts = latest.split(".").map(Number);
-
-  for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
-    const currentPart = currentParts[i] || 0;
-    const latestPart = latestParts[i] || 0;
-
-    if (currentPart < latestPart) return -1;
-    if (currentPart > latestPart) return 1;
-  }
-
-  return 0;
 }
 
 function loadCache(): VersionCache | null {
@@ -94,7 +80,7 @@ function displayUpdateMessage(
 
   const lines = [
     `Update available ${lightGray}${currentVersion}${reset} -> ${green}${latestVersion}${reset}`,
-    `Run ${green}npm i -g ${packageName}${reset} to update`,
+    `Run ${green}npm install -g ${packageName}@latest${reset} to update`,
   ];
 
   const message = boxifyMessage(lines);

@@ -85,7 +85,7 @@ describe("format-helper", () => {
       const lines = result.split("\n").filter((line) => line.length > 0);
 
       expect(lines[0]).toMatch(/^┌─+┐$/);
-      expect(lines[1]).toMatch(/^│  .+   │$/);
+      expect(lines[1]).toMatch(/^│  .+  │$/);
       expect(lines[2]).toMatch(/^└─+┘$/);
     });
 
