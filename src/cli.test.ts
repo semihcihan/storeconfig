@@ -144,11 +144,11 @@ describe("CLI Error Handling", () => {
     it("should enable Bugsnag by default (production mode)", () => {
       // Unset NODE_ENV (defaults to production behavior)
       delete process.env.NODE_ENV;
-      
+
       // Re-import the instrument module to test environment detection
       jest.resetModules();
       const instrument = require("./services/instrument");
-      
+
       // In production (default), Bugsnag should be properly initialized
       // The mock will still be in place for testing, but the real behavior
       // would be different in actual production
@@ -158,14 +158,14 @@ describe("CLI Error Handling", () => {
     it("should disable Bugsnag in development environment", () => {
       // Set development environment
       process.env.NODE_ENV = "development";
-      
+
       // Re-import the instrument module to test environment detection
       jest.resetModules();
       const instrument = require("./services/instrument");
-      
+
       // In development, Bugsnag.notify should be a no-op function
       expect(typeof Bugsnag.notify).toBe("function");
-      
+
       // Call notify and verify it doesn't throw or send real notifications
       expect(() => {
         Bugsnag.notify(new Error("test error"));
@@ -175,14 +175,14 @@ describe("CLI Error Handling", () => {
     it("should disable Bugsnag when DEBUG is true", () => {
       // Set DEBUG environment variable
       process.env.DEBUG = "true";
-      
+
       // Re-import the instrument module to test environment detection
       jest.resetModules();
       const instrument = require("./services/instrument");
-      
+
       // In development, Bugsnag.notify should be a no-op function
       expect(typeof Bugsnag.notify).toBe("function");
-      
+
       // Call notify and verify it doesn't throw or send real notifications
       expect(() => {
         Bugsnag.notify(new Error("test error"));
@@ -192,11 +192,11 @@ describe("CLI Error Handling", () => {
     it("should enable Bugsnag in production environment", () => {
       // Set production environment
       process.env.NODE_ENV = "production";
-      
+
       // Re-import the instrument module to test environment detection
       jest.resetModules();
       const instrument = require("./services/instrument");
-      
+
       // In production, Bugsnag should be properly initialized
       // The mock will still be in place for testing, but the real behavior
       // would be different in actual production

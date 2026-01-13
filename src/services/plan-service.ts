@@ -70,10 +70,10 @@ export async function showAction(action: AnyAction) {
       const subTerritoryInfo = subIsWorldwide
         ? "worldwide"
         : subTerritories
-        ? `${
-            Array.isArray(subTerritories) ? subTerritories.length : 1
-          } territories`
-        : "No territories set";
+          ? `${
+              Array.isArray(subTerritories) ? subTerritories.length : 1
+            } territories`
+          : "No territories set";
       title = `Creating subscription "${sub.productId}" (${sub.referenceName}) in group "${action.payload.groupReferenceName}"`;
       details = `Period: ${sub.subscriptionPeriod}, Pricing: ${subPriceList}, Territories: ${subTerritoryInfo}`;
       break;
@@ -126,10 +126,12 @@ export async function showAction(action: AnyAction) {
       const iapTerritoryInfo = iapCreateIsWorldwide
         ? "worldwide"
         : iapAvailTerritories
-        ? `${
-            Array.isArray(iapAvailTerritories) ? iapAvailTerritories.length : 1
-          } territories`
-        : "No territories set";
+          ? `${
+              Array.isArray(iapAvailTerritories)
+                ? iapAvailTerritories.length
+                : 1
+            } territories`
+          : "No territories set";
       title = `Creating in-app purchase "${iap.productId}" (${iap.referenceName})"`;
       details = `Type: ${iap.type}, Pricing: ${iapPriceList}, Territories: ${iapTerritoryInfo}`;
       break;

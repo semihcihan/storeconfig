@@ -2,7 +2,13 @@ const fs = require("fs");
 const path = require("path");
 
 // Read the example JSON from shared
-const exampleJsonPath = path.join(__dirname, "..", "..", "shared", "example-storeconfig.json");
+const exampleJsonPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "shared",
+  "example-storeconfig.json"
+);
 const exampleData = JSON.parse(fs.readFileSync(exampleJsonPath, "utf8"));
 const exampleJson = JSON.stringify(exampleData, null, 2);
 
