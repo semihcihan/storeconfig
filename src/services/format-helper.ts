@@ -11,12 +11,12 @@ export function boxifyMessage(lines: string[]): string {
     ...lines.map((line) => stripAnsiCodes(line).length)
   );
   const contentWidth = longestLineLength;
-  const boxWidth = contentWidth + 7;
+  const boxWidth = contentWidth + 6;
 
   const formatLine = (content: string): string => {
     const visibleLength = stripAnsiCodes(content).length;
     const padding = " ".repeat(contentWidth - visibleLength);
-    return `│  ${content}${padding}   │`;
+    return `│  ${content}${padding}  │`;
   };
 
   const horizontalBar = "─".repeat(boxWidth - 2);

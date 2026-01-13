@@ -85,6 +85,20 @@ describe("version-check-service", () => {
       expect(console.log).not.toHaveBeenCalled();
     });
 
+    it("should not display message when cache indicates newer version but CLI was already updated to that version", () => {
+      const cache = {
+        latestVersion: "0.0.19",
+        lastCheckDate: new Date().toISOString(),
+      };
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(cache));
+
+      checkVersionUpdateSync();
+
+      expect(console.log).not.toHaveBeenCalled();
+    });
+
     it("should not display message when current version is newer than cached", () => {
       const cache = {
         latestVersion: "0.0.18",
