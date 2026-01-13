@@ -17,6 +17,7 @@
     "start": "node dist/cli.js",
     "test": "jest --config jest.unit.config.js",
     "test:unit": "jest --config jest.unit.config.js",
+    "test:e2e": "jest --config jest.e2e.config.js",
     "test:coverage": "jest --config jest.unit.config.js --coverage",
     "prepublishOnly": "npm run build",
     "fetch": "node dist/cli.js fetch",
