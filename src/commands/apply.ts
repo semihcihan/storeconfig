@@ -13,6 +13,7 @@ import { removeShortcuts } from "@semihcihan/shared";
 import { apiClient } from "../services/api-client";
 import { trackJob } from "../services/job-polling-service";
 import { createJob } from "../services/job-service";
+import { boxifyMessage } from "../services/format-helper";
 import ora from "ora";
 
 interface DiffResponse {
@@ -23,12 +24,11 @@ interface DiffResponse {
   };
 }
 
-const APPLY_REMINDER =
-  "\n┌─────────────────────────────────────────────────────────────┐\n" +
-  "│  This may take up to 30 minutes depending on the changes.   │\n" +
-  "│  Processing continues on our servers even if CLI is closed. │\n" +
-  "│  You can rerun the same command to check current status.    │\n" +
-  "└─────────────────────────────────────────────────────────────┘\n\n";
+const APPLY_REMINDER = boxifyMessage([
+  "This may take up to 30 minutes depending on the changes.",
+  "Processing continues on our servers even if CLI is closed.",
+  "You can rerun the same command to check current status.",
+]);
 
 const command: CommandModule = {
   command: "apply",

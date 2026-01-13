@@ -20,11 +20,14 @@ import { requireAuth } from "./services/api-client";
 import { userService } from "./services/user-service";
 import setPriceCommand from "./commands/set-price";
 import comparePriceCommand from "./commands/compare-price";
+import { checkVersionUpdateSync } from "./services/version-check-service";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
 logger.setLevel("info");
 
 async function main() {
+  checkVersionUpdateSync();
+
   const parser = yargs(hideBin(process.argv))
     .middleware((argv) => {
       // Commands that require authentication
