@@ -122,7 +122,7 @@ describe("Subscription E2E Tests", () => {
       createdSubscription.pricing.prices.find((p: any) => p.territory === "USA")
         ?.price
     ).toBe("9.99");
-  }, 60000000);
+  }, 600000);
 
   it("should update subscription to single base price", async () => {
     const currentState = JSON.parse(
@@ -184,7 +184,7 @@ describe("Subscription E2E Tests", () => {
 
     const updatedSubscription = updatedGroup.subscriptions[0];
     expect(updatedSubscription.productId).toBe(testSubscriptionId);
-  }, 60000000);
+  }, 600000);
 
   it("should delete future prices and create new future prices when price changes", async () => {
     const currentState = JSON.parse(
@@ -241,5 +241,5 @@ describe("Subscription E2E Tests", () => {
     );
     expect(group).toBeDefined();
     expect(group.subscriptions[0].productId).toBe(testSubscriptionId);
-  }, 60000000);
+  }, 600000);
 });
