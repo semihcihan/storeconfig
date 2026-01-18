@@ -5,7 +5,6 @@ import {
   cleanupE2ETest,
   mockInquirer,
   generateTestIdentifier,
-  waitForApiProcessing,
   type E2ETestContext,
 } from "./helpers";
 import fetchCommand from "../src/commands/fetch";
@@ -83,8 +82,6 @@ describe("IAP Localization E2E Tests", () => {
       preview: false,
     } as any);
 
-    await waitForApiProcessing(5000);
-
     await fetchCommand.handler!({
       id: env.APP_ID,
       file: testContext.tempConfigFile,
@@ -135,8 +132,6 @@ describe("IAP Localization E2E Tests", () => {
       file: testContext.tempConfigFile,
       preview: false,
     } as any);
-
-    await waitForApiProcessing(5000);
 
     await fetchCommand.handler!({
       id: env.APP_ID,
