@@ -1,7 +1,7 @@
 const esbuild = require("esbuild");
 const path = require("path");
 
-const buildConfig = {
+const cliBuildConfig = {
   entryPoints: ["src/cli.ts"],
   bundle: true,
   platform: "node",
@@ -9,7 +9,6 @@ const buildConfig = {
   outfile: "dist/cli.js",
   format: "cjs",
   external: [
-    // External dependencies (they will be installed with the package)
     "axios",
     "dotenv",
     "yargs",
@@ -20,6 +19,23 @@ const buildConfig = {
   sourcemap: true,
   minify: true,
 };
+
+const mcpBuildConfig = {
+  entryPoints: ["src/mcp/index.ts"],
+  bundle: true,
+  platform: "node",
+  target: "node18",
+  outfile: "dist/mcp.mjs",
+  format: "esm",
+  banner: {
+    js: "#!/usr/bin/env node",
+  },
+  packages: "bundle",
+  sourcemap: true,
+  minify: true,
+};
+
+const buildConfig = cliBuildConfig;
 
 const watchConfig = {
   ...buildConfig,
@@ -41,8 +57,12 @@ const watchConfig = {
 async function build() {
   try {
     console.log("Building CLI with esbuild...");
-    await esbuild.build(buildConfig);
-    console.log("Build completed successfully!");
+    await esbuild.build(cliBuildConfig);
+    console.log("CLI build completed successfully!");
+
+    console.log("Building MCP server with esbuild...");
+    await esbuild.build(mcpBuildConfig);
+    console.log("MCP server build completed successfully!");
   } catch (error) {
     console.error("Build failed:", error);
     process.exit(1);
