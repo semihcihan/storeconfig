@@ -7,6 +7,8 @@
 
 ## Prerequisites
 
+**Network Access**: All storeconfig commands require network access. When running any storeconfig command, ensure network permissions are enabled. When executing commands, if you encounter ENOTFOUND or network errors, request network permissions.
+
 To use storeconfig, you need the storeconfig JSON configuration. Start with `storeconfig fetch` if you don't already have its storeconfig JSON available. `storeconfig fetch` (without `--id`) returns all apps on the account - either show the list to the user or select it yourself if you know the name. Users may also fetch a similar app as a first draft and copy relevant fields over.
 
 ## Workflow
