@@ -220,9 +220,7 @@ describe("job-service", () => {
       });
 
       it("should return null when user chooses not to watch ongoing job", async () => {
-        mockInquirer.prompt
-          .mockResolvedValueOnce({ watchOngoing: false })
-          .mockResolvedValueOnce({ confirmed: false });
+        mockInquirer.prompt.mockResolvedValueOnce({ watchOngoing: false });
 
         const result = await createJob(
           mockPlan,
@@ -240,7 +238,7 @@ describe("job-service", () => {
       });
 
       it("should handle pending status as ongoing job", async () => {
-        mockGetInfo.mockResolvedValue({
+        mockGetInfo.mockResolvedValueOnce({
           currentJob: {
             id: "pending-job-123",
             status: "pending",
@@ -271,7 +269,7 @@ describe("job-service", () => {
       });
 
       it("should not treat completed job as ongoing", async () => {
-        mockGetInfo.mockResolvedValue({
+        mockGetInfo.mockResolvedValueOnce({
           currentJob: {
             id: "completed-job-123",
             status: "completed",
@@ -303,7 +301,7 @@ describe("job-service", () => {
       });
 
       it("should not treat failed job as ongoing", async () => {
-        mockGetInfo.mockResolvedValue({
+        mockGetInfo.mockResolvedValueOnce({
           currentJob: {
             id: "failed-job-123",
             status: "failed",
@@ -352,7 +350,7 @@ describe("job-service", () => {
       });
 
       it("should handle inquirer errors", async () => {
-        mockGetInfo.mockResolvedValue({
+        mockGetInfo.mockResolvedValueOnce({
           currentJob: undefined,
           user: {
             id: "user-123",
@@ -362,7 +360,7 @@ describe("job-service", () => {
           },
         });
         const inquirerError = new Error("Inquirer error");
-        mockInquirer.prompt.mockRejectedValue(inquirerError);
+        mockInquirer.prompt.mockRejectedValueOnce(inquirerError);
 
         await expect(
           createJob(
