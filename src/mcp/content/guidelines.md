@@ -9,7 +9,7 @@
 
 **Network Access**: All storeconfig commands require network access. When running any storeconfig command, ensure network permissions are enabled. When executing commands, if you encounter ENOTFOUND or network errors, request network permissions.
 
-To use storeconfig, you need the storeconfig JSON configuration. Start with `storeconfig fetch` if you don't already have its storeconfig JSON available. `storeconfig fetch` (without `--id`) returns all apps on the account - either show the list to the user or select it yourself if you know the name. Users may also fetch a similar app as a first draft and copy relevant fields over.
+To use storeconfig, you need the storeconfig JSON configuration. Start with `storeconfig fetch --list` if you don't already have its storeconfig JSON available. This command returns all apps on the account in JSON format `[{id, name}]` - show the list to the user unless you know which app to fetch. Then use `storeconfig fetch --id <app-store-connect-app-id>` to fetch the specific app. Do not ever start from scratch. Users may also fetch a similar app as a first draft and copy relevant fields over, but you must still fetch the target app (the app that needs to be configured).
 
 ## Workflow
 
@@ -32,11 +32,13 @@ storeconfig apple --key-path <path-to-p8-file>
 
 ### fetch - Download app configuration
 ```bash
-storeconfig fetch [--id <app-store-connect-app-id>] [--file <output-file>]
+storeconfig fetch [--id <app-store-connect-app-id>] [--file <output-file>] [--list]
 ```
 
 Run `storeconfig fetch` without `--id` to fetch all app names and prompt the user to select an app (useful when the Apple app ID is unknown).
 `--id` refers to the App Store Connect app ID (numeric App Store Connect ID, all numbers), not the bundle ID.
+
+Use `storeconfig fetch --list` (or `-l`) to get all available apps in JSON format `[{id, name}]` without any interactive prompts. This is useful for LLMs and non-interactive environments.
 
 ### apply - Sync changes to App Store Connect
 ```bash

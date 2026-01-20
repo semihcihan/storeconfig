@@ -52,8 +52,26 @@ const fetchCommand: CommandModule = {
       demandOption: false,
       type: "string",
     },
+    list: {
+      alias: "l",
+      describe: "List all available apps in JSON format (non-interactive, for LLMs).",
+      demandOption: false,
+      type: "boolean",
+    },
   },
   handler: async (argv) => {
+    const list = argv.list as boolean;
+    
+    if (list) {
+      try {
+        const apps = await fetchApps();
+        console.log(JSON.stringify(apps, null, 2));
+        return;
+      } catch (error) {
+        throw error;
+      }
+    }
+
     let appId = argv.id as string;
     const outputFile = (argv.file as string) || DEFAULT_CONFIG_FILENAME;
     const spinner = ora();
