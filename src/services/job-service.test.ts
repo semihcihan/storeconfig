@@ -82,6 +82,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
       });
@@ -191,6 +192,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
       });
@@ -249,6 +251,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
         mockInquirer.prompt.mockResolvedValueOnce({ watchOngoing: true });
@@ -279,6 +282,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
         mockInquirer.prompt.mockResolvedValueOnce({ confirmed: true });
@@ -310,6 +314,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
         mockInquirer.prompt.mockResolvedValueOnce({ confirmed: true });
@@ -353,6 +358,7 @@ describe("job-service", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
         });
         const inquirerError = new Error("Inquirer error");

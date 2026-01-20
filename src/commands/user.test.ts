@@ -52,7 +52,7 @@ describe("user command", () => {
 
     it("should have correct description", () => {
       expect(userCommand.describe).toBe(
-        "Display current user information and latest job status"
+        "Display current user information and latest 'apply' status and Apple credentials status if not configured"
       );
     });
 
@@ -72,6 +72,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       };
@@ -81,7 +82,9 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
-      expect(mockLogger.std).toHaveBeenCalledWith("Email → test@example.com");
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+      );
     });
 
     it("should display user information with current job", async () => {
@@ -90,6 +93,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -105,7 +109,7 @@ describe("user command", () => {
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -115,6 +119,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -130,7 +135,7 @@ describe("user command", () => {
 
       expect(mockGetInfo).toHaveBeenCalledTimes(1);
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Something went wrong"
+        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Something went wrong\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -150,6 +155,7 @@ describe("user command", () => {
             id: "user-123",
             email: "test@example.com",
             name: "Test User",
+            appleSetup: false,
           },
           currentJob: {
             id: "job-456",
@@ -165,8 +171,8 @@ describe("user command", () => {
 
         const expectedOutput =
           status === "failed"
-            ? "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Test error"
-            : "Email → test@example.com\nLatest Actions → Status: " + status;
+            ? "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Test error\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+            : "Email → test@example.com\nLatest Actions → Status: " + status + "\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information.";
 
         expect(mockLogger.std).toHaveBeenCalledWith(expectedOutput);
       }
@@ -209,6 +215,7 @@ describe("user command", () => {
           id: "user-123",
           email: "user@domain.com",
           name: "John Doe",
+          appleSetup: false,
         },
         currentJob: undefined,
       };
@@ -217,7 +224,9 @@ describe("user command", () => {
 
       await userCommand.handler!({} as any);
 
-      expect(mockLogger.std).toHaveBeenCalledWith("Email → user@domain.com");
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → user@domain.com\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+      );
     });
 
     it("should format output correctly with job status", async () => {
@@ -226,6 +235,7 @@ describe("user command", () => {
           id: "user-123",
           email: "user@domain.com",
           name: "John Doe",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-789",
@@ -240,7 +250,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → Status: completed"
+        "Email → user@domain.com\nLatest Actions → Status: completed\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -250,6 +260,7 @@ describe("user command", () => {
           id: "user-123",
           email: "user@domain.com",
           name: "John Doe",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-789",
@@ -264,7 +275,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → Status: failed\n   Error: Validation failed: Invalid product ID"
+        "Email → user@domain.com\nLatest Actions → Status: failed\n   Error: Validation failed: Invalid product ID\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -274,6 +285,7 @@ describe("user command", () => {
           id: "user-123",
           email: "user@domain.com",
           name: "John Doe",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-789",
@@ -288,7 +300,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → Status: failed"
+        "Email → user@domain.com\nLatest Actions → Status: failed\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -298,6 +310,7 @@ describe("user command", () => {
           id: "user-123",
           email: "user@domain.com",
           name: "John Doe",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-789",
@@ -312,7 +325,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → user@domain.com\nLatest Actions → Status: failed"
+        "Email → user@domain.com\nLatest Actions → Status: failed\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
   });
@@ -324,6 +337,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       };
@@ -332,7 +346,9 @@ describe("user command", () => {
 
       await userCommand.handler!({} as any);
 
-      expect(mockLogger.std).toHaveBeenCalledWith("Email → test@example.com");
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+      );
     });
 
     it("should handle null currentJob", async () => {
@@ -341,6 +357,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: null as any,
       };
@@ -349,7 +366,9 @@ describe("user command", () => {
 
       await userCommand.handler!({} as any);
 
-      expect(mockLogger.std).toHaveBeenCalledWith("Email → test@example.com");
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → test@example.com\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+      );
     });
 
     it("should handle empty user email", async () => {
@@ -358,6 +377,7 @@ describe("user command", () => {
           id: "user-123",
           email: "",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       };
@@ -366,7 +386,9 @@ describe("user command", () => {
 
       await userCommand.handler!({} as any);
 
-      expect(mockLogger.std).toHaveBeenCalledWith("Email → ");
+      expect(mockLogger.std).toHaveBeenCalledWith(
+        "Email → \n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
+      );
     });
 
     it("should handle special characters in job ID", async () => {
@@ -375,6 +397,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456-special_chars.123",
@@ -389,7 +412,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -402,6 +425,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -416,7 +440,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        `Email → test@example.com\nLatest Actions → Status: failed\n   Error: ${longError}`
+        `Email → test@example.com\nLatest Actions → Status: failed\n   Error: ${longError}\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information.`
       );
     });
   });
@@ -428,6 +452,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -448,7 +473,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled for tomorrow"
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled for tomorrow\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -458,6 +483,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -478,7 +504,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -488,6 +514,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -518,7 +545,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled"
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   Price changes are scheduled\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -528,6 +555,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -558,7 +586,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   First after message\n   Second after message\n   Third after message"
+        "Email → test@example.com\nLatest Actions → Status: completed\n\nAdditional information:\n   First after message\n   Second after message\n   Third after message\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -568,6 +596,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -582,7 +611,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -592,6 +621,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -606,7 +636,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: processing"
+        "Email → test@example.com\nLatest Actions → Status: processing\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
 
@@ -616,6 +646,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: {
           id: "job-456",
@@ -636,7 +667,7 @@ describe("user command", () => {
       await userCommand.handler!({} as any);
 
       expect(mockLogger.std).toHaveBeenCalledWith(
-        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Validation failed\n\nAdditional information:\n   Some additional context about the failure"
+        "Email → test@example.com\nLatest Actions → Status: failed\n   Error: Validation failed\n\nAdditional information:\n   Some additional context about the failure\n\nApple Credentials missing. Run 'storeconfig apple --key-path /path/to/key.p8' to set up. Check https://storeconfig.com/docs for more information."
       );
     });
   });
@@ -648,6 +679,7 @@ describe("user command", () => {
           id: "user-123",
           email: "test@example.com",
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       };

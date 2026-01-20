@@ -19,6 +19,7 @@ interface InfoResponse {
       id: string;
       email: string;
       name: string;
+      appleSetup: boolean;
     };
   };
 }

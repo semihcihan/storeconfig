@@ -264,6 +264,7 @@ describe("UserService", () => {
           id: "user-123",
           email: mockEmail,
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       });
@@ -305,6 +306,7 @@ describe("UserService", () => {
           id: "user-123",
           email: mockEmail,
           name: "Test User",
+          appleSetup: false,
         },
         currentJob: undefined,
       });

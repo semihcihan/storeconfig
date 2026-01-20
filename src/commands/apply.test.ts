@@ -103,7 +103,7 @@ describe("apply command", () => {
     mockTrackJob.mockResolvedValue(undefined);
     mockGetInfo.mockResolvedValue({
       currentJob: undefined,
-      user: { id: "user-123", email: "test@example.com", name: "Test User" },
+      user: { id: "user-123", email: "test@example.com", name: "Test User", appleSetup: false },
     });
 
     // Mock apiClient responses
