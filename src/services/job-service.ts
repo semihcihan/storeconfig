@@ -21,6 +21,8 @@ export const createJob = async (
     let jobId = await handleOngoingJob(ongoingJobId, spinner);
     if (jobId) {
       return { jobId, newJobCreated: false };
+    } else {
+      return null;
     }
   }
 
