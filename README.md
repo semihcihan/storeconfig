@@ -23,7 +23,7 @@ For detailed documentation, visit [storeconfig.com/docs](https://storeconfig.com
 - **😌 Easy to Use** - Prepare App Store Connect for your app in minutes instead of hours. What normally takes 2+ hours of manual work is now done in minutes.
 - **⚡️ Quick App Duplication** - Copy App Store Connect data from an existing app to a new app in minutes.
 - **📄 Configuration as Code** - Define your app structure in version-controlled JSON files.
-- **🤖 Vibe Code Your App Store Connect Setup** - Use AI to vibe code your JSON configuration for app descriptions, content updates, in-app purchases, subscriptions, and more.
+- **🤖 Vibe Code Your App Store Connect Setup** - Use our MCP server and AI to vibe code your JSON configuration for app descriptions, content updates, in-app purchases, subscriptions, and more.
 - **🌍 Multi-Language Support** - Easily manage localized content across all supported territories.
 - **📊 Bulk Operations** - Make changes across multiple products, subscriptions, or territories at once.
 - **🔄 Bidirectional Sync** - Fetch current state of your app and apply changes to App Store Connect.
@@ -217,23 +217,43 @@ storeconfig example --type iap
 }
 ```
 
-## 🧰 AI Integration - IDE Support - JSON Schema
+## 🧰 MCP Server - AI Integration
 
-StoreConfig provides a JSON Schema that enhances the development experience by offering validation, autocomplete, and IntelliSense support in your favorite IDE, while also improving results with AI tools.
+### MCP Server - AI Integration
 
-### AI Integration
+StoreConfig includes a Model Context Protocol (MCP) server that provides AI assistants with direct access to the JSON schema, business rules, and CLI guidelines. This enables AI tools to better understand and help you work with StoreConfig files.
 
-When using AI tools to modify your StoreConfig JSON files, provide the schema URL for more accurate and consistent results:
+This is optional but recommended for the best experience.
 
-**JSON Schema URL:** `https://storeconfig.com/storeconfig-schema.json`
+#### Installation
+
+The MCP server is included when you install StoreConfig globally.
+
+#### Configuration
+
+Add the following configuration to your MCP client:
+
+```json
+{
+  "storeconfig": {
+    "command": "storeconfig-mcp"
+  }
+}
+```
+
+For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.com/docs#mcp-configuration).
 
 ### VSCode Setup
 
-1. **Open VSCode Settings** (Cmd/Ctrl + ,)
-2. **Search for "json schema"**
-3. **Ensure Schema Download is enabled:**
-4. **Click "Edit in settings.json"**
-5. **Add the following configuration:**
+Enable validation, autocomplete, and IntelliSense support. This is optional but recommended for the best experience.
+
+#### Setup Steps
+
+1. Open VSCode Settings (Cmd/Ctrl + ,)
+2. Search for "json schema"
+3. Ensure Schema Download is enabled
+4. Click "Edit in settings.json"
+5. Add the following configuration:
 
 ```json
 // root settings.json
@@ -254,16 +274,20 @@ When using AI tools to modify your StoreConfig JSON files, provide the schema UR
 > - **User Settings** (applies to all your projects)
 > - **Workspace Settings** (applies only to the current project)
 
+#### JSON Schema URL
+
+The schema URL used in the configuration above:
+
+**JSON Schema URL:** `https://storeconfig.com/storeconfig-schema.json`
+
+> **Note:** If you don't want to use the MCP server, you can still use AI tools with StoreConfig by providing the schema URL directly. When using AI tools to modify your StoreConfig JSON files, provide the schema URL for more accurate and consistent results.
+
 ### Benefits
 
 - ✅ **Real-time validation** - Catch errors as you type
 - ✅ **Autocomplete** - Get suggestions for properties and values
 - ✅ **Documentation** - Hover over properties to see descriptions
 - ✅ **Type safety** - Ensure your JSON structure is correct
-
-### Schema URL
-
-The JSON Schema is available at: [https://storeconfig.com/storeconfig-schema.json](https://storeconfig.com/storeconfig-schema.json)
 
 ### Tool Limitations
 
