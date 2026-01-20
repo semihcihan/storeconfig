@@ -3,9 +3,15 @@
 1. **Configure** - Configure StoreConfig with your Secret Key (one-time setup)
 2. **Authenticate** - Configure StoreConfig and Apple credentials (one-time setup)
 
+*Note: Assume configure and authenticate have already run. If not, self-explanatory CLI errors will indicate what to do.*
+
+## Prerequisites
+
+To use storeconfig, you need the storeconfig JSON configuration. Start with `storeconfig fetch` if you don't already have its storeconfig JSON available. `storeconfig fetch` (without `--id`) returns all apps on the account - either show the list to the user or select it yourself if you know the name. Users may also fetch a similar app as a first draft and copy relevant fields over.
+
 ## Workflow
 
-1. **Fetch** - Download current app configuration from App Store Connect
+1. **Fetch** - Download current app configuration from App Store Connect (Always the first step if you don't have the storeconfig JSON configuration)
 2. **Edit** - Modify the JSON configuration file
 3. **Validate** - Check the JSON is valid before applying (Optional as apply already validates first, but important for fast iteration)
 4. **Apply** - Sync changes to App Store Connect (uses storeconfig.json by default)
@@ -65,7 +71,7 @@ storeconfig user
 
 ### Use the JSON Schema
 
-When editing StoreConfig JSON files, reference the schema for better accuracy:
+When editing StoreConfig JSON files, reference the schema for better accuracy.
 
 ### Validate After Every Change
 
