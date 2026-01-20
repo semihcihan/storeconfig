@@ -32,10 +32,11 @@ storeconfig apple --key-path <path-to-p8-file>
 
 ### fetch - Download app configuration
 ```bash
-storeconfig fetch [--id <app-id>] [--file <output-file>]
+storeconfig fetch [--id <app-store-connect-app-id>] [--file <output-file>]
 ```
 
 Run `storeconfig fetch` without `--id` to fetch all app names and prompt the user to select an app (useful when the Apple app ID is unknown).
+`--id` refers to the App Store Connect app ID (numeric App Store Connect ID, all numbers), not the bundle ID.
 
 ### apply - Sync changes to App Store Connect
 ```bash
