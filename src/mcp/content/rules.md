@@ -50,7 +50,7 @@
 ## Localization Guidelines
 
 ### Missing Fields
-- **Missing fields for additional root localizations will be filled with the values from the primary locale.**
+- **Missing fields for additional root 'localizations' field will be filled with the values from the primary locale.**
 - Skip fields instead of repeating to use the same values from the primary locale.
 
 ### Content Guidelines (Unless Asked Otherwise)
