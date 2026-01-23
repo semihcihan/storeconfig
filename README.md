@@ -1,6 +1,6 @@
 # StoreConfig CLI
 
-A powerful command-line tool for managing apps on **App Store Connect**. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect - the smart way. **No more manual work**.
+A powerful command-line tool for automating **App Store Connect** app management with JSON-based workflows. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect - the smart way. **No more manual work**.
 
 [![npm version](https://badge.fury.io/js/storeconfig.svg)](https://badge.fury.io/js/storeconfig)
 
@@ -68,17 +68,14 @@ storeconfig apple --key-path /path/to/your/AuthKey_XXXXX.p8
 This is required for store config to manage your apps on App Store Connect.
 
 1. **Open App Store Connect API Settings**
-
    - Go to [https://appstoreconnect.apple.com/access/integrations/api](https://appstoreconnect.apple.com/access/integrations/api)
    - Make sure the correct team is selected on top right corner of the page
 
 2. **Create a New Team Key**
-
    - Click the "Plus" button to create a new `Team Key` (Not Individual Key)
    - Choose a descriptive name (e.g., "StoreConfig") to easily identify it later
 
 3. **Set Required Permissions**
-
    - Select **App Manager Access** - this is required to manage prices and other app configurations
 
 4. **Download and Copy Credentials**
