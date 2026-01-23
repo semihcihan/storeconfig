@@ -1,13 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { AppStoreModelSchema } from "@semihcihan/shared";
+import { runStoreConfigCommand, toMcpToolResult } from "./run-storeconfig";
 import { getSchemaContent } from "./resources/schema";
 import { getRulesContent } from "./resources/rules";
 import { getGuidelinesContent } from "./resources/guidelines";
 import { schemaContent } from "./generated/schemaContent";
 import { version } from "../../package.json";
 
-const instructions = "Use the 'schema' to understand and be able to edit the JSON configuration file. Use the 'rules' to understand constraints. Use the 'guidelines' to understand the CLI workflow and commands. Always validate JSON `storeconfig validate` after making changes.";
+const AppListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+const instructions =
+  "Use the 'schema' to understand and be able to edit the JSON configuration file. Use the 'rules' to understand constraints. Use the 'guidelines' to understand the CLI workflow and commands. Always validate JSON `storeconfig validate` after making changes. IMPORTANT: Use `storeconfig_fetch_list` to list apps and `storeconfig_fetch_app` to fetch a specific app's configuration. Other CLI commands run in a shell need network permissions; `storeconfig validate` does not.";
 const server = new McpServer(
   {
     name: "storeconfig-mcp",
@@ -23,7 +31,8 @@ const server = new McpServer(
 );
 
 const schemaTitle = "StoreConfig JSON Schema";
-const schemaDescription = "defines the structure and validation rules for storeconfig.json files";
+const schemaDescription =
+  "defines the structure and validation rules for storeconfig.json files";
 server.registerResource(
   "schema",
   "storeconfig://schema",
@@ -43,7 +52,8 @@ server.registerResource(
   })
 );
 
-const rulesDescription = "important constraints and information NOT captured in the JSON schema that will cause apply to fail if violated";
+const rulesDescription =
+  "important constraints and information NOT captured in the JSON schema that will cause apply to fail if violated";
 server.registerResource(
   "rules",
   "storeconfig://rules",
@@ -63,7 +73,8 @@ server.registerResource(
   })
 );
 
-const guidelinesDescription = "how to use and help users with StoreConfig CLI including workflow, commands";
+const guidelinesDescription =
+  "how to use and help users with StoreConfig CLI including workflow, commands";
 server.registerResource(
   "guidelines",
   "storeconfig://guidelines",
@@ -111,6 +122,61 @@ server.registerTool(
         },
       ],
     };
+  }
+);
+
+server.registerTool(
+  "storeconfig_fetch_list",
+  {
+    title: "List all apps from App Store Connect",
+    description:
+      "Fetches the list of all iOS apps from the user's App Store Connect account. Returns JSON array of {id, name} objects. ALWAYS use this tool instead of running `storeconfig fetch` in a shell",
+    inputSchema: {},
+    outputSchema: z.array(AppListItemSchema),
+  },
+  async () => {
+    const result = await runStoreConfigCommand(["fetch", "--stdout"]);
+    return toMcpToolResult(result);
+  }
+);
+
+server.registerTool(
+  "storeconfig_fetch_app",
+  {
+    title: "Fetch a specific app's configuration from App Store Connect",
+    description:
+      "Fetches the full StoreConfig JSON for the given App Store Connect app ID. ALWAYS use this tool instead of running `storeconfig fetch --id` in a shell.",
+    inputSchema: {
+      appId: z
+        .string()
+        .describe("App Store Connect app ID (numeric, all numbers)"),
+    },
+    outputSchema: AppStoreModelSchema,
+  },
+  async (args) => {
+    const appId = args.appId as string;
+    const result = await runStoreConfigCommand([
+      "fetch",
+      "--stdout",
+      "--id",
+      appId,
+    ]);
+    return toMcpToolResult(result);
+  }
+);
+
+server.registerTool(
+  "storeconfig_user",
+  {
+    title: "Display current user and apply status",
+    description:
+      "Shows the current user email, latest apply job status, and whether Apple credentials are configured. Use this instead of running `storeconfig user` in a shell.",
+    inputSchema: {},
+    outputSchema: z.string(),
+  },
+  async () => {
+    const result = await runStoreConfigCommand(["user"]);
+    return toMcpToolResult(result);
   }
 );
 

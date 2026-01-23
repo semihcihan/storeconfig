@@ -133,6 +133,14 @@ describe("fetch command", () => {
         `Path to the output JSON file. Defaults to ${DEFAULT_CONFIG_FILENAME} in current directory.`
       );
     });
+
+    it("should have stdout parameter with correct configuration", () => {
+      const builder = fetchCommand.builder as any;
+      expect(builder.stdout).toBeDefined();
+      expect(builder.stdout.demandOption).toBe(false);
+      expect(builder.stdout.type).toBe("boolean");
+      expect(builder.stdout.describe).toContain("Output JSON to stdout");
+    });
   });
 
   describe("command execution with app ID provided", () => {
@@ -534,6 +542,54 @@ describe("fetch command", () => {
       expect(spinnerInstance.succeed).toHaveBeenCalledWith(
         expect.stringMatching(/Successfully fetched app: .*output\.json/)
       );
+    });
+  });
+
+  describe("stdout mode", () => {
+    it("should output app list to stdout when --stdout without --id", async () => {
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      mockApiClient.get.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: mockApps,
+        },
+      });
+
+      await fetchCommand.handler!({ stdout: true } as any);
+
+      expect(mockApiClient.get).toHaveBeenCalledWith("/fetch-apps");
+      expect(consoleSpy).toHaveBeenCalledWith(JSON.stringify(mockApps, null, 2));
+      expect(mockFs.writeFileSync).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it("should output app config to stdout when --stdout with --id", async () => {
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      mockApiClient.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: mockAppStoreState,
+        },
+      });
+
+      await fetchCommand.handler!({ stdout: true, id: "123456789" } as any);
+
+      expect(mockApiClient.post).toHaveBeenCalledWith("/fetch", {
+        appId: "123456789",
+      });
+      expect(consoleSpy).toHaveBeenCalledWith(
+        JSON.stringify(mockAppStoreState, null, 2)
+      );
+      expect(mockFs.writeFileSync).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle API error in stdout mode", async () => {
+      mockApiClient.get.mockRejectedValueOnce(new Error("API error"));
+
+      await expect(
+        fetchCommand.handler!({ stdout: true } as any)
+      ).rejects.toThrow("API error");
     });
   });
 

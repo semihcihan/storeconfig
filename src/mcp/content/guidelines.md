@@ -1,15 +1,20 @@
+## IMPORTANT: Use MCP Fetch Tools
+
+- Use `storeconfig_fetch_list` to list apps (`[{id, name}]`).
+- Use `storeconfig_fetch_app` with an `appId` to fetch the full config JSON.
+
+For other CLI commands run in a shell, request network permissions with `required_permissions: ['network']`. `storeconfig validate` does not require network access.
+
 ## Initial Setup
 
 1. **Configure** - Configure StoreConfig with your Secret Key (one-time setup)
 2. **Authenticate** - Configure StoreConfig and Apple credentials (one-time setup)
 
-*Note: Assume configure and authenticate have already run. If not, self-explanatory CLI errors will indicate what to do.*
+_Note: Assume configure and authenticate have already run. If not, self-explanatory CLI errors will indicate what to do._
 
 ## Prerequisites
 
-**Network Access**: All storeconfig commands require network access. When running any storeconfig command, ensure network permissions are enabled. When executing commands, if you encounter ENOTFOUND or network errors, request network permissions.
-
-To use storeconfig, you need the storeconfig JSON configuration. Start with `storeconfig fetch --list` if you don't already have its storeconfig JSON available. This command returns all apps on the account in JSON format `[{id, name}]` - show the list to the user unless you know which app to fetch. Then use `storeconfig fetch --id <app-store-connect-app-id>` to fetch the specific app. Do not ever start from scratch. Users may also fetch a similar app as a first draft and copy relevant fields over, but you must still fetch the target app (the app that needs to be configured).
+To use storeconfig, you need the storeconfig JSON configuration. Use `storeconfig_fetch_list` to get all apps, then use `storeconfig_fetch_app` with the chosen App Store Connect app ID to fetch the specific app. Do not ever start from scratch. Users may also fetch a similar app as a first draft and copy relevant fields over, but you must still fetch the target app (the app that needs to be configured).
 
 ## Workflow
 
@@ -21,56 +26,64 @@ To use storeconfig, you need the storeconfig JSON configuration. Start with `sto
 ## CLI Commands
 
 ### configure - Configure StoreConfig with your Secret Key (One-time setup)
+
 ```bash
 storeconfig configure
 ```
 
 ### apple - Add Apple credentials (One-time setup)
+
 ```bash
 storeconfig apple --key-path <path-to-p8-file>
 ```
 
 ### fetch - Download app configuration
+
 ```bash
-storeconfig fetch [--id <app-store-connect-app-id>] [--file <output-file>] [--list]
+storeconfig fetch [--id <app-store-connect-app-id>] [--file <output-file>] [--stdout]
 ```
 
-Run `storeconfig fetch` without `--id` to fetch all app names and prompt the user to select an app (useful when the Apple app ID is unknown).
-`--id` refers to the App Store Connect app ID (numeric App Store Connect ID, all numbers), not the bundle ID.
-
-Use `storeconfig fetch --list` (or `-l`) to get all available apps in JSON format `[{id, name}]` without any interactive prompts. This is useful for LLMs and non-interactive environments.
+**Agents**: use `storeconfig_fetch_list` and `storeconfig_fetch_app`.
 
 ### apply - Sync changes to App Store Connect
+
 ```bash
 storeconfig apply [--file <config-file>] [--preview]
 ```
 
 ### validate - Check JSON validity
+
 ```bash
 storeconfig validate [--file <config-file>]
 ```
 
-**IMPORTANT**: Always run `storeconfig validate` after making changes to the JSON file. Keep running validate and fixing errors until it passes.
+**Does not require network access.** Always run `storeconfig validate` after making changes to the JSON file. Keep running validate and fixing errors until it passes.
 
 ### example - Generate example JSON files
+
 ```bash
 storeconfig example [--type <type>] [--file <output-file>]
 ```
 
 ### set-price - Interactive pricing tool
+
 ```bash
 storeconfig set-price [--file <config-file>]
 ```
 
 ### compare-price - Compare prices across territories
+
 ```bash
 storeconfig compare-price [--file <config-file>] [--output <output-file>]
 ```
 
 ### user - Display current user information, latest 'apply' status, and Apple credentials status if not configured
+
 ```bash
 storeconfig user
 ```
+
+**Agents**: use `storeconfig_user`.
 
 ## JSON Editing Tips
 

@@ -52,33 +52,34 @@ const fetchCommand: CommandModule = {
       demandOption: false,
       type: "string",
     },
-    list: {
-      alias: "l",
-      describe: "List all available apps in JSON format (non-interactive, for LLMs).",
+    stdout: {
+      describe: "Output JSON to stdout instead of writing to a file.",
       demandOption: false,
       type: "boolean",
     },
   },
   handler: async (argv) => {
-    const list = argv.list as boolean;
-    
-    if (list) {
-      try {
+    const stdout = argv.stdout as boolean;
+    const appId = argv.id as string | undefined;
+
+    if (stdout) {
+      if (!appId) {
         const apps = await fetchApps();
         console.log(JSON.stringify(apps, null, 2));
-        return;
-      } catch (error) {
-        throw error;
+      } else {
+        const response = await apiClient.post("/fetch", { appId });
+        await userService.ensureUserCached();
+        console.log(JSON.stringify(response.data.data, null, 2));
       }
+      return;
     }
 
-    let appId = argv.id as string;
+    let selectedAppId = appId;
     const outputFile = (argv.file as string) || DEFAULT_CONFIG_FILENAME;
     const spinner = ora();
 
     try {
-      // If no app ID provided, fetch apps list and let user select
-      if (!appId) {
+      if (!selectedAppId) {
         spinner.start("No app ID provided. Fetching available apps...");
         const apps = await fetchApps();
 
@@ -87,16 +88,15 @@ const fetchCommand: CommandModule = {
           process.exit(1);
         }
         spinner.stop();
-        appId = await selectApp(apps);
+        selectedAppId = await selectApp(apps);
       }
 
       spinner.start(
-        `Fetching details for app ID: ${appId} and writing to ${outputFile}`
+        `Fetching details for app ID: ${selectedAppId} and writing to ${outputFile}`
       );
 
-      // Call the HTTP API using the api client
       const response = await apiClient.post("/fetch", {
-        appId: appId,
+        appId: selectedAppId,
       });
 
       await userService.ensureUserCached();
