@@ -54,5 +54,5 @@
 - Skip fields instead of repeating to use the same values from the primary locale.
 
 ### Content Guidelines (Unless Asked Otherwise)
-- **Make descriptions long and beautiful, talk about the benefits. Use line breaks, uppercase, available punctuations to make it more readable.**
+- **Make app descriptions long and beautiful, talk about the benefits. Use line breaks, uppercase, available punctuations to make it more readable.**
 - **Separate keywords field values with a single comma and no space. Do not repeat title and subtitle words in the keywords within the same localization. Do not use plurals. (i.e. "foo,bar,baz")**

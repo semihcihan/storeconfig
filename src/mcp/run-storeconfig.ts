@@ -39,11 +39,19 @@ export function runStoreConfigCommand(
 export function toMcpToolResult(result: StoreConfigCommandResult) {
   if (result.exitCode !== 0) {
     return {
-      content: [{ type: "text" as const, text: `Error: ${result.stderr || result.stdout}` }],
+      content: [
+        {
+          type: "text" as const,
+          text: `Error: ${result.stderr || result.stdout}`,
+        },
+      ],
       isError: true,
     };
   }
-  return {
+  const response: {
+    content: { type: "text"; text: string }[];
+  } = {
     content: [{ type: "text" as const, text: result.stdout }],
   };
+  return response;
 }

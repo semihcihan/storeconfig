@@ -25,6 +25,8 @@ To use storeconfig, you need the storeconfig JSON configuration. Use `storeconfi
 
 ## CLI Commands
 
+**`--file`** defaults to `storeconfig.json` in the current directory when omitted.
+
 ### configure - Configure StoreConfig with your Secret Key (One-time setup)
 
 ```bash

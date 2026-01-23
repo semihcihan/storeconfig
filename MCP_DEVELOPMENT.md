@@ -67,7 +67,7 @@ npx @modelcontextprotocol/inspector --help
      "mcpServers": {
        "storeconfig": {
          "command": "node",
-         "args": ["cli/dist/mcp.mjs"]
+        "args": ["cli/dist/mcp.js"]
        }
      }
    }
@@ -137,5 +137,5 @@ This makes development feel more like the production setup.
 
 ## Production vs Development
 
-- **Development:** Use absolute path to `dist/mcp.mjs` in `.cursor/mcp.json`
+- **Development:** Use absolute path to `dist/mcp.js` in `.cursor/mcp.json`
 - **Production:** Users install via `npm install -g storeconfig` and use `storeconfig-mcp` command

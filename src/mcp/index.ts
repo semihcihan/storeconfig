@@ -1,18 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { AppStoreModelSchema } from "@semihcihan/shared";
 import { runStoreConfigCommand, toMcpToolResult } from "./run-storeconfig";
 import { getSchemaContent } from "./resources/schema";
 import { getRulesContent } from "./resources/rules";
 import { getGuidelinesContent } from "./resources/guidelines";
 import { schemaContent } from "./generated/schemaContent";
 import { version } from "../../package.json";
-
-const AppListItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
 
 const instructions =
   "Use the 'schema' to understand and be able to edit the JSON configuration file. Use the 'rules' to understand constraints. Use the 'guidelines' to understand the CLI workflow and commands. Always validate JSON `storeconfig validate` after making changes. IMPORTANT: Use `storeconfig_fetch_list` to list apps and `storeconfig_fetch_app` to fetch a specific app's configuration. Other CLI commands run in a shell need network permissions; `storeconfig validate` does not.";
@@ -94,7 +88,7 @@ server.registerResource(
   })
 );
 
-const structuredContent = {
+const contextPayload = {
   schema: schemaContent,
   rules: getRulesContent(),
   guidelines: getGuidelinesContent(),
@@ -106,19 +100,13 @@ server.registerTool(
     title: "How to use the StoreConfig CLI and edit StoreConfig JSON",
     description: instructions,
     inputSchema: {},
-    outputSchema: {
-      schema: z.any().describe(schemaTitle + " - " + schemaDescription),
-      rules: z.string().describe(rulesDescription),
-      guidelines: z.string().describe(guidelinesDescription),
-    },
   },
   async () => {
     return {
-      structuredContent: structuredContent,
       content: [
         {
           type: "text",
-          text: JSON.stringify(structuredContent),
+          text: JSON.stringify(contextPayload),
         },
       ],
     };
@@ -132,7 +120,6 @@ server.registerTool(
     description:
       "Fetches the list of all iOS apps from the user's App Store Connect account. Returns JSON array of {id, name} objects. ALWAYS use this tool instead of running `storeconfig fetch` in a shell",
     inputSchema: {},
-    outputSchema: z.array(AppListItemSchema),
   },
   async () => {
     const result = await runStoreConfigCommand(["fetch", "--stdout"]);
@@ -146,15 +133,12 @@ server.registerTool(
     title: "Fetch a specific app's configuration from App Store Connect",
     description:
       "Fetches the full StoreConfig JSON for the given App Store Connect app ID. ALWAYS use this tool instead of running `storeconfig fetch --id` in a shell.",
-    inputSchema: {
-      appId: z
-        .string()
-        .describe("App Store Connect app ID (numeric, all numbers)"),
-    },
-    outputSchema: AppStoreModelSchema,
+    inputSchema: z.object({
+      appId: z.string().min(1),
+    }),
   },
-  async (args) => {
-    const appId = args.appId as string;
+  async (args: { appId: string }) => {
+    const appId = args.appId;
     const result = await runStoreConfigCommand([
       "fetch",
       "--stdout",
@@ -170,9 +154,8 @@ server.registerTool(
   {
     title: "Display current user and apply status",
     description:
-      "Shows the current user email, latest apply job status, and whether Apple credentials are configured. Use this instead of running `storeconfig user` in a shell.",
+      "Shows the current user email, latest apply job status, and whether Apple credentials are configured. Use if you get Authentication errors. Use this instead of running `storeconfig user` in a shell.",
     inputSchema: {},
-    outputSchema: z.string(),
   },
   async () => {
     const result = await runStoreConfigCommand(["user"]);

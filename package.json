@@ -1,11 +1,11 @@
 {
   "name": "storeconfig",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
     "storeconfig": "dist/cli.js",
-    "storeconfig-mcp": "dist/mcp.mjs"
+    "storeconfig-mcp": "dist/mcp.js"
   },
   "scripts": {
     "prebuild": "npm run update-readme && npm run generate-mcp-content",
@@ -33,8 +33,8 @@
     "compare-price": "node dist/cli.js compare-price",
     "example": "node dist/cli.js example",
     "user": "node dist/cli.js user",
-    "mcp": "node dist/mcp.mjs",
-    "mcp:test": "npx @modelcontextprotocol/inspector node dist/mcp.mjs",
+    "mcp": "node dist/mcp.js",
+    "mcp:test": "npx @modelcontextprotocol/inspector node dist/mcp.js",
     "update-readme": "node scripts/generate-readme-example.js",
     "upload-sourcemap": "npx bugsnag-source-maps upload-node --api-key 9214ba2acdaeee4012c236461232c4f3 --overwrite --detect-app-version --bundle dist/cli.js --source-map dist/cli.js.map"
   },
@@ -73,8 +73,8 @@
     "THIRD_PARTY_LICENSES.md"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
     "@bugsnag/js": "^8.6.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.10.0",
     "axios-retry": "^4.5.0",
     "dotenv": "^16.6.1",

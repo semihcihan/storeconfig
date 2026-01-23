@@ -1,6 +1,18 @@
 const esbuild = require("esbuild");
 const path = require("path");
 
+const sharedPathMappingPlugin = {
+  name: "path-mapping",
+  setup(build) {
+    build.onResolve({ filter: /^@semihcihan\/shared/ }, () => {
+      return {
+        path: path.resolve(__dirname, "../shared/src/index.ts"),
+        watchFiles: ["../shared/src/**/*"],
+      };
+    });
+  },
+};
+
 const cliBuildConfig = {
   entryPoints: ["src/cli.ts"],
   bundle: true,
@@ -25,8 +37,8 @@ const mcpBuildConfig = {
   bundle: true,
   platform: "node",
   target: "node18",
-  outfile: "dist/mcp.mjs",
-  format: "esm",
+  outfile: "dist/mcp.js",
+  format: "cjs",
   banner: {
     js: "#!/usr/bin/env node",
   },
@@ -39,19 +51,7 @@ const buildConfig = cliBuildConfig;
 
 const watchConfig = {
   ...buildConfig,
-  plugins: [
-    {
-      name: "path-mapping",
-      setup(build) {
-        build.onResolve({ filter: /^@semihcihan\/shared/ }, (args) => {
-          return {
-            path: path.resolve(__dirname, "../shared/src/index.ts"),
-            watchFiles: ["../shared/src/**/*"],
-          };
-        });
-      },
-    },
-  ],
+  plugins: [sharedPathMappingPlugin],
 };
 
 async function build() {

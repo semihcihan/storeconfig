@@ -29,7 +29,7 @@ function copySchema() {
   }
   const schemaContent = fs.readFileSync(schemaSource, "utf8");
   const schema = JSON.parse(schemaContent);
-  const tsContent = `export const schemaContent = ${JSON.stringify(schema, null, 2)};\n`;
+  const tsContent = `export const schemaContent = ${JSON.stringify(schema)};\n`;
   const tsPath = path.join(generatedDir, "schemaContent.ts");
   fs.writeFileSync(tsPath, tsContent);
   console.log(`Generated ${tsPath}`);
