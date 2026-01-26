@@ -10,9 +10,8 @@ export function runStoreConfigCommand(
   args: string[]
 ): Promise<StoreConfigCommandResult> {
   return new Promise((resolve) => {
-    const proc = spawn("storeconfig", args, {
+    const proc = spawn("npx", ["-y", "storeconfig", ...args], {
       env: process.env,
-      shell: true,
     });
 
     let stdout = "";
