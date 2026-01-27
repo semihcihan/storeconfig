@@ -1,4 +1,6 @@
 import { spawn } from "child_process";
+import "../services/instrument";
+import Bugsnag from "@bugsnag/js";
 import fs from "fs";
 import path from "path";
 
@@ -32,8 +34,20 @@ function spawnStoreConfig(args: string[]) {
 export function runStoreConfigCommand(
   args: string[]
 ): Promise<StoreConfigCommandResult> {
-  return new Promise((resolve) => {
-    const proc = spawnStoreConfig(args);
+  return new Promise((resolve, reject) => {
+    let proc: ReturnType<typeof spawnStoreConfig>;
+    try {
+      proc = spawnStoreConfig(args);
+    } catch (err) {
+      Bugsnag.notify(err as Error, (event) => {
+        event.addMetadata("metadata", {
+          args,
+          message: "Error spawning storeconfig",
+        });
+      });
+      reject(err);
+      return;
+    }
 
     let stdout = "";
     let stderr = "";
@@ -51,16 +65,6 @@ export function runStoreConfigCommand(
     });
 
     proc.on("error", (err) => {
-      const e = err as NodeJS.ErrnoException;
-      if (e.code === "ENOENT") {
-        resolve({
-          stdout,
-          stderr:
-            "storeconfig CLI not found. This MCP expects the bundled CLI to be present; try reinstalling/rebuilding the package.",
-          exitCode: 1,
-        });
-        return;
-      }
       resolve({ stdout, stderr: err.message, exitCode: 1 });
     });
   });

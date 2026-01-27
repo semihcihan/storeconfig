@@ -1,3 +1,4 @@
+import "../load-env";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -170,5 +171,5 @@ async function main() {
 
 main().catch((error) => {
   console.error("MCP server error:", error);
-  process.exit(1);
+  process.exitCode = 1;
 });
