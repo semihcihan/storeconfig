@@ -25,7 +25,7 @@ interface DiffResponse {
 }
 
 const APPLY_REMINDER = boxifyMessage([
-  "This may take up to 30 minutes depending on the changes.",
+  "This may take up to 15 minutes depending on the changes.",
   "Processing continues on our servers even if CLI is closed.",
   "You can rerun the same command to check current status.",
 ]);
