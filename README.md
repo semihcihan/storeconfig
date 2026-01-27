@@ -238,7 +238,7 @@ Add the following configuration to your MCP client:
 }
 ```
 
-For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.com/docs#mcp-configuration).
+For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.com/docs#ai-support).
 
 ### VSCode Setup
 
