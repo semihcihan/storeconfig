@@ -61,15 +61,24 @@ describe("IAP Localization E2E Tests", () => {
       type: "NON_CONSUMABLE" as const,
       referenceName: testIAPProductId,
       familySharable: false,
+      pricing: {
+        baseTerritory: "USA" as const,
+        prices: [
+          { territory: "USA" as const, price: "1.99" },
+          { territory: "GBR" as const, price: "1.49" },
+          { territory: "CAN" as const, price: "2.49" },
+        ],
+      },
+      availability: {
+        availableInNewTerritories: true,
+        availableTerritories: "worldwide" as const,
+      },
       localizations,
     };
 
     const desiredStateWithLocalizations: AppStoreModel = {
       ...currentState,
-      inAppPurchases: [
-        ...(currentState.inAppPurchases || []),
-        newIAP,
-      ],
+      inAppPurchases: [...(currentState.inAppPurchases || []), newIAP],
     };
 
     fs.writeFileSync(
@@ -96,10 +105,14 @@ describe("IAP Localization E2E Tests", () => {
     );
 
     expect(createdIAP).toBeDefined();
+    expect(createdIAP.pricing).toBeDefined();
+    expect(createdIAP.pricing.prices).toHaveLength(3);
     expect(createdIAP.localizations).toBeDefined();
     expect(createdIAP.localizations).toHaveLength(12);
 
-    const fetchedLocales = createdIAP.localizations.map((loc: any) => loc.locale);
+    const fetchedLocales = createdIAP.localizations.map(
+      (loc: any) => loc.locale
+    );
     TEST_LOCALES.forEach((locale) => {
       expect(fetchedLocales).toContain(locale);
     });

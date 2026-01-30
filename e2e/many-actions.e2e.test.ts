@@ -68,6 +68,15 @@ describe("Apply Many Actions E2E Tests", () => {
       type: "NON_CONSUMABLE" as const,
       referenceName: testIapId,
       familySharable: false,
+      pricing: {
+        baseTerritory: "USA" as const,
+        prices: [
+          { territory: "USA" as const, price: "2.99" },
+          { territory: "GBR" as const, price: "2.49" },
+          { territory: "CAN" as const, price: "3.49" },
+          { territory: "DEU" as const, price: "2.79" },
+        ],
+      },
       availability: {
         availableInNewTerritories: true,
         availableTerritories: "worldwide" as const,
@@ -140,6 +149,8 @@ describe("Apply Many Actions E2E Tests", () => {
     expect(createdIap).toBeDefined();
     expect(createdIap.availability).toBeDefined();
     expect(createdIap.availability.availableTerritories).toBe("worldwide");
+    expect(createdIap.pricing).toBeDefined();
+    expect(createdIap.pricing.prices).toHaveLength(4);
     expect(createdIap.localizations).toHaveLength(TEST_LOCALES.length);
 
     const createdGroup = fetchedState.subscriptionGroups?.find(
