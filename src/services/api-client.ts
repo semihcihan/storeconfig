@@ -55,6 +55,11 @@ apiClient.interceptors.response.use(
         const details = error.response.data?.details;
         throw new ContextualError(message, details);
       }
+      if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+        throw new ContextualError(
+          "Request timed out. App Store Connect can be slow. Please try again."
+        );
+      }
     }
     throw error;
   }
