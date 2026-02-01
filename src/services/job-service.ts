@@ -65,7 +65,9 @@ const getOngoingJobId = async (): Promise<string | null> => {
 
   if (
     currentJob &&
-    (currentJob.status === "pending" || currentJob.status === "processing")
+    (currentJob.status === "pending" ||
+      currentJob.status === "processing" ||
+      currentJob.status === "yielded")
   ) {
     return currentJob.id;
   }

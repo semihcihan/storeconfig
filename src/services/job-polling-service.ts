@@ -15,7 +15,7 @@ interface JobStatusResponse {
   success: boolean;
   data: {
     jobId: string;
-    status: "pending" | "processing" | "completed" | "failed";
+    status: "pending" | "processing" | "yielded" | "completed" | "failed";
     error: string | undefined;
     currentActionIndex: number;
     currentAction: AnyAction | undefined;

@@ -11,7 +11,7 @@ interface InfoResponse {
   data: {
     currentJob?: {
       id: string;
-      status: "pending" | "processing" | "completed" | "failed";
+      status: "pending" | "processing" | "yielded" | "completed" | "failed";
       error: string | undefined;
       info: JobInfo[];
     };
