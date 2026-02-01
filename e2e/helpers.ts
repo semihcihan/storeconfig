@@ -8,6 +8,7 @@ import { keyService } from "../src/services/key-service";
 import fetchCommand from "../src/commands/fetch";
 import applyCommand from "../src/commands/apply";
 import type { AppStoreModel } from "@semihcihan/shared";
+import { logger } from "@semihcihan/shared";
 
 export const mockInquirer = jest.mocked(inquirer);
 
@@ -41,6 +42,19 @@ export function validateE2EEnvironment(): E2EEnvironment {
 
 export function generateRandomId(): string {
   return `test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+export function getLastMockCallArg<T = unknown>(
+  mockFn: jest.Mock,
+  argIndex: number = 0
+): T | undefined {
+  const calls = mockFn.mock.calls;
+  if (calls.length === 0) return undefined;
+  return calls[calls.length - 1]?.[argIndex] as T | undefined;
+}
+
+export function setupLoggerStdSpy(): jest.SpyInstance {
+  return jest.spyOn(logger, "std").mockImplementation(() => {});
 }
 
 export async function setupE2ETest(
