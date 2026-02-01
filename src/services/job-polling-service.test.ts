@@ -351,6 +351,64 @@ describe("job-polling-service", () => {
       jest.restoreAllMocks();
     });
 
+    it("should handle yielded status and continue polling", async () => {
+      let callCount = 0;
+      const mockJobStatuses = [
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "yielded" as const,
+            currentActionIndex: 0,
+            currentAction: {
+              type: "CREATE_IN_APP_PURCHASE",
+              payload: { productId: "test" },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+        {
+          success: true,
+          data: {
+            jobId,
+            status: "completed" as const,
+            currentActionIndex: 2,
+            currentAction: {
+              type: "CREATE_IN_APP_PURCHASE",
+              payload: { productId: "test" },
+            },
+            totalActions: 3,
+            createdAt: "2023-01-01T00:00:00Z",
+            updatedAt: "2023-01-01T00:01:00Z",
+          },
+        },
+      ];
+
+      mockApiClient.get.mockImplementation(() => {
+        const response = mockJobStatuses[callCount];
+        callCount++;
+        return Promise.resolve({ data: response } as any);
+      });
+
+      // Mock setTimeout to resolve immediately for testing
+      jest.spyOn(global, "setTimeout").mockImplementation((callback: any) => {
+        callback();
+        return {} as any;
+      });
+
+      await trackJob(jobId, mockSpinner);
+
+      expect(mockApiClient.get).toHaveBeenCalledTimes(2);
+      expect(mockSpinner.succeed).toHaveBeenCalledWith(
+        "Actions completed successfully"
+      );
+
+      // Restore setTimeout
+      jest.restoreAllMocks();
+    });
+
     it("should handle API errors", async () => {
       const apiError = new Error("API Error");
       mockApiClient.get.mockRejectedValue(apiError);

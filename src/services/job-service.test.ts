@@ -268,6 +268,38 @@ describe("job-service", () => {
         });
       });
 
+      it("should handle yielded status as ongoing job", async () => {
+        mockGetInfo.mockResolvedValueOnce({
+          currentJob: {
+            id: "yielded-job-123",
+            status: "yielded",
+            error: undefined,
+            info: [],
+          },
+          user: {
+            id: "user-123",
+            email: "test@example.com",
+            name: "Test User",
+            appleSetup: false,
+          },
+        });
+        mockInquirer.prompt.mockResolvedValueOnce({ watchOngoing: true });
+
+        const result = await createJob(
+          mockPlan,
+          mockCurrentState,
+          mockDesiredState,
+          false,
+          mockSpinner
+        );
+
+        expect(result).toEqual({
+          jobId: "yielded-job-123",
+          newJobCreated: false,
+        });
+        expect(mockApiClient.post).not.toHaveBeenCalled();
+      });
+
       it("should not treat completed job as ongoing", async () => {
         mockGetInfo.mockResolvedValueOnce({
           currentJob: {
