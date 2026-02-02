@@ -19,8 +19,8 @@
     "start": "node dist/cli.js",
     "test": "jest --config jest.unit.config.js",
     "test:unit": "jest --config jest.unit.config.js",
-    "test:e2e:dev": "E2E_ENV_FILE=.env.e2e.dev jest --config jest.e2e.config.js",
-    "test:e2e:test": "E2E_ENV_FILE=.env.e2e.test jest --config jest.e2e.config.js",
+    "test:e2e:dev": "E2E_ENV_FILE=.env.e2e.dev ENV_FILE=.env AWS_PROFILE=store-config jest --config jest.e2e.config.js",
+    "test:e2e:test": "E2E_ENV_FILE=.env.e2e.test ENV_FILE=.env.test AWS_PROFILE=store-config jest --config jest.e2e.config.js",
     "test:coverage": "jest --config jest.unit.config.js --coverage",
     "prepublishOnly": "npm run build",
     "fetch": "node dist/cli.js fetch",
@@ -98,6 +98,7 @@
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "yaml": "^2.8.2"
   }
 }

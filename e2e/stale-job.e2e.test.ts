@@ -1,5 +1,6 @@
 import {
   cleanupE2ETest,
+  backdateJobViaAws,
   generateTestIdentifier,
   getLastMockCallArg,
   mockInquirer,
@@ -45,9 +46,11 @@ describe("Stale job cleanup E2E Tests", () => {
     jobId: string,
     status: "pending" | "processing" | "yielded"
   ) => {
-    await apiClient.post(`/test/jobs/${jobId}/backdate`, {
-      updatedAt: new Date().toISOString(),
+    await backdateJobViaAws({
+      env,
+      jobId,
       status,
+      updatedAt: new Date().toISOString(),
       createIfMissing: true,
     });
   };
@@ -56,9 +59,11 @@ describe("Stale job cleanup E2E Tests", () => {
     jobId: string,
     status: "pending" | "processing" | "yielded"
   ) => {
-    await apiClient.post(`/test/jobs/${jobId}/backdate`, {
-      updatedAt: UPDATED_AT,
+    await backdateJobViaAws({
+      env,
+      jobId,
       status,
+      updatedAt: UPDATED_AT,
     });
   };
 
@@ -90,7 +95,10 @@ describe("Stale job cleanup E2E Tests", () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockInquirer.prompt.mockResolvedValue({ confirmed: true, watchOngoing: true });
+    mockInquirer.prompt.mockResolvedValue({
+      confirmed: true,
+      watchOngoing: true,
+    });
     await ensureNoActiveJob();
   });
 
@@ -112,9 +120,7 @@ describe("Stale job cleanup E2E Tests", () => {
       ).resolves.toBeUndefined();
       delete process.env.dryRun;
 
-      const applyCall = apiPostSpy.mock.calls.find(
-        ([url]) => url === "/apply"
-      );
+      const applyCall = apiPostSpy.mock.calls.find(([url]) => url === "/apply");
       apiPostSpy.mockRestore();
       expect(applyCall).toBeDefined();
     }

@@ -3,6 +3,9 @@ jest.mock("inquirer");
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { parse } from "yaml";
 import inquirer from "inquirer";
 import { keyService } from "../src/services/key-service";
 import fetchCommand from "../src/commands/fetch";
@@ -44,6 +47,8 @@ export function generateRandomId(): string {
   return `test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
+const execFileAsync = promisify(execFile);
+
 export function getLastMockCallArg<T = unknown>(
   mockFn: jest.Mock,
   argIndex: number = 0
@@ -53,8 +58,97 @@ export function getLastMockCallArg<T = unknown>(
   return calls[calls.length - 1]?.[argIndex] as T | undefined;
 }
 
+type ServerlessTableConfig = {
+  tableNameTemplate: string;
+  gsi1: string;
+  gsi2: string;
+  gsi3: string;
+};
+
+function loadServerlessTableConfig(): ServerlessTableConfig {
+  const serverlessConfigPath = path.resolve(
+    __dirname,
+    "../../serverless/serverless.yml"
+  );
+  const contents = fs.readFileSync(serverlessConfigPath, "utf-8");
+  const parsed = parse(contents, { logLevel: "silent" }) as {
+    custom?: {
+      storeConfigTableName?: string;
+      storeConfigTableGSI1?: string;
+      storeConfigTableGSI2?: string;
+      storeConfigTableGSI3?: string;
+    };
+  };
+  const tableNameTemplate = parsed.custom?.storeConfigTableName ?? "";
+  const gsi1 = parsed.custom?.storeConfigTableGSI1 ?? "";
+  const gsi2 = parsed.custom?.storeConfigTableGSI2 ?? "";
+  const gsi3 = parsed.custom?.storeConfigTableGSI3 ?? "";
+  if (!tableNameTemplate || !gsi1 || !gsi2 || !gsi3) {
+    throw new Error("Failed to read table config from serverless.yml");
+  }
+  return { tableNameTemplate, gsi1, gsi2, gsi3 };
+}
+
+function resolveStageFromApiBaseUrl(apiBaseUrl: string): "test" | "dev" {
+  return apiBaseUrl.includes("test") ? "test" : "dev";
+}
+
 export function setupLoggerStdSpy(): jest.SpyInstance {
   return jest.spyOn(logger, "std").mockImplementation(() => {});
+}
+
+export async function backdateJobViaAws(options: {
+  env: E2EEnvironment;
+  jobId: string;
+  status: "pending" | "processing" | "yielded";
+  updatedAt: string;
+  createIfMissing?: boolean;
+}) {
+  const envFile = process.env.ENV_FILE;
+  if (!envFile) {
+    throw new Error("ENV_FILE must be set for backdateJobViaAws");
+  }
+  const awsProfile = process.env.AWS_PROFILE;
+  if (!awsProfile) {
+    throw new Error("AWS_PROFILE must be set for backdateJobViaAws");
+  }
+  const serverlessConfig = loadServerlessTableConfig();
+  const stage = resolveStageFromApiBaseUrl(options.env.API_BASE_URL);
+  const tableName = serverlessConfig.tableNameTemplate.replace(
+    "${sls:stage}",
+    stage
+  );
+  const { gsi1, gsi2, gsi3 } = serverlessConfig;
+  const serverlessRoot = path.resolve(__dirname, "../../serverless");
+  const scriptPath = path.join(serverlessRoot, "src/scripts/backdate-job.ts");
+  const args = [
+    "-r",
+    "ts-node/register",
+    scriptPath,
+    "--api-key",
+    options.env.API_KEY,
+    "--job-id",
+    options.jobId,
+    "--status",
+    options.status,
+    "--updated-at",
+    options.updatedAt,
+  ];
+  if (options.createIfMissing) {
+    args.push("--create-if-missing");
+  }
+  await execFileAsync(process.execPath, args, {
+    cwd: serverlessRoot,
+    env: {
+      ...process.env,
+      AWS_PROFILE: awsProfile,
+      ENV_FILE: envFile,
+      STORE_CONFIG_TABLE_NAME: process.env.STORE_CONFIG_TABLE_NAME || tableName,
+      STORE_CONFIG_TABLE_GSI1: process.env.STORE_CONFIG_TABLE_GSI1 || gsi1,
+      STORE_CONFIG_TABLE_GSI2: process.env.STORE_CONFIG_TABLE_GSI2 || gsi2,
+      STORE_CONFIG_TABLE_GSI3: process.env.STORE_CONFIG_TABLE_GSI3 || gsi3,
+    },
+  });
 }
 
 export async function setupE2ETest(
@@ -83,15 +177,11 @@ export async function setupE2ETest(
   };
 }
 
-export async function cleanupE2ETest(
-  context: E2ETestContext
-): Promise<void> {
+export async function cleanupE2ETest(context: E2ETestContext): Promise<void> {
   try {
-    const {
-      cleanupTestIAPResources,
-      cleanupTestSubscriptionResources,
-    } = await import("../../api/src/test-utils/cleanup-helper");
-    
+    const { cleanupTestIAPResources, cleanupTestSubscriptionResources } =
+      await import("../../api/src/test-utils/cleanup-helper");
+
     await cleanupTestIAPResources(context.appId);
     await cleanupTestSubscriptionResources(context.appId);
   } catch (error) {

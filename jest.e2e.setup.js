@@ -4,7 +4,10 @@ process.env.LOG_LEVEL = "info";
 const dotenv = require("dotenv");
 const path = require("path");
 
-const envFile = process.env.E2E_ENV_FILE || ".env.e2e";
+const envFile = process.env.E2E_ENV_FILE;
+if (!envFile) {
+  throw new Error("E2E_ENV_FILE must be set for e2e tests");
+}
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 // Mock ora spinner to avoid ES module issues
