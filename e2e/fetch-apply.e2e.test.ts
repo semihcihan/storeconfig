@@ -50,14 +50,23 @@ describe("CLI E2E Tests", () => {
         description:
           "Test description for e2e test localization. This is a test.",
         keywords: "test, e2e",
+        whatsNew: "This is a new version of the app with a new feature.",
+      };
+
+      const baseLocalization = testContext.originalState.localizations?.find(
+        (loc) => loc.locale === "en-US"
+      );
+      if (!baseLocalization) {
+        throw new Error("No base localization found");
+      }
+      const updatedBaseLocalization = {
+        ...baseLocalization,
+        whatsNew: "This is a new version of the app with a new feature.",
       };
 
       const desiredState: AppStoreModel = {
         ...testContext.originalState,
-        localizations: [
-          ...(testContext.originalState.localizations || []),
-          newLocalization,
-        ],
+        localizations: [newLocalization, updatedBaseLocalization],
       };
 
       fs.writeFileSync(
@@ -69,8 +78,6 @@ describe("CLI E2E Tests", () => {
         file: testContext.tempConfigFile,
         preview: false,
       } as any);
-
-      await new Promise((resolve) => setTimeout(resolve, 5000));
     }, 180000);
   });
 });
