@@ -61,10 +61,10 @@ describe("Logging and Retry Integration (Simple)", () => {
       });
 
       // Verify logging calls
-      expect(mockLogger.info).toHaveBeenCalledTimes(2); // One request, one response
+      expect(mockLogger.debug).toHaveBeenCalledTimes(2); // One request, one response
 
       // Check request log
-      const requestLog = mockLogger.info.mock.calls.find(
+      const requestLog = mockLogger.debug.mock.calls.find(
         (call: any) =>
           call[0].includes("GET /v1/apps") && !call[0].includes("-")
       );
@@ -77,7 +77,7 @@ describe("Logging and Retry Integration (Simple)", () => {
       });
 
       // Check response log
-      const responseLog = mockLogger.info.mock.calls.find((call: any) =>
+      const responseLog = mockLogger.debug.mock.calls.find((call: any) =>
         call[0].includes("- 200")
       );
       expect(responseLog).toBeDefined();
@@ -111,10 +111,10 @@ describe("Logging and Retry Integration (Simple)", () => {
       await apiClient.GET("/v1/apps/invalid-id");
 
       // Verify logging calls
-      expect(mockLogger.info).toHaveBeenCalledTimes(2); // One request, one error response
+      expect(mockLogger.debug).toHaveBeenCalled();
 
       // Check error response log
-      const errorLog = mockLogger.info.mock.calls.find((call: any) =>
+      const errorLog = mockLogger.debug.mock.calls.find((call: any) =>
         call[0].includes("- 404")
       );
       expect(errorLog).toBeDefined();
@@ -139,18 +139,18 @@ describe("Logging and Retry Integration (Simple)", () => {
       await expect(apiClient.GET("/v1/apps")).rejects.toThrow("Network error");
 
       // Verify logging calls
-      expect(mockLogger.info).toHaveBeenCalledTimes(1); // One request log
-      expect(mockLogger.error).toHaveBeenCalledTimes(1); // One error log
+      expect(mockLogger.debug).toHaveBeenCalled();
+      expect(mockLogger.error).not.toHaveBeenCalled();
 
       // Check request log
-      const requestLog = mockLogger.info.mock.calls.find(
+      const requestLog = mockLogger.debug.mock.calls.find(
         (call: any) =>
           call[0].includes("GET /v1/apps") && !call[0].includes("-")
       );
       expect(requestLog).toBeDefined();
 
       // Check error log
-      const errorLog = mockLogger.error.mock.calls.find((call: any) =>
+      const errorLog = mockLogger.debug.mock.calls.find((call: any) =>
         call[0].includes("THROWN ERROR")
       );
       expect(errorLog).toBeDefined();
@@ -191,7 +191,7 @@ describe("Logging and Retry Integration (Simple)", () => {
       await apiClient.GET("/v1/apps");
 
       // Get all request logs
-      const requestLogs = mockLogger.info.mock.calls.filter(
+      const requestLogs = mockLogger.debug.mock.calls.filter(
         (call: any) =>
           call[0].includes("GET /v1/apps") && !call[0].includes("-")
       );

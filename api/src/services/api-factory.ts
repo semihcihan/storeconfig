@@ -58,7 +58,7 @@ export function createApiClient(
 
   // Add logging wrapper to capture all calls including retries and pagination
   const loggedApi = createLoggingWrapper(paginatedRetriedApi, {
-    logLevel: "info",
+    logLevel: "debug",
     sensitiveHeaders: ["authorization", "x-api-key", "cookie", "set-cookie"],
   });
 

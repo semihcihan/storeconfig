@@ -1,4 +1,6 @@
 import {
+  DEFAULT_DIAGNOSTICS_LOG_LEVEL,
+  DEFAULT_DIAGNOSTICS_MAX_EVENTS,
   logger,
   LogOutputModes,
   LogOutputConfig,
@@ -6,9 +8,16 @@ import {
 } from "./logger";
 import { ContextualError } from "../helpers/error-handling-helpers";
 import { z } from "zod";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 describe("Logger Tests", () => {
   let stdoutWriteSpy: jest.SpyInstance;
+  const testDiagnosticsLogFile = path.join(
+    os.tmpdir(),
+    "storeconfig-test-diagnostics.log"
+  );
 
   beforeEach(() => {
     logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
@@ -19,6 +28,13 @@ describe("Logger Tests", () => {
 
   afterEach(() => {
     stdoutWriteSpy.mockRestore();
+    logger.configureDiagnostics({
+      level: DEFAULT_DIAGNOSTICS_LOG_LEVEL,
+      maxEvents: DEFAULT_DIAGNOSTICS_MAX_EVENTS,
+      logFile: testDiagnosticsLogFile,
+      runtime: "test",
+    });
+    logger.startRun({ runtime: "test" });
   });
 
   describe("Multiple Output Support", () => {
@@ -169,6 +185,63 @@ describe("Logger Tests", () => {
       const metadataMessageCount = (output.match(/Metadata message/g) || [])
         .length;
       expect(metadataMessageCount).toBe(1);
+    });
+  });
+
+  describe("Failure diagnostics", () => {
+    it("should buffer diagnostics and write NDJSON only on failure", () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "storeconfig-log-"));
+      const logFile = path.join(tempDir, "storeconfig.log");
+
+      try {
+        logger.configureDiagnostics({
+          level: "debug",
+          maxEvents: 2,
+          logFile,
+          runtime: "cli",
+        });
+        logger.startRun({
+          command: "fetch",
+          runtime: "cli",
+          runId: "test-run",
+        });
+
+        logger.debug("First internal event", {
+          authorization: "Bearer secret-token",
+        });
+        logger.info("Second internal event", { ok: true });
+
+        expect(fs.existsSync(logFile)).toBe(false);
+
+        const failurePath = logger.writeFailureDiagnostics({
+          command: "fetch",
+          error: new Error("Network failed"),
+          metadata: { appId: "123" },
+        });
+
+        expect(failurePath).toBe(logFile);
+
+        const lines = fs.readFileSync(logFile, "utf8").trim().split("\n");
+        expect(lines).toHaveLength(1);
+
+        const event = JSON.parse(lines[0]);
+        expect(event).toMatchObject({
+          event: "error-context",
+          runId: "test-run",
+          runtime: "cli",
+          command: "fetch",
+          metadata: { appId: "123" },
+        });
+        expect(event.error).toMatchObject({
+          name: "Error",
+          message: "Network failed",
+          stack: expect.any(String),
+        });
+        expect(event.recentEvents).toHaveLength(2);
+        expect(event.recentEvents[0].meta.authorization).toBe("[REDACTED]");
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 

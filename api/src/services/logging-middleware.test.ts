@@ -134,7 +134,7 @@ describe("Logging Wrapper", () => {
       );
 
       // Verify error was logged
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringMatching(
           /\[[a-z0-9]+\] RES GET \/v1\/apps - THROWN ERROR \(\d+ms\)/
         ),
@@ -397,7 +397,7 @@ describe("Logging Wrapper", () => {
 
       await expect(wrappedClient.GET("/v1/apps")).rejects.toBe(thrownObject);
 
-      const errorLog = mockLogger.error.mock.calls.find((call: any) =>
+      const errorLog = mockLogger.info.mock.calls.find((call: any) =>
         call[0].includes("THROWN ERROR")
       );
 
@@ -412,7 +412,7 @@ describe("Logging Wrapper", () => {
 
       await expect(wrappedClient.GET("/v1/apps")).rejects.toBe(stringError);
 
-      const errorLog = mockLogger.error.mock.calls.find((call: any) =>
+      const errorLog = mockLogger.info.mock.calls.find((call: any) =>
         call[0].includes("THROWN ERROR")
       );
 

@@ -84,7 +84,7 @@ function displayUpdateMessage(
   ];
 
   const message = boxifyMessage(lines);
-  console.log(message);
+  console.error(message);
 }
 
 async function fetchLatestVersion(packageName: string): Promise<string | null> {

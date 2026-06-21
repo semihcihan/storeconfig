@@ -23,12 +23,12 @@ const mockCacheDir = "/home/user/.storeconfig";
 const mockCacheFile = "/home/user/.storeconfig/version-cache.json";
 
 describe("version-check-service", () => {
-  let originalConsoleLog: typeof console.log;
+  let originalConsoleError: typeof console.error;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    originalConsoleLog = console.log;
-    console.log = jest.fn();
+    originalConsoleError = console.error;
+    console.error = jest.fn();
 
     mockOs.homedir.mockReturnValue("/home/user");
     mockPath.join.mockImplementation((...args) => {
@@ -41,7 +41,7 @@ describe("version-check-service", () => {
   });
 
   afterEach(() => {
-    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
   });
 
   describe("checkVersionUpdateSync", () => {
@@ -50,7 +50,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("should display message when newer version is available in cache", () => {
@@ -64,8 +64,8 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).toHaveBeenCalled();
-      const message = (console.log as jest.Mock).mock.calls[0][0];
+      expect(console.error).toHaveBeenCalled();
+      const message = (console.error as jest.Mock).mock.calls[0][0];
       expect(message).toContain("0.0.19");
       expect(message).toContain("0.0.20");
       expect(message).toContain("Update available");
@@ -82,7 +82,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("should not display message when cache indicates newer version but CLI was already updated to that version", () => {
@@ -96,7 +96,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("should not display message when current version is newer than cached", () => {
@@ -110,7 +110,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("should handle invalid cache file gracefully", () => {
@@ -211,7 +211,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
     });
 
     it("should handle patch version updates", () => {
@@ -225,7 +225,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
     });
 
     it("should handle minor version updates", () => {
@@ -239,7 +239,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
     });
 
     it("should handle major version updates", () => {
@@ -253,7 +253,7 @@ describe("version-check-service", () => {
 
       checkVersionUpdateSync();
 
-      expect(console.log).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
     });
   });
 

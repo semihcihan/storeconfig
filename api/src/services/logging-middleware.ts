@@ -1,4 +1,4 @@
-import { logger, LogLevel, DEFAULT_LOG_LEVEL } from "@semihcihan/shared";
+import { logger, LogLevel } from "@semihcihan/shared";
 
 export interface LoggingOptions {
   logLevel?: LogLevel;
@@ -6,7 +6,7 @@ export interface LoggingOptions {
 }
 
 const DEFAULT_OPTIONS: Required<LoggingOptions> = {
-  logLevel: DEFAULT_LOG_LEVEL,
+  logLevel: "debug",
   sensitiveHeaders: ["authorization", "x-api-key", "cookie", "set-cookie"],
 };
 
@@ -26,7 +26,7 @@ interface StoredBigResponse extends Record<string, any> {
 }
 
 const storedBigResponses = new Map<string, StoredBigResponse>();
-let configuredLogLevel: LogLevel = DEFAULT_LOG_LEVEL;
+let configuredLogLevel: LogLevel = "debug";
 
 export function logStoredBigResponses(): void {
   if (storedBigResponses.size > 0) {
@@ -292,7 +292,7 @@ export function createLoggingWrapper<T extends Record<string, any>>(
         } catch (error) {
           const duration = Date.now() - startTime;
 
-          logger.error(
+          logger[config.logLevel](
             `[${requestId}] RES ${method} ${endpoint} - THROWN ERROR (${duration}ms)`,
             {
               requestId,

@@ -16,6 +16,8 @@ The removed hosted product surface is intentionally not part of this repository.
 
 The CLI stores one Apple credential set under the user's home directory and loads it before calling the local `api` engine. Price-point metadata is refreshed from public static snapshots and cached locally; currency data is bundled and cached locally.
 
+Failure diagnostics are written locally while keeping CLI stdout reserved for command data. See [logging](logging.md).
+
 ## Development
 
 ```bash

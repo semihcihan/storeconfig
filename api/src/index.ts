@@ -1,5 +1,3 @@
-import "./helpers/logging";
-
 // Export all route functions for external use
 export { fetchPricePoints } from "./routes/price-points";
 export { fetchAppStoreData } from "./routes/fetch";

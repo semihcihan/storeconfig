@@ -1,11 +1,16 @@
 import winston from "winston";
 import util from "util";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { fromError, isZodErrorLike } from "zod-validation-error";
 
 export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
 export const DEFAULT_LOG_LEVEL: LogLevel = "info";
+export const DEFAULT_DIAGNOSTICS_LOG_LEVEL: LogLevel = "debug";
+export const DEFAULT_DIAGNOSTICS_MAX_EVENTS = 200;
 
 export interface LogOutputConfig {
   mode: "console" | "file" | "json";
@@ -13,6 +18,22 @@ export interface LogOutputConfig {
 }
 
 export type LogOutputModes = LogOutputConfig[];
+
+export interface DiagnosticsOptions {
+  level?: LogLevel;
+  maxEvents?: number;
+  logFile?: string;
+  runtime?: string;
+  runId?: string;
+}
+
+export interface FailureDiagnosticsContext {
+  command?: string;
+  error: unknown;
+  metadata?: Record<string, unknown>;
+  runId?: string;
+  runtime?: string;
+}
 
 export interface Logger {
   debug: (...args: any[]) => void;
@@ -24,6 +45,16 @@ export interface Logger {
   getLevel: () => LogLevel;
   setOutputModes: (modes: LogOutputModes, filename?: string) => void;
   getOutputModes: () => LogOutputModes;
+  configureDiagnostics: (options?: DiagnosticsOptions) => void;
+  startRun: (context?: {
+    command?: string;
+    runtime?: string;
+    runId?: string;
+  }) => string;
+  clearDiagnosticsBuffer: () => void;
+  writeFailureDiagnostics: (
+    context: FailureDiagnosticsContext
+  ) => string | undefined;
 }
 
 const ANSI = {
@@ -43,6 +74,62 @@ const LOG_LEVEL_PREFIXES: Record<string, LogLevelPrefixConfig> = {
   info: { prefix: "i", color: ANSI.GREEN },
   warn: { prefix: "warn", color: ANSI.YELLOW },
   error: { prefix: "error", color: ANSI.RED },
+};
+
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+};
+
+const SENSITIVE_KEY_PATTERNS = [
+  "authorization",
+  "x-api-key",
+  "cookie",
+  "set-cookie",
+  "privatekey",
+  "private_key",
+  "asc_private_key",
+  "token",
+  "secret",
+  "password",
+];
+
+const DEFAULT_LOG_FILE = path.join(
+  os.homedir(),
+  ".storeconfig",
+  "logs",
+  "storeconfig.log"
+);
+const FAILURE_LOG_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const FAILURE_LOG_MAX_FILES = 5;
+
+interface DiagnosticEvent {
+  timestamp: string;
+  sequence: number;
+  runId: string;
+  runtime?: string;
+  command?: string;
+  level: LogLevel;
+  message: unknown;
+  meta?: unknown;
+}
+
+const generateRunId = (): string =>
+  `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+const isLogLevel = (value: unknown): value is LogLevel =>
+  typeof value === "string" && LOG_LEVELS.includes(value as LogLevel);
+
+const shouldIncludeLevel = (level: LogLevel, minLevel: LogLevel): boolean =>
+  LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[minLevel];
+
+const isSensitiveKey = (key: string): boolean => {
+  const normalized = key.toLowerCase().replace(/[\s-]/g, "_");
+  return SENSITIVE_KEY_PATTERNS.some((pattern) =>
+    normalized.includes(pattern)
+  );
 };
 
 const getLogPrefix = (
@@ -173,6 +260,115 @@ export const processNestedErrors = (
   return processed;
 };
 
+interface DiagnosticSerializeOptions {
+  showErrorStack: boolean;
+  maxStringLength: number;
+  maxArrayLength: number;
+  maxObjectKeys: number;
+}
+
+const DIAGNOSTIC_SERIALIZE_OPTIONS: DiagnosticSerializeOptions = {
+  showErrorStack: true,
+  maxStringLength: 20_000,
+  maxArrayLength: 100,
+  maxObjectKeys: 100,
+};
+
+const ERROR_SERIALIZE_OPTIONS: DiagnosticSerializeOptions = {
+  showErrorStack: true,
+  maxStringLength: 100_000,
+  maxArrayLength: 250,
+  maxObjectKeys: 250,
+};
+
+const redactString = (value: string): string => {
+  if (value.includes("BEGIN PRIVATE KEY") || value.includes("BEGIN RSA PRIVATE KEY")) {
+    return "[REDACTED]";
+  }
+
+  return value.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]");
+};
+
+const truncateString = (value: string, maxLength: number): string => {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}...[truncated ${value.length - maxLength} chars]`;
+};
+
+const serializeDiagnosticValue = (
+  value: unknown,
+  options: DiagnosticSerializeOptions,
+  seen: WeakSet<object> = new WeakSet()
+): unknown => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return truncateString(redactString(value), options.maxStringLength);
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+
+  if (typeof value === "symbol" || typeof value === "function") {
+    return String(value);
+  }
+
+  if (typeof value !== "object") {
+    return String(value);
+  }
+
+  if (seen.has(value)) {
+    return "[Circular]";
+  }
+
+  seen.add(value);
+
+  if (value instanceof Error) {
+    const errorObject = processErrorObject(value, options.showErrorStack, seen);
+    if (value.name) {
+      errorObject.name = value.name;
+    }
+    return serializeDiagnosticValue(
+      errorObject,
+      options,
+      seen
+    );
+  }
+
+  if (Array.isArray(value)) {
+    const items = value
+      .slice(0, options.maxArrayLength)
+      .map((item) => serializeDiagnosticValue(item, options, seen));
+    if (value.length > options.maxArrayLength) {
+      items.push(`[truncated ${value.length - options.maxArrayLength} items]`);
+    }
+    return items;
+  }
+
+  const serialized: Record<string, unknown> = {};
+  const entries = Object.entries(value);
+  for (const [key, nestedValue] of entries.slice(0, options.maxObjectKeys)) {
+    serialized[key] = isSensitiveKey(key)
+      ? "[REDACTED]"
+      : serializeDiagnosticValue(nestedValue, options, seen);
+  }
+
+  if (entries.length > options.maxObjectKeys) {
+    serialized.__truncatedKeys = entries.length - options.maxObjectKeys;
+  }
+
+  return serialized;
+};
+
 const renderValue = (
   value: unknown,
   showErrorStack: boolean,
@@ -295,6 +491,7 @@ const createJsonFormat = (showErrorStack: boolean) => {
 const createConsoleTransport = (showErrorStack: boolean) => {
   return new winston.transports.Console({
     format: createFormat(false, showErrorStack),
+    stderrLevels: [...LOG_LEVELS],
   });
 };
 
@@ -310,6 +507,7 @@ const createFileTransport = (filename: string, showErrorStack: boolean) => {
 
 const createJsonTransport = (showErrorStack: boolean) => {
   return new winston.transports.Console({
+    stderrLevels: [...LOG_LEVELS],
     format: winston.format.combine(
       winston.format.timestamp(),
       createJsonFormat(showErrorStack)
@@ -357,6 +555,14 @@ const isValidOutputMode = (config: LogOutputConfig): boolean => {
 class WinstonLogger implements Logger {
   private winstonLogger: winston.Logger;
   private currentConfig: LogOutputModes = [];
+  private diagnosticsBuffer: DiagnosticEvent[] = [];
+  private diagnosticsLevel: LogLevel = DEFAULT_DIAGNOSTICS_LOG_LEVEL;
+  private diagnosticsMaxEvents = DEFAULT_DIAGNOSTICS_MAX_EVENTS;
+  private diagnosticsLogFile = DEFAULT_LOG_FILE;
+  private diagnosticsSequence = 0;
+  private runId = generateRunId();
+  private runCommand: string | undefined;
+  private runtime: string | undefined;
 
   constructor() {
     this.currentConfig = [{ mode: "console", showErrorStack: false }];
@@ -372,26 +578,30 @@ class WinstonLogger implements Logger {
   }
 
   debug = (message: any, ...meta: any[]) => {
+    this.recordDiagnostic("debug", message, meta);
     this.winstonLogger.debug(message, ...meta);
   };
 
   info = (message: any, ...meta: any[]) => {
+    this.recordDiagnostic("info", message, meta);
     this.winstonLogger.info(message, ...meta);
   };
 
   warn = (message: any, ...meta: any[]) => {
+    this.recordDiagnostic("warn", message, meta);
     this.winstonLogger.warn(message, ...meta);
   };
 
   error = (message: any, ...meta: any[]) => {
+    this.recordDiagnostic("error", message, meta);
     this.winstonLogger.error(message, ...meta);
   };
 
   std = (message: any) => {
     if (typeof message === "object") {
-      console.log(JSON.stringify(message, null, 2));
+      process.stderr.write(`${JSON.stringify(message, null, 2)}\n`);
     } else {
-      console.log(message);
+      process.stderr.write(`${message}\n`);
     }
   };
 
@@ -426,6 +636,172 @@ class WinstonLogger implements Logger {
 
   getOutputModes = (): LogOutputModes => {
     return this.currentConfig;
+  };
+
+  configureDiagnostics = (options: DiagnosticsOptions = {}): void => {
+    if (options.level !== undefined) {
+      if (isLogLevel(options.level)) {
+        this.diagnosticsLevel = options.level;
+      } else {
+        this.warn(
+          `Invalid diagnostics log level: ${options.level}. Using '${DEFAULT_DIAGNOSTICS_LOG_LEVEL}' as default.`
+        );
+        this.diagnosticsLevel = DEFAULT_DIAGNOSTICS_LOG_LEVEL;
+      }
+    }
+
+    if (options.maxEvents !== undefined && options.maxEvents > 0) {
+      this.diagnosticsMaxEvents = Math.floor(options.maxEvents);
+      this.trimDiagnosticsBuffer();
+    }
+
+    if (options.logFile && options.logFile.trim()) {
+      this.diagnosticsLogFile = path.resolve(options.logFile);
+    }
+
+    if (options.runtime !== undefined) {
+      this.runtime = options.runtime;
+    }
+
+    if (options.runId !== undefined) {
+      this.runId = options.runId || generateRunId();
+    }
+  };
+
+  startRun = (
+    context: { command?: string; runtime?: string; runId?: string } = {}
+  ): string => {
+    this.runId = context.runId || generateRunId();
+    this.runCommand = context.command;
+    if (context.runtime !== undefined) {
+      this.runtime = context.runtime;
+    }
+    this.clearDiagnosticsBuffer();
+    return this.runId;
+  };
+
+  clearDiagnosticsBuffer = (): void => {
+    this.diagnosticsBuffer = [];
+  };
+
+  writeFailureDiagnostics = (
+    context: FailureDiagnosticsContext
+  ): string | undefined => {
+    const event = {
+      timestamp: new Date().toISOString(),
+      event: "error-context",
+      runId: context.runId || this.runId,
+      runtime: context.runtime || this.runtime,
+      command: context.command || this.runCommand,
+      error: serializeDiagnosticValue(context.error, ERROR_SERIALIZE_OPTIONS),
+      metadata: context.metadata
+        ? serializeDiagnosticValue(context.metadata, DIAGNOSTIC_SERIALIZE_OPTIONS)
+        : undefined,
+      recentEvents: this.diagnosticsBuffer.slice(-this.diagnosticsMaxEvents),
+    };
+
+    try {
+      this.appendFailureLog(JSON.stringify(event));
+      return this.diagnosticsLogFile;
+    } catch {
+      return undefined;
+    }
+  };
+
+  private recordDiagnostic = (
+    level: LogLevel,
+    message: unknown,
+    meta: unknown[]
+  ): void => {
+    if (!shouldIncludeLevel(level, this.diagnosticsLevel)) {
+      return;
+    }
+
+    const event: DiagnosticEvent = {
+      timestamp: new Date().toISOString(),
+      sequence: ++this.diagnosticsSequence,
+      runId: this.runId,
+      runtime: this.runtime,
+      command: this.runCommand,
+      level,
+      message: serializeDiagnosticValue(
+        message,
+        DIAGNOSTIC_SERIALIZE_OPTIONS
+      ),
+    };
+
+    if (meta.length === 1) {
+      event.meta = serializeDiagnosticValue(
+        meta[0],
+        DIAGNOSTIC_SERIALIZE_OPTIONS
+      );
+    } else if (meta.length > 1) {
+      event.meta = serializeDiagnosticValue(
+        meta,
+        DIAGNOSTIC_SERIALIZE_OPTIONS
+      );
+    }
+
+    this.diagnosticsBuffer.push(event);
+    this.trimDiagnosticsBuffer();
+  };
+
+  private trimDiagnosticsBuffer = (): void => {
+    if (this.diagnosticsBuffer.length > this.diagnosticsMaxEvents) {
+      this.diagnosticsBuffer = this.diagnosticsBuffer.slice(
+        -this.diagnosticsMaxEvents
+      );
+    }
+  };
+
+  private appendFailureLog = (line: string): void => {
+    const logDir = path.dirname(this.diagnosticsLogFile);
+    fs.mkdirSync(logDir, { recursive: true, mode: 0o700 });
+    this.applyPrivatePermissions(logDir, 0o700);
+
+    this.rotateFailureLogIfNeeded(Buffer.byteLength(line) + 1);
+    fs.appendFileSync(this.diagnosticsLogFile, `${line}\n`, {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+    this.applyPrivatePermissions(this.diagnosticsLogFile, 0o600);
+  };
+
+  private rotateFailureLogIfNeeded = (nextWriteBytes: number): void => {
+    if (!fs.existsSync(this.diagnosticsLogFile)) {
+      return;
+    }
+
+    const { size } = fs.statSync(this.diagnosticsLogFile);
+    if (size + nextWriteBytes <= FAILURE_LOG_MAX_SIZE_BYTES) {
+      return;
+    }
+
+    for (let index = FAILURE_LOG_MAX_FILES; index >= 1; index--) {
+      const source =
+        index === 1
+          ? this.diagnosticsLogFile
+          : `${this.diagnosticsLogFile}.${index - 1}`;
+      const destination = `${this.diagnosticsLogFile}.${index}`;
+
+      if (!fs.existsSync(source)) {
+        continue;
+      }
+
+      if (fs.existsSync(destination)) {
+        fs.unlinkSync(destination);
+      }
+      fs.renameSync(source, destination);
+      this.applyPrivatePermissions(destination, 0o600);
+    }
+  };
+
+  private applyPrivatePermissions = (targetPath: string, mode: number): void => {
+    try {
+      fs.chmodSync(targetPath, mode);
+    } catch {
+      // Best-effort only; some platforms/filesystems do not support chmod.
+    }
   };
 }
 

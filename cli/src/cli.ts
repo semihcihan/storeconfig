@@ -5,13 +5,30 @@ import Bugsnag from "@bugsnag/js";
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { logger, processNestedErrors } from "@semihcihan/shared";
+import {
+  DEFAULT_DIAGNOSTICS_LOG_LEVEL,
+  DEFAULT_LOG_LEVEL,
+  logger,
+  processNestedErrors,
+  type LogLevel,
+} from "@semihcihan/shared";
 
 import { localCommands } from "./commands/local-commands";
 import { checkVersionUpdateSync } from "./services/version-check-service";
 
 logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
-logger.setLevel("info");
+logger.setLevel((process.env.LOG_LEVEL as LogLevel) || DEFAULT_LOG_LEVEL);
+logger.configureDiagnostics({
+  level:
+    (process.env.STORECONFIG_FILE_LOG_LEVEL as LogLevel) ||
+    DEFAULT_DIAGNOSTICS_LOG_LEVEL,
+  logFile: process.env.STORECONFIG_LOG_FILE,
+  runtime: "cli",
+});
+logger.startRun({
+  command: process.argv?.slice(2)[0] || "unknown",
+  runtime: "cli",
+});
 
 async function main() {
   checkVersionUpdateSync();
@@ -35,6 +52,7 @@ async function main() {
     .help();
 
   await parser.parseAsync();
+  logger.clearDiagnosticsBuffer();
 }
 
 main().catch((err) => {
@@ -47,8 +65,13 @@ main().catch((err) => {
     command = "unknown";
   }
 
-  let processedError = processNestedErrors(err, false);
+  const processedError = processNestedErrors(err, false);
 
+  logger.writeFailureDiagnostics({
+    command,
+    error: err,
+    metadata: { processedError },
+  });
   logger.error(`Command '${command}' failed`, processedError);
   Bugsnag.notify(err, (event) => {
     event.addMetadata("metadata", { command, context: processedError });

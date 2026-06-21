@@ -10,6 +10,10 @@ jest.mock("@bugsnag/js", () => ({
 const mockLogger = {
   setOutputModes: jest.fn(),
   setLevel: jest.fn(),
+  configureDiagnostics: jest.fn(),
+  startRun: jest.fn(() => "test-run-id"),
+  clearDiagnosticsBuffer: jest.fn(),
+  writeFailureDiagnostics: jest.fn(),
   error: jest.fn(),
 };
 
