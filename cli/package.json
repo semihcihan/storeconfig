@@ -1,6 +1,6 @@
 {
   "name": "storeconfig",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool for App Store Connect synchronization",
   "main": "dist/cli.js",
   "bin": {
