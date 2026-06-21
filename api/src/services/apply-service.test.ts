@@ -981,8 +981,9 @@ describe("Subscription Group Actions", () => {
       }
     );
 
-    // Should execute the action successfully
-    expect(mockLogger.info).toHaveBeenCalled();
+    // Should keep action details in diagnostics, not terminal info output.
+    expect(mockLogger.debug).toHaveBeenCalledWith("Applying action", action);
+    expect(mockLogger.info).not.toHaveBeenCalledWith(action);
   });
 
   it("should handle CREATE_SUBSCRIPTION_PRICE action with newly created subscription", async () => {

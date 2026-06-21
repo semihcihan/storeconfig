@@ -1,5 +1,5 @@
-import { logger, AnyAction } from "@semihcihan/shared";
+import { logger, type AnyAction } from "@semihcihan/shared";
 
 export async function showAction(action: AnyAction) {
-  logger.info(action);
+  logger.debug("Applying action", action);
 }
