@@ -1,4 +1,8 @@
 const { spawnSync } = require("child_process");
+const path = require("path");
+const dotenv = require("dotenv");
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const apiKey =
   process.env.BUGSNAG_API_KEY || process.env.STORECONFIG_BUGSNAG_API_KEY;

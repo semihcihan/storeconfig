@@ -49,4 +49,6 @@ Publish the CLI package from the workspace:
 npm run publish:cli
 ```
 
+The Bugsnag source map upload reads `cli/.env`, so maintainers can set `BUGSNAG_API_KEY` there for local releases.
+
 Refresh or configure price-point snapshots from the `api` workspace scripts. See [price-point snapshots](price-point-snapshots.md).
