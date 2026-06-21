@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "appId": "1641272046",
+  "versionString": "1.0",
+  "pricing": {
+    "baseTerritory": "USA",
+    "prices": [
+      {
+        "price": "0.0",
+        "territory": "USA"
+      }
+    ]
+  },
+  "availableTerritories": [],
+  "inAppPurchases": [
+    {
+      "productId": "product",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Lifetime Access",
+      "familySharable": false,
+      "pricing": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "price": "9.99",
+            "territory": "USA"
+          }
+        ]
+      },
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": "worldwide"
+      },
+      "localizations": []
+    }
+  ],
+  "subscriptionGroups": [],
+  "primaryLocale": "en-US",
+  "localizations": [
+    {
+      "locale": "en-US",
+      "name": "Fit & Fill"
+    }
+  ]
+}

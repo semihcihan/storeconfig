@@ -1,13 +1,28 @@
 {
-  "extends": "../tsconfig.json",
+  "files": [],
+  "references": [
+    { "path": "shared" },
+    { "path": "app-store-connect-api-types" },
+    { "path": "api" },
+    { "path": "cli" }
+  ],
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["../shared/src/*"]
-    }
-  },
-  "include": ["src/**/*", "e2e/cli.e2e.test.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true
+  }
 }

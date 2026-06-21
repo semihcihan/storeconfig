@@ -1,0 +1,74 @@
+---
+description: Testing guidelines and known issues for running tests in the monorepo workspace
+alwaysApply: false
+---
+
+# Testing Guidelines
+
+## Jest Test Execution in Monorepo
+
+### Known Issue: Module Resolution in Sandboxed Environment
+
+**Problem:**
+When running Jest tests in the API package (`npm test` or `npm run test` from `/api/`), you may encounter the following error:
+
+```
+Error: Cannot find module '@jest/test-sequencer'
+```
+
+**Root Cause:**
+This is a monorepo workspace with npm workspaces where dependencies are hoisted to the root `node_modules`. When running tests in a sandboxed environment (like Cursor's AI assistant), the sandbox restrictions prevent Jest from properly resolving dependencies, even though they exist in the root `node_modules`.
+
+**Solution:**
+When running Jest tests programmatically (e.g., through Cursor's AI assistant), use `required_permissions: ['all']` to bypass sandbox restrictions and allow Jest to properly access all files in `node_modules`.
+
+**Example:**
+
+```typescript
+// When using run_terminal_cmd tool
+run_terminal_cmd({
+  command: "cd api && npm test",
+  required_permissions: ["all"],
+});
+```
+
+**Note:** This is only necessary when running tests through automated tools with sandbox restrictions. Running tests directly in your terminal should work normally.
+
+## Test Structure
+
+### Unit Tests
+
+- **Location:** `api/src/**/*.test.ts`
+- **Config:** `jest.unit.config.js`
+- **Command:** `npm test` or `npm run test:unit` from `/api/`
+- **Excludes:** Integration tests (`*.integration.test.ts`) and E2E tests (`*.e2e.test.ts`)
+
+### E2E Tests
+
+- **Location:** `api/src/**/*.e2e.test.ts`
+- **Config:** `jest.e2e.config.js`
+- **Command:** `npm run test:e2e` from `/api/`
+- **Note:** Runs in band (sequentially) to avoid conflicts
+
+### Coverage
+
+- **Command:** `npm run test:coverage` from `/api/`
+- **Output:** Text-based coverage report
+
+## Workspace Test Execution
+
+From the root workspace:
+
+```bash
+# Run all tests across all packages
+npm run test
+
+# Run tests for specific workspace
+npm run test --workspace=api
+```
+
+## Common Test Issues
+
+1. **Module Resolution Errors:** Use `required_permissions: ['all']` when running through automated tools
+2. **Missing Dependencies:** Ensure root `node_modules` is properly installed (`npm install` from root)
+3. **Cache Issues:** Clear Jest cache with `rm -rf api/.jest-cache` if tests behave unexpectedly

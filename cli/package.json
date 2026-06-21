@@ -1,0 +1,100 @@
+{
+  "name": "storeconfig",
+  "version": "0.0.25",
+  "description": "CLI tool for App Store Connect synchronization",
+  "main": "dist/cli.js",
+  "bin": {
+    "storeconfig": "dist/cli.js",
+    "storeconfig-mcp": "dist/mcp.js"
+  },
+  "scripts": {
+    "prebuild": "npm run update-readme && npm run generate-mcp-content",
+    "predev": "npm run update-readme && npm run generate-mcp-content",
+    "generate-mcp-content": "node scripts/generate-mcp-content.js",
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
+    "dev": "node dist/cli.js",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
+    "start": "node dist/cli.js",
+    "test": "jest --config jest.unit.config.js",
+    "test:unit": "jest --config jest.unit.config.js",
+    "test:e2e:dev": "E2E_ENV_FILE=.env.e2e.dev jest --config jest.e2e.config.js",
+    "test:e2e:test": "E2E_ENV_FILE=.env.e2e.test jest --config jest.e2e.config.js",
+    "test:coverage": "jest --config jest.unit.config.js --coverage",
+    "prepublishOnly": "npm run build",
+    "fetch": "node dist/cli.js fetch",
+    "fetch:all": "node dist/cli.js fetch",
+    "apply": "node dist/cli.js apply",
+    "apple": "node dist/cli.js apple",
+    "validate": "node dist/cli.js validate",
+    "set-price": "node dist/cli.js set-price",
+    "compare-price": "node dist/cli.js compare-price",
+    "example": "node dist/cli.js example",
+    "mcp": "node dist/mcp.js",
+    "mcp:test": "npx @modelcontextprotocol/inspector node dist/mcp.js",
+    "update-readme": "node scripts/generate-readme-example.js",
+    "upload-sourcemap": "node scripts/upload-sourcemap.js"
+  },
+  "keywords": [
+    "cli",
+    "app-store",
+    "ios",
+    "synchronization",
+    "app store connect",
+    "automation",
+    "mcp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/semihcihan/storeconfig.git"
+  },
+  "contributors": [
+    {
+      "name": "Semih Cihan",
+      "url": "https://github.com/semihcihan"
+    },
+    {
+      "name": "Selçuk Cihan",
+      "url": "https://github.com/selcukcihan"
+    }
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "homepage": "https://storeconfig.com",
+  "files": [
+    "dist/",
+    "README.md",
+    "THIRD_PARTY_LICENSES.md"
+  ],
+  "dependencies": {
+    "@bugsnag/js": "^8.6.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@semihcihan/developer-tool": "file:../api",
+    "axios": "^1.10.0",
+    "dotenv": "^16.6.1",
+    "inquirer": "^8.2.5",
+    "ora": "^8.2.0",
+    "winston": "^3.17.0",
+    "yargs": "^17.7.2",
+    "zod": "4.1.9",
+    "zod-validation-error": "^4.0.2"
+  },
+  "devDependencies": {
+    "@bugsnag/cli": "^3.4.1",
+    "@bugsnag/source-maps": "^2.3.3",
+    "@types/inquirer": "^9.0.9",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.10",
+    "@types/yargs": "^17.0.33",
+    "esbuild": "^0.25.11",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  }
+}

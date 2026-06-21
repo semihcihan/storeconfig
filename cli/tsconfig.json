@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@semihcihan/developer-tool/functions": ["../api/src/index.ts"],
+      "@shared/*": ["../shared/src/*"]
+    }
+  },
+  "include": ["src/**/*", "e2e/cli.e2e.test.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

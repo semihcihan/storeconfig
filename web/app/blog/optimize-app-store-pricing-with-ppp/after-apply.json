@@ -1,0 +1,741 @@
+{
+  "schemaVersion": "1.0.0",
+  "appId": "1641272046",
+  "versionString": "1.0",
+  "pricing": {
+    "baseTerritory": "USA",
+    "prices": [
+      {
+        "price": "0.0",
+        "territory": "USA"
+      }
+    ]
+  },
+  "availableTerritories": [],
+  "inAppPurchases": [
+    {
+      "productId": "product",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Lifetime Access",
+      "familySharable": false,
+      "pricing": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "price": "9.99",
+            "territory": "AFG"
+          },
+          {
+            "price": "3.95",
+            "territory": "AGO"
+          },
+          {
+            "price": "9.99",
+            "territory": "AIA"
+          },
+          {
+            "price": "5.09",
+            "territory": "ALB"
+          },
+          {
+            "price": "22.49",
+            "territory": "ARE"
+          },
+          {
+            "price": "4.49",
+            "territory": "ARG"
+          },
+          {
+            "price": "3.95",
+            "territory": "ARM"
+          },
+          {
+            "price": "7.09",
+            "territory": "ATG"
+          },
+          {
+            "price": "14.49",
+            "territory": "AUS"
+          },
+          {
+            "price": "7.29",
+            "territory": "AUT"
+          },
+          {
+            "price": "2.79",
+            "territory": "AZE"
+          },
+          {
+            "price": "7.09",
+            "territory": "BEL"
+          },
+          {
+            "price": "3.59",
+            "territory": "BEN"
+          },
+          {
+            "price": "3.95",
+            "territory": "BFA"
+          },
+          {
+            "price": "8.49",
+            "territory": "BGR"
+          },
+          {
+            "price": "4.19",
+            "territory": "BHR"
+          },
+          {
+            "price": "9.39",
+            "territory": "BHS"
+          },
+          {
+            "price": "3.79",
+            "territory": "BIH"
+          },
+          {
+            "price": "2.99",
+            "territory": "BLR"
+          },
+          {
+            "price": "5.29",
+            "territory": "BLZ"
+          },
+          {
+            "price": "9.99",
+            "territory": "BMU"
+          },
+          {
+            "price": "9.99",
+            "territory": "BOL"
+          },
+          {
+            "price": "26.5",
+            "territory": "BRA"
+          },
+          {
+            "price": "11.49",
+            "territory": "BRB"
+          },
+          {
+            "price": "3.59",
+            "territory": "BRN"
+          },
+          {
+            "price": "2.29",
+            "territory": "BTN"
+          },
+          {
+            "price": "3.79",
+            "territory": "BWA"
+          },
+          {
+            "price": "11.49",
+            "territory": "CAN"
+          },
+          {
+            "price": "9.3",
+            "territory": "CHE"
+          },
+          {
+            "price": "4790",
+            "territory": "CHL"
+          },
+          {
+            "price": "33.8",
+            "territory": "CHN"
+          },
+          {
+            "price": "3.79",
+            "territory": "CIV"
+          },
+          {
+            "price": "3.69",
+            "territory": "CMR"
+          },
+          {
+            "price": "5.59",
+            "territory": "COD"
+          },
+          {
+            "price": "3.79",
+            "territory": "COG"
+          },
+          {
+            "price": "15500.0",
+            "territory": "COL"
+          },
+          {
+            "price": "4.99",
+            "territory": "CPV"
+          },
+          {
+            "price": "6.19",
+            "territory": "CRI"
+          },
+          {
+            "price": "9.99",
+            "territory": "CYM"
+          },
+          {
+            "price": "5.69",
+            "territory": "CYP"
+          },
+          {
+            "price": "129.99",
+            "territory": "CZE"
+          },
+          {
+            "price": "7.19",
+            "territory": "DEU"
+          },
+          {
+            "price": "5.19",
+            "territory": "DMA"
+          },
+          {
+            "price": "60.0",
+            "territory": "DNK"
+          },
+          {
+            "price": "3.89",
+            "territory": "DOM"
+          },
+          {
+            "price": "3.39",
+            "territory": "DZA"
+          },
+          {
+            "price": "4.29",
+            "territory": "ECU"
+          },
+          {
+            "price": "80.99",
+            "territory": "EGY"
+          },
+          {
+            "price": "5.95",
+            "territory": "ESP"
+          },
+          {
+            "price": "6.29",
+            "territory": "EST"
+          },
+          {
+            "price": "7.49",
+            "territory": "FIN"
+          },
+          {
+            "price": "4.09",
+            "territory": "FJI"
+          },
+          {
+            "price": "6.59",
+            "territory": "FRA"
+          },
+          {
+            "price": "11.49",
+            "territory": "FSM"
+          },
+          {
+            "price": "3.79",
+            "territory": "GAB"
+          },
+          {
+            "price": "6.79",
+            "territory": "GBR"
+          },
+          {
+            "price": "3.39",
+            "territory": "GEO"
+          },
+          {
+            "price": "4.69",
+            "territory": "GHA"
+          },
+          {
+            "price": "2.39",
+            "territory": "GMB"
+          },
+          {
+            "price": "3.89",
+            "territory": "GNB"
+          },
+          {
+            "price": "5.39",
+            "territory": "GRC"
+          },
+          {
+            "price": "5.79",
+            "territory": "GRD"
+          },
+          {
+            "price": "4.39",
+            "territory": "GTM"
+          },
+          {
+            "price": "2.95",
+            "territory": "GUY"
+          },
+          {
+            "price": "56.0",
+            "territory": "HKG"
+          },
+          {
+            "price": "4.59",
+            "territory": "HND"
+          },
+          {
+            "price": "4.69",
+            "territory": "HRV"
+          },
+          {
+            "price": "1900",
+            "territory": "HUN"
+          },
+          {
+            "price": "48000",
+            "territory": "IDN"
+          },
+          {
+            "price": "205.0",
+            "territory": "IND"
+          },
+          {
+            "price": "7.69",
+            "territory": "IRL"
+          },
+          {
+            "price": "3.69",
+            "territory": "IRQ"
+          },
+          {
+            "price": "12.49",
+            "territory": "ISL"
+          },
+          {
+            "price": "37.9",
+            "territory": "ISR"
+          },
+          {
+            "price": "6.09",
+            "territory": "ITA"
+          },
+          {
+            "price": "6.29",
+            "territory": "JAM"
+          },
+          {
+            "price": "4.29",
+            "territory": "JOR"
+          },
+          {
+            "price": "940",
+            "territory": "JPN"
+          },
+          {
+            "price": "1900.0",
+            "territory": "KAZ"
+          },
+          {
+            "price": "3.49",
+            "territory": "KEN"
+          },
+          {
+            "price": "3.39",
+            "territory": "KGZ"
+          },
+          {
+            "price": "3.29",
+            "territory": "KHM"
+          },
+          {
+            "price": "6.49",
+            "territory": "KNA"
+          },
+          {
+            "price": "7600",
+            "territory": "KOR"
+          },
+          {
+            "price": "5.69",
+            "territory": "KWT"
+          },
+          {
+            "price": "2.29",
+            "territory": "LAO"
+          },
+          {
+            "price": "9.99",
+            "territory": "LBN"
+          },
+          {
+            "price": "0.29",
+            "territory": "LBR"
+          },
+          {
+            "price": "3.59",
+            "territory": "LBY"
+          },
+          {
+            "price": "5.09",
+            "territory": "LCA"
+          },
+          {
+            "price": "9.99",
+            "territory": "LKA"
+          },
+          {
+            "price": "5.19",
+            "territory": "LTU"
+          },
+          {
+            "price": "8.49",
+            "territory": "LUX"
+          },
+          {
+            "price": "5.19",
+            "territory": "LVA"
+          },
+          {
+            "price": "5.59",
+            "territory": "MAC"
+          },
+          {
+            "price": "4.19",
+            "territory": "MAR"
+          },
+          {
+            "price": "4.59",
+            "territory": "MDA"
+          },
+          {
+            "price": "3.19",
+            "territory": "MDG"
+          },
+          {
+            "price": "5.19",
+            "territory": "MDV"
+          },
+          {
+            "price": "108.0",
+            "territory": "MEX"
+          },
+          {
+            "price": "3.69",
+            "territory": "MKD"
+          },
+          {
+            "price": "3.59",
+            "territory": "MLI"
+          },
+          {
+            "price": "5.59",
+            "territory": "MLT"
+          },
+          {
+            "price": "3.19",
+            "territory": "MMR"
+          },
+          {
+            "price": "3.89",
+            "territory": "MNE"
+          },
+          {
+            "price": "3.69",
+            "territory": "MNG"
+          },
+          {
+            "price": "4.19",
+            "territory": "MOZ"
+          },
+          {
+            "price": "2.95",
+            "territory": "MRT"
+          },
+          {
+            "price": "9.99",
+            "territory": "MSR"
+          },
+          {
+            "price": "3.95",
+            "territory": "MUS"
+          },
+          {
+            "price": "4.29",
+            "territory": "MWI"
+          },
+          {
+            "price": "13.9",
+            "territory": "MYS"
+          },
+          {
+            "price": "4.39",
+            "territory": "NAM"
+          },
+          {
+            "price": "3.95",
+            "territory": "NER"
+          },
+          {
+            "price": "2100.0",
+            "territory": "NGA"
+          },
+          {
+            "price": "3.29",
+            "territory": "NIC"
+          },
+          {
+            "price": "7.79",
+            "territory": "NLD"
+          },
+          {
+            "price": "91.0",
+            "territory": "NOR"
+          },
+          {
+            "price": "2.39",
+            "territory": "NPL"
+          },
+          {
+            "price": "12.49",
+            "territory": "NRU"
+          },
+          {
+            "price": "15.49",
+            "territory": "NZL"
+          },
+          {
+            "price": "4.39",
+            "territory": "OMN"
+          },
+          {
+            "price": "720.0",
+            "territory": "PAK"
+          },
+          {
+            "price": "4.59",
+            "territory": "PAN"
+          },
+          {
+            "price": "18.5",
+            "territory": "PER"
+          },
+          {
+            "price": "190.0",
+            "territory": "PHL"
+          },
+          {
+            "price": "10.49",
+            "territory": "PLW"
+          },
+          {
+            "price": "6.69",
+            "territory": "PNG"
+          },
+          {
+            "price": "19.49",
+            "territory": "POL"
+          },
+          {
+            "price": "5.59",
+            "territory": "PRT"
+          },
+          {
+            "price": "4.09",
+            "territory": "PRY"
+          },
+          {
+            "price": "21.49",
+            "territory": "QAT"
+          },
+          {
+            "price": "21.49",
+            "territory": "ROU"
+          },
+          {
+            "price": "315.0",
+            "territory": "RUS"
+          },
+          {
+            "price": "2.59",
+            "territory": "RWA"
+          },
+          {
+            "price": "17.49",
+            "territory": "SAU"
+          },
+          {
+            "price": "3.69",
+            "territory": "SEN"
+          },
+          {
+            "price": "7.78",
+            "territory": "SGP"
+          },
+          {
+            "price": "9.39",
+            "territory": "SLB"
+          },
+          {
+            "price": "2.69",
+            "territory": "SLE"
+          },
+          {
+            "price": "4.09",
+            "territory": "SLV"
+          },
+          {
+            "price": "4.29",
+            "territory": "SRB"
+          },
+          {
+            "price": "6.79",
+            "territory": "STP"
+          },
+          {
+            "price": "3.29",
+            "territory": "SUR"
+          },
+          {
+            "price": "5.39",
+            "territory": "SVK"
+          },
+          {
+            "price": "5.69",
+            "territory": "SVN"
+          },
+          {
+            "price": "84.0",
+            "territory": "SWE"
+          },
+          {
+            "price": "3.69",
+            "territory": "SWZ"
+          },
+          {
+            "price": "5.19",
+            "territory": "SYC"
+          },
+          {
+            "price": "9.99",
+            "territory": "TCA"
+          },
+          {
+            "price": "3.69",
+            "territory": "TCD"
+          },
+          {
+            "price": "100.0",
+            "territory": "THA"
+          },
+          {
+            "price": "3.09",
+            "territory": "TJK"
+          },
+          {
+            "price": "4.79",
+            "territory": "TKM"
+          },
+          {
+            "price": "7.29",
+            "territory": "TON"
+          },
+          {
+            "price": "5.09",
+            "territory": "TTO"
+          },
+          {
+            "price": "3.39",
+            "territory": "TUN"
+          },
+          {
+            "price": "204.99",
+            "territory": "TUR"
+          },
+          {
+            "price": "135",
+            "territory": "TWN"
+          },
+          {
+            "price": "8000.0",
+            "territory": "TZA"
+          },
+          {
+            "price": "3.69",
+            "territory": "UGA"
+          },
+          {
+            "price": "3.19",
+            "territory": "UKR"
+          },
+          {
+            "price": "7.19",
+            "territory": "URY"
+          },
+          {
+            "price": "9.99",
+            "territory": "USA"
+          },
+          {
+            "price": "3.29",
+            "territory": "UZB"
+          },
+          {
+            "price": "5.29",
+            "territory": "VCT"
+          },
+          {
+            "price": "16.49",
+            "territory": "VEN"
+          },
+          {
+            "price": "9.99",
+            "territory": "VGB"
+          },
+          {
+            "price": "71000",
+            "territory": "VNM"
+          },
+          {
+            "price": "10.49",
+            "territory": "VUT"
+          },
+          {
+            "price": "8.59",
+            "territory": "XKS"
+          },
+          {
+            "price": "9.99",
+            "territory": "YEM"
+          },
+          {
+            "price": "75.99",
+            "territory": "ZAF"
+          },
+          {
+            "price": "4.49",
+            "territory": "ZMB"
+          },
+          {
+            "price": "4.95",
+            "territory": "ZWE"
+          }
+        ]
+      },
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": "worldwide"
+      },
+      "localizations": []
+    }
+  ],
+  "subscriptionGroups": [],
+  "primaryLocale": "en-US",
+  "localizations": [
+    {
+      "locale": "en-US",
+      "name": "Fit & Fill"
+    }
+  ]
+}

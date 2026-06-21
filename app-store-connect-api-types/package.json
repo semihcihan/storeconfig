@@ -1,0 +1,36 @@
+{
+  "name": "@semihcihan/app-store-connect-api-types",
+  "version": "1.0.0",
+  "description": "Generated types for App Store Connect API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "tsc --watch",
+    "nuke": "rm -rf node_modules package-lock.json dist tsconfig.tsbuildinfo",
+    "prepublishOnly": "npm run build",
+    "codegen": "openapi-typescript openapi.json --output ../src/index.ts",
+    "split-openapi": "npx redocly split openapi.json --outDir=openapi"
+  },
+  "keywords": [
+    "app-store",
+    "api",
+    "types",
+    "generated"
+  ],
+  "author": "Semih Cihan",
+  "license": "ISC",
+  "devDependencies": {
+    "@redocly/cli": "^2.14.3",
+    "@types/node": "^24.0.10",
+    "openapi-typescript": "^7.0.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "next": "15.5.9"
+  }
+}

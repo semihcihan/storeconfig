@@ -1,0 +1,14 @@
+node_modules
+dist
+*.tsbuildinfo
+.jest-cache
+*.log
+.env
+.env.*
+*.p8
+storeconfig*.json
+.next
+build
+coverage
+*.map
+/app-store-connect-api-types

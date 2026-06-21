@@ -1,0 +1,453 @@
+import { logger } from "@semihcihan/shared";
+import { AppStoreModelSchema } from "@semihcihan/shared";
+import { isInAppPurchaseLocalizationNotUpdatableError } from "@semihcihan/shared";
+import { z } from "zod";
+import {
+  createInAppPurchase,
+  updateInAppPurchase,
+  fetchInAppPurchases as fetchInAppPurchasesApi,
+  fetchInAppPurchaseLocalizations,
+  createInAppPurchaseLocalization,
+  updateInAppPurchaseLocalization,
+  deleteInAppPurchaseLocalization,
+} from "./api-client";
+import type { components } from "@semihcihan/app-store-connect-api-types";
+
+type InAppPurchaseV2CreateRequest =
+  components["schemas"]["InAppPurchaseV2CreateRequest"];
+type InAppPurchaseV2UpdateRequest =
+  components["schemas"]["InAppPurchaseV2UpdateRequest"];
+type InAppPurchaseLocalizationCreateRequest =
+  components["schemas"]["InAppPurchaseLocalizationCreateRequest"];
+type InAppPurchaseLocalizationUpdateRequest =
+  components["schemas"]["InAppPurchaseLocalizationUpdateRequest"];
+type InAppPurchaseLocalization =
+  components["schemas"]["InAppPurchaseLocalization"];
+type InAppPurchasesV2Response =
+  components["schemas"]["InAppPurchasesV2Response"];
+type InAppPurchasesV2IncludedItem = NonNullable<
+  InAppPurchasesV2Response["included"]
+>[number];
+
+type AppStoreModel = z.infer<typeof AppStoreModelSchema>;
+const APPROVED_LOCALIZATION_STATE = "APPROVED";
+
+function buildLocalizationRelationshipData(
+  localizations: components["schemas"]["InAppPurchaseLocalization"][]
+): { id: string; type: "inAppPurchaseLocalizations" }[] {
+  return localizations.map((localization) => ({
+    id: localization.id,
+    type: "inAppPurchaseLocalizations",
+  }));
+}
+
+function mergeIncludedResources(
+  existingIncluded: InAppPurchasesV2IncludedItem[] = [],
+  newIncluded: components["schemas"]["InAppPurchaseLocalization"][]
+): InAppPurchasesV2IncludedItem[] {
+  const seen = new Set(existingIncluded.map((item) => `${item.type}:${item.id}`));
+  const merged = [...existingIncluded];
+
+  newIncluded.forEach((item) => {
+    const key = `${item.type}:${item.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(item);
+    }
+  });
+
+  return merged;
+}
+
+async function attachLocalizations(
+  response: InAppPurchasesV2Response
+): Promise<InAppPurchasesV2Response> {
+  const iaps = response.data || [];
+  if (iaps.length === 0) {
+    return response;
+  }
+
+  const localizationResults = await Promise.all(
+    iaps.map(async (iap) => {
+      const localizationResponse = await fetchInAppPurchaseLocalizations(iap.id);
+      return {
+        iapId: iap.id,
+        localizations: localizationResponse.data || [],
+      };
+    })
+  );
+
+  localizationResults.forEach(({ iapId, localizations }) => {
+    const iap = iaps.find((item) => item.id === iapId);
+    if (!iap) return;
+
+    const relationshipData = buildLocalizationRelationshipData(localizations);
+    iap.relationships = {
+      ...iap.relationships,
+      inAppPurchaseLocalizations: {
+        ...iap.relationships?.inAppPurchaseLocalizations,
+        data: relationshipData as any,
+      },
+    };
+
+    response.included = mergeIncludedResources(
+      response.included as any,
+      localizations
+    ) as any;
+  });
+
+  return response;
+}
+
+export async function fetchInAppPurchases(
+  appId: string
+): Promise<InAppPurchasesV2Response> {
+  const response = await fetchInAppPurchasesApi(appId);
+  return await attachLocalizations(response);
+}
+
+// Utility function to extract IAP ID from raw API response
+function extractIAPId(
+  apiResponse: InAppPurchasesV2Response,
+  productId: string
+): string | null {
+  const iap = apiResponse.data?.find(
+    (iap) => iap.attributes?.productId === productId
+  );
+  return iap?.id || null;
+}
+
+function selectPreferredLocalization<T extends { attributes?: { state?: string } }>(
+  localizations: T[]
+): T | null {
+  if (localizations.length === 0) {
+    return null;
+  }
+
+  return (
+    localizations.find(
+      (localization) =>
+        localization.attributes?.state !== APPROVED_LOCALIZATION_STATE
+    ) || localizations[0] || null
+  );
+}
+
+function extractLocalization(
+  apiResponse: InAppPurchasesV2Response,
+  productId: string,
+  locale: string
+): InAppPurchaseLocalization | null {
+  const iap = apiResponse.data?.find(
+    (iap) => iap.attributes?.productId === productId
+  );
+
+  if (!iap || !apiResponse.included) {
+    return null;
+  }
+
+  const localizations = apiResponse.included.filter(
+    (item: any): item is InAppPurchaseLocalization =>
+      item.type === "inAppPurchaseLocalizations" &&
+      item.attributes?.locale === locale &&
+      !!iap.relationships?.inAppPurchaseLocalizations?.data?.some(
+        (rel: any) => rel.id === item.id
+      )
+  );
+
+  return selectPreferredLocalization(localizations);
+}
+
+// Utility function to extract localization ID from raw API response
+function extractLocalizationId(
+  apiResponse: InAppPurchasesV2Response,
+  productId: string,
+  locale: string
+): string | null {
+  return extractLocalization(apiResponse, productId, locale)?.id || null;
+}
+
+// Helper function to get existing IAP ID by product ID (fallback when no raw response provided)
+async function getIAPIdByProductId(
+  appId: string,
+  productId: string
+): Promise<string | null> {
+  const iapsResponse = await fetchInAppPurchases(appId);
+  return extractIAPId(iapsResponse, productId);
+}
+
+// Helper function to get existing IAP localization ID (fallback when no raw response provided)
+async function getIAPLocalizationId(
+  appId: string,
+  productId: string,
+  locale: string
+): Promise<string | null> {
+  const localization = await getIAPLocalization(appId, productId, locale);
+  return localization?.id || null;
+}
+
+async function getIAPLocalization(
+  appId: string,
+  productId: string,
+  locale: string
+): Promise<InAppPurchaseLocalization | null> {
+  const iapsResponse = await fetchInAppPurchases(appId);
+  return extractLocalization(iapsResponse, productId, locale);
+}
+
+// Create a new in-app purchase
+export async function createNewInAppPurchase(
+  appId: string,
+  inAppPurchase: NonNullable<AppStoreModel["inAppPurchases"]>[0]
+): Promise<string> {
+  logger.debug(`Creating new in-app purchase: ${inAppPurchase.productId}`);
+
+  const createRequest: InAppPurchaseV2CreateRequest = {
+    data: {
+      type: "inAppPurchases",
+      attributes: {
+        productId: inAppPurchase.productId,
+        name: inAppPurchase.referenceName,
+        inAppPurchaseType: inAppPurchase.type,
+        familySharable: inAppPurchase.familySharable,
+        ...(inAppPurchase.reviewNote && {
+          reviewNote: inAppPurchase.reviewNote,
+        }),
+      },
+      relationships: {
+        app: {
+          data: {
+            type: "apps",
+            id: appId,
+          },
+        },
+      },
+    },
+  };
+
+  const response = await createInAppPurchase(createRequest);
+
+  if (!response.data?.id) {
+    throw new Error("No IAP ID returned from creation");
+  }
+
+  logger.debug(`Successfully created in-app purchase: ${response.data.id}`);
+
+  return response.data.id;
+}
+
+// Update an existing in-app purchase
+export async function updateExistingInAppPurchase(
+  appId: string,
+  productId: string,
+  changes: {
+    referenceName?: string;
+    familySharable?: boolean;
+    reviewNote?: string;
+  },
+  currentStateResponse?: InAppPurchasesV2Response
+): Promise<void> {
+  logger.debug(`Updating in-app purchase: ${productId}`);
+
+  // Get the existing IAP ID using utility function or fallback
+  const iapId = currentStateResponse
+    ? extractIAPId(currentStateResponse, productId)
+    : await getIAPIdByProductId(appId, productId);
+
+  if (!iapId) {
+    throw new Error(`Could not find IAP with product ID: ${productId}`);
+  }
+
+  const updateRequest: InAppPurchaseV2UpdateRequest = {
+    data: {
+      type: "inAppPurchases",
+      id: iapId,
+      attributes: {
+        ...(changes.referenceName && { name: changes.referenceName }),
+        ...(changes.familySharable !== undefined && {
+          familySharable: changes.familySharable,
+        }),
+        ...(changes.reviewNote !== undefined && {
+          reviewNote: changes.reviewNote,
+        }),
+      },
+    },
+  };
+
+  const response = await updateInAppPurchase(iapId, updateRequest);
+
+  if (!response.data?.id) {
+    throw new Error("No IAP ID returned from update");
+  }
+
+  logger.debug(`Successfully updated in-app purchase: ${response.data.id}`);
+}
+
+// Create a new IAP localization
+export async function createIAPLocalization(
+  appId: string,
+  productId: string,
+  localization: { locale: string; name: string; description: string },
+  currentStateResponse?: InAppPurchasesV2Response,
+  newlyCreatedIAPs?: Map<string, string>
+): Promise<void> {
+  logger.debug(
+    `Creating IAP localization: ${productId} - ${localization.locale}`
+  );
+
+  // Get the IAP ID, checking newly created IAPs first
+  let iapId: string | null = null;
+
+  if (newlyCreatedIAPs?.has(productId)) {
+    iapId = newlyCreatedIAPs.get(productId)!;
+  } else if (currentStateResponse) {
+    iapId = extractIAPId(currentStateResponse, productId);
+  }
+
+  if (!iapId) {
+    iapId = await getIAPIdByProductId(appId, productId);
+  }
+
+  if (!iapId) {
+    throw new Error(`Could not find IAP with product ID: ${productId}`);
+  }
+
+  const createRequest: InAppPurchaseLocalizationCreateRequest = {
+    data: {
+      type: "inAppPurchaseLocalizations",
+      attributes: {
+        name: localization.name,
+        locale: localization.locale,
+        description: localization.description,
+      },
+      relationships: {
+        inAppPurchaseV2: {
+          data: {
+            type: "inAppPurchases",
+            id: iapId,
+          },
+        },
+      },
+    },
+  };
+
+  const response = await createInAppPurchaseLocalization(createRequest);
+
+  if (!response.data?.id) {
+    throw new Error("No localization ID returned from creation");
+  }
+
+  logger.debug(`Successfully created IAP localization: ${response.data.id}`);
+}
+
+// Update an existing IAP localization
+export async function updateIAPLocalization(
+  appId: string,
+  productId: string,
+  locale: string,
+  changes: { name?: string; description?: string },
+  currentStateResponse?: InAppPurchasesV2Response
+): Promise<void> {
+  logger.debug(`Updating IAP localization: ${productId} - ${locale}`);
+
+  let existingLocalization = currentStateResponse
+    ? extractLocalization(currentStateResponse, productId, locale)
+    : null;
+
+  if (!existingLocalization) {
+    existingLocalization = await getIAPLocalization(appId, productId, locale);
+  }
+
+  if (existingLocalization?.attributes?.state === APPROVED_LOCALIZATION_STATE) {
+    await createIAPLocalization(
+      appId,
+      productId,
+      {
+        locale,
+        name: changes.name ?? existingLocalization.attributes?.name ?? "",
+        description:
+          changes.description ?? existingLocalization.attributes?.description ?? "",
+      },
+      currentStateResponse
+    );
+    return;
+  }
+
+  let localizationId = existingLocalization?.id || null;
+
+  if (!localizationId) {
+    localizationId = await getIAPLocalizationId(appId, productId, locale);
+  }
+
+  if (!localizationId) {
+    throw new Error(
+      `Could not find IAP localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  const updateRequest: InAppPurchaseLocalizationUpdateRequest = {
+    data: {
+      type: "inAppPurchaseLocalizations",
+      id: localizationId,
+      attributes: {
+        ...(changes.name && { name: changes.name }),
+        ...(changes.description && { description: changes.description }),
+      },
+    },
+  };
+
+  let response;
+  try {
+    response = await updateInAppPurchaseLocalization(localizationId, updateRequest);
+  } catch (error) {
+    if (isInAppPurchaseLocalizationNotUpdatableError(error)) {
+      await createIAPLocalization(
+        appId,
+        productId,
+        {
+          locale,
+          name: changes.name ?? existingLocalization?.attributes?.name ?? "",
+          description:
+            changes.description ?? existingLocalization?.attributes?.description ?? "",
+        },
+        currentStateResponse
+      );
+      return;
+    }
+    throw error;
+  }
+
+  if (!response.data?.id) {
+    throw new Error("No localization ID returned from update");
+  }
+
+  logger.debug(`Successfully updated IAP localization: ${response.data.id}`);
+}
+
+// Delete an IAP localization
+export async function deleteIAPLocalization(
+  appId: string,
+  productId: string,
+  locale: string,
+  currentStateResponse?: InAppPurchasesV2Response
+): Promise<void> {
+  logger.debug(`Deleting IAP localization: ${productId} - ${locale}`);
+
+  // Get the existing localization ID using utility function or fallback
+  let localizationId = currentStateResponse
+    ? extractLocalizationId(currentStateResponse, productId, locale)
+    : null;
+
+  if (!localizationId) {
+    localizationId = await getIAPLocalizationId(appId, productId, locale);
+  }
+
+  if (!localizationId) {
+    throw new Error(
+      `Could not find IAP localization with product ID: ${productId} and locale: ${locale}`
+    );
+  }
+
+  await deleteInAppPurchaseLocalization(localizationId);
+
+  logger.debug(`Successfully deleted IAP localization: ${localizationId}`);
+}

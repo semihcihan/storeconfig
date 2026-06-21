@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+import "./load-env";
+import "./services/instrument";
+import Bugsnag from "@bugsnag/js";
+
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { logger, processNestedErrors } from "@semihcihan/shared";
+
+import { localCommands } from "./commands/local-commands";
+import { checkVersionUpdateSync } from "./services/version-check-service";
+
+logger.setOutputModes([{ mode: "console", showErrorStack: false }]);
+logger.setLevel("info");
+
+async function main() {
+  checkVersionUpdateSync();
+
+  const parser = localCommands
+    .reduce(
+      (currentParser, command) => currentParser.command(command),
+      yargs(hideBin(process.argv))
+    )
+    .demandCommand(1, "Please specify a command")
+    .strict()
+    .fail(async (msg, err, yargs) => {
+      if (msg) {
+        logger.error(
+          msg,
+          "Use 'storeconfig --help' to see available commands and options."
+        );
+        process.exit(1);
+      }
+    })
+    .help();
+
+  await parser.parseAsync();
+}
+
+main().catch((err) => {
+  let command = "unknown";
+
+  try {
+    const processArgs = process.argv?.slice(2) || [];
+    command = processArgs[0] || "unknown";
+  } catch (error) {
+    command = "unknown";
+  }
+
+  let processedError = processNestedErrors(err, false);
+
+  logger.error(`Command '${command}' failed`, processedError);
+  Bugsnag.notify(err, (event) => {
+    event.addMetadata("metadata", { command, context: processedError });
+  });
+  process.exitCode = 1;
+});

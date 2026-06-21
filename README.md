@@ -46,22 +46,17 @@ npx storeconfig --help
 
 ## 🔧 Setup
 
-### 1. Sign Up & Get Secret Key
-
-First, sign up at [storeconfig.com](https://storeconfig.com) to get your Secret Key.
-
-### 2. Authentication
+### 1. Authentication
 
 Set up your App Store Connect API credentials:
 
 ```bash
-# Configure StoreConfig with the StoreConfig Secret Key
-storeconfig configure
-
 # Add Apple credentials
 # The command will prompt you for Issuer ID and Key ID
 storeconfig apple --key-path /path/to/your/AuthKey_XXXXX.p8
 ```
+
+`fetch`, `set-price`, `compare-price`, and `apply` use these local Apple credentials directly. StoreConfig Secret Keys, hosted account commands, and backup App Store Connect credentials are no longer used.
 
 #### Get App Store Connect Key and IDs
 
@@ -214,8 +209,6 @@ storeconfig example --type iap
 }
 ```
 
-## 🧰 MCP Server - AI Integration
-
 ### MCP Server - AI Integration
 
 StoreConfig includes a Model Context Protocol (MCP) server that provides AI assistants with direct access to the JSON schema, business rules, and CLI guidelines. This enables AI tools to better understand and help you work with StoreConfig files.
@@ -306,8 +299,9 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 
 ### Security
 
-- StoreConfig Secret Keys are stored in your local machine
-- Apple credentials and key are securely sent and stored on our servers for app management purposes. You can revoke access at any time through Apple or contact us to delete your user data and credentials.
+- Apple credentials are stored locally at `~/.storeconfig/apple-credentials.json` for local App Store Connect access. You can revoke the key at any time through App Store Connect.
+- StoreConfig does not use hosted accounts, StoreConfig Secret Keys, backup App Store Connect credentials, or remote job polling in the local-only CLI.
+- Price point data is refreshed from shared static snapshots and cached locally under `~/.storeconfig/cache/price-points`. Currency data is cached locally under `~/.storeconfig/cache/currencies.json`.
 
 ## Support
 
@@ -316,4 +310,6 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 - 📄 [JSON Schema](https://storeconfig.com/storeconfig-schema.json)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
-This CLI is proprietary software. Usage requires a valid subscription and Secret Key from [StoreConfig](https://storeconfig.com).
+For source development and workspace details, see [repository notes](docs/repository.md).
+
+This CLI is open source under the MIT license.

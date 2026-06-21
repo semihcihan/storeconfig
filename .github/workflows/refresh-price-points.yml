@@ -1,0 +1,60 @@
+name: Refresh price points
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh-price-points:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build local packages
+        run: npm run build --workspace=app-store-connect-api-types --workspace=shared --workspace=api
+
+      - name: Generate price point snapshots
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          FALLBACK_APP_APPLE_ID: ${{ secrets.FALLBACK_APP_APPLE_ID }}
+          FALLBACK_IAP_APPLE_ID: ${{ secrets.FALLBACK_IAP_APPLE_ID }}
+          FALLBACK_SUBSCRIPTION_APPLE_ID: ${{ secrets.FALLBACK_SUBSCRIPTION_APPLE_ID }}
+        run: node api/dist/scripts/refresh-price-points-pages.js
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

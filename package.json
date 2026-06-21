@@ -1,104 +1,41 @@
 {
-  "name": "storeconfig",
-  "version": "0.0.25",
-  "description": "CLI tool for App Store Connect synchronization",
-  "main": "dist/cli.js",
-  "bin": {
-    "storeconfig": "dist/cli.js",
-    "storeconfig-mcp": "dist/mcp.js"
-  },
-  "scripts": {
-    "prebuild": "npm run update-readme && npm run generate-mcp-content",
-    "predev": "npm run update-readme && npm run generate-mcp-content",
-    "generate-mcp-content": "node scripts/generate-mcp-content.js",
-    "build": "node esbuild.config.js",
-    "build:watch": "node esbuild.config.js --watch",
-    "dev": "node dist/cli.js",
-    "clean": "rm -rf dist",
-    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
-    "start": "node dist/cli.js",
-    "test": "jest --config jest.unit.config.js",
-    "test:unit": "jest --config jest.unit.config.js",
-    "test:e2e:dev": "E2E_ENV_FILE=.env.e2e.dev ENV_FILE=.env AWS_PROFILE=store-config jest --config jest.e2e.config.js",
-    "test:e2e:test": "E2E_ENV_FILE=.env.e2e.test ENV_FILE=.env.test AWS_PROFILE=store-config jest --config jest.e2e.config.js",
-    "test:coverage": "jest --config jest.unit.config.js --coverage",
-    "prepublishOnly": "npm run build",
-    "fetch": "node dist/cli.js fetch",
-    "fetch:all": "node dist/cli.js fetch",
-    "apply": "node dist/cli.js apply",
-    "plan": "node dist/cli.js plan",
-    "apple": "node dist/cli.js apple",
-    "validate": "node dist/cli.js validate",
-    "set-price": "node dist/cli.js set-price",
-    "compare-price": "node dist/cli.js compare-price",
-    "example": "node dist/cli.js example",
-    "user": "node dist/cli.js user",
-    "mcp": "node dist/mcp.js",
-    "mcp:test": "npx @modelcontextprotocol/inspector node dist/mcp.js",
-    "update-readme": "node scripts/generate-readme-example.js",
-    "upload-sourcemap": "npx bugsnag-source-maps upload-node --api-key 9214ba2acdaeee4012c236461232c4f3 --overwrite --detect-app-version --bundle dist/cli.js --source-map dist/cli.js.map"
-  },
-  "keywords": [
+  "name": "developer-tool-workspace",
+  "version": "1.0.0",
+  "description": "App Store Connect API synchronization tool workspace",
+  "private": true,
+  "//": "WORKSPACES!!! NOTE THAT ORDER MATTERS, BASE PACKAGES NEED TO BE FIRST",
+  "workspaces": [
+    "app-store-connect-api-types",
+    "shared",
+    "api",
     "cli",
-    "app-store",
-    "ios",
-    "synchronization",
-    "app store connect",
-    "automation",
-    "mcp"
+    "web"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/semihcihan/storeconfig.git"
-  },
-  "contributors": [
-    {
-      "name": "Semih Cihan",
-      "url": "https://github.com/semihcihan"
-    },
-    {
-      "name": "Selçuk Cihan",
-      "url": "https://github.com/selcukcihan"
-    }
-  ],
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
-  "homepage": "https://storeconfig.com",
-  "files": [
-    "dist/",
-    "README.md",
-    "THIRD_PARTY_LICENSES.md"
-  ],
-  "dependencies": {
-    "@bugsnag/js": "^8.6.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "axios": "^1.10.0",
-    "axios-retry": "^4.5.0",
-    "dotenv": "^16.6.1",
-    "inquirer": "^8.2.5",
-    "ora": "^8.2.0",
-    "winston": "^3.17.0",
-    "yargs": "^17.7.2",
-    "zod": "4.1.9",
-    "zod-validation-error": "^4.0.2"
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:noweb": "npm run build --workspace=app-store-connect-api-types --workspace=shared --workspace=api --workspace=cli",
+    "dev": "npm run build && concurrently \"npm run build:watch --workspace=shared\" \"EXPRESS_PORT=3000 nodemon --exec 'npm run dev --workspace=api' --watch api/src --ext ts,js --ignore 'api/dist/**'\" \"npm run build:watch --workspace=cli\" \"PORT=3001 npm run dev --workspace=web\"",
+    "dev:noweb": "npm run build:noweb && concurrently \"npm run build:watch --workspace=shared\" \"EXPRESS_PORT=3000 nodemon --exec 'npm run dev --workspace=api' --watch api/src --ext ts,js --ignore 'api/dist/**'\" \"npm run build:watch --workspace=cli\"",
+    "clean": "npm run nuke --workspaces --if-present",
+    "nuke": "npm run nuke --workspaces --if-present && rm -rf node_modules",
+    "test": "npm run test --workspaces --if-present",
+    "install:all": "npm install",
+    "start:api": "npm run start --workspace=api",
+    "start:cli": "npm run start --workspace=cli",
+    "start:web": "npm run dev --workspace=web",
+    "deploy:web": "npm run deploy --workspace=web",
+    "publish:cli": "npm run build && npm run upload-sourcemap --workspace=cli && npm publish --workspace=cli",
+    "link:cli": "npm run build --workspace=cli && cd cli && npm link",
+    "unlink:cli": "cd cli && npm unlink storeconfig",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\""
   },
   "devDependencies": {
-    "@bugsnag/cli": "^3.4.1",
-    "@bugsnag/source-maps": "^2.3.3",
-    "@types/inquirer": "^9.0.9",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.10",
-    "@types/yargs": "^17.0.33",
-    "axios-mock-adapter": "^2.1.0",
-    "esbuild": "^0.25.11",
-    "jest": "^30.0.4",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3",
-    "yaml": "^2.8.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=8.0.0"
   }
 }

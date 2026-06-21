@@ -1,0 +1,313 @@
+# StoreConfig CLI
+
+A powerful command-line tool for automating **App Store Connect** app management with JSON-based workflows. Manage **in-app purchases**, **subscriptions**, **pricing**, **localizations**, **metadata**, **availability**, and more. Sync your app configurations from local JSON files to App Store Connect - the smart way. **No more manual work**.
+
+[![npm version](https://badge.fury.io/js/storeconfig.svg)](https://badge.fury.io/js/storeconfig)
+
+## 🚀 Quick Start
+
+```bash
+# Install globally
+npm install -g storeconfig
+
+# Or use with npx
+npx storeconfig --help
+```
+
+## 📖 Documentation
+
+For detailed documentation, visit [storeconfig.com/docs](https://storeconfig.com/docs)
+
+## ✨ Features
+
+- **😌 Easy to Use** - Prepare App Store Connect for your app in minutes instead of hours. What normally takes 2+ hours of manual work is now done in minutes.
+- **⚡️ Quick App Duplication** - Copy App Store Connect data from an existing app to a new app in minutes.
+- **📄 Configuration as Code** - Define your app structure in version-controlled JSON files.
+- **🤖 Vibe Code Your App Store Connect Setup** - Use our MCP server and AI to vibe code your JSON configuration for app descriptions, content updates, in-app purchases, subscriptions, and more.
+- **🌍 Multi-Language Support** - Easily manage localized content across all supported territories.
+- **📊 Bulk Operations** - Make changes across multiple products, subscriptions, or territories at once.
+- **🔄 Bidirectional Sync** - Fetch current state of your app and apply changes to App Store Connect.
+- **💰 Interactive Pricing** - Set prices across territories based on Purchasing Power Parity (PPP) for fair pricing to increase revenue. Also supports Apple's standard pricing tiers.
+
+## 🛠 Installation
+
+### Global Installation
+
+```bash
+npm install -g storeconfig
+```
+
+### Local Installation
+
+```bash
+npm install storeconfig
+npx storeconfig --help
+```
+
+## 🔧 Setup
+
+### 1. Authentication
+
+Set up your App Store Connect API credentials:
+
+```bash
+# Add Apple credentials
+# The command will prompt you for Issuer ID and Key ID
+storeconfig apple --key-path /path/to/your/AuthKey_XXXXX.p8
+```
+
+`fetch`, `set-price`, `compare-price`, and `apply` use these local Apple credentials directly. StoreConfig Secret Keys, hosted account commands, and backup App Store Connect credentials are no longer used.
+
+#### Get App Store Connect Key and IDs
+
+This is required for store config to manage your apps on App Store Connect.
+
+1. **Open App Store Connect API Settings**
+   - Go to [https://appstoreconnect.apple.com/access/integrations/api](https://appstoreconnect.apple.com/access/integrations/api)
+   - Make sure the correct team is selected on top right corner of the page
+
+2. **Create a New Team Key**
+   - Click the "Plus" button to create a new `Team Key` (Not Individual Key)
+   - Choose a descriptive name (e.g., "StoreConfig") to easily identify it later
+
+3. **Set Required Permissions**
+   - Select **App Manager Access** - this is required to manage prices and other app configurations
+
+4. **Download and Copy Credentials**
+   - Download the `.p8` file. Use its path as the `--key-path` argument.
+   - **Key ID** - you'll be prompted to enter this.
+   - **Issuer ID** - you'll be prompted to enter this.
+
+## 📋 Commands
+
+#### `fetch`
+
+Fetch current app configuration from App Store Connect. Easiest way to get started. Fetch the app you want to manage or fetch another app to use as a template for your new app.
+
+```bash
+# Show all your apps to select from (saves to storeconfig.json by default)
+storeconfig fetch
+
+# Fetch specific app by ID
+storeconfig fetch --id 1234567890
+```
+
+#### `apply`
+
+Apply changes from JSON file to App Store Connect after making changes on it. It will preview the changes and ask for approval before applying them.
+
+```bash
+# Apply changes (uses storeconfig.json by default)
+storeconfig apply
+```
+
+#### `set-price`
+
+Set prices for your app, in-app purchases, and subscriptions interactively. This updates pricing only in your configuration file; changes won't be applied to App Store Connect until you run the `apply` command.
+
+```bash
+# Set prices (uses storeconfig.json by default)
+storeconfig set-price
+```
+
+#### `compare-price`
+
+Compare prices across territories in USD. Useful to see how your pricing compares to other territories.
+
+```bash
+# Compare prices (uses storeconfig.json and outputs to compare-price.csv by default)
+storeconfig compare-price
+```
+
+#### `validate`
+
+Validate the JSON file format and structure. Useful for AI tools to check if your configuration file is valid before applying changes.
+
+```bash
+# Validate configuration (uses storeconfig.json by default)
+storeconfig validate
+```
+
+#### `example`
+
+Generate example JSON files for different data types. Useful to get started or to see how to structure your JSON file.
+
+```bash
+# Interactive selection of example type
+storeconfig example
+
+# Generate minimal app example
+storeconfig example --type minimal
+
+# Generate full app example
+storeconfig example --type full
+
+# Generate subscription example
+storeconfig example --type subscription
+
+# Generate in-app purchase example
+storeconfig example --type iap
+```
+
+## 📁 Example JSON Structure
+
+```json
+{
+  "schemaVersion": "1.0.0",
+  "appId": "1234567890",
+  "versionString": "2.1.17",
+  "pricing": {
+    "baseTerritory": "USA",
+    "prices": [
+      {
+        "price": "0",
+        "territory": "USA"
+      }
+    ]
+  },
+  "availableTerritories": "worldwide",
+  "inAppPurchases": [
+    {
+      "productId": "com.mycompany.myapp.premium",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Premium",
+      "familySharable": false,
+      "pricing": {
+        "baseTerritory": "USA",
+        "prices": [
+          {
+            "price": "49.99",
+            "territory": "USA"
+          }
+        ]
+      },
+      "availability": {
+        "availableInNewTerritories": true,
+        "availableTerritories": "worldwide"
+      },
+      "localizations": [
+        {
+          "locale": "en-US",
+          "name": "Premium Upgrade",
+          "description": "Unlock all premium features"
+        }
+      ]
+    }
+  ],
+  "primaryLocale": "en-US",
+  "localizations": [
+    {
+      "locale": "en-US",
+      "name": "My Awesome App",
+      "subtitle": "The best app ever",
+      "description": "The best app ever in the whole world",
+      "keywords": "best,app,ever",
+      "promotionalText": "The best app ever in the whole world",
+      "whatsNew": "Bug fixes and improvements"
+    }
+  ]
+}
+```
+
+### MCP Server - AI Integration
+
+StoreConfig includes a Model Context Protocol (MCP) server that provides AI assistants with direct access to the JSON schema, business rules, and CLI guidelines. This enables AI tools to better understand and help you work with StoreConfig files.
+
+This is optional but recommended for the best experience.
+
+#### Installation
+
+The MCP server is included when you install StoreConfig globally.
+
+#### Configuration
+
+Add the following configuration to your MCP client:
+
+```json
+{
+  "storeconfig": {
+    "command": "storeconfig-mcp"
+  }
+}
+```
+
+For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.com/docs#ai-support).
+
+### VSCode Setup
+
+Enable validation, autocomplete, and IntelliSense support. This is optional but recommended for the best experience.
+
+#### Setup Steps
+
+1. Open VSCode Settings (Cmd/Ctrl + ,)
+2. Search for "json schema"
+3. Ensure Schema Download is enabled
+4. Click "Edit in settings.json"
+5. Add the following configuration:
+
+```json
+// root settings.json
+{
+  // Other settings (if any)...
+  "json.schemas": [
+    // Other schemas (if any)...
+    {
+      "fileMatch": ["*storeconfig*.json"],
+      "url": "https://storeconfig.com/storeconfig-schema.json"
+    }
+  ]
+}
+```
+
+> **Note:** You can add this configuration to either:
+>
+> - **User Settings** (applies to all your projects)
+> - **Workspace Settings** (applies only to the current project)
+
+#### JSON Schema URL
+
+The schema URL used in the configuration above:
+
+**JSON Schema URL:** `https://storeconfig.com/storeconfig-schema.json`
+
+> **Note:** If you don't want to use the MCP server, you can still use AI tools with StoreConfig by providing the schema URL directly. When using AI tools to modify your StoreConfig JSON files, provide the schema URL for more accurate and consistent results.
+
+### Benefits
+
+- ✅ **Real-time validation** - Catch errors as you type
+- ✅ **Autocomplete** - Get suggestions for properties and values
+- ✅ **Documentation** - Hover over properties to see descriptions
+- ✅ **Type safety** - Ensure your JSON structure is correct
+
+### Tool Limitations
+
+Due to current App Store Connect API restrictions, some features are not yet available in the CLI. As soon as these capabilities are supported by the API, we will update the CLI accordingly.
+
+- **Creating a New App**: New apps can only be created via the App Store Connect website.
+- **App Privacy**: App Privacy data can only be created or updated through the App Store Connect website. This process is repetitive, and we plan to add support once the API allows it.
+- **State Management**: Submitting apps, in-app purchases, and subscriptions is not supported. These actions are usually performed as a final step and are not repetitive or particularly difficult to do manually.
+- **Age Rating**: Setting age ratings for apps is not currently supported.
+- **Start and End Dates**: Setting start and end dates for in-app purchases and subscriptions is not supported.
+- **Promo Offers**: Promo offers for subscriptions are not supported.
+- **Billing Grace Period**: Billing grace period for subscriptions is not supported.
+
+### Planned Features
+
+- **App Category**: Support for setting app categories will be added soon.
+- **Content Rights**: Support for managing content rights will be added soon.
+- **iOS Platform**: Currently, only the iOS platform is supported. We plan to add support for additional platforms in the future.
+
+### Security
+
+- Apple credentials are stored locally at `~/.storeconfig/apple-credentials.json` for local App Store Connect access. You can revoke the key at any time through App Store Connect.
+- StoreConfig does not use hosted accounts, StoreConfig Secret Keys, backup App Store Connect credentials, or remote job polling in the local-only CLI.
+- Price point data is refreshed from shared static snapshots and cached locally under `~/.storeconfig/cache/price-points`. Currency data is cached locally under `~/.storeconfig/cache/currencies.json`.
+
+## Support
+
+- 📚 [Documentation](https://storeconfig.com/docs)
+- 📄 [Schemas Documentation](https://storeconfig.com/schemas)
+- 📄 [JSON Schema](https://storeconfig.com/storeconfig-schema.json)
+- 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
+
+This CLI is open source under the MIT license.

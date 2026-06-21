@@ -1,0 +1,45 @@
+{
+  "name": "@semihcihan/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for App Store Connect API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc && npm run docs",
+    "build:watch": "tsc --watch",
+    "dev": "tsc --watch",
+    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "docs": "tsx scripts/generate-docs.ts && cp -r docs dist/",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "app-store",
+    "types",
+    "validation",
+    "shared"
+  ],
+  "author": "Semih Cihan",
+  "license": "ISC",
+  "dependencies": {
+    "@semihcihan/app-store-connect-api-types": "file:../app-store-connect-api-types",
+    "winston": "^3.17.0",
+    "zod": "4.1.9",
+    "zod-validation-error": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.10",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.3",
+    "zod2md": "^0.2.4"
+  }
+}

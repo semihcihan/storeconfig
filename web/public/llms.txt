@@ -1,0 +1,72 @@
+# StoreConfig
+
+> Free and open-source App Store Connect automation that runs locally. Transform hours of manual work into minutes of automation with JSON-based configuration. Manage in-app purchases, subscriptions, pricing, localizations, and metadata efficiently from your machine.
+
+## Getting Started
+
+- [Homepage](https://storeconfig.com/): Overview of StoreConfig features and capabilities
+- [Quick Start Guide](https://storeconfig.com/docs#quick-start): Step-by-step installation and setup instructions
+- [Documentation](https://storeconfig.com/docs): Comprehensive guide covering all features and commands
+
+## Core Features
+
+- **Configuration as Code**: Define App Store Connect data in JSON files
+- **Easy to Use**: Prepare App Store Connect in minutes instead of hours
+- **Quick App Duplication**: Copy configurations between apps
+- **Vibe Code Your App Store Connect Setup**: Use our MCP server and AI to vibe code your JSON configuration for app descriptions, content updates, in-app purchases, subscriptions, and more
+- **Multi-Language Support**: Manage localized content across territories
+- **Bulk Operations**: Make changes across multiple products and territories
+- **Bidirectional Sync**: Fetch current state and apply changes
+- **Interactive Pricing**: Set prices based on Purchasing Power Parity (PPP)
+- **Local-Only**: Use your own App Store Connect credentials from your machine
+- **Free and Open Source**: Inspect, adapt, and use the CLI without subscriptions or trials
+
+## Documentation
+
+- [Quick Start Guide](https://storeconfig.com/docs#quick-start): Step-by-step installation and setup instructions
+- [Commands Reference](https://storeconfig.com/docs#commands): Complete list of CLI commands and options
+- [MCP Server - AI Integration](https://storeconfig.com/docs#ai-support): MCP server and VSCode integration with JSON schema
+- [Schema Documentation](https://storeconfig.com/schemas): Detailed schema documentation for all data structures
+- [JSON Schema](https://storeconfig.com/storeconfig-schema.json): JSON Schema
+- [Example Configurations](https://storeconfig.com/docs#examples): Sample JSON files for different use cases
+
+## Latest Guides
+
+- [App Store Pricing Mistake Costing You 35% Revenue (Fix It in 5 Minutes)](https://storeconfig.com/blog/optimize-app-store-pricing-with-ppp): Learn how to maximize revenue and user acquisition globally using StoreConfig's set-price command with Purchasing Power Parity (PPP) strategy. See up to 35% revenue increase with fair, automated pricing.
+- [How to vibe code your App Store Connect setup](https://storeconfig.com/blog/how-to-vibe-code-your-app-store-connect-setup): Use AI to localize your app, create subscriptions and in-app purchases, and configure App Store Connect—all by editing a single JSON file. Fetch your current state, edit with AI, validate, and apply safely.
+
+## Frequently Asked Questions
+
+- [General Questions](https://storeconfig.com/faq#general): What is StoreConfig and how does it work?
+- [Free & Open Source](https://storeconfig.com/faq#free): Cost, source code, and license details
+- [Features & Usage](https://storeconfig.com/faq#features): What can you manage and limitations
+- [Technical](https://storeconfig.com/faq#technical): Setup, credentials, security
+- [Support](https://storeconfig.com/faq#support): Help, troubleshooting
+
+## Support and Community
+
+- [GitHub Repository](https://github.com/semihcihan/storeconfig): Source code and issue tracking
+- [GitHub Issues](https://github.com/semihcihan/storeconfig/issues): Bug reports and feature requests
+- **Email Support**: contact@storeconfig.com
+- **Documentation**: Comprehensive guides and API references
+
+## Legal and Policies
+
+- [Privacy Policy](https://storeconfig.com/privacy): How we handle your data
+- [Terms of Service](https://storeconfig.com/terms): Rules and guidelines for using StoreConfig
+- **Data Security**: All data encrypted in transit and at rest
+- **Apple Credentials**: Stored locally and can be revoked in App Store Connect anytime
+
+## Use Cases and Examples
+
+- **App Store Management**: Oversee and control your app on App Store Connect
+- **Localization**: Manage multi-language content efficiently
+- **In-App Purchases**: Configure IAPs and subscriptions programmatically
+- **App Duplication**: Copy configurations from existing apps to new ones
+- **Version Control**: Track and manage App Store Connect changes with Git
+- **CI/CD Integration**: Automate App Store Connect updates in deployment pipelines
+- **AI Tools**: Use ChatGPT, Claude, or other AI tools to modify JSON configurations
+
+---
+
+*This file is designed to help Large Language Models understand and provide accurate information about StoreConfig. For the most up-to-date information, please visit our website at https://storeconfig.com*

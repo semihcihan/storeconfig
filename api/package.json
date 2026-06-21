@@ -1,0 +1,78 @@
+{
+  "name": "@semihcihan/developer-tool",
+  "version": "1.0.0",
+  "description": "A Node.js API tool to synchronize in-app purchases and subscriptions with the App Store from a local JSON file.",
+  "main": "dist/server.js",
+  "exports": {
+    ".": "./dist/server.js",
+    "./functions": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./services/*": "./dist/services/*",
+    "./models/*": "./dist/models/*",
+    "./helpers/*": "./dist/helpers/*"
+  },
+  "bin": {
+    "app-store-sync": "dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "node -r ts-node/register -r tsconfig-paths/register src/server.ts",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules dist tsconfig.tsbuildinfo",
+    "start": "node dist/server.js",
+    "test": "jest --config jest.unit.config.js",
+    "test:unit": "jest --config jest.unit.config.js",
+    "test:e2e": "jest --config jest.e2e.config.js --runInBand",
+    "test:coverage": "jest --config jest.unit.config.js --coverage",
+    "local-jwt": "node scripts/generate-jwt.js",
+    "refresh-price-points:pages": "node dist/scripts/refresh-price-points-pages.js",
+    "price-points:setup-pages": "node scripts/price-points-github.js setup-pages",
+    "price-points:secrets": "node scripts/price-points-github.js secrets",
+    "price-points:refresh": "node scripts/price-points-github.js refresh",
+    "price-points:watch": "node scripts/price-points-github.js watch",
+    "price-points:verify": "node scripts/price-points-github.js verify",
+    "price-points:url": "node scripts/price-points-github.js url",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [],
+  "author": "Semih Cihan",
+  "license": "ISC",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "dependencies": {
+    "@semihcihan/app-store-connect-api-types": "file:../app-store-connect-api-types",
+    "@semihcihan/shared": "file:../shared",
+    "@types/lodash": "^4.17.20",
+    "axios": "^1.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "openapi-fetch": "^0.14.0",
+    "winston": "^3.17.0",
+    "yargs": "^17.7.2",
+    "zod": "4.1.9"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.0.10",
+    "@types/yargs": "^17.0.33",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  }
+}

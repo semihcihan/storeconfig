@@ -1,0 +1,128 @@
+---
+description: General project description, architecture, and development workflow.
+alwaysApply: false
+---
+
+# Project: StoreConfig
+
+StoreConfig is a local-only, open-source workspace for managing App Store Connect app configuration from JSON files. The CLI stores one local App Store Connect credential set, calls App Store Connect directly from the user's machine, and uses local cache files for data that used to be refreshed by hosted cron jobs.
+
+## Objective
+
+The project lets developers fetch their App Store Connect state, edit it as version-controlled JSON, validate it, compare/set prices, and apply changes without a hosted StoreConfig backend.
+
+## Workspace Structure
+
+This monorepo contains 5 packages:
+
+### 1. `@semihcihan/developer-tool` (`/api`)
+
+- Local App Store Connect engine used by the CLI.
+- Contains the domain services, App Store Connect API clients, diff generation, apply logic, pricing, and fetch logic.
+
+### 2. `storeconfig` (`/cli`)
+
+- User-facing command-line tool and MCP server.
+- Stores local Apple credentials and runs fetch, validate, compare-price, set-price, and apply locally.
+
+### 3. `@semihcihan/shared` (`/shared`)
+
+- Shared schemas, types, logging, errors, helpers, and generated schema docs.
+
+### 4. `@semihcihan/app-store-connect-api-types` (`/app-store-connect-api-types`)
+
+- Generated TypeScript types from Apple's App Store Connect OpenAPI spec.
+
+### 5. `web` (`/web`)
+
+- Documentation and marketing site for the local-only open-source CLI.
+
+## Removed Hosted Surface
+
+The local-only version does not include serverless deployment, admin web, Paddle/payment flows, Mailgun/API-key request flows, hosted user/account concepts, backup App Store Connect credentials, StoreConfig Secret Keys, or remote job/status polling.
+
+## Local Credentials And Cache
+
+- `storeconfig apple --key-path /path/to/AuthKey_XXXXX.p8` stores Apple credentials in `~/.storeconfig/apple-credentials.json`.
+- Every App Store Connect request uses that same local credential set.
+- Price point data is cached under `~/.storeconfig/cache/price-points`.
+- Currency data is loaded from bundled data and cached under `~/.storeconfig/cache/currencies.json`.
+
+## Core Features
+
+- JSON configuration for App Store Connect metadata, availability, pricing, in-app purchases, and subscriptions.
+- Bidirectional sync: fetch current state, edit JSON, then apply changes.
+- Interactive pricing with Apple pricing tiers and PPP support.
+- Runtime validation using Zod schemas and TypeScript types.
+- Bulk operations across products, subscriptions, localizations, and territories.
+- MCP server support for AI tools that edit StoreConfig JSON.
+
+## CLI Commands
+
+- `storeconfig apple --key-path <path>`: Configure local App Store Connect credentials.
+- `storeconfig fetch --file <file>`: Fetch current app configuration.
+- `storeconfig apply --file <file>`: Preview and apply local JSON changes.
+- `storeconfig set-price --file <file>`: Interactive pricing tool.
+- `storeconfig compare-price --file <file> --output <csv>`: Compare prices across territories.
+- `storeconfig validate --file <file>`: Validate a StoreConfig JSON file.
+- `storeconfig example --type <type>`: Generate example JSON files.
+
+## Development Workflow
+
+```bash
+npm install
+npm run build
+npm run test
+npm run build:noweb
+npm run start:web
+```
+
+Use `npm run link:cli` to link the local CLI globally during development.
+
+## Package Architecture
+
+### API Package (`/api`)
+
+- Domain-driven structure with separate folders for App Store Connect domains.
+- API clients live in `domains/*/api-client.ts`.
+- Services orchestrate operations and are called directly by the CLI engine.
+- Express routes may remain for internal development/testing, but the shipped CLI workflow does not depend on a local or hosted HTTP server.
+
+### CLI Package (`/cli`)
+
+- Yargs-based CLI command structure.
+- `src/services/storeconfig-engine.ts` is the direct local bridge into the API engine.
+- Apple credential loading is centralized through local auth services.
+- Commands should not depend on hosted StoreConfig API clients or remote jobs.
+
+### Shared Package (`/shared`)
+
+- Zod schemas and StoreConfig data model.
+- Common helper functions, logging, and error formatting.
+- Schema docs and JSON Schema generation.
+
+### API Types Package (`/app-store-connect-api-types`)
+
+- Generated TypeScript types from Apple's OpenAPI specification.
+- Rebuild when the Apple OpenAPI source is updated.
+
+## Important App Store Connect Behavior
+
+### Pricing
+
+In-app purchases use a `pricing` object with `baseTerritory` and `prices`. Subscriptions use the same StoreConfig JSON shape, while the API layer maps it to Apple's subscription pricing endpoints.
+
+When updating subscription prices, use `preserveCurrentPrice: true` to protect existing subscribers while allowing new subscribers to get updated prices.
+
+### API Limitations
+
+- New apps must still be created in App Store Connect.
+- Some app privacy, state management, age rating, and promotional offer operations are not available through the public App Store Connect API.
+- App availability has limited update support after creation.
+
+## References
+
+- [Creating API Keys for App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api)
+- [Generating Tokens for API Requests](https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests)
+- [Managing In-App Purchases](https://developer.apple.com/documentation/appstoreconnectapi/managing-in-app-purchases)
+- [Managing Auto-Renewable Subscriptions](https://developer.apple.com/documentation/appstoreconnectapi/managing-auto-renewable-subscriptions)
