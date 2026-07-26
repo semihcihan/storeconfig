@@ -1,5 +1,10 @@
+const baseUrl = (
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  "https://storeconfig.semihcihan.dev"
+).replace(/\/$/, "");
+
 export const config = {
-  baseUrl: process.env.NEXT_PUBLIC_BASE_URL || "https://storeconfig.com",
+  baseUrl,
   github: {
     repository:
       process.env.NEXT_PUBLIC_GITHUB_REPOSITORY_URL ||
@@ -12,3 +17,7 @@ export const config = {
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@example.com",
   },
 } as const;
+
+export function siteUrl(path = "") {
+  return `${config.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+}

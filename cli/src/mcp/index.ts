@@ -18,7 +18,7 @@ const server = new McpServer(
     version,
     description:
       "StoreConfig is a CLI tool that manages and automates App Store Connect app listings (IAPs, subscriptions, pricing, localizations, metadata, availability, etc.). This MCP instructs how to use StoreConfig CLI and how to edit StoreConfig JSON configuration files. Use this when working with storeconfig.json (or any other StoreConfig JSON config) files, validating configurations, or helping users with StoreConfig CLI.",
-    websiteUrl: "https://storeconfig.com",
+    websiteUrl: "https://storeconfig.semihcihan.dev",
   },
   {
     instructions: instructions,

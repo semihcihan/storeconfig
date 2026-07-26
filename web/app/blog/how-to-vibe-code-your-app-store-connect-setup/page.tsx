@@ -72,7 +72,7 @@ Setup 2 subscriptions:
 - Yearly subscription for $49.99 USD
 - Give 1 week free trial introductory offer for the yearly subscription.`;
 
-  const manualPromptText = `Use the JSON schema https: https://storeconfig.com/storeconfig-schema.json for the storeconfig.json file to set it up. Fill all the fields.
+  const manualPromptText = `Use the JSON schema ${config.baseUrl}/storeconfig-schema.json for the storeconfig.json file to set it up. Fill all the fields.
 
 Make the IDs unique by prepending dev.semihcihan.caltracker (our bundle id), except for the app ID.
 Make the app available worldwide.

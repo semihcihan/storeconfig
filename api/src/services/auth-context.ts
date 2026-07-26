@@ -63,7 +63,7 @@ export class AuthContextManager {
 
     if (!privateKey || !keyId || !issuerId) {
       throw new ContextualError(
-        "Missing App Store Connect API credentials. Please run 'storeconfig apple --key-path /path/to/key.p8' to add your credentials. Check https://storeconfig.com/docs for more information."
+        "Missing App Store Connect API credentials. Please run 'storeconfig apple --key-path /path/to/key.p8' to add your credentials. Check https://storeconfig.semihcihan.dev/docs for more information."
       );
     }
 

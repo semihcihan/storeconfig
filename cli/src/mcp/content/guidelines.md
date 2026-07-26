@@ -88,4 +88,4 @@ After making any change to the JSON:
 
 ### Docs
 
-- Documentation: https://storeconfig.com/docs
+- Documentation: https://storeconfig.semihcihan.dev/docs

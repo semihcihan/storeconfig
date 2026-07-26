@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { config, siteUrl } from "@/lib/config";
 
 interface StructuredDataProps {
   data: Record<string, unknown>;
@@ -39,7 +40,7 @@ export const homepageProductSchema = {
   name: "StoreConfig CLI",
   description:
     "Free and open-source App Store Connect automation that runs locally. Manage metadata, localizations, in-app purchases, subscriptions, pricing, and availability with JSON-based configuration.",
-  url: "https://storeconfig.com",
+  url: config.baseUrl,
   applicationCategory: "Developer Application",
   featureList: [
     "Easy to Use - Prepare App Store Connect in minutes instead of hours",
@@ -53,16 +54,16 @@ export const homepageProductSchema = {
     "Local-Only - Use your own App Store Connect credentials from your machine",
     "Free and Open Source - No subscription required",
   ],
-  screenshot: "https://storeconfig.com/demo.mp4",
+  screenshot: siteUrl("/demo.mp4"),
   author: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
   },
   publisher: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
   },
   datePublished: "2025-10-07",
   dateModified: new Date().toISOString().split("T")[0],
@@ -124,13 +125,13 @@ export const aboutPageSchema = {
   name: "About StoreConfig",
   description:
     "We're on a mission to make App Store Connect management effortless for developers worldwide.",
-  url: "https://storeconfig.com/about",
+  url: siteUrl("/about"),
   mainEntity: {
     "@type": "Organization",
     name: "StoreConfig",
     description:
       "Free and open-source App Store Connect automation that runs locally with your own Apple credentials.",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
     foundingDate: "2025",
     founder: [
       {
@@ -158,24 +159,24 @@ export const docsArticleSchema = {
   headline: "StoreConfig Documentation",
   description:
     "Everything you need to know to get started with StoreConfig and manage your App Store Connect configurations.",
-  url: "https://storeconfig.com/docs",
+  url: siteUrl("/docs"),
   author: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
   },
   publisher: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
     logo: {
       "@type": "ImageObject",
-      url: "https://storeconfig.com/icon.png",
+      url: siteUrl("/icon.png"),
     },
   },
   datePublished: "2025-10-07",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: "https://storeconfig.com/docs",
+  mainEntityOfPage: siteUrl("/docs"),
   about: {
     "@type": "SoftwareApplication",
     name: "StoreConfig CLI",
@@ -221,25 +222,25 @@ export const docsHowToSchema = {
       "@type": "HowToStep",
       name: "Install StoreConfig",
       text: "Install the CLI tool globally on your system using npm install -g storeconfig",
-      url: "https://storeconfig.com/docs#install",
+      url: siteUrl("/docs#install"),
     },
     {
       "@type": "HowToStep",
       name: "Add Apple Credentials",
       text: "Set up your App Store Connect API credentials using storeconfig apple command with your issuer ID, key ID, and key path",
-      url: "https://storeconfig.com/docs#apple-credentials",
+      url: siteUrl("/docs#apple-credentials"),
     },
     {
       "@type": "HowToStep",
       name: "Fetch Your App",
       text: "Download your app configuration to get started using storeconfig fetch",
-      url: "https://storeconfig.com/docs#fetch",
+      url: siteUrl("/docs#fetch"),
     },
     {
       "@type": "HowToStep",
       name: "Apply Changes",
       text: "Upload your changes back to App Store Connect using storeconfig apply",
-      url: "https://storeconfig.com/docs#apply",
+      url: siteUrl("/docs#apply"),
     },
   ],
 };
@@ -251,24 +252,24 @@ export const schemasPageSchema = {
   headline: "StoreConfig JSON Schema Documentation",
   description:
     "Comprehensive JSON schema documentation for StoreConfig data structures, validation rules, and configuration options.",
-  url: "https://storeconfig.com/schemas",
+  url: siteUrl("/schemas"),
   author: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
   },
   publisher: {
     "@type": "Organization",
     name: "StoreConfig",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
     logo: {
       "@type": "ImageObject",
-      url: "https://storeconfig.com/icon.png",
+      url: siteUrl("/icon.png"),
     },
   },
   datePublished: "2025-10-07",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: "https://storeconfig.com/schemas#appstoremodel",
+  mainEntityOfPage: siteUrl("/schemas#appstoremodel"),
   about: {
     "@type": "SoftwareApplication",
     name: "StoreConfig CLI",
@@ -278,6 +279,6 @@ export const schemasPageSchema = {
   isPartOf: {
     "@type": "WebSite",
     name: "StoreConfig Documentation",
-    url: "https://storeconfig.com/docs",
+    url: siteUrl("/docs"),
   },
 };

@@ -64,7 +64,7 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "homepage": "https://storeconfig.com",
+  "homepage": "https://storeconfig.semihcihan.dev",
   "files": [
     "dist/",
     "README.md",

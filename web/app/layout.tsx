@@ -53,13 +53,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://storeconfig.com"),
+  metadataBase: new URL(config.baseUrl),
   openGraph: {
     title: "StoreConfig - Automate App Store Connect the Smart Way",
     description:
       "Free and open-source App Store Connect automation. StoreConfig runs locally, uses your own Apple credentials, and manages App Store Connect with JSON.",
     type: "website",
-    url: "https://storeconfig.com",
+    url: config.baseUrl,
     siteName: "StoreConfig",
     images: [
       {

@@ -7,7 +7,11 @@ The public web site is a static Next.js export hosted on Netlify.
 - Project name: `storeconfig`
 - Site ID: `464c8d96-3579-40bb-b386-326a23f64be5`
 - Team slug: `semihcihan`
-- Production domain target: `storeconfig.com`
+- Production domain: `storeconfig.semihcihan.dev`
+
+The `semihcihan.dev` DNS zone is managed by Netlify DNS. The `storeconfig`
+subdomain is assigned to the StoreConfig project independently from the
+personal site at the apex domain.
 
 ## Build
 

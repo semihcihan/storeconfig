@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 // Import the config (we'll need to handle this differently since it's TypeScript)
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://storeconfig.com";
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://storeconfig.semihcihan.dev";
 
 const pages = [
   { path: "", priority: "1.0", changefreq: "weekly" },

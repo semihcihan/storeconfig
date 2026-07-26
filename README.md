@@ -16,7 +16,7 @@ npx storeconfig --help
 
 ## 📖 Documentation
 
-For detailed documentation, visit [storeconfig.com/docs](https://storeconfig.com/docs)
+For detailed documentation, visit [storeconfig.semihcihan.dev/docs](https://storeconfig.semihcihan.dev/docs)
 
 ## ✨ Features
 
@@ -231,7 +231,7 @@ Add the following configuration to your MCP client:
 }
 ```
 
-For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.com/docs#ai-support).
+For detailed setup instructions for different MCP clients (Cursor, VSCode, Claude Desktop, etc.), see the [MCP Configuration documentation](https://storeconfig.semihcihan.dev/docs#ai-support).
 
 ### VSCode Setup
 
@@ -253,7 +253,7 @@ Enable validation, autocomplete, and IntelliSense support. This is optional but 
     // Other schemas (if any)...
     {
       "fileMatch": ["*storeconfig*.json"],
-      "url": "https://storeconfig.com/storeconfig-schema.json"
+      "url": "https://storeconfig.semihcihan.dev/storeconfig-schema.json"
     }
   ]
 }
@@ -268,7 +268,7 @@ Enable validation, autocomplete, and IntelliSense support. This is optional but 
 
 The schema URL used in the configuration above:
 
-**JSON Schema URL:** `https://storeconfig.com/storeconfig-schema.json`
+**JSON Schema URL:** `https://storeconfig.semihcihan.dev/storeconfig-schema.json`
 
 > **Note:** If you don't want to use the MCP server, you can still use AI tools with StoreConfig by providing the schema URL directly. When using AI tools to modify your StoreConfig JSON files, provide the schema URL for more accurate and consistent results.
 
@@ -305,9 +305,9 @@ Due to current App Store Connect API restrictions, some features are not yet ava
 
 ## Support
 
-- 📚 [Documentation](https://storeconfig.com/docs)
-- 📄 [Schemas Documentation](https://storeconfig.com/schemas)
-- 📄 [JSON Schema](https://storeconfig.com/storeconfig-schema.json)
+- 📚 [Documentation](https://storeconfig.semihcihan.dev/docs)
+- 📄 [Schemas Documentation](https://storeconfig.semihcihan.dev/schemas)
+- 📄 [JSON Schema](https://storeconfig.semihcihan.dev/storeconfig-schema.json)
 - 🐛 [Report Issues](https://github.com/semihcihan/storeconfig/issues)
 
 For source development and workspace details, see [repository notes](docs/repository.md).

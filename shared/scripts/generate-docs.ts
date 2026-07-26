@@ -102,7 +102,8 @@ async function generateJSONSchema() {
     });
     const schema = {
       $schema: "http://json-schema.org/draft-07/schema#",
-      $id: "https://storeconfig.com/storeconfig-schema.json",
+      $id:
+        "https://storeconfig.semihcihan.dev/storeconfig-schema.json",
       title: "StoreConfig JSON Schema",
       description:
         "JSON Schema for storeconfig JSON file to be used with StoreConfig CLI",

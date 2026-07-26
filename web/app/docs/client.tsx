@@ -22,6 +22,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { NeedHelp } from "@/components/need-help";
+import { siteUrl } from "@/lib/config";
 import { CTACard } from "@/components/cta-card";
 import {
   StructuredData,
@@ -64,6 +65,7 @@ export function DocsPageClient() {
   const mcpConfig = {
     command: "storeconfig-mcp",
   };
+  const schemaUrl = siteUrl("/storeconfig-schema.json");
   const mcpSnippets = {
     cursorConfig: JSON.stringify(
       {
@@ -91,7 +93,7 @@ command = "storeconfig-mcp"`,
     // Other schemas (if any)...
     {
       "fileMatch": ["*storeconfig*.json"],
-      "url": "https://storeconfig.com/storeconfig-schema.json"
+      "url": "${schemaUrl}"
     }
   ]
 }`,
@@ -800,10 +802,10 @@ command = "storeconfig-mcp"`,
                         rel="noopener noreferrer"
                         className="text-primary hover:underline pr-10"
                       >
-                        https://storeconfig.com/storeconfig-schema.json
+                        {schemaUrl}
                       </Link>
                       <div className="absolute top-2 right-2">
-                        <CopyButton text="https://storeconfig.com/storeconfig-schema.json" />
+                        <CopyButton text={schemaUrl} />
                       </div>
                     </code>
                     <div className="mt-3 pt-3 border-t">
