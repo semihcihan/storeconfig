@@ -223,6 +223,14 @@ export const AppStoreLocalizationSchema = z
   .and(AppStoreAppInfoLocalizationSchema)
   .and(AppStoreVersionLocalizationSchema);
 
+export const AppReviewInformationSchema = z.object({
+  contactFirstName: z.string().optional(),
+  contactLastName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  contactEmail: z.string().optional(),
+  notes: z.string().max(4000).optional(),
+});
+
 export const AppStoreModelSchema = z
   .object({
     schemaVersion: z.string(),
@@ -235,5 +243,6 @@ export const AppStoreModelSchema = z
     primaryLocale: LocaleCodeSchema.optional(),
     localizations: z.array(AppStoreLocalizationSchema).optional(),
     copyright: z.string().optional(),
+    appReviewInformation: AppReviewInformationSchema.optional(),
   })
   .superRefine(validateAppStoreModelData);

@@ -1133,9 +1133,30 @@ export function diff(
     desiredState
   );
   const appDetailsActions = diffAppDetails(currentState, desiredState);
+  const versionChanging =
+    desiredState.versionString !== undefined &&
+    desiredState.versionString !== currentState.versionString;
+  const reviewChanges: NonNullable<AppStoreModel["appReviewInformation"]> = {};
+  for (const key of Object.keys(
+    desiredState.appReviewInformation || {}
+  ) as (keyof typeof reviewChanges)[]) {
+    const value = desiredState.appReviewInformation?.[key];
+    if (
+      value !== undefined &&
+      (versionChanging ||
+        value !== (currentState.appReviewInformation?.[key] ?? ""))
+    ) {
+      reviewChanges[key] = value;
+    }
+  }
+  const reviewActions: AnyAction[] =
+    Object.keys(reviewChanges).length > 0
+      ? [{ type: "UPDATE_APP_REVIEW_INFORMATION", payload: reviewChanges }]
+      : [];
 
   const plan: Plan = [
     ...versionMetadataActions,
+    ...reviewActions,
     ...appDetailsActions,
     ...appAvailabilityActions,
     ...iapActions,

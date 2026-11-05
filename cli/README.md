@@ -205,7 +205,14 @@ storeconfig example --type iap
       "promotionalText": "The best app ever in the whole world",
       "whatsNew": "Bug fixes and improvements"
     }
-  ]
+  ],
+  "appReviewInformation": {
+    "contactFirstName": "Jane",
+    "contactLastName": "Doe",
+    "contactPhone": "+1 555 123 4567",
+    "contactEmail": "review@mycompany.com",
+    "notes": "Instructions for the App Review team."
+  }
 }
 ```
 

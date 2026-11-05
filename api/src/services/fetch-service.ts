@@ -1,3 +1,4 @@
+import { fetchAppReviewInformation } from "../domains/versions/review-service";
 import { logger } from "@semihcihan/shared";
 import {
   AppStoreModelSchema,
@@ -99,6 +100,7 @@ export async function fetchAppStoreState(
     versionMetadata,
     localizations,
     appInfo,
+    appReviewInformation,
   ] = await Promise.all([
     fetchAndMapInAppPurchases(appId),
     fetchAndMapSubscriptionGroups(appId),
@@ -107,6 +109,7 @@ export async function fetchAppStoreState(
     versionService.fetchVersionMetadata(appId),
     localizationAggregator.fetchAllLocalizations(appId),
     fetchApp(appId),
+    fetchAppReviewInformation(appId),
   ]);
 
   const primaryLocale = appInfo.data?.attributes?.primaryLocale as
@@ -124,6 +127,7 @@ export async function fetchAppStoreState(
     primaryLocale,
     localizations: localizations.length > 0 ? localizations : undefined,
     copyright: versionMetadata.copyright,
+    appReviewInformation,
   };
 
   const parsedData = validateAppStoreModel(result, false, "fetch");

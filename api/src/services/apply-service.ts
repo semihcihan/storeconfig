@@ -1,3 +1,4 @@
+import { applyAppReviewInformation } from "../domains/versions/review-service";
 import { logger, AnyAction } from "@semihcihan/shared";
 import { AppStoreModelSchema } from "@semihcihan/shared";
 import { updateAppAvailability } from "../domains/availability/service";
@@ -116,6 +117,10 @@ async function executeAction(
         currentIAPsResponse!,
         newlyCreatedIAPs
       );
+      break;
+
+    case "UPDATE_APP_REVIEW_INFORMATION":
+      await applyAppReviewInformation(appId, action.payload);
       break;
 
     // Version Metadata

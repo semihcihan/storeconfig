@@ -244,6 +244,13 @@ const fullAppExample: AppStoreModel = {
       },
     ],
   },
+  appReviewInformation: {
+    contactFirstName: "Jane",
+    contactLastName: "Doe",
+    contactPhone: "+1 555 123 4567",
+    contactEmail: "review@mycompany.com",
+    notes: "Instructions for the App Review team.",
+  },
   availableTerritories: "worldwide",
   inAppPurchases: inAppPurchaseExample,
   subscriptionGroups: [subscriptionGroupExample],

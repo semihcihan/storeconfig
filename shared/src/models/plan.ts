@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  AppReviewInformationSchema,
   InAppPurchaseSchema,
   PriceSchema,
   SubscriptionGroupLocalizationSchema,
@@ -358,7 +359,13 @@ export type DeleteAppLocalizationAction = Action<
 // Union Types
 // #################################################################################
 
+export type UpdateAppReviewInformationAction = Action<
+  "UPDATE_APP_REVIEW_INFORMATION",
+  z.infer<typeof AppReviewInformationSchema>
+>;
+
 export type AnyAction =
+  | UpdateAppReviewInformationAction
   // In-App Purchases
   | CreateInAppPurchaseAction
   | UpdateInAppPurchaseAction

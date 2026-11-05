@@ -74,9 +74,7 @@ export class AppStoreVersionService {
     return response.data;
   }
 
-  private findLatestVersion(
-    versions: AppStoreVersion[]
-  ): AppStoreVersion | null {
+  findLatestVersion(versions: AppStoreVersion[]): AppStoreVersion | null {
     if (versions.length === 0) {
       return null;
     }
