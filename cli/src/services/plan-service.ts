@@ -155,6 +155,11 @@ export async function showAction(action: AnyAction) {
       details = metadata;
       break;
 
+    case "UPDATE_APP_REVIEW_INFORMATION":
+      title = "Updating app review information";
+      details = Object.keys(action.payload).join(", ");
+      break;
+
     case "CREATE_APP_LOCALIZATION":
       const appLoc = action.payload.localization;
       title = "Creating app localization";

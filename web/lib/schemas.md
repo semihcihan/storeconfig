@@ -15,9 +15,24 @@ _Object containing the following properties:_
 | `primaryLocale`          | [LocaleCode](#localecode)                                      |
 | `localizations`          | _Array of [AppStoreLocalization](#appstorelocalization) items_ |
 | `copyright`              | `string`                                                       |
+| `appReviewInformation`   | [AppReviewInformation](#appreviewinformation)                  |
 
 _(\*) Required._
 
+
+## AppReviewInformation
+
+_Object containing the following properties:_
+
+| Property           | Type                          |
+| :----------------- | :---------------------------- |
+| `contactFirstName` | `string`                      |
+| `contactLastName`  | `string`                      |
+| `contactPhone`     | `string`                      |
+| `contactEmail`     | `string`                      |
+| `notes`            | `string` (_max length: 4000_) |
+
+_All properties are optional._
 
 ## AppStoreAppInfoLocalization
 

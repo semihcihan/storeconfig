@@ -291,6 +291,39 @@ describe("apply command", () => {
   });
 
   describe("logging", () => {
+    it.each([
+      {
+        mode: "apply",
+        preview: false,
+        payload: { notes: "Review instructions\nSecond line" },
+        fields: "notes",
+      },
+      {
+        mode: "preview",
+        preview: true,
+        payload: { notes: "", contactEmail: "review@example.com" },
+        fields: "notes, contactEmail",
+      },
+    ])(
+      "should summarize review information changes in $mode",
+      async ({ preview, payload, fields }) => {
+        const { showPlan } = jest.requireActual<
+          typeof import("../services/plan-service")
+        >("../services/plan-service");
+        mockShowPlan.mockImplementationOnce(showPlan);
+        mockStoreConfigEngine.generateDiff.mockResolvedValueOnce({
+          plan: [{ type: "UPDATE_APP_REVIEW_INFORMATION", payload }],
+          currentState: { schemaVersion: "1.0", appId: "123456789" },
+        });
+
+        await applyCommand.handler!({ ...mockArgv, preview } as any);
+
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          `Updating app review information\n   ${fields}`
+        );
+      }
+    );
+
     it("should log when processing target state", async () => {
       await applyCommand.handler!(mockArgv as any);
 
